@@ -1,0 +1,123 @@
+/*
+ * Asp engine data implementation.
+ */
+
+#include "data.h"
+#include "asp-priv.h"
+#include <string.h>
+
+void AspDataSetWord3(AspDataEntry *entry, uint32_t value)
+{
+    entry->s[11] = (uint8_t)AspBitGetField(value, 0, 8);
+    entry->s[12] = (uint8_t)AspBitGetField(value, 8, 8);
+    entry->s[13] = (uint8_t)AspBitGetField(value, 16, 8);
+    AspBitSetField
+        (&entry->u2, AspWordBitSize, AspWordBitSize - 24U,
+         AspBitGetField(value, 24U, AspWordBitSize - 24U));
+}
+
+uint32_t AspDataGetWord3(const AspDataEntry *entry)
+{
+    return (uint32_t)
+        (uint32_t)entry->s[11] |
+        (uint32_t)entry->s[12] << 8 |
+        (uint32_t)entry->s[13] << 16 |
+        AspBitGetField(entry->u2, AspWordBitSize, AspWordBitSize - 24U) << 24;
+}
+
+size_t AspDataEntrySize(void)
+{
+    return sizeof(AspDataEntry);
+}
+
+void AspClearData(AspEngine *engine)
+{
+    /* Clear data storage, setting every element to a free entry. */
+    engine->freeListIndex = 0;
+    AspDataEntry *data = engine->data;
+    for (unsigned i = 0; i < engine->dataEndIndex; i++)
+    {
+        memset(data + i, 0, sizeof *data);
+        AspDataSetType(data + i, DataType_Free);
+        AspDataSetFreeNext(data + i, i + 1);
+    }
+    if (engine->dataEndIndex != 0)
+        AspDataSetFreeNext(data + engine->dataEndIndex - 1, 0);
+    engine->lowFreeCount = engine->freeCount = engine->dataEndIndex;
+}
+
+uint32_t AspAlloc(AspEngine *engine)
+{
+    if (engine->freeCount == 0)
+        return 0;
+
+    AspDataEntry *data = engine->data;
+    uint32_t index = engine->freeListIndex;
+
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(data + index) == DataType_Free);
+    if (assertResult != AspRunResult_OK)
+        return 0;
+
+    engine->freeListIndex = AspDataGetFreeNext(data + index);
+    engine->freeCount--;
+    if (engine->freeCount < engine->lowFreeCount)
+        engine->lowFreeCount = engine->freeCount;
+    memset(data + index, 0, sizeof *data);
+    AspDataSetType(data + index, DataType_None);
+    return index;
+}
+
+bool AspFree(AspEngine *engine, uint32_t index)
+{
+    AspRunResult assertResult = AspAssert
+        (engine, index < engine->dataEndIndex);
+    if (assertResult != AspRunResult_OK)
+        return false;
+    AspDataEntry *data = engine->data;
+    assertResult = AspAssert
+        (engine, AspDataGetType(data + index) != DataType_Free);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
+    memset(data + index, 0, sizeof *data);
+    AspDataSetType(data + index, DataType_Free);
+    AspDataSetFreeNext(data + index, engine->freeListIndex);
+    engine->freeListIndex = index;
+    engine->freeCount++;
+
+    return true;
+}
+
+bool AspIsObject(const AspDataEntry *entry)
+{
+    return (AspDataGetType(entry) & ~DataType_ObjectMask) == 0;
+}
+
+AspDataEntry *AspAllocEntry(AspEngine *engine, DataType type)
+{
+    uint32_t index = AspAlloc(engine);
+    if (index == 0)
+        return 0;
+    AspDataEntry *entry = engine->data + index;
+    AspDataSetType(entry, type);
+    AspRef(engine, entry);
+    return entry;
+}
+
+AspDataEntry *AspEntry(AspEngine *engine, uint32_t index)
+{
+    /* Zero means a null reference (for lists, trees, etc.). */
+    return index == 0 ? 0 : engine->data + index;
+}
+
+AspDataEntry *AspValueEntry(AspEngine *engine, uint32_t index)
+{
+    /* Zero means the None singleton. */
+    return engine->data + index;
+}
+
+uint32_t AspIndex(const AspEngine *engine, const AspDataEntry *entry)
+{
+    return entry == 0 ? 0 : (uint32_t)(entry - engine->data);
+}
