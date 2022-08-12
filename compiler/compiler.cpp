@@ -3,8 +3,6 @@
 //
 
 #include "compiler.h"
-
-#include "asp.h"
 #include "grammar.hpp"
 #include "expression.hpp"
 #include "statement.hpp"

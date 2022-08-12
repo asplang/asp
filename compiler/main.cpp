@@ -29,8 +29,8 @@ static void Usage()
     cerr
         << "Usage: aspc [spec] script\n"
         << "Arguments:\n"
-        << "spec    = Application specification file *.aps."
-        << " Default is app.aps.\n"
+        << "spec    = Application specification file *.aspec."
+        << " Default is app.aspec.\n"
         << "script  = Script file *.asp.\n";
 }
 
@@ -69,7 +69,7 @@ static int main1(int argc, char **argv)
     };
     struct InputSpec inputs[] =
     {
-        {".aps", &specFileName, &specSuffixIndex},
+        {".aspec", &specFileName, &specSuffixIndex},
         {".asp", &mainModuleFileName, &mainModuleSuffixIndex},
     };
     for (int argi = 1; argi < argc; argi++)
@@ -96,7 +96,7 @@ static int main1(int argc, char **argv)
 
     // Use default application specification if one is not given.
     if (specFileName.empty())
-        specFileName = "app.aps";
+        specFileName = "app.aspec";
 
     // Ensure the script has been identified.
     if (mainModuleFileName.empty())
@@ -110,7 +110,9 @@ static int main1(int argc, char **argv)
     ifstream specStream(specFileName, ios::binary);
     if (!specStream)
     {
-        cerr << "Error opening " << specFileName << endl;
+        cerr
+            << "Error opening " << specFileName
+            << ": " << strerror(errno) << endl;
         Usage();
         return 2;
     }
@@ -121,7 +123,9 @@ static int main1(int argc, char **argv)
     ofstream executableStream(executableFileName, ios::binary);
     if (!executableStream)
     {
-        cerr << "Error creating " << executableFileName << endl;
+        cerr
+            << "Error creating " << executableFileName
+            << ": " << strerror(errno) << endl;
         Usage();
         return 2;
     }
@@ -132,7 +136,9 @@ static int main1(int argc, char **argv)
     ofstream listingStream(listingFileName);
     if (!listingStream)
     {
-        cerr << "Error creating " << listingFileName << endl;
+        cerr
+            << "Error creating " << listingFileName
+            << ": " << strerror(errno) << endl;
         Usage();
         return 2;
     }
@@ -155,8 +161,8 @@ static int main1(int argc, char **argv)
         if (!moduleStream)
         {
             cerr
-                << "Error: " << strerror(errno) << ": "
-                << moduleFileName << endl;
+                << "Error opening " << moduleFileName
+                << ": " << strerror(errno) << endl;
             errorDetected = true;
             break;
         }
@@ -213,15 +219,21 @@ static int main1(int argc, char **argv)
     executableStream.close();
     if (!executableStream)
     {
-        cerr << "Error writing executable" << endl;
+        cerr
+            << "Error writing " << executableFileName
+            << ": " << strerror(errno) << endl;
         remove(executableFileName.c_str());
     }
 
-    // Create the listing.
+    // Write the listing.
     executable.WriteListing(listingStream);
     listingStream.close();
     if (!listingStream)
-        cerr << "Error writing listing" << endl;
+    {
+        cerr
+            << "Error writing " << listingFileName
+            << ": " << strerror(errno) << endl;
+    }
 
     // Indicate any error writing the code.
     if (!executableStream)
@@ -229,9 +241,11 @@ static int main1(int argc, char **argv)
 
     // Write statistics.
     if (executableStream)
+    {
         cout
             << executableFileName << ": "
             << executableByteCount << " bytes" << endl;
+    }
 
     return 0;
 }
