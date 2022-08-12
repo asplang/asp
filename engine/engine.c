@@ -223,3 +223,8 @@ uint32_t AspProgramCounter(const AspEngine *engine)
 {
     return (uint32_t)(engine->pc - engine->code);
 }
+
+uint32_t AspLowFreeCount(const AspEngine *engine)
+{
+    return engine->lowFreeCount;
+}

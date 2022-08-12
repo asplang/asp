@@ -70,6 +70,7 @@ AspRunResult AspRestart(AspEngine *);
 AspRunResult AspStep(AspEngine *);
 bool AspIsRunning(const AspEngine *);
 uint32_t AspProgramCounter(const AspEngine *);
+uint32_t AspLowFreeCount(const AspEngine *);
 
 /* API for use by application functions. */
 bool AspIsNone(const AspDataEntry *);
