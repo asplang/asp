@@ -16,6 +16,11 @@ dist/
 # Log files
 *.log
 
+# CMake files
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+
 # Package files
 *.jar
 
@@ -47,4 +52,3 @@ Thumbs.db
 *.flv
 *.mov
 *.wmv
-
