@@ -1,0 +1,39 @@
+#
+# Standalone Asp application function specifications.
+#
+
+# General purpose print.
+def print(value) = asp_print
+
+# Trigonometric functions.
+def cos(x) = asp_cos
+def sin(x) = asp_sin
+def tan(x) = asp_tan
+def acos(x) = asp_acos
+def asin(x) = asp_asin
+def atan(x) = asp_atan
+def atan2(y, x) = asp_atan2
+
+# Hyperbolic functions.
+def cosh(x) = asp_cosh
+def sinh(x) = asp_sinh
+def tanh(x) = asp_tanh
+def acosh(x) = asp_acosh
+def asinh(x) = asp_asinh
+def atanh(x) = asp_atanh
+
+# Hypotenuse function.
+def hypot(x, y) = asp_hypot
+
+# Exponential and logarithmic functions.
+def exp(x) = asp_exp
+def log(x) = asp_log
+def log10(x) = asp_log10
+
+# Rounding functions.
+def ceil(x) = asp_ceil
+def floor(x) = asp_floor
+def round(x) = asp_round
+
+# Other functions.
+def abs(x) = asp_abs
