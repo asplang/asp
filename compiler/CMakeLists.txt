@@ -12,12 +12,18 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
 add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/asp.y
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${PROJECT_SOURCE_DIR}/asp.y ${PROJECT_BINARY_DIR}
+    )
+
+add_custom_command(
     OUTPUT
-        ${PROJECT_SOURCE_DIR}/asp.c 
-        ${PROJECT_SOURCE_DIR}/asp.h 
-        ${PROJECT_SOURCE_DIR}/asp.out
-    DEPENDS lemon ${PROJECT_SOURCE_DIR}/asp.y
-    COMMAND lemon asp.y
+        ${PROJECT_BINARY_DIR}/asp.c
+        ${PROJECT_BINARY_DIR}/asp.h
+        ${PROJECT_BINARY_DIR}/asp.out
+    DEPENDS lemon ${PROJECT_BINARY_DIR}/asp.y
+    COMMAND lemon ${PROJECT_BINARY_DIR}/asp.y
     )
 
 add_executable(aspc
@@ -35,5 +41,7 @@ add_executable(aspc
     )
 
 target_include_directories(aspc PRIVATE
+    "${PROJECT_BINARY_DIR}"
+    "${PROJECT_SOURCE_DIR}"
     ../engine
     )

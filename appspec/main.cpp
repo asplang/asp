@@ -9,8 +9,10 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <algorithm>
 #include <cstring>
 #include <cstdlib>
+#include <cctype>
 
 // Lemon parser.
 extern "C" {
@@ -88,9 +90,16 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // Determine the base name for use in code generation.
+    auto baseNameIter = find_if_not
+        (baseFileName.rbegin(), baseFileName.rend(),
+         [](char c){return isalnum(c) || c == '_';});
+    string baseName =
+        baseFileName.substr(baseFileName.rend() - baseNameIter);
+
     Lexer lexer(sourceStream);
     SymbolTable symbolTable;
-    Generator generator(cerr, symbolTable, baseFileName);
+    Generator generator(cerr, symbolTable, baseName);
 
     #ifdef ASP_APPSPEC_DEBUG
     cout << "Parsing module " << sourceFileName << "..." << endl;
