@@ -190,6 +190,17 @@ bool AspFloatValue(const AspDataEntry *entry, double *result)
     return true;
 }
 
+bool AspRangeValue
+    (AspEngine *engine, const AspDataEntry *entry,
+     int32_t *start, int32_t *end, int32_t *step)
+{
+    if (!AspIsRange(entry))
+        return false;
+
+    AspGetRange(engine, entry, start, end, step);
+    return true;
+}
+
 /* If supplied, *size is the number of bytes in the string without null
    termination. If *size - index < bufferSize, this routine will deposit a
    null after the requested string content. If *size - index >= bufferSize,
@@ -199,7 +210,7 @@ bool AspStringValue
      size_t *size, char *buffer, size_t index, size_t bufferSize)
 {
     AspDataEntry *entry = (AspDataEntry *)const_entry;
-    if (entry == 0 || AspDataGetType(entry) != DataType_String)
+    if (!AspIsString(entry))
         return false;
 
     size_t localSize = (size_t)AspDataGetSequenceCount(entry);

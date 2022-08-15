@@ -5,6 +5,7 @@
 #include "range.h"
 #include "asp.h"
 #include "data.h"
+#include <limits.h>
 
 void AspGetRange
     (AspEngine *engine, const AspDataEntry *entry,

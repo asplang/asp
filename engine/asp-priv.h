@@ -9,13 +9,19 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct AspEngine AspEngine;
 typedef struct AspDataEntry AspDataEntry;
 typedef struct AspAppSpec AspAppSpec;
 
-#ifndef ASP_080177a8_14ce_11ed_b65f_7328ac4c64a3_H
-#include "asp.h"
+#ifdef __cplusplus
+}
 #endif
+
+#include "asp.h"
 
 #ifdef __cplusplus
 extern "C" {

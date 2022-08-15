@@ -118,7 +118,7 @@ static int main1(int argc, char **argv)
     }
 
     // Open output executable.
-    static string executableSuffix = ".ae";
+    static string executableSuffix = ".aspe";
     string executableFileName = baseFileName + executableSuffix;
     ofstream executableStream(executableFileName, ios::binary);
     if (!executableStream)

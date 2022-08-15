@@ -8,6 +8,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#ifdef ASP_DEBUG
+#include <stdio.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,8 +53,16 @@ typedef enum
     AspRunResult_Application = 0x100,
 } AspRunResult;
 
+#ifdef __cplusplus
+}
+#endif
+
 /* Internal types. */
 #include "asp-priv.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Initialization. */
 size_t AspDataEntrySize(void);
@@ -71,6 +82,9 @@ AspRunResult AspStep(AspEngine *);
 bool AspIsRunning(const AspEngine *);
 uint32_t AspProgramCounter(const AspEngine *);
 uint32_t AspLowFreeCount(const AspEngine *);
+#ifdef ASP_DEBUG
+void AspDump(const AspEngine *, FILE *);
+#endif
 
 /* API for use by application functions. */
 bool AspIsNone(const AspDataEntry *);
@@ -89,6 +103,9 @@ bool AspIsDictionary(const AspDataEntry *);
 bool AspIsTrue(AspEngine *, const AspDataEntry *);
 bool AspIntegerValue(const AspDataEntry *, int32_t *);
 bool AspFloatValue(const AspDataEntry *, double *);
+bool AspRangeValue
+    (AspEngine *, const AspDataEntry *,
+     int32_t *start, int32_t *end, int32_t *step);
 bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);

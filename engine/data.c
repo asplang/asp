@@ -49,7 +49,10 @@ void AspClearData(AspEngine *engine)
 uint32_t AspAlloc(AspEngine *engine)
 {
     if (engine->freeCount == 0)
+    {
+        engine->runResult = AspRunResult_OutOfDataMemory;
         return 0;
+    }
 
     AspDataEntry *data = engine->data;
     uint32_t index = engine->freeListIndex;

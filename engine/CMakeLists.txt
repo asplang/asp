@@ -22,7 +22,7 @@ add_library(aspe SHARED
     tree.c
     operation.c
     function.c
-    debug.c
+    $<$<CONFIG:Debug>:debug.c>
     )
 
 target_compile_definitions(aspe PUBLIC
