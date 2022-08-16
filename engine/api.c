@@ -283,6 +283,10 @@ unsigned AspCount(const AspDataEntry *entry)
 AspDataEntry *AspListElement
     (AspEngine *engine, AspDataEntry *list, unsigned index)
 {
+    uint8_t type = AspDataGetType(list);
+    if (type != DataType_Tuple && type != DataType_List)
+        return 0;
+
     AspSequenceResult result = AspSequenceIndex(engine, list, index);
     if (result.result != AspRunResult_OK)
         return 0;

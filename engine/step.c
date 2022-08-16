@@ -1502,7 +1502,11 @@ static AspRunResult Step(AspEngine *engine)
                     (engine, functionSymbol, ns, &returnValue);
                 engine->inApp = false;
                 if (callResult != AspRunResult_OK)
+                {
+                    if (callResult == AspRunResult_Complete)
+                        callResult = AspRunResult_MalformedFunctionCall;
                     return callResult;
+                }
 
                 /* We're now done with the local namespace. */
                 AspUnref(engine, ns);
