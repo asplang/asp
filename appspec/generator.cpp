@@ -5,6 +5,7 @@
 #include "generator.h"
 #include "symbol.hpp"
 #include "grammar.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -90,20 +91,22 @@ DEFINE_ACTION
      Token *, nameToken, ParameterList *, parameterList,
      Token *, internalNameToken)
 {
-    auto symbol = symbolTable.Symbol(nameToken->s);
-
-    FunctionDefinition functionDefinition;
-    functionDefinition.name = nameToken->s;
-    functionDefinition.internalName = internalNameToken->s;
-    for (auto iter = parameterList->ParametersBegin();
-         iter != parameterList->ParametersEnd(); iter++)
+    // Replace any previous function definition having the same name with
+    // this latter one.
+    auto findIter = functionDefinitions.find
+        (FunctionDefinition(nameToken->s, "", 0));
+    if (findIter != functionDefinitions.end())
     {
-        auto parameter = *iter;
-        functionDefinition.parameterNames.push_back(parameter->Name());
+        cout << "Warning: function " << nameToken->s << " redefined" << endl;
+        functionDefinitions.erase(findIter);
     }
-    functionDefinitions.emplace(symbol, functionDefinition);
 
-    delete parameterList;
+    functionDefinitions.emplace
+        (nameToken->s, internalNameToken->s, parameterList);
+    checkValueComputed = false;
+
+    delete nameToken;
+    delete internalNameToken;
 
     return 0;
 }

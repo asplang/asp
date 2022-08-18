@@ -4,44 +4,63 @@
 
 #include "generator.h"
 #include "symbol.hpp"
+#include "crc.h"
 #include <iomanip>
 #include <set>
 
 using namespace std;
 
+template <class T>
+static void Write(ostream &os, T value)
+{
+    unsigned i = sizeof value;
+    while (i--)
+        os << static_cast<char>((value >> (i << 3)) & 0xFF);
+}
+
 void Generator::WriteCompilerSpec(ostream &os)
 {
-    // Write each name only once, in order of assigned symbol.
+    // Write the specification's check value.
+    os.write("AspS", 4);
+    Write(os, CheckValue());
+
+    // Assign symbols, function names first, then parameter names,
+    // writing each name only once, in order of assigned symbol.
     set<int> writtenSymbols;
     for (auto iter = functionDefinitions.begin();
          iter != functionDefinitions.end(); iter++)
     {
-        auto symbol = iter->first;
-        auto &functionDefinition = iter->second;
+        auto &functionDefinition = *iter;
+
+        auto functionName = functionDefinition.Name();
+        auto symbol = symbolTable.Symbol(functionName);
 
         auto writtenIter = writtenSymbols.find(symbol);
         if (writtenIter == writtenSymbols.end())
         {
-            os << functionDefinition.name << endl;
+            os << functionName << '\n';
             writtenSymbols.insert(symbol);
         }
     }
     for (auto iter = functionDefinitions.begin();
          iter != functionDefinitions.end(); iter++)
     {
-        auto &functionDefinition = iter->second;
+        auto &functionDefinition = *iter;
 
-        for (auto parameterIter = functionDefinition.parameterNames.begin();
-             parameterIter != functionDefinition.parameterNames.end();
+        for (auto parameterIter =
+             functionDefinition.Parameters().ParametersBegin();
+             parameterIter != functionDefinition.Parameters().ParametersEnd();
              parameterIter++)
         {
-            auto &parameterName = *parameterIter;
+            auto &parameter = **parameterIter;
+
+            const auto &parameterName = parameter.Name();
             auto parameterSymbol = symbolTable.Symbol(parameterName);
 
             auto writtenIter = writtenSymbols.find(parameterSymbol);
             if (writtenIter == writtenSymbols.end())
             {
-                os << parameterName << endl;
+                os << parameterName << '\n';
                 writtenSymbols.insert(parameterSymbol);
             }
         }
@@ -63,23 +82,25 @@ void Generator::WriteApplicationHeader(ostream &os)
     for (auto iter = functionDefinitions.begin();
          iter != functionDefinitions.end(); iter++)
     {
-        auto &functionDefinition = iter->second;
+        auto &functionDefinition = *iter;
 
         os
-            << "\nAspRunResult " << functionDefinition.internalName << "\n"
+            << "\nAspRunResult " << functionDefinition.InternalName() << "\n"
                "    (AspEngine *,";
-        if (!functionDefinition.parameterNames.empty())
+        if (!functionDefinition.Parameters().ParametersEmpty())
             os << "\n";
 
-        for (auto parameterIter = functionDefinition.parameterNames.begin();
-             parameterIter != functionDefinition.parameterNames.end();
+        for (auto parameterIter =
+             functionDefinition.Parameters().ParametersBegin();
+             parameterIter != functionDefinition.Parameters().ParametersEnd();
              parameterIter++)
         {
-            auto &parameterName = *parameterIter;
-            os << "     AspDataEntry *" << parameterName << ",\n";
+            auto &parameter = **parameterIter;
+
+            os << "     AspDataEntry *" << parameter.Name() << ",\n";
         }
 
-        if (functionDefinition.parameterNames.empty())
+        if (functionDefinition.Parameters().ParametersEmpty())
             os << ' ';
         else
             os << "     ";
@@ -114,18 +135,22 @@ void Generator::WriteApplicationCode(ostream &os)
     for (auto iter = functionDefinitions.begin();
          iter != functionDefinitions.end(); iter++)
     {
-        auto symbol = iter->first;
-        auto &functionDefinition = iter->second;
+        auto &functionDefinition = *iter;
+
+        auto symbol = symbolTable.Symbol(functionDefinition.Name());
 
         os
             << "        case " << symbol << ":\n"
             << "        {\n";
 
-        for (auto parameterIter = functionDefinition.parameterNames.begin();
-             parameterIter != functionDefinition.parameterNames.end();
+        for (auto parameterIter =
+             functionDefinition.Parameters().ParametersBegin();
+             parameterIter != functionDefinition.Parameters().ParametersEnd();
              parameterIter++)
         {
-            auto &parameterName = *parameterIter;
+            auto &parameter = **parameterIter;
+
+            const auto &parameterName = parameter.Name();
             int32_t parameterSymbol = symbolTable.Symbol(parameterName);
 
             os
@@ -135,15 +160,17 @@ void Generator::WriteApplicationCode(ostream &os)
         }
 
         os
-            << "            return " << functionDefinition.internalName
+            << "            return " << functionDefinition.InternalName()
             << "(engine, ";
 
-        for (auto parameterIter = functionDefinition.parameterNames.begin();
-             parameterIter != functionDefinition.parameterNames.end();
+        for (auto parameterIter =
+             functionDefinition.Parameters().ParametersBegin();
+             parameterIter != functionDefinition.Parameters().ParametersEnd();
              parameterIter++)
         {
-            auto &parameterName = *parameterIter;
-            os << parameterName << ", ";
+            auto &parameter = **parameterIter;
+
+            os << parameter.Name() << ", ";
         }
 
         os
@@ -163,20 +190,22 @@ void Generator::WriteApplicationCode(ostream &os)
     for (auto iter = functionDefinitions.begin();
          iter != functionDefinitions.end(); iter++)
     {
-        auto symbol = iter->first;
-        auto &functionDefinition = iter->second;
+        auto &functionDefinition = *iter;
 
         os
             << "\n    \"\\x" << setw(2)
-            << functionDefinition.parameterNames.size();
+            << functionDefinition.Parameters().ParametersSize();
         specByteCount++;
 
-        for (auto parameterIter = functionDefinition.parameterNames.begin();
-             parameterIter != functionDefinition.parameterNames.end();
+        for (auto parameterIter =
+             functionDefinition.Parameters().ParametersBegin();
+             parameterIter != functionDefinition.Parameters().ParametersEnd();
              parameterIter++)
         {
-            auto &parameterName = *parameterIter;
-            int32_t parameterSymbol = symbolTable.Symbol(parameterName);
+            auto &parameter = **parameterIter;
+
+            int32_t parameterSymbol = symbolTable.Symbol(parameter.Name());
+
             uint32_t word = *reinterpret_cast<uint32_t *>(&parameterSymbol);
             for (unsigned i = 0; i < 4; i++)
             {
@@ -192,12 +221,9 @@ void Generator::WriteApplicationCode(ostream &os)
     }
     os << dec;
 
-    // TODO: Calculate CRC.
-    uint32_t crc = 0;
-
     os
         << ",\n    " << specByteCount
-        << ", 0x" << hex << setfill('0') << setw(4) << crc
+        << ", 0x" << hex << setfill('0') << setw(4) << CheckValue() << dec
         << ", AspDispatch_" << baseFileName << "\n"
            "};\n";
 
@@ -212,4 +238,66 @@ void Generator::ReportError(const string &error)
         << currentSourceLocation.column << ": Error: "
         << error << endl;
     errorCount++;
+}
+
+uint32_t Generator::CheckValue()
+{
+    if (!checkValueComputed)
+    {
+        ComputeCheckValue();
+        checkValueComputed = true;
+    }
+    return checkValue;
+}
+
+void Generator::ComputeCheckValue()
+{
+    // Use CRC-32/ISO-HDLC for computing a check value.
+    auto spec = crc_make_spec
+        (32, 0x04C11DB7, 0xFFFFFFFF, true, true, 0xFFFFFFFF);
+    crc_session session;
+    crc_start(&spec, &session);
+
+    // Compute a check value based on the signature of each function.
+    static const string
+        CheckValueFunctionPrefix = "\f",
+        CheckValueParameterPrefix = "(";
+    for (auto iter = functionDefinitions.begin();
+         iter != functionDefinitions.end(); iter++)
+    {
+        auto &functionDefinition = *iter;
+
+        const auto &functionName = functionDefinition.Name();
+
+        // Contribute the function name.
+        crc_add
+            (&spec, &session,
+             CheckValueFunctionPrefix.c_str(),
+             static_cast<unsigned>(CheckValueFunctionPrefix.size()));
+        crc_add
+            (&spec, &session,
+             functionName.c_str(),
+             static_cast<unsigned>(functionName.size()));
+
+        for (auto parameterIter =
+             functionDefinition.Parameters().ParametersBegin();
+             parameterIter != functionDefinition.Parameters().ParametersEnd();
+             parameterIter++)
+        {
+            auto &parameter = **parameterIter;
+
+            const auto &parameterName = parameter.Name();
+
+            // Contribute the parameter name.
+            crc_add
+                (&spec, &session,
+                 CheckValueParameterPrefix.c_str(),
+                 static_cast<unsigned>(CheckValueParameterPrefix.size()));
+            crc_add
+                (&spec, &session,
+                 parameterName.c_str(),
+                 static_cast<unsigned>(parameterName.size()));
+        }
+    }
+    checkValue = static_cast<uint32_t>(crc_finish(&spec, &session));
 }

@@ -148,7 +148,7 @@ static int main1(int argc, char **argv)
     Executable executable(symbolTable);
     Compiler compiler(cerr, symbolTable, executable);
     compiler.AddModuleFileName(mainModuleFileName);
-    compiler.PredefineSymbols(specStream);
+    compiler.LoadApplicationSpec(specStream);
 
     // Compile main module and any other modules that are imported.
     bool errorDetected = false;

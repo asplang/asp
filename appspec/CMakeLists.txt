@@ -33,7 +33,8 @@ add_executable(aspg
     lexer.cpp
     grammar.cpp
     app.c
-    parameter.cpp
+    crc.c
+    statement.cpp
     ../compiler/symbol.cpp
     )
 

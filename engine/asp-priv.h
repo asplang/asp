@@ -35,7 +35,7 @@ typedef struct AspAppSpec
 {
     char *spec;
     unsigned specSize;
-    uint32_t crc;
+    uint32_t checkValue;
     AspDispatchFunction *dispatch;
 } AspAppSpec;
 

@@ -21,6 +21,11 @@ Executable::~Executable()
         delete *iter;
 }
 
+void Executable::SetCheckValue(uint32_t checkValue)
+{
+    this->checkValue = checkValue;
+}
+
 void Executable::CurrentModule(const string &moduleName)
 {
     currentModuleName = moduleName;
@@ -115,7 +120,14 @@ void Executable::Finalize()
 
 void Executable::Write(ostream &os) const
 {
-    os.write("AspE\0\0\0\0", 8);
+    // Write header signature and check value.
+    os.write("AspE", 4);
+    {
+        unsigned i = 4;
+        while (i--)
+            os << static_cast<char>((checkValue >> (i << 3)) & 0xFF);
+    }
+
     for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
     {
         auto instruction = *iter;

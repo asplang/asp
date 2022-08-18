@@ -21,7 +21,7 @@ typedef enum
 {
     AspAddCodeResult_OK = 0x00,
     AspAddCodeResult_InvalidFormat = 0x01,
-    AspAddCodeResult_InvalidCheck = 0x02,
+    AspAddCodeResult_InvalidCheckValue = 0x02,
     AspAddCodeResult_OutOfCodeMemory = 0x03,
     AspAddCodeResult_InvalidState = 0x04,
 } AspAddCodeResult;

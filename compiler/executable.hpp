@@ -25,6 +25,9 @@ class Executable
         explicit Executable(SymbolTable &);
         ~Executable();
 
+        // Check value method.
+        void SetCheckValue(std::uint32_t);
+
         // Current module methods.
         void CurrentModule(const std::string &);
         std::pair<std::string, std::int32_t> CurrentModule() const;
@@ -63,6 +66,7 @@ class Executable
     private:
 
         // Data.
+        std::uint32_t checkValue = 0;
         SymbolTable &symbolTable;
         std::string currentModuleName;
         std::list<Instruction *> instructions;

@@ -17,6 +17,7 @@
 #endif
 
 #define HEADER_SIZE 8
+#define MAX_CODE_SIZE (1 << (AspWordBitSize))
 
 static AspRunResult ResetData(AspEngine *);
 
@@ -26,6 +27,9 @@ AspRunResult AspInitialize
      void *data, size_t dataSize,
      AspAppSpec *appSpec)
 {
+    if (codeSize > MAX_CODE_SIZE)
+        return AspRunResult_InitializationError;
+
     engine->code = code;
     engine->maxCodeSize = codeSize;
     engine->data = data;
@@ -59,18 +63,25 @@ AspAddCodeResult AspAddCode
 
             if (engine->headerIndex == HEADER_SIZE)
             {
-                /* Check header. */
+                /* Check the header signature. */
                 if (memcmp(engine->code, "AspE", 4) != 0)
                 {
                     engine->state = AspEngineState_LoadError;
                     engine->loadResult = AspAddCodeResult_InvalidFormat;
                 }
 
-                /* TODO: Check CRC. */
-                if (false)
+                /* Check the application specification check value. */
+                const uint8_t *checkValuePtr = engine->code + 4;
+                uint32_t checkValue = 0;
+                for (unsigned i = 0; i < 4; i++)
+                {
+                    checkValue <<= 8;
+                    checkValue |= *checkValuePtr++;
+                }
+                if (checkValue != engine->appSpec->checkValue)
                 {
                     engine->state = AspEngineState_LoadError;
-                    engine->loadResult = AspAddCodeResult_InvalidCheck;
+                    engine->loadResult = AspAddCodeResult_InvalidCheckValue;
                 }
 
                 if (engine->loadResult != AspAddCodeResult_OK)

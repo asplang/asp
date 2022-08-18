@@ -9,6 +9,8 @@
 #include "instruction.hpp"
 #include <iostream>
 #include <sstream>
+#include <cstring>
+#include <cstdint>
 
 using namespace std;
 
@@ -28,8 +30,25 @@ Compiler::~Compiler()
 {
 }
 
-void Compiler::PredefineSymbols(istream &specStream)
+void Compiler::LoadApplicationSpec(istream &specStream)
 {
+    // Read and check application spec header.
+    char header[4];
+    specStream.read(header, 4);
+    if (memcmp(header, "AspS", 4) != 0)
+        throw string("Invalid format in application spec file");
+
+    // Read application spec check value and store.
+    uint32_t checkValue = 0;
+    for (unsigned i = 0; i < 4; i++)
+    {
+        checkValue <<= 8;
+        checkValue |= specStream.get();
+        if (specStream.eof())
+            throw string("Invalid format in application spec file");
+    }
+    executable.SetCheckValue(checkValue);
+
     // Define symbols for all names used in the application.
     while (true)
     {

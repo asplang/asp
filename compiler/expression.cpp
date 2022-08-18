@@ -575,7 +575,6 @@ ConstantExpression *ConstantExpression::Invert() const
             throw string("Bad operand type for unary ~");
 
         case Type::Boolean:
-            cout << "Folding boolean " << b << " to " << ~(b?1:0) << endl;
             return new ConstantExpression(Token(sourceLocation,
                 ~(b ? 1 : 0), 0));
 

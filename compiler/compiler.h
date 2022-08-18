@@ -66,7 +66,7 @@ class Compiler
         ~Compiler();
 
         // Compiler methods.
-        void PredefineSymbols(std::istream &);
+        void LoadApplicationSpec(std::istream &);
         void AddModule(const std::string &);
         void AddModuleFileName(const std::string &);
         std::string NextModuleFileName();

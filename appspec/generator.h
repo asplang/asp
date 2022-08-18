@@ -8,9 +8,9 @@
 #include "lexer.h"
 
 #ifdef __cplusplus
-#include "parameter.hpp"
+#include "statement.hpp"
 #include <iostream>
-#include <map>
+#include <set>
 #include <vector>
 #include <string>
 class SymbolTable;
@@ -90,17 +90,12 @@ class Generator
         Generator &operator =(const Generator &) = delete;
 
         void ReportError(const std::string &);
-
-        struct FunctionDefinition
-        {
-            std::string name;
-            std::string internalName;
-            std::vector<std::string> parameterNames;
-        };
+        std::uint32_t CheckValue();
+        void ComputeCheckValue();
 
     private:
 
-        //Lexer &lexer;
+        // Error reporting data.
         std::ostream &errorStream;
         unsigned errorCount = 0;
 
@@ -109,7 +104,10 @@ class Generator
         SymbolTable &symbolTable;
         std::string baseFileName;
 
-        std::map<int, FunctionDefinition> functionDefinitions;
+        // Spec data.
+        std::set<FunctionDefinition> functionDefinitions;
+        bool checkValueComputed = false;
+        std::uint32_t checkValue = 0;
 };
 
 } // extern "C"
