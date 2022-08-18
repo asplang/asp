@@ -13,6 +13,7 @@ set(CMAKE_CX_STANDARD_REQUIRED True)
 
 add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/standalone.asps
+    DEPENDS ${PROJECT_SOURCE_DIR}/standalone.asps
     COMMAND ${CMAKE_COMMAND} -E copy
         ${PROJECT_SOURCE_DIR}/standalone.asps ${PROJECT_BINARY_DIR}
     )

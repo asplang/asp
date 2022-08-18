@@ -13,6 +13,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 
 add_custom_command(
     OUTPUT ${PROJECT_BINARY_DIR}/app.y
+    DEPENDS ${PROJECT_SOURCE_DIR}/app.y
     COMMAND ${CMAKE_COMMAND} -E copy
         ${PROJECT_SOURCE_DIR}/app.y ${PROJECT_BINARY_DIR}
     )
