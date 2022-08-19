@@ -43,7 +43,7 @@ int main(int argc, char **argv)
         (&engine,
          code, ASP_CODE_BYTE_COUNT,
          data, dataByteSize,
-         &AspAppSpec_standalone);
+         &AspAppSpec_standalone, 0);
     if (initializeResult != AspRunResult_OK)
     {
         cerr

@@ -25,11 +25,12 @@ AspRunResult AspInitialize
     (AspEngine *engine,
      void *code, size_t codeSize,
      void *data, size_t dataSize,
-     AspAppSpec *appSpec)
+     AspAppSpec *appSpec, void *context)
 {
     if (codeSize > MAX_CODE_SIZE)
         return AspRunResult_InitializationError;
 
+    engine->context = context;
     engine->code = code;
     engine->maxCodeSize = codeSize;
     engine->data = data;

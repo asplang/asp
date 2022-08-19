@@ -70,7 +70,7 @@ AspRunResult AspInitialize
     (AspEngine *,
      void *code, size_t codeSize,
      void *data, size_t dataSize,
-     AspAppSpec *);
+     AspAppSpec *, void *context);
 AspAddCodeResult AspAddCode
     (AspEngine *, const char *code, size_t codeSize);
 AspAddCodeResult AspSeal(AspEngine *);
@@ -131,6 +131,7 @@ bool AspDictionaryInsert
      AspDataEntry *key, AspDataEntry *value);
 void AspRef(AspEngine *, AspDataEntry *);
 void AspUnref(AspEngine *, AspDataEntry *);
+void *AspContext(AspEngine *);
 AspRunResult AspAssert(AspEngine *, bool);
 
 #ifdef __cplusplus

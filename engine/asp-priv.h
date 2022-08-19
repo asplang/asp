@@ -53,6 +53,10 @@ typedef enum AspEngineState
 
 typedef struct AspEngine
 {
+    /* Application context. */
+    void *context;
+
+    /* Engine state and status. */
     AspEngineState state;
     uint8_t headerIndex;
     AspAddCodeResult loadResult;

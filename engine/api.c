@@ -413,6 +413,11 @@ bool AspDictionaryInsert
     return result.result == AspRunResult_OK;
 }
 
+void *AspContext(AspEngine *engine)
+{
+    return engine->context;
+}
+
 AspRunResult AspAssert(AspEngine *engine, bool condition)
 {
     /* Bail if a previous error condition exists. */
