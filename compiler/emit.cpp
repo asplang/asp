@@ -70,7 +70,8 @@ void AssignmentStatement::Emit1(Executable &executable, bool top) const
         ostringstream oss;
         oss
             << "Perform binary operation 0x"
-            << hex << setfill('0') << setw(2) << iter->second;
+            << hex << setfill('0') << setw(2)
+            << static_cast<unsigned>(iter->second);
         executable.Insert(new BinaryInstruction(iter->second, oss.str()));
     }
 
@@ -613,7 +614,8 @@ void TernaryExpression::Emit
     ostringstream oss;
     oss
         << "Perform ternary operation 0x"
-        << hex << setfill('0') << setw(2) << opCode;
+        << hex << setfill('0') << setw(2)
+        << static_cast<unsigned>(opCode);
     executable.Insert(new TernaryInstruction(opCode, oss.str()));
 }
 
@@ -667,7 +669,8 @@ void BinaryExpression::Emit
     ostringstream oss;
     oss
         << "Perform binary operation 0x"
-        << hex << setfill('0') << setw(2) << iter->second;
+        << hex << setfill('0') << setw(2)
+        << static_cast<unsigned>(iter->second);
     executable.Insert(new BinaryInstruction(iter->second, oss.str()));
 }
 
@@ -698,7 +701,8 @@ void UnaryExpression::Emit
     ostringstream oss;
     oss
         << "Perform unary operation 0x"
-        << hex << setfill('0') << setw(2) << iter->second;
+        << hex << setfill('0') << setw(2)
+        << static_cast<unsigned>(iter->second);
     executable.Insert(new UnaryInstruction(iter->second, oss.str()));
 }
 
