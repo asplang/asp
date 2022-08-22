@@ -62,6 +62,7 @@ static AspRunResult Step(AspEngine *engine)
 
     if (engine->pc >= engine->code + engine->codeEndIndex)
         return AspRunResult_BeyondEndOfCode;
+    uint8_t *pc = engine->pc;
     uint8_t opCode = *engine->pc++;
     #ifdef ASP_DEBUG
     printf("0x%2.2X ", opCode);
@@ -1457,50 +1458,70 @@ static AspRunResult Step(AspEngine *engine)
             puts("CALL");
             #endif
 
-            /* Pop function off the stack. */
-            AspDataEntry *function = AspTop(engine);
-            if (function == 0)
-                return AspRunResult_StackUnderflow;
-            if (AspDataGetType(function) != DataType_Function)
-                return AspRunResult_UnexpectedType;
-            AspRef(engine, function);
-            AspPop(engine);
+            AspDataEntry *function = 0, *ns = 0;
+            if (!engine->again)
+            {
+                /* Pop the function off the stack. */
+                function = AspTop(engine);
+                if (function == 0)
+                    return AspRunResult_StackUnderflow;
+                if (AspDataGetType(function) != DataType_Function)
+                    return AspRunResult_UnexpectedType;
+                AspRef(engine, function);
+                AspPop(engine);
 
-            /* Pop argument list off the stack. */
-            AspDataEntry *arguments = AspTop(engine);
-            if (arguments == 0)
-                return AspRunResult_StackUnderflow;
-            if (AspDataGetType(arguments) != DataType_ArgumentList)
-                return AspRunResult_UnexpectedType;
-            AspPop(engine);
+                /* Pop argument list off the stack. */
+                AspDataEntry *arguments = AspTop(engine);
+                if (arguments == 0)
+                    return AspRunResult_StackUnderflow;
+                if (AspDataGetType(arguments) != DataType_ArgumentList)
+                    return AspRunResult_UnexpectedType;
+                AspPop(engine);
 
-            /* Gain access to the parameter list within the function. */
-            AspDataEntry *parameters = AspEntry
-                (engine, AspDataGetFunctionParametersIndex(function));
-            if (AspDataGetType(parameters) != DataType_ParameterList)
-                return AspRunResult_UnexpectedType;
+                /* Gain access to the parameter list within the function. */
+                AspDataEntry *parameters = AspEntry
+                    (engine, AspDataGetFunctionParametersIndex(function));
+                if (AspDataGetType(parameters) != DataType_ParameterList)
+                    return AspRunResult_UnexpectedType;
 
-            /* Create a local namespace for the call. */
-            AspDataEntry *ns = AspAllocEntry(engine, DataType_Namespace);
-            if (ns == 0)
-                return AspRunResult_OutOfDataMemory;
-            AspRunResult loadArgumentsResult = AspLoadArguments
-                (engine, arguments, parameters, ns);
-            if (loadArgumentsResult != AspRunResult_OK)
-                return loadArgumentsResult;
-            AspUnref(engine, arguments);
+                /* Create a local namespace for the call. */
+                ns = AspAllocEntry(engine, DataType_Namespace);
+                if (ns == 0)
+                    return AspRunResult_OutOfDataMemory;
+                AspRunResult loadArgumentsResult = AspLoadArguments
+                    (engine, arguments, parameters, ns);
+                if (loadArgumentsResult != AspRunResult_OK)
+                    return loadArgumentsResult;
+                AspUnref(engine, arguments);
+            }
 
             /* Call the function. */
-            if (AspDataGetFunctionIsApp(function))
+            if (engine->again || AspDataGetFunctionIsApp(function))
             {
-                AspDataEntry *returnValue = 0;
-                uint32_t functionSymbol = AspDataGetFunctionSymbol(function);
+                if (!engine->again)
+                {
+                    engine->appFunctionSymbol = AspDataGetFunctionSymbol
+                        (function);
+                    engine->appFunctionNamespace = ns;
+                    engine->appFunctionReturnValue = 0;
+                }
 
                 /* Call the application function. */
                 engine->inApp = true;
                 AspRunResult callResult = engine->appSpec->dispatch
-                    (engine, functionSymbol, ns, &returnValue);
+                    (engine,
+                     engine->appFunctionSymbol, engine->appFunctionNamespace,
+                     &engine->appFunctionReturnValue);
                 engine->inApp = false;
+                if (callResult == AspRunResult_OK)
+                    engine->again = false;
+                else if (callResult == AspRunResult_Again)
+                {
+                    /* Cause this instruction to execute again. */
+                    engine->pc = pc;
+                    engine->again = true;
+                    callResult = AspRunResult_OK;
+                }
                 if (callResult != AspRunResult_OK)
                 {
                     if (callResult == AspRunResult_Complete)
@@ -1508,20 +1529,24 @@ static AspRunResult Step(AspEngine *engine)
                     return callResult;
                 }
 
-                /* We're now done with the local namespace. */
-                AspUnref(engine, ns);
-
-                /* Ensure there's a return value and push it onto the stack. */
-                if (returnValue == 0)
-                    returnValue = engine->noneSingleton;
-                else if (AspDataGetType(returnValue) == DataType_None)
+                if (!engine->again)
                 {
+                    /* We're now done with the local namespace. */
+                    AspUnref(engine, engine->appFunctionNamespace);
+                    engine->appFunctionSymbol = 0;
+                    engine->appFunctionNamespace = 0;
+
+                    /* Ensure there's a return value and push it onto the
+                       stack. */
+                    AspDataEntry *returnValue = engine->appFunctionReturnValue;
+                    engine->appFunctionReturnValue = 0;
+                    if (returnValue == 0)
+                        returnValue = AspAllocEntry(engine, DataType_None);
+                    AspDataEntry *stackEntry = AspPush(engine, returnValue);
+                    if (stackEntry == 0)
+                        return AspRunResult_OutOfDataMemory;
                     AspUnref(engine, returnValue);
-                    returnValue = engine->noneSingleton;
                 }
-                AspDataEntry *stackEntry = AspPush(engine, returnValue);
-                if (stackEntry == 0)
-                    return AspRunResult_OutOfDataMemory;
             }
             else
             {
@@ -1561,7 +1586,8 @@ static AspRunResult Step(AspEngine *engine)
                 engine->pc = engine->code + codeAddress;
             }
 
-            AspUnref(engine, function);
+            if (function != 0)
+                AspUnref(engine, function);
 
             break;
         }

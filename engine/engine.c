@@ -140,10 +140,14 @@ AspRunResult AspReset(AspEngine *engine)
     engine->state = AspEngineState_Reset;
     engine->headerIndex = 0;
     engine->loadResult = AspAddCodeResult_OK;
+    engine->again = false;
     engine->runResult = AspRunResult_OK;
     engine->pc = engine->code;
     engine->codeEndIndex = 0;
     memset(engine->code, 0, engine->maxCodeSize);
+    engine->appFunctionSymbol = 0;
+    engine->appFunctionNamespace = 0;
+    engine->appFunctionReturnValue = 0;
 
     return ResetData(engine);
 }
@@ -160,8 +164,12 @@ AspRunResult AspRestart(AspEngine *engine)
         return AspRunResult_InvalidState;
 
     engine->state = AspEngineState_Ready;
+    engine->again = false;
     engine->runResult = AspRunResult_OK;
     engine->pc = engine->code;
+    engine->appFunctionSymbol = 0;
+    engine->appFunctionNamespace = 0;
+    engine->appFunctionReturnValue = 0;
 
     ResetData(engine);
 }

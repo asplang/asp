@@ -48,6 +48,7 @@ typedef enum
     AspRunResult_UndefinedAppFunction = 0x15,
     AspRunResult_DivideByZero = 0x18,
     AspRunResult_OutOfDataMemory = 0x20,
+    AspRunResult_Again = 0xFA,
     AspRunResult_InternalError = 0xFE,
     AspRunResult_NotImplemented = 0xFF,
     AspRunResult_Application = 0x100,
@@ -131,7 +132,8 @@ bool AspDictionaryInsert
      AspDataEntry *key, AspDataEntry *value);
 void AspRef(AspEngine *, AspDataEntry *);
 void AspUnref(AspEngine *, AspDataEntry *);
-void *AspContext(AspEngine *);
+void *AspContext(const AspEngine *);
+bool AspAgain(const AspEngine *);
 AspRunResult AspAssert(AspEngine *, bool);
 
 #ifdef __cplusplus

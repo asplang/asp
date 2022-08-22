@@ -99,6 +99,13 @@ bool AspIsObject(const AspDataEntry *entry)
 
 AspDataEntry *AspAllocEntry(AspEngine *engine, DataType type)
 {
+    /* Return the None singleton if the None type is requested. */
+    if (type == DataType_None)
+    {
+        AspRef(engine, engine->data);
+        return engine->data;
+    }
+
     uint32_t index = AspAlloc(engine);
     if (index == 0)
         return 0;

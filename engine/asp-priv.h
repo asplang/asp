@@ -60,6 +60,7 @@ typedef struct AspEngine
     AspEngineState state;
     uint8_t headerIndex;
     AspAddCodeResult loadResult;
+    bool again;
     AspRunResult runResult;
 
     /* Code space. */
@@ -93,6 +94,8 @@ typedef struct AspEngine
 
     /* Application function call state. */
     bool inApp;
+    int32_t appFunctionSymbol;
+    AspDataEntry *appFunctionNamespace, *appFunctionReturnValue;
 
 } AspEngine;
 
