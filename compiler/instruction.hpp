@@ -516,11 +516,11 @@ class MakeFunctionInstruction : public SimpleInstruction
             (const std::string &comment = "");
 };
 
-class MakeDictionaryEntryInstruction : public SimpleInstruction
+class MakeKeyValuePairInstruction : public SimpleInstruction
 {
     public:
 
-        explicit MakeDictionaryEntryInstruction
+        explicit MakeKeyValuePairInstruction
             (const std::string &comment = "");
 };
 
@@ -533,20 +533,20 @@ class MakeRangeInstruction : public SimpleInstruction
              const std::string &comment = "");
 };
 
+class InsertInstruction : public SimpleInstruction
+{
+    public:
+
+        explicit InsertInstruction
+            (bool pop, const std::string &comment = "");
+};
+
 class BuildInstruction : public SimpleInstruction
 {
     public:
 
         explicit BuildInstruction
             (const std::string &comment = "");
-};
-
-class SliceInstruction : public SimpleInstruction
-{
-    public:
-
-        explicit SliceInstruction
-            (bool address, const std::string &comment = "");
 };
 
 class IndexInstruction : public SimpleInstruction

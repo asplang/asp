@@ -216,7 +216,7 @@ string VariableExpression::Name() const
     return name;
 }
 
-DictionaryEntry::DictionaryEntry
+KeyValuePair::KeyValuePair
     (Expression *keyExpression, Expression *valueExpression) :
     NonTerminal((SourceElement &)*keyExpression),
     keyExpression(keyExpression),
@@ -224,13 +224,13 @@ DictionaryEntry::DictionaryEntry
 {
 }
 
-DictionaryEntry::~DictionaryEntry()
+KeyValuePair::~KeyValuePair()
 {
     delete keyExpression;
     delete valueExpression;
 }
 
-void DictionaryEntry::Parent(const Statement *statement)
+void KeyValuePair::Parent(const Statement *statement)
 {
     keyExpression->Parent(statement);
     valueExpression->Parent(statement);
@@ -251,7 +251,7 @@ DictionaryExpression::~DictionaryExpression()
         delete *iter;
 }
 
-void DictionaryExpression::Add(DictionaryEntry *entry)
+void DictionaryExpression::Add(KeyValuePair *entry)
 {
     if (entries.empty())
         (SourceElement &)*this = *entry;

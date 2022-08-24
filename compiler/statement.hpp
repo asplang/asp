@@ -97,6 +97,34 @@ class AssignmentStatement : public Statement
         AssignmentStatement *valueAssignmentStatement;
 };
 
+class InsertionStatement : public Statement
+{
+    public:
+
+        InsertionStatement
+            (const Token &insertionToken,
+             InsertionStatement *, Expression *item);
+        InsertionStatement
+            (const Token &insertionToken,
+             InsertionStatement *, KeyValuePair *item);
+        InsertionStatement
+            (const Token &insertionToken,
+             Expression *container, Expression *item);
+        InsertionStatement
+            (const Token &insertionToken,
+             Expression *container, KeyValuePair *);
+        ~InsertionStatement();
+
+        virtual void Emit(Executable &) const;
+        void Emit1(Executable &, bool top) const;
+
+    private:
+
+        InsertionStatement *containerInsertionStatement;
+        Expression *containerExpression, *itemExpression;
+        KeyValuePair *keyValuePair;
+};
+
 class BreakStatement : public Statement
 {
     public:

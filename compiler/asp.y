@@ -15,6 +15,7 @@
 
 // Token precedences from low to high.
 %right ASSIGN.
+%left INSERT.
 %left COMMA.
 %left COLON.
 %left IF. // Conditional expression.
@@ -297,6 +298,11 @@ simple_statement_stem(result) ::= assignment(assignmentStatement).
     result = ACTION(MakeAssignmentStatement, assignmentStatement);
 }
 
+simple_statement_stem(result) ::= insertion(insertionStatement).
+{
+    result = ACTION(MakeInsertionStatement, insertionStatement);
+}
+
 simple_statement_stem(result) ::= expression(expression).
 {
     result = ACTION(MakeExpressionStatement, expression);
@@ -447,6 +453,44 @@ augmented_assign(result) ::= MODULO_ASSIGN(token).
 augmented_assign(result) ::= POWER_ASSIGN(token).
 {
     result = ACTION(AssignToken, token);
+}
+
+%type insertion {InsertionStatement *}
+
+insertion(result) ::=
+    insertion(insertionStatement) INSERT(insertionToken)
+    expression(itemExpression).
+{
+    result = ACTION
+        (MakeMultipleValueInsertionStatement, insertionToken,
+         insertionStatement, itemExpression);
+}
+
+insertion(result) ::=
+    insertion(insertionStatement) INSERT(insertionToken)
+    key_value_pair(keyValuePair).
+{
+    result = ACTION
+        (MakeMultiplePairInsertionStatement, insertionToken,
+         insertionStatement, keyValuePair);
+}
+
+insertion(result) ::=
+    expression(containerExpression) INSERT(insertionToken)
+    expression(itemExpression).
+{
+    result = ACTION
+        (MakeSingleValueInsertionStatement, insertionToken,
+         containerExpression, itemExpression);
+}
+
+insertion(result) ::=
+    expression(containerExpression) INSERT(insertionToken)
+    key_value_pair(keyValuePair).
+{
+    result = ACTION
+        (MakeSinglePairInsertionStatement, insertionToken,
+         containerExpression, keyValuePair);
 }
 
 %type expression {Expression *}
@@ -1009,27 +1053,27 @@ dictionary_entries(result) ::= dictionary_entries(dictionaryExpression) COMMA.
 
 dictionary_entries(result) ::=
     dictionary_entries(dictionaryExpression) COMMA
-    dictionary_entry(dictionaryEntry).
+    key_value_pair(keyValuePair).
 {
     result = ACTION
-        (AddEntryToDictionary, dictionaryExpression, dictionaryEntry);
+        (AddEntryToDictionary, dictionaryExpression, keyValuePair);
 }
 
-dictionary_entries(result) ::= dictionary_entry(dictionaryEntry).
+dictionary_entries(result) ::= key_value_pair(keyValuePair).
 {
     result = ACTION
         (AddEntryToDictionary,
          ACTION(MakeEmptyDictionary, 0),
-         dictionaryEntry);
+         keyValuePair);
 }
 
-%type dictionary_entry {DictionaryEntry *}
+%type key_value_pair {KeyValuePair *}
 
-dictionary_entry(result) ::=
+key_value_pair(result) ::=
     expression1(keyExpression) COLON expression1(valueExpression).
 {
     result = ACTION
-        (MakeDictionaryEntry, keyExpression, valueExpression);
+        (MakeKeyValuePair, keyExpression, valueExpression);
 }
 
 %type list {ListExpression *}

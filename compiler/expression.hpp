@@ -212,12 +212,12 @@ class VariableExpression : public Expression
         int32_t symbol;
 };
 
-class DictionaryEntry : public NonTerminal
+class KeyValuePair : public NonTerminal
 {
     public:
 
-        DictionaryEntry(Expression *key, Expression *value);
-        ~DictionaryEntry();
+        KeyValuePair(Expression *key, Expression *value);
+        ~KeyValuePair();
 
         void Parent(const Statement *);
 
@@ -236,7 +236,7 @@ class DictionaryExpression : public Expression
         DictionaryExpression();
         ~DictionaryExpression();
 
-        void Add(DictionaryEntry *);
+        void Add(KeyValuePair *);
 
         virtual void Parent(const Statement *);
 
@@ -244,7 +244,7 @@ class DictionaryExpression : public Expression
 
     private:
 
-        std::list<DictionaryEntry *> entries;
+        std::list<KeyValuePair *> entries;
 };
 
 class SetExpression : public Expression

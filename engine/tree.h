@@ -31,7 +31,7 @@ AspRunResult AspTreeEraseNode
     (AspEngine *, AspDataEntry *tree, AspDataEntry *keyNode,
      bool eraseKey, bool eraseValue);
 AspTreeResult AspTreeFind
-    (AspEngine *, AspDataEntry *tree, AspDataEntry *key);
+    (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
 AspTreeResult AspFindSymbol
     (AspEngine *, AspDataEntry *tree, int32_t symbol);
 AspTreeResult AspTreeNext

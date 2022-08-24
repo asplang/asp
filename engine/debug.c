@@ -124,7 +124,7 @@ static TypeName gTypeNames[] =
     {DataType_Frame, "frame"},
     {DataType_Element, "elem"},
     {DataType_StringFragment, "strfrag"},
-    {DataType_DictionaryEntry, "dent"},
+    {DataType_KeyValuePair, "kvp"},
     {DataType_Namespace, "ns"},
     {DataType_SetNode, "snode"},
     {DataType_DictionaryNode, "dnode"},
@@ -256,10 +256,10 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fputc('\'', fp);
             break;
         }
-        case DataType_DictionaryEntry:
+        case DataType_KeyValuePair:
             fprintf(fp, " key=0x%7.7X val=0x%7.7X",
-                AspDataGetDictionaryEntryKeyIndex(entry),
-                AspDataGetDictionaryEntryValueIndex(entry));
+                AspDataGetKeyValuePairKeyIndex(entry),
+                AspDataGetKeyValuePairValueIndex(entry));
             break;
         case DataType_SetNode:
             fprintf(fp, " key=0x%7.7X p=0x%7.7X l=0x%7.7X r=0x%7.7X clr=%c",

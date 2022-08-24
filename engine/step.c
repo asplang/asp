@@ -1224,12 +1224,12 @@ static AspRunResult Step(AspEngine *engine)
                         (engine, AspDataGetElementValueIndex(element));
                     if (AspDataGetType(fragment) != DataType_StringFragment)
                         return AspRunResult_UnexpectedType;
-                    uint8_t stringSize =
+                    uint8_t fragmentSize =
                         AspDataGetStringFragmentSize(fragment);
 
                     uint8_t stringIndex =
                         AspDataGetIteratorStringIndex(iterator);
-                    if (stringIndex + 1 < stringSize)
+                    if (stringIndex + 1 < fragmentSize)
                     {
                         AspDataSetIteratorStringIndex
                             (iterator, stringIndex + 1);
@@ -2040,13 +2040,13 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
-        case OpCode_MKDENT:
+        case OpCode_MKKVP:
         {
             #ifdef ASP_DEBUG
-            puts("MKDE");
+            puts("MKKVP");
             #endif
 
-            /* Access the dictionary entry key on top of the stack. */
+            /* Access the key on top of the stack. */
             AspDataEntry *key = AspTop(engine);
             if (key == 0)
                 return AspRunResult_StackUnderflow;
@@ -2055,26 +2055,27 @@ static AspRunResult Step(AspEngine *engine)
             AspRef(engine, key);
             AspPop(engine);
 
-            /* Access the dictionary entry value on top of the stack. */
+            /* Access the value on top of the stack. */
             AspDataEntry *value = AspTop(engine);
             if (value == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(value))
                 return AspRunResult_UnexpectedType;
 
-            /* Create a dictionary entry. */
-            AspDataEntry *dictionaryEntry = AspAllocEntry
-                (engine, DataType_DictionaryEntry);
-            if (dictionaryEntry == 0)
+            /* Create a key value pair entry. */
+            AspDataEntry *keyValuePairEntry = AspAllocEntry
+                (engine, DataType_KeyValuePair);
+            if (keyValuePairEntry == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspDataSetDictionaryEntryKeyIndex
-                (dictionaryEntry, AspIndex(engine, key));
-            AspDataSetDictionaryEntryValueIndex
-                (dictionaryEntry, AspIndex(engine, value));
+            AspDataSetKeyValuePairKeyIndex
+                (keyValuePairEntry, AspIndex(engine, key));
+            AspDataSetKeyValuePairValueIndex
+                (keyValuePairEntry, AspIndex(engine, value));
 
             /* Replace the top stack entry with the dictionary entry. */
             AspDataSetStackEntryValueIndex
-                (engine->stackTop, AspIndex(engine, dictionaryEntry));
+                (engine->stackTop, AspIndex(engine, keyValuePairEntry));
+
             break;
         }
 
@@ -2173,10 +2174,14 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
+        case OpCode_INS:
+        case OpCode_INSP:
         case OpCode_BLD:
         {
             #ifdef ASP_DEBUG
-            puts("BLD");
+            puts
+                (opCode == OpCode_BLD ? "BLD" :
+                 opCode == OpCode_INS ? "INS" : "INSP");
             #endif
 
             AspDataEntry *item = AspTop(engine);
@@ -2200,31 +2205,46 @@ static AspRunResult Step(AspEngine *engine)
                     return AspRunResult_UnexpectedType;
 
                 case DataType_Tuple:
-                case DataType_List:
+                    if (opCode != OpCode_BLD)
+                        return AspRunResult_UnexpectedType;
+
+                    /* Fall through. */
+
                 case DataType_Set:
                     if (!AspIsObject(item))
                         return AspRunResult_UnexpectedType;
                     break;
 
                 case DataType_ParameterList:
-                    if (itemType != DataType_Parameter)
+                    if (opCode != OpCode_BLD ||
+                        itemType != DataType_Parameter)
                         return AspRunResult_UnexpectedType;
                     break;
 
                 case DataType_ArgumentList:
-                    if (itemType != DataType_Argument)
+                    if (opCode != OpCode_BLD ||
+                        itemType != DataType_Argument)
                         return AspRunResult_UnexpectedType;
                     break;
 
+                case DataType_List:
+                    if (itemType != DataType_KeyValuePair &&
+                        !AspIsObject(item))
+                        return AspRunResult_UnexpectedType;
+                    if (itemType != DataType_KeyValuePair)
+                        break;
+
+                    /* Fall through. */
+
                 case DataType_Dictionary:
-                    if (itemType != DataType_DictionaryEntry)
+                    if (itemType != DataType_KeyValuePair)
                         return AspRunResult_UnexpectedType;
                     key = AspValueEntry
-                        (engine, AspDataGetDictionaryEntryKeyIndex(item));
+                        (engine, AspDataGetKeyValuePairKeyIndex(item));
                     if (!AspIsObject(key))
                         return AspRunResult_UnexpectedType;
                     value = AspValueEntry
-                        (engine, AspDataGetDictionaryEntryValueIndex(item));
+                        (engine, AspDataGetKeyValuePairValueIndex(item));
                     if (!AspIsObject(value))
                         return AspRunResult_UnexpectedType;
                     break;
@@ -2237,7 +2257,6 @@ static AspRunResult Step(AspEngine *engine)
                     return AspRunResult_UnexpectedType;
 
                 case DataType_Tuple:
-                case DataType_List:
                 case DataType_ParameterList:
                 case DataType_ArgumentList:
                 {
@@ -2245,6 +2264,53 @@ static AspRunResult Step(AspEngine *engine)
                         (engine, container, item);
                     if (appendResult.result != AspRunResult_OK)
                         return appendResult.result;
+
+                    break;
+                }
+
+                case DataType_List:
+                {
+                    AspSequenceResult insertResult =
+                        {AspRunResult_InternalError, 0, 0};
+                    bool append = true;
+                    if (value == 0)
+                        value = item;
+                    else
+                    {
+                        append = AspDataGetType(key) == DataType_None;
+                        if (!append)
+                        {
+                            /* Ensure the index is a non-negative integer. */
+                            if (AspDataGetType(key) != DataType_Integer)
+                                return AspRunResult_UnexpectedType;
+                            int32_t signedIndex = AspDataGetInteger(key);
+                            if (signedIndex < 0)
+                                return AspRunResult_IndexOutOfRange;
+                            unsigned index = (unsigned)signedIndex;
+
+                            /* Check for index one past the end. */
+                            uint32_t count = AspDataGetSequenceCount
+                                (container);
+                            append = index == count;
+                            if (!append)
+                            {
+                                /* Insert the value at the given index. */
+                                insertResult = AspSequenceInsertByIndex
+                                    (engine, container, index, value);
+                            }
+                        }
+                    }
+
+                    if (append)
+                    {
+                        /* Append the entry. */
+                        insertResult = AspSequenceAppend
+                            (engine, container, value);
+                    }
+
+                    if (insertResult.result != AspRunResult_OK)
+                        return insertResult.result;
+
                     break;
                 }
 
@@ -2254,6 +2320,7 @@ static AspRunResult Step(AspEngine *engine)
                         (engine, container, item, 0);
                     if (insertResult.result != AspRunResult_OK)
                         return insertResult.result;
+
                     break;
                 }
 
@@ -2264,12 +2331,16 @@ static AspRunResult Step(AspEngine *engine)
                     if (insertResult.result != AspRunResult_OK)
                         return insertResult.result;
                     AspUnref(engine, item);
+
                     break;
                 }
             }
 
             if (AspIsObject(item))
                 AspUnref(engine, item);
+
+            if (opCode == OpCode_INSP)
+                AspPop(engine);
 
             break;
         }
@@ -2302,7 +2373,9 @@ static AspRunResult Step(AspEngine *engine)
                     return AspRunResult_UnexpectedType;
 
                 case DataType_String:
-                    /* TODO: Implement string support. */
+                    /* TODO: Implement string support. Use AspStringElement
+                       to get the character, then create a single character
+                       string object. */
                     return AspRunResult_NotImplemented;
 
                 case DataType_Tuple:
@@ -2322,7 +2395,7 @@ static AspRunResult Step(AspEngine *engine)
                     int32_t signedIndexValue = AspDataGetInteger(index);
                     if (signedIndexValue < 0)
                         return AspRunResult_IndexOutOfRange;
-                    uint32_t indexValue = (uint32_t)signedIndexValue;
+                    unsigned indexValue = (unsigned)signedIndexValue;
 
                     /* Locate the element. */
                     AspSequenceResult indexResult = AspSequenceIndex

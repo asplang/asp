@@ -277,6 +277,57 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeMultipleValueInsertionStatement, InsertionStatement *,
+     Token *, insertionToken, InsertionStatement *, insertionStatement,
+     Expression *, itemExpression)
+{
+    auto result = new InsertionStatement
+        (*insertionToken, insertionStatement, itemExpression);
+    delete insertionToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeMultiplePairInsertionStatement, InsertionStatement *,
+     Token *, insertionToken, InsertionStatement *, insertionStatement,
+     KeyValuePair *, keyValuePair)
+{
+    auto result = new InsertionStatement
+        (*insertionToken, insertionStatement, keyValuePair);
+    delete insertionToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeSingleValueInsertionStatement, InsertionStatement *,
+     Token *, insertionToken, Expression *, containerExpression,
+     Expression *, itemExpression)
+{
+    auto result = new InsertionStatement
+        (*insertionToken, containerExpression, itemExpression);
+    delete insertionToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeSinglePairInsertionStatement, InsertionStatement *,
+     Token *, insertionToken, Expression *, containerExpression,
+     KeyValuePair *, keyValuePair)
+{
+    auto result = new InsertionStatement
+        (*insertionToken, containerExpression, keyValuePair);
+    delete insertionToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeInsertionStatement, Statement *,
+     InsertionStatement *, insertionStatement)
+{
+    return insertionStatement;
+}
+
+DEFINE_ACTION
     (MakeExpressionStatement, Statement *,
      Expression *, expression)
 {
@@ -713,13 +764,6 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
-    (MakeDictionaryEntry, DictionaryEntry *,
-     Expression *, keyExpression, Expression *, valueExpression)
-{
-    return new DictionaryEntry(keyExpression, valueExpression);
-}
-
-DEFINE_ACTION
     (MakeEmptyDictionary, DictionaryExpression *, Token *, token)
 {
     auto result = token != 0 ?
@@ -731,9 +775,9 @@ DEFINE_ACTION
 DEFINE_ACTION
     (AddEntryToDictionary, DictionaryExpression *,
      DictionaryExpression *, dictionaryExpression,
-     DictionaryEntry *, dictionaryEntry)
+     KeyValuePair *, keyValuePair)
 {
-    dictionaryExpression->Add(dictionaryEntry);
+    dictionaryExpression->Add(keyValuePair);
     return dictionaryExpression;
 }
 
@@ -797,6 +841,13 @@ DEFINE_ACTION
         (SourceElement &)*listExpression = *token;
     delete token;
     return listExpression;
+}
+
+DEFINE_ACTION
+    (MakeKeyValuePair, KeyValuePair *,
+     Expression *, keyExpression, Expression *, valueExpression)
+{
+    return new KeyValuePair(keyExpression, valueExpression);
 }
 
 DEFINE_ACTION

@@ -13,9 +13,9 @@ extern "C" AspRunResult asp_print
 {
     if (AspIsNone(value))
         printf("None");
-    if (AspIsEllipsis(value))
+    else if (AspIsEllipsis(value))
         printf("...");
-    if (AspIsBoolean(value))
+    else if (AspIsBoolean(value))
         printf("%s", AspIsTrue(engine, value) ? "True" : "False");
     else if (AspIsInteger(value))
     {

@@ -52,19 +52,65 @@ AspSequenceResult AspSequenceAppend
     return result;
 }
 
+AspSequenceResult AspSequenceInsertByIndex
+    (AspEngine *engine, AspDataEntry *list,
+     unsigned index, AspDataEntry *value)
+{
+    AspSequenceResult result = AspSequenceIndex(engine, list, index);
+    if (result.result != AspRunResult_OK)
+        return result;
+    if (result.element == 0)
+    {
+        result.result = AspRunResult_IndexOutOfRange;
+        return result;
+    }
+
+    return AspSequenceInsert(engine, list, result.element, value);
+}
+
 AspSequenceResult AspSequenceInsert
-    (AspEngine *engine, AspDataEntry *list, AspDataEntry *value,
-     AspDataEntry *element)
+    (AspEngine *engine, AspDataEntry *list,
+     AspDataEntry *element, AspDataEntry *value)
 {
     AspSequenceResult result = {AspRunResult_OK, 0, 0};
 
     AspAssert(engine, list != 0 && IsSequenceType(AspDataGetType(list)));
+    AspAssert(engine, element != 0);
     result.result = AspAssert(engine, value != 0);
     if (result.result != AspRunResult_OK)
         return result;
 
-    /* TODO: Implement. */
-    result.result = AspRunResult_NotImplemented;
+    /* Allocate an element entry and link it to the given value entry. */
+    result.element = AspAllocEntry(engine, DataType_Element);
+    if (result.element == 0)
+    {
+        result.result = AspRunResult_OutOfDataMemory;
+        return result;
+    }
+    result.value = value;
+    AspRef(engine, value);
+    AspDataSetElementValueIndex(result.element, AspIndex(engine, value));
+
+    /* Update links. */
+    uint32_t nextElementIndex = AspIndex(engine, element);
+    uint32_t previousElementIndex = AspDataGetElementPreviousIndex(element);
+    uint32_t newElementIndex = AspIndex(engine, result.element);
+    AspDataSetElementNextIndex(result.element, nextElementIndex);
+    AspDataSetElementPreviousIndex(result.element, previousElementIndex);
+    if (previousElementIndex == 0)
+        AspDataSetSequenceHeadIndex(list, newElementIndex);
+    else
+    {
+        AspDataEntry *previousElement = AspEntry
+            (engine, previousElementIndex);
+        AspDataSetElementNextIndex(previousElement, newElementIndex);
+    }
+    AspDataSetElementPreviousIndex(element, newElementIndex);
+
+    /* Update the sequence count. */
+    uint32_t sizeChange = AspDataGetType(list) == DataType_String ?
+        AspDataGetStringFragmentSize(value) : 1U;
+    AspDataSetSequenceCount(list, AspDataGetSequenceCount(list) + sizeChange);
 
     return result;
 }
@@ -143,7 +189,7 @@ AspSequenceResult AspSequenceNext
          AspDataGetElementNextIndex(element));
 
     result.value = result.element == 0 ? 0 :
-        AspEntry(engine, AspDataGetElementValueIndex(result.element));
+        AspValueEntry(engine, AspDataGetElementValueIndex(result.element));
 
     return result;
 }

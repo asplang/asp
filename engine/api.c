@@ -7,6 +7,7 @@
 #include "sequence.h"
 #include "tree.h"
 #include <string.h>
+#include <limits.h>
 
 static AspDataEntry *AspNewObject(AspEngine *, DataType);
 
@@ -103,12 +104,16 @@ bool AspIsTrue(AspEngine *engine, const AspDataEntry *entry)
         case DataType_Float:
             return AspDataGetFloat(entry) != 0.0;
 
-        case DataType_String:
-        case DataType_List:
-            return AspDataGetSequenceCount(entry) != 0;
+        case DataType_Range:
+        {
+            int32_t startValue, endValue, stepValue;
+            AspGetRange(engine, entry, &startValue, &endValue, &stepValue);
+            return !AspIsValueAtRangeEnd(startValue, endValue, stepValue);
+        }
 
+        case DataType_String:
         case DataType_Tuple:
-            /* TODO: Add testing of element if there's only 1. */
+        case DataType_List:
             return AspDataGetSequenceCount(entry) != 0;
 
         case DataType_Set:
@@ -116,16 +121,10 @@ bool AspIsTrue(AspEngine *engine, const AspDataEntry *entry)
             return AspDataGetTreeCount(entry) != 0;
 
         case DataType_Iterator:
-            /* Different than Python. */
             return AspDataGetIteratorMemberIndex(entry) != 0;
 
-        case DataType_Range:
-        {
-            /* Different than Python. */
-            int32_t startValue, endValue, stepValue;
-            AspGetRange(engine, entry, &startValue, &endValue, &stepValue);
-            return !AspIsValueAtRangeEnd(startValue, endValue, stepValue);
-        }
+        case DataType_Type:
+            return AspDataGetTypeValue(entry) != DataType_None;
     }
 }
 
@@ -135,6 +134,7 @@ bool AspIntegerValue(const AspDataEntry *entry, int32_t *result)
         return false;
 
     int value;
+    bool valid = true;
     switch (AspDataGetType(entry))
     {
         default:
@@ -149,15 +149,28 @@ bool AspIntegerValue(const AspDataEntry *entry, int32_t *result)
             break;
 
         case DataType_Float:
-            /* TODO: Check against INT_MIN and INT_MAX. */
-            value = (int)AspDataGetFloat(entry);
+        {
+            double f = AspDataGetFloat(entry);
+            if (f < INT_MIN)
+            {
+                value = INT_MIN;
+                valid = false;
+            }
+            else if (f > INT_MAX)
+            {
+                value = INT_MAX;
+                valid = false;
+            }
+            else
+                value = (int)f;
             break;
+        }
     }
 
     if (result != 0)
         *result = value;
 
-    return true;
+    return valid;
 }
 
 bool AspFloatValue(const AspDataEntry *entry, double *result)
@@ -294,16 +307,31 @@ AspDataEntry *AspListElement
 }
 
 char AspStringElement
-    (AspEngine *engine, AspDataEntry *str, unsigned index)
+    (AspEngine *engine, const AspDataEntry *strEntry, unsigned index)
 {
-    /* TODO: Implement. Share code with IDX instruction in engine.c.
-       Look at string iterator code for possible logic to borrow. */
-    engine->runResult = AspRunResult_NotImplemented;
+    AspDataEntry *str = (AspDataEntry *)strEntry;
+
+    if (AspDataGetType(str) != DataType_String)
+        return 0;
+
+    AspSequenceResult nextResult = AspSequenceNext(engine, str, 0);
+    for (; nextResult.element != 0;
+         nextResult = AspSequenceNext(engine, str, nextResult.element))
+    {
+        AspDataEntry *fragment = nextResult.value;
+        uint8_t fragmentSize = AspDataGetStringFragmentSize(fragment);
+        if (index >= fragmentSize)
+            continue;
+
+        const uint8_t *stringData = AspDataGetStringFragmentData(fragment);
+        return (char)stringData[index];
+    }
+
     return 0;
 }
 
 AspDataEntry *AspFind
-    (AspEngine *engine, AspDataEntry *tree, AspDataEntry *key)
+    (AspEngine *engine, AspDataEntry *tree, const AspDataEntry *key)
 {
     AspTreeResult result = AspTreeFind(engine, tree, key);
     if (result.result != AspRunResult_OK)
@@ -387,6 +415,15 @@ bool AspListAppend
     (AspEngine *engine, AspDataEntry *list, AspDataEntry *value)
 {
     AspSequenceResult result = AspSequenceAppend(engine, list, value);
+    return result.result == AspRunResult_OK;
+}
+
+bool AspListInsert
+    (AspEngine *engine, AspDataEntry *list,
+     unsigned index, AspDataEntry *value)
+{
+    AspSequenceResult result = AspSequenceInsertByIndex
+        (engine, list, index, value);
     return result.result == AspRunResult_OK;
 }
 

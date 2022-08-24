@@ -20,6 +20,7 @@ add_library(aspe SHARED
     stack.c
     sequence.c
     tree.c
+    compare.c
     operation.c
     function.c
     $<$<CONFIG:Debug>:debug.c>

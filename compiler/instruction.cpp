@@ -231,7 +231,7 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_RET, "RET"},
         {OpCode_XMOD, "XMOD"},
         {OpCode_MKFUN, "MKFUN"},
-        {OpCode_MKDENT, "MKDENT"},
+        {OpCode_MKKVP, "MKKVP"},
         {OpCode_MKR0, "MKR0"},
         {OpCode_MKRS, "MKRS"},
         {OpCode_MKRE, "MKRE"},
@@ -240,6 +240,8 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_MKRST, "MKRST"},
         {OpCode_MKRET, "MKRET"},
         {OpCode_MKR, "MKR"},
+        {OpCode_INS, "INS"},
+        {OpCode_INSP, "INSP"},
         {OpCode_BLD, "BLD"},
         {OpCode_IDX, "IDX"},
         {OpCode_IDXA, "IDXA"},
@@ -738,9 +740,14 @@ MakeFunctionInstruction::MakeFunctionInstruction
 {
 }
 
-MakeDictionaryEntryInstruction::MakeDictionaryEntryInstruction
+MakeKeyValuePairInstruction::MakeKeyValuePairInstruction
     (const string &comment) :
-    SimpleInstruction(OpCode_MKDENT, comment)
+    SimpleInstruction(OpCode_MKKVP, comment)
+{
+}
+
+InsertInstruction::InsertInstruction(bool pop, const string &comment) :
+    SimpleInstruction(pop ? OpCode_INSP : OpCode_INS, comment)
 {
 }
 

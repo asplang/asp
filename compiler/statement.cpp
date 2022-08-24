@@ -135,6 +135,60 @@ void AssignmentStatement::Parent(const Block *block)
     Statement::Parent(block);
 }
 
+InsertionStatement::InsertionStatement
+    (const Token &insertionToken,
+     InsertionStatement *containerInsertionStatement,
+     Expression *itemExpression) :
+    Statement(insertionToken),
+    containerInsertionStatement(containerInsertionStatement),
+    containerExpression(0),
+    itemExpression(itemExpression),
+    keyValuePair(0)
+{
+}
+
+InsertionStatement::InsertionStatement
+    (const Token &insertionToken,
+     InsertionStatement *containerInsertionStatement,
+     KeyValuePair *keyValuePair) :
+    Statement(insertionToken),
+    containerInsertionStatement(containerInsertionStatement),
+    containerExpression(0),
+    itemExpression(0),
+    keyValuePair(keyValuePair)
+{
+}
+
+InsertionStatement::InsertionStatement
+    (const Token &insertionToken,
+     Expression *containerExpression, Expression *itemExpression) :
+    Statement(insertionToken),
+    containerInsertionStatement(0),
+    containerExpression(containerExpression),
+    itemExpression(itemExpression),
+    keyValuePair(0)
+{
+}
+
+InsertionStatement::InsertionStatement
+    (const Token &insertionToken,
+     Expression *containerExpression, KeyValuePair *keyValuePair) :
+    Statement(insertionToken),
+    containerInsertionStatement(0),
+    containerExpression(containerExpression),
+    itemExpression(0),
+    keyValuePair(keyValuePair)
+{
+}
+
+InsertionStatement::~InsertionStatement()
+{
+    delete containerInsertionStatement;
+    delete containerExpression;
+    delete itemExpression;
+    delete keyValuePair;
+}
+
 BreakStatement::BreakStatement(const Token &token) :
     Statement(token)
 {

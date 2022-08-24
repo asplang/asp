@@ -515,6 +515,10 @@ Token *Lexer::ProcessSpecial()
         lex += static_cast<char>(Get());
         lex += static_cast<char>(Get());
     }
+    else if (c == '<' && c2 == '-')
+    {
+        lex += static_cast<char>(Get());
+    }
     else if (strchr(dbl, c) != 0 && c2 == c)
     {
         lex += static_cast<char>(Get());
@@ -522,7 +526,9 @@ Token *Lexer::ProcessSpecial()
             lex += static_cast<char>(Get());
     }
     else if (strchr(eq2, c) != 0 && c2 == '=')
+    {
         lex += static_cast<char>(Get());
+    }
 
     static const map<string, int> keywords =
     {
@@ -558,6 +564,7 @@ Token *Lexer::ProcessSpecial()
         {"*=", TOKEN_TIMES_ASSIGN},
         {"/=", TOKEN_DIVIDE_ASSIGN},
         {"%=", TOKEN_MODULO_ASSIGN},
+        {"<-", TOKEN_INSERT},
         {"<=", TOKEN_LE},
         {">=", TOKEN_GE},
         {"==", TOKEN_EQ},

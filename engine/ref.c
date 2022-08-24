@@ -31,17 +31,17 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             uint8_t t = AspDataGetType(entry);
             if (t == DataType_Range)
             {
-                uint32_t startIndex = AspDataGetRangeStartIndex(entry);
-                if (startIndex != 0)
-                    AspUnref(engine, AspEntry(engine, startIndex));
+                if (AspDataGetRangeHasStart(entry))
+                    AspUnref(engine, AspValueEntry(engine,
+                        AspDataGetRangeStartIndex(entry)));
 
-                uint32_t endIndex = AspDataGetRangeEndIndex(entry);
-                if (endIndex != 0)
-                    AspUnref(engine, AspEntry(engine, endIndex));
+                if (AspDataGetRangeHasEnd(entry))
+                    AspUnref(engine, AspValueEntry(engine,
+                        AspDataGetRangeEndIndex(entry)));
 
-                uint32_t stepIndex = AspDataGetRangeStepIndex(entry);
-                if (stepIndex != 0)
-                    AspUnref(engine, AspEntry(engine, stepIndex));
+                if (AspDataGetRangeHasStep(entry))
+                    AspUnref(engine, AspValueEntry(engine,
+                        AspDataGetRangeStepIndex(entry)));
             }
             else if (t == DataType_String ||
                      t == DataType_Tuple || t == DataType_List ||
@@ -143,17 +143,17 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     (engine, AspDataGetFrameModuleIndex(entry));
                 AspPushNoUse(engine, module);
             }
-            else if (t == DataType_DictionaryEntry)
+            else if (t == DataType_KeyValuePair)
             {
                 AspDataEntry *key = AspValueEntry
-                    (engine, AspDataGetDictionaryEntryKeyIndex(entry));
+                    (engine, AspDataGetKeyValuePairKeyIndex(entry));
                 if (IsTerminal(key))
                     AspUnref(engine, key);
                 else
                     AspPushNoUse(engine, key);
 
                 AspDataEntry *value = AspValueEntry
-                    (engine, AspDataGetDictionaryEntryValueIndex(entry));
+                    (engine, AspDataGetKeyValuePairValueIndex(entry));
                 if (IsTerminal(value))
                     AspUnref(engine, value);
                 else

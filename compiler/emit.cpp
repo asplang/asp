@@ -80,6 +80,27 @@ void AssignmentStatement::Emit1(Executable &executable, bool top) const
         top ? "Assign with pop" : "Assign, leave value on stack"));
 }
 
+void InsertionStatement::Emit(Executable &executable) const
+{
+    Emit1(executable, true);
+}
+
+void InsertionStatement::Emit1(Executable &executable, bool top) const
+{
+    if (containerInsertionStatement != 0)
+        containerInsertionStatement->Emit1(executable, false);
+    else
+        containerExpression->Emit(executable);
+
+    if (keyValuePair != 0)
+        keyValuePair->Emit(executable);
+    else
+        itemExpression->Emit(executable);
+
+    executable.Insert(new InsertInstruction(top,
+        top ? "Insert with pop" : "Insert, leave container on stack"));
+}
+
 void BreakStatement::Emit(Executable &executable) const
 {
     auto loopStatement = ParentLoop();
@@ -799,11 +820,11 @@ void VariableExpression::Emit
         (symbol, emitType == EmitType::Address, oss.str()));
 }
 
-void DictionaryEntry::Emit(Executable &executable) const
+void KeyValuePair::Emit(Executable &executable) const
 {
     valueExpression->Emit(executable);
     keyExpression->Emit(executable);
-    executable.Insert(new MakeDictionaryEntryInstruction);
+    executable.Insert(new MakeKeyValuePairInstruction);
 }
 
 void DictionaryExpression::Emit
@@ -918,33 +939,25 @@ void ConstantExpression::Emit
     else if (emitType == EmitType::Delete)
         throw string("Cannot delete constant expression");
 
-    ostringstream oss;
-    oss << "Push ";
     switch (type)
     {
         case Type::None:
-            oss << "None";
-            executable.Insert(new PushNoneInstruction(oss.str()));
+            executable.Insert(new PushNoneInstruction);
             break;
         case Type::Ellipsis:
-            oss << "...";
-            executable.Insert(new PushEllipsisInstruction(oss.str()));
+            executable.Insert(new PushEllipsisInstruction);
             break;
         case Type::Boolean:
-            oss << (b ? "True" : "False");
-            executable.Insert(new PushBooleanInstruction(b, oss.str()));
+            executable.Insert(new PushBooleanInstruction(b));
             break;
         case Type::Integer:
-            oss << "int(" << i << ')';
-            executable.Insert(new PushIntegerInstruction(i, oss.str()));
+            executable.Insert(new PushIntegerInstruction(i));
             break;
         case Type::Float:
-            oss << "float(" << f << ')';
-            executable.Insert(new PushFloatInstruction(f, oss.str()));
+            executable.Insert(new PushFloatInstruction(f));
             break;
         case Type::String:
-            oss << '\'' << s << '\'';
-            executable.Insert(new PushStringInstruction(s, oss.str()));
+            executable.Insert(new PushStringInstruction(s));
             break;
     }
 }

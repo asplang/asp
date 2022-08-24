@@ -21,9 +21,12 @@ typedef struct
 
 AspSequenceResult AspSequenceAppend
     (AspEngine *, AspDataEntry *list, AspDataEntry *value);
+AspSequenceResult AspSequenceInsertByIndex
+    (AspEngine *, AspDataEntry *list,
+     unsigned index, AspDataEntry *value);
 AspSequenceResult AspSequenceInsert
-    (AspEngine *, AspDataEntry *list, AspDataEntry *value,
-     AspDataEntry *element);
+    (AspEngine *, AspDataEntry *list,
+     AspDataEntry *element, AspDataEntry *value);
 bool AspSequenceErase
     (AspEngine *, AspDataEntry *list, unsigned index, bool eraseValue);
 bool AspSequenceEraseElement

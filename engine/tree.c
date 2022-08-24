@@ -4,7 +4,7 @@
 
 #include "tree.h"
 #include "data.h"
-#include <assert.h>
+#include "compare.h"
 
 static AspRunResult Insert
     (AspEngine *, AspDataEntry *tree, AspDataEntry *node);
@@ -18,8 +18,6 @@ static AspRunResult Shift
 static int CompareKeys
     (AspEngine *, const AspDataEntry *tree,
      const AspDataEntry *leftNode, const AspDataEntry *rightNode);
-static int Compare
-    (AspEngine *, const AspDataEntry *left, const AspDataEntry *right);
 
 static AspRunResult SetLeftIndex
     (AspEngine *, AspDataEntry *node, uint32_t index);
@@ -70,18 +68,23 @@ AspTreeResult AspTreeInsert
     AspDataEntry *foundNode = FindNode(engine, tree, result.node);
     if (foundNode != 0)
     {
-        AspUnref(engine, AspEntry
-            (engine, AspDataGetTreeNodeValueIndex(foundNode)));
         AspUnref(engine, result.node);
         result.node = foundNode;
-        result.key = AspEntry
+        result.key = AspValueEntry
             (engine, AspDataGetTreeNodeKeyIndex(foundNode));
-        if (treeType == DataType_Dictionary)
+
+        /* Replace the entry's value if applicable. */
+        if (treeType != DataType_Set)
         {
-            result.value = AspEntry
+            AspUnref(engine, AspValueEntry
+                (engine, AspDataGetTreeNodeValueIndex(foundNode)));
+            AspDataSetTreeNodeValueIndex(foundNode, AspIndex
+                (engine, value));
+            result.value = AspValueEntry
                 (engine, AspDataGetTreeNodeValueIndex(foundNode));
             AspRef(engine, result.value);
         }
+
         return result;
     }
 
@@ -222,7 +225,7 @@ AspRunResult AspTreeEraseNode
 }
 
 AspTreeResult AspTreeFind
-    (AspEngine *engine, AspDataEntry *tree, AspDataEntry *key)
+    (AspEngine *engine, AspDataEntry *tree, const AspDataEntry *key)
 {
     AspTreeResult result = {AspRunResult_OK, 0, 0, 0, false};
 
@@ -328,10 +331,10 @@ AspTreeResult AspTreeNext
     if (result.node != 0)
     {
         if (AspDataGetType(tree) != DataType_Namespace)
-            result.key = AspEntry
+            result.key = AspValueEntry
                 (engine, AspDataGetTreeNodeKeyIndex(result.node));
         if (AspDataGetType(tree) != DataType_Set)
-            result.value = AspEntry
+            result.value = AspValueEntry
                 (engine, AspDataGetTreeNodeValueIndex(result.node));
     }
 
@@ -341,7 +344,7 @@ AspTreeResult AspTreeNext
 AspDataEntry *AspTreeNodeValue(AspEngine *engine, AspDataEntry *node)
 {
     return node == 0 || AspDataGetType(node) == DataType_SetNode ?
-        0 : AspEntry(engine, AspDataGetTreeNodeValueIndex(node));
+        0 : AspValueEntry(engine, AspDataGetTreeNodeValueIndex(node));
 }
 
 static AspRunResult Insert
@@ -479,119 +482,10 @@ static int CompareKeys
             leftSymbol < rightSymbol ? -1 : 1;
     }
     else
-        return Compare
+        return AspCompare
             (engine,
-             AspEntry(engine, AspDataGetTreeNodeKeyIndex(leftNode)),
-             AspEntry(engine, AspDataGetTreeNodeKeyIndex(rightNode)));
-}
-
-static int Compare
-    (AspEngine *engine,
-     const AspDataEntry *leftEntry, const AspDataEntry *rightEntry)
-{
-    AspAssert
-        (engine, leftEntry != 0 && AspIsObject(leftEntry));
-    AspRunResult assertResult = AspAssert
-        (engine, rightEntry != 0 && AspIsObject(rightEntry));
-    if (assertResult != AspRunResult_OK)
-        return 0;
-
-    /* Determine whether objects are of the same type. */
-    uint8_t
-        leftType = AspDataGetType(leftEntry),
-        rightType = AspDataGetType(rightEntry);
-    if (leftType != rightType)
-    {
-        /* Compare objects as numeric if possible. Otherwise, compare
-           their types. */
-        if (AspIsNumeric(leftEntry) && AspIsNumeric(rightEntry))
-        {
-            if (leftType != DataType_Float && rightType != DataType_Float)
-            {
-                int32_t leftValue, rightValue;
-                AspIntegerValue(leftEntry, &leftValue);
-                AspIntegerValue(rightEntry, &rightValue);
-                return
-                    leftValue == rightValue ? 0 :
-                    leftValue < rightValue ? -1 : 1;
-            }
-            else
-            {
-                double leftValue, rightValue;
-                AspFloatValue(leftEntry, &leftValue);
-                AspFloatValue(rightEntry, &rightValue);
-                return
-                    leftValue == rightValue ? 0 :
-                    leftValue < rightValue ? -1 : 1;
-            }
-        }
-        else
-            return leftType < rightType ? -1 : 1;
-    }
-
-    /* Compare objects of the same type. */
-    DataType type = (DataType)leftType;
-    switch (type)
-    {
-        default:
-            AspAssert(engine, false);
-            return 0;
-
-        case DataType_None:
-        case DataType_Ellipsis:
-            return 0;
-
-        case DataType_Boolean:
-        {
-            bool
-                leftValue = AspDataGetBoolean(leftEntry),
-                rightValue = AspDataGetBoolean(rightEntry);
-            return
-                leftValue == rightValue ? 0 :
-                leftValue < rightValue ? -1 : 1;
-        }
-        case DataType_Integer:
-        {
-            int32_t
-                leftValue = AspDataGetInteger(leftEntry),
-                rightValue = AspDataGetInteger(rightEntry);
-            return
-                leftValue == rightValue ? 0 :
-                leftValue < rightValue ? -1 : 1;
-        }
-        case DataType_Float:
-        {
-            int32_t
-                leftValue = AspDataGetFloat(leftEntry),
-                rightValue = AspDataGetFloat(rightEntry);
-            return
-                leftValue == rightValue ? 0 :
-                leftValue < rightValue ? -1 : 1;
-        }
-        case DataType_Range:
-        case DataType_String:
-        case DataType_Tuple:
-        case DataType_List:
-        case DataType_Set:
-        case DataType_Dictionary:
-        case DataType_Iterator:
-        case DataType_Function:
-        case DataType_Module:
-        case DataType_Type:
-        {
-            /* TODO: Implement comparisons for each type.
-               Hint: Make use of the *ComparsionOperation routines in
-               operation.c. */
-            AspAssert(engine, false);
-            /* For now, just sort by "address". */
-            uint32_t
-                leftIndex = AspIndex(engine, leftEntry),
-                rightIndex = AspIndex(engine, rightEntry);
-            return
-                leftIndex == rightIndex ? 0 :
-                leftIndex < rightIndex ? -1 : 1;
-        }
-    }
+             AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(leftNode)),
+             AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(rightNode)));
 }
 
 static AspRunResult SetLeftIndex

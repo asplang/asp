@@ -42,7 +42,7 @@ typedef enum
     DataType_Frame = 0x52,
     DataType_Element = 0x62,
     DataType_StringFragment = 0x64,
-    DataType_DictionaryEntry = 0x68,
+    DataType_KeyValuePair = 0x66,
     DataType_Namespace = 0x70,
     DataType_SetNode = 0x74,
     DataType_DictionaryNode = 0x78,
@@ -302,14 +302,14 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 #define AspDataGetStringFragmentData(eptr) \
     ((char *)(eptr)->s)
 
-/* DictionaryEntry entry field access. */
-#define AspDataSetDictionaryEntryKeyIndex(eptr, value) \
+/* KeyValuePair entry field access. */
+#define AspDataSetKeyValuePairKeyIndex(eptr, value) \
     (AspDataSetWord0((eptr), (value)))
-#define AspDataGetDictionaryEntryKeyIndex(eptr) \
+#define AspDataGetKeyValuePairKeyIndex(eptr) \
     (AspDataGetWord0((eptr)))
-#define AspDataSetDictionaryEntryValueIndex(eptr, value) \
+#define AspDataSetKeyValuePairValueIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
-#define AspDataGetDictionaryEntryValueIndex(eptr) \
+#define AspDataGetKeyValuePairValueIndex(eptr) \
     (AspDataGetWord1((eptr)))
 
 /* Common tree node entry field access. */

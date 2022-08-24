@@ -35,6 +35,7 @@ DECLARE_TYPE(NonTerminal)
 DECLARE_TYPE(ConstantExpression)
 DECLARE_TYPE(Expression)
 DECLARE_TYPE(AssignmentStatement)
+DECLARE_TYPE(InsertionStatement)
 DECLARE_TYPE(IfStatement)
 DECLARE_TYPE(Statement)
 DECLARE_TYPE(ImportNameList)
@@ -43,10 +44,10 @@ DECLARE_TYPE(ParameterList)
 DECLARE_TYPE(Parameter)
 DECLARE_TYPE(ArgumentList)
 DECLARE_TYPE(Argument)
-DECLARE_TYPE(DictionaryEntry)
 DECLARE_TYPE(DictionaryExpression)
 DECLARE_TYPE(SetExpression)
 DECLARE_TYPE(ListExpression)
+DECLARE_TYPE(KeyValuePair)
 DECLARE_TYPE(RangeExpression)
 DECLARE_TYPE(VariableList)
 DECLARE_TYPE(Block)
@@ -100,6 +101,20 @@ class Compiler
          AssignmentStatement *);
     DECLARE_METHOD
         (MakeAssignmentStatement, Statement *, AssignmentStatement *);
+    DECLARE_METHOD
+        (MakeMultipleValueInsertionStatement, InsertionStatement *,
+         Token *, InsertionStatement *, Expression *);
+    DECLARE_METHOD
+        (MakeMultiplePairInsertionStatement, InsertionStatement *,
+         Token *, InsertionStatement *, KeyValuePair *);
+    DECLARE_METHOD
+        (MakeSingleValueInsertionStatement, InsertionStatement *,
+         Token *, Expression *, Expression *);
+    DECLARE_METHOD
+        (MakeSinglePairInsertionStatement, InsertionStatement *,
+         Token *, Expression *, KeyValuePair *);
+    DECLARE_METHOD
+        (MakeInsertionStatement, Statement *, InsertionStatement *);
     DECLARE_METHOD
         (MakeExpressionStatement, Statement *,
          Expression *);
@@ -231,13 +246,10 @@ class Compiler
 
     /* Dictionaries. */
     DECLARE_METHOD
-        (MakeDictionaryEntry, DictionaryEntry *,
-         Expression *, Expression *);
-    DECLARE_METHOD
         (MakeEmptyDictionary, DictionaryExpression *, Token *);
     DECLARE_METHOD
         (AddEntryToDictionary, DictionaryExpression *,
-         DictionaryExpression *, DictionaryEntry *);
+         DictionaryExpression *, KeyValuePair *);
     DECLARE_METHOD
         (AssignDictionary, DictionaryExpression *, DictionaryExpression *);
 
@@ -255,6 +267,11 @@ class Compiler
          ListExpression *, Expression *);
     DECLARE_METHOD
         (AssignList, ListExpression *, Token *, ListExpression *);
+
+    /* Key/value pairs. */
+    DECLARE_METHOD
+        (MakeKeyValuePair, KeyValuePair *,
+         Expression *, Expression *);
 
     /* Ranges. */
     DECLARE_METHOD

@@ -24,7 +24,7 @@ typedef enum OpCode
     OpCode_PUSHTU = 0x14, /* empty tuple */
     OpCode_PUSHLI = 0x15, /* empty list */
     OpCode_PUSHSE = 0x16, /* empty set */
-    OpCode_PUSHDI = 0x17, /* empty dict */
+    OpCode_PUSHDI = 0x17, /* empty dictionary */
     OpCode_PUSHAL = 0x18, /* argument list */
     OpCode_PUSHPL = 0x19, /* parameter list */
     OpCode_PUSHCA = 0x1C, /* 4-byte code address */
@@ -69,6 +69,7 @@ typedef enum OpCode
     /* Ternary operations. */
     OpCode_COND = 0x70, /* true if cond else false */
 
+    /* Load operations. */
     OpCode_LD1 = 0x81, /* load variable's value with 1-byte symbol */
     OpCode_LD2 = 0x82, /* load variable's value with 2-byte symbol */
     OpCode_LD4 = 0x83, /* load variable's value with 4-byte symbol */
@@ -76,6 +77,7 @@ typedef enum OpCode
     OpCode_LDA2 = 0x86, /* load variable's "address" with 2-byte symbol */
     OpCode_LDA4 = 0x87, /* load variable's "address" with 4-byte symbol */
 
+    /* Assignment and deletion operations. */
     OpCode_SET = 0x88, /* assign variable (no pop) */
     OpCode_SETP = 0x89, /* assign variable with pop */
     OpCode_ERASE = 0x8C, /* delete element or slice */
@@ -83,6 +85,7 @@ typedef enum OpCode
     OpCode_DEL2 = 0x8E, /* delete variable with 2-byte symbol */
     OpCode_DEL4 = 0x8F, /* delete variable with 4-byte symbol */
 
+    /* Global override operations. */
     OpCode_GLOB1 = 0x91, /* 1-byte symbol global override */
     OpCode_GLOB2 = 0x92, /* 2-byte symbol global override */
     OpCode_GLOB4 = 0x93, /* 4-byte symbol global override */
@@ -90,19 +93,23 @@ typedef enum OpCode
     OpCode_LOC2 = 0x96, /* cancel 2-byte symbol global override */
     OpCode_LOC4 = 0x97, /* cancel 4-byte symbol global override */
 
+    /* Iterator operations. */
     OpCode_SITER = 0xA0, /* start iterator */
     OpCode_TITER = 0xA1, /* test iterator */
     OpCode_NITER = 0xA2, /* advance iterator to next */
     OpCode_DITER = 0xA3, /* dereference iterator */
 
+    /* Jump operations. */
     OpCode_NOOP = 0xB0, /* (never jump) */
     OpCode_JMPF = 0xB1, /* jump false */
     OpCode_JMPT = 0xB2, /* jump true */
     OpCode_JMP = 0xB3, /* unconditional jump */
 
+    /* Function call/return operations. */
     OpCode_CALL = 0xB4, /* call function */
     OpCode_RET = 0xB5, /* return from function */
 
+    /* Module operations. */
     OpCode_ADDMOD1 = 0xB9, /* add module with 1-byte symbol to engine */
     OpCode_ADDMOD2 = 0xBA, /* add module with 2-byte symbol to engine */
     OpCode_ADDMOD4 = 0xBB, /* add module with 4-byte symbol to engine */
@@ -111,6 +118,7 @@ typedef enum OpCode
     OpCode_LDMOD2 = 0xBE, /* load/call module with 2-byte symbol */
     OpCode_LDMOD4 = 0xBF, /* load/call module with 4-byte symbol */
 
+    /* Function argument and parameter operations. */
     OpCode_MKARG = 0xC0, /* make positional arg */
     OpCode_MKARGN1 = 0xC1, /* make named argument with 1-byte symbol */
     OpCode_MKARGN2 = 0xC2, /* make named argument with 2-byte symbol */
@@ -123,21 +131,29 @@ typedef enum OpCode
     OpCode_MKPARD4 = 0xCA, /* make parameter with default with 4-byte symbol */
     OpCode_MKFUN = 0xCF, /* make function */
 
-    OpCode_MKDENT = 0xD0, /* make dict entry */
+    /* Container entry operations. */
+    OpCode_MKKVP = 0xD3, /* make key/value pair entry */
 
-    OpCode_MKR0 = 0xE0, /* make range .. */
-    OpCode_MKRS = 0xE1, /* make range start.. */
-    OpCode_MKRE = 0xE2, /* make range ..end */
-    OpCode_MKRSE = 0xE3, /* make range start..end */
-    OpCode_MKRT = 0xE4, /* make range ..:step */
-    OpCode_MKRST = 0xE5, /* make range start..:step */
-    OpCode_MKRET = 0xE6, /* make range ..end:step */
-    OpCode_MKR = 0xE7, /* make range s..end:step */
+    /* Range operations. */
+    OpCode_MKR0 = 0xD8, /* make range .. */
+    OpCode_MKRS = 0xD9, /* make range start.. */
+    OpCode_MKRE = 0xDA, /* make range ..end */
+    OpCode_MKRSE = 0xDB, /* make range start..end */
+    OpCode_MKRT = 0xDC, /* make range ..:step */
+    OpCode_MKRST = 0xDD, /* make range start..:step */
+    OpCode_MKRET = 0xDE, /* make range ..end:step */
+    OpCode_MKR = 0xDF, /* make range s..end:step */
 
-    OpCode_BLD = 0xEF, /* build (tuple, list, dict, arg list, param list) */
+    /* Insert operations. */
+    OpCode_INS = 0xE8, /* insert (list, set, dictionary) */
+    OpCode_INSP = 0xE9, /* insert with pop */
+    OpCode_BLD = 0xEC, /* build (tuple, list, set, dictionary, args, params) */
 
+    /* Indexing operations. */
     OpCode_IDX = 0xF0, /* index (or range) value */
     OpCode_IDXA = 0xF1, /* index (or range) address */
+
+    /* Member look-up operations. */
     OpCode_MEM1 = 0xF4, /* 1-byte member lookup value by symbol */
     OpCode_MEM2 = 0xF5, /* 2-byte member lookup value by symbol */
     OpCode_MEM4 = 0xF6, /* 4-byte member lookup value by symbol */
@@ -145,6 +161,7 @@ typedef enum OpCode
     OpCode_MEMA2 = 0xF9, /* 2-byte member lookup address by symbol */
     OpCode_MEMA4 = 0xFA, /* 4-byte member lookup address by symbol */
 
+    /* End operation. */
     OpCode_END = 0xFF, /* normal exit, stack must be empty */
 
 } OpCode;
