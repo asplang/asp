@@ -111,8 +111,8 @@ bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);
 unsigned AspCount(const AspDataEntry *);
-AspDataEntry *AspListElement(AspEngine *, AspDataEntry *list, unsigned index);
-char AspStringElement(AspEngine *, const AspDataEntry *str, unsigned index);
+AspDataEntry *AspListElement(AspEngine *, AspDataEntry *list, int index);
+char AspStringElement(AspEngine *, const AspDataEntry *str, int index);
 AspDataEntry *AspFind
     (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
 AspDataEntry *AspNewNone(AspEngine *);
@@ -128,7 +128,7 @@ AspDataEntry *AspNewDictionary(AspEngine *);
 bool AspListAppend(AspEngine *, AspDataEntry *list, AspDataEntry *value);
 bool AspListInsert
     (AspEngine *, AspDataEntry *list,
-     unsigned index, AspDataEntry *value);
+     int index, AspDataEntry *value);
 bool AspStringAppend(AspEngine *, AspDataEntry *str, char);
 bool AspSetInsert(AspEngine *, AspDataEntry *set, AspDataEntry *key);
 bool AspDictionaryInsert

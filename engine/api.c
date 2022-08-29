@@ -217,7 +217,7 @@ bool AspRangeValue
 /* If supplied, *size is the number of bytes in the string without null
    termination. If *size - index < bufferSize, this routine will deposit a
    null after the requested string content. If *size - index >= bufferSize,
-   no null termination occurs. */
+   no null termination occurs. Negative indices are not supported. */
 bool AspStringValue
     (AspEngine *engine, const AspDataEntry *const_entry,
      size_t *size, char *buffer, size_t index, size_t bufferSize)
@@ -294,7 +294,7 @@ unsigned AspCount(const AspDataEntry *entry)
 }
 
 AspDataEntry *AspListElement
-    (AspEngine *engine, AspDataEntry *list, unsigned index)
+    (AspEngine *engine, AspDataEntry *list, int index)
 {
     uint8_t type = AspDataGetType(list);
     if (type != DataType_Tuple && type != DataType_List)
@@ -307,12 +307,20 @@ AspDataEntry *AspListElement
 }
 
 char AspStringElement
-    (AspEngine *engine, const AspDataEntry *strEntry, unsigned index)
+    (AspEngine *engine, const AspDataEntry *strEntry, int index)
 {
     AspDataEntry *str = (AspDataEntry *)strEntry;
 
     if (AspDataGetType(str) != DataType_String)
         return 0;
+
+    /* Treat negative indices as counting backwards from the end. */
+    if (index < 0)
+    {
+        index = (int)AspDataGetSequenceCount(strEntry) + index;
+        if (index < 0)
+            return 0;
+    }
 
     AspSequenceResult nextResult = AspSequenceNext(engine, str, 0);
     for (; nextResult.element != 0;
@@ -420,7 +428,7 @@ bool AspListAppend
 
 bool AspListInsert
     (AspEngine *engine, AspDataEntry *list,
-     unsigned index, AspDataEntry *value)
+     int index, AspDataEntry *value)
 {
     AspSequenceResult result = AspSequenceInsertByIndex
         (engine, list, index, value);

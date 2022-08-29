@@ -759,7 +759,7 @@ static AspRunResult Step(AspEngine *engine)
             if (address == 0)
                 return AspRunResult_StackUnderflow;
             if (AspIsObject(address))
-                return AspRunResult_UnexpectedType;
+                AspRef(engine, address);
             AspPop(engine);
 
             /* Access value entry on the top of the stack. */
@@ -798,6 +798,9 @@ static AspRunResult Step(AspEngine *engine)
 
             AspRef(engine, newValue);
 
+            if (AspIsObject(address))
+                AspUnref(engine, address);
+
             if (opCode == OpCode_SETP)
                 AspPop(engine);
 
@@ -832,13 +835,10 @@ static AspRunResult Step(AspEngine *engine)
 
                 case DataType_List:
                 {
-                    /* Ensure the index is a non-negative integer. */
+                    /* Ensure the index is an integer. */
                     if (AspDataGetType(index) != DataType_Integer)
                         return AspRunResult_UnexpectedType;
-                    int32_t signedIndexValue = AspDataGetInteger(index);
-                    if (signedIndexValue < 0)
-                        return AspRunResult_IndexOutOfRange;
-                    uint32_t indexValue = (uint32_t)signedIndexValue;
+                    int32_t indexValue = AspDataGetInteger(index);
 
                     /* Erase the element. */
                     bool eraseResult = AspSequenceErase
@@ -2184,6 +2184,7 @@ static AspRunResult Step(AspEngine *engine)
                  opCode == OpCode_INS ? "INS" : "INSP");
             #endif
 
+            /* Access item on top of the stack to insert. */
             AspDataEntry *item = AspTop(engine);
             if (item == 0)
                 return AspRunResult_StackUnderflow;
@@ -2191,7 +2192,7 @@ static AspRunResult Step(AspEngine *engine)
             AspPop(engine);
             uint8_t itemType = AspDataGetType(item);
 
-            /* Access object on top of the stack to build to. */
+            /* Access object on top of the stack to build/insert into. */
             AspDataEntry *container = AspTop(engine);
             if (container == 0)
                 return AspRunResult_StackUnderflow;
@@ -2207,11 +2208,9 @@ static AspRunResult Step(AspEngine *engine)
                 case DataType_Tuple:
                     if (opCode != OpCode_BLD)
                         return AspRunResult_UnexpectedType;
-
-                    /* Fall through. */
-
-                case DataType_Set:
-                    if (!AspIsObject(item))
+                    if (!AspIsObject(item) &&
+                        itemType != DataType_NamespaceNode &&
+                        itemType != DataType_Element)
                         return AspRunResult_UnexpectedType;
                     break;
 
@@ -2227,6 +2226,11 @@ static AspRunResult Step(AspEngine *engine)
                         return AspRunResult_UnexpectedType;
                     break;
 
+                case DataType_Set:
+                    if (!AspIsObject(item))
+                        return AspRunResult_UnexpectedType;
+                    break;
+
                 case DataType_List:
                     if (itemType != DataType_KeyValuePair &&
                         !AspIsObject(item))
@@ -2234,7 +2238,7 @@ static AspRunResult Step(AspEngine *engine)
                     if (itemType != DataType_KeyValuePair)
                         break;
 
-                    /* Fall through. */
+                    /* Fall through... */
 
                 case DataType_Dictionary:
                     if (itemType != DataType_KeyValuePair)
@@ -2272,40 +2276,22 @@ static AspRunResult Step(AspEngine *engine)
                 {
                     AspSequenceResult insertResult =
                         {AspRunResult_InternalError, 0, 0};
-                    bool append = true;
-                    if (value == 0)
-                        value = item;
-                    else
-                    {
-                        append = AspDataGetType(key) == DataType_None;
-                        if (!append)
-                        {
-                            /* Ensure the index is a non-negative integer. */
-                            if (AspDataGetType(key) != DataType_Integer)
-                                return AspRunResult_UnexpectedType;
-                            int32_t signedIndex = AspDataGetInteger(key);
-                            if (signedIndex < 0)
-                                return AspRunResult_IndexOutOfRange;
-                            unsigned index = (unsigned)signedIndex;
-
-                            /* Check for index one past the end. */
-                            uint32_t count = AspDataGetSequenceCount
-                                (container);
-                            append = index == count;
-                            if (!append)
-                            {
-                                /* Insert the value at the given index. */
-                                insertResult = AspSequenceInsertByIndex
-                                    (engine, container, index, value);
-                            }
-                        }
-                    }
-
-                    if (append)
+                    if (key == 0)
                     {
                         /* Append the entry. */
                         insertResult = AspSequenceAppend
-                            (engine, container, value);
+                            (engine, container, item);
+                    }
+                    else
+                    {
+                        /* Ensure the index is an integer. */
+                        if (AspDataGetType(key) != DataType_Integer)
+                            return AspRunResult_UnexpectedType;
+                        int32_t index = AspDataGetInteger(key);
+
+                        /* Insert the value at the given index. */
+                        insertResult = AspSequenceInsertByIndex
+                            (engine, container, index, value);
                     }
 
                     if (insertResult.result != AspRunResult_OK)
@@ -2373,29 +2359,65 @@ static AspRunResult Step(AspEngine *engine)
                     return AspRunResult_UnexpectedType;
 
                 case DataType_String:
-                    /* TODO: Implement string support. Use AspStringElement
-                       to get the character, then create a single character
-                       string object. */
-                    return AspRunResult_NotImplemented;
+                {
+                    if (opCode == OpCode_IDXA)
+                        return AspRunResult_UnexpectedType;
+
+                    /* Ensure the index is an integer. */
+                    if (AspDataGetType(index) != DataType_Integer)
+                        return AspRunResult_UnexpectedType;
+                    int32_t indexValue = AspDataGetInteger(index);
+
+                    /* Get the indexed character. */
+                    char c = AspStringElement(engine, container, indexValue);
+                    if (c == 0)
+                    {
+                        uint32_t count = AspDataGetSequenceCount(container);
+                        if (indexValue >= count ||
+                            indexValue < -(int32_t)count)
+                            return AspRunResult_IndexOutOfRange;
+                    }
+
+                    /* Create a single-character string fragment. */
+                    AspDataEntry *fragment =
+                        AspAllocEntry(engine, DataType_StringFragment);
+                    if (fragment == 0)
+                        return AspRunResult_OutOfDataMemory;
+                    AspDataSetStringFragment(fragment, &c, 1);
+
+                    /* Create a new string. */
+                    AspDataEntry *element = AspAllocEntry
+                        (engine, DataType_String);
+                    if (element == 0)
+                        return AspRunResult_OutOfDataMemory;
+
+                    /* Add the single-character fragment to the new string. */
+                    AspSequenceResult appendResult = AspSequenceAppend
+                        (engine, element, fragment);
+                    if (appendResult.result != AspRunResult_OK)
+                        return appendResult.result;
+
+                    /* Push the single-character string. */
+                    AspDataEntry *stackEntry = AspPush(engine, element);
+                    if (stackEntry == 0)
+                        return AspRunResult_OutOfDataMemory;
+                    AspUnref(engine, element);
+
+                    break;
+                }
 
                 case DataType_Tuple:
                     if (opCode == OpCode_IDXA)
-                    {
-                        /* TODO: Implement tuple of addresses. */
-                        return AspRunResult_NotImplemented;
-                    }
+                        return AspRunResult_UnexpectedType;
 
-                    /* Fall through. */
+                    /* Fall through... */
 
                 case DataType_List:
                 {
-                    /* Ensure the index is a non-negative integer. */
+                    /* Ensure the index is an integer. */
                     if (AspDataGetType(index) != DataType_Integer)
                         return AspRunResult_UnexpectedType;
-                    int32_t signedIndexValue = AspDataGetInteger(index);
-                    if (signedIndexValue < 0)
-                        return AspRunResult_IndexOutOfRange;
-                    unsigned indexValue = (unsigned)signedIndexValue;
+                    int32_t indexValue = AspDataGetInteger(index);
 
                     /* Locate the element. */
                     AspSequenceResult indexResult = AspSequenceIndex

@@ -54,8 +54,14 @@ AspSequenceResult AspSequenceAppend
 
 AspSequenceResult AspSequenceInsertByIndex
     (AspEngine *engine, AspDataEntry *list,
-     unsigned index, AspDataEntry *value)
+     int index, AspDataEntry *value)
 {
+    if (index == -1 || index == (int)AspDataGetSequenceCount(list))
+        return AspSequenceAppend(engine, list, value);
+
+    /* Locate insertion point, adjusting by one for a negative index. */
+    if (index < 0)
+        index++;
     AspSequenceResult result = AspSequenceIndex(engine, list, index);
     if (result.result != AspRunResult_OK)
         return result;
@@ -75,7 +81,8 @@ AspSequenceResult AspSequenceInsert
     AspSequenceResult result = {AspRunResult_OK, 0, 0};
 
     AspAssert(engine, list != 0 && IsSequenceType(AspDataGetType(list)));
-    AspAssert(engine, element != 0);
+    AspAssert
+        (engine, element != 0 && AspDataGetType(element) == DataType_Element);
     result.result = AspAssert(engine, value != 0);
     if (result.result != AspRunResult_OK)
         return result;
@@ -116,7 +123,7 @@ AspSequenceResult AspSequenceInsert
 }
 
 bool AspSequenceErase
-    (AspEngine *engine, AspDataEntry *list, unsigned index,
+    (AspEngine *engine, AspDataEntry *list, int index,
      bool eraseValue)
 {
     AspSequenceResult result = AspSequenceIndex(engine, list, index);
@@ -160,10 +167,23 @@ bool AspSequenceEraseElement
 }
 
 AspSequenceResult AspSequenceIndex
-    (AspEngine *engine, AspDataEntry *list, unsigned index)
+    (AspEngine *engine, AspDataEntry *list, int index)
 {
-    AspSequenceResult result = AspSequenceNext(engine, list, 0);
-    unsigned i = 0;
+    AspSequenceResult result = {AspRunResult_OK, 0, 0};
+
+    /* Treat negative indices as counting backwards from the end. */
+    if (index < 0)
+    {
+        index = (int)AspDataGetSequenceCount(list) + index;
+        if (index < 0)
+        {
+            result.result = AspRunResult_IndexOutOfRange;
+            return result;
+        }
+    }
+
+    result = AspSequenceNext(engine, list, 0);
+    int i = 0;
     for (i = 0; i < index && result.element != 0; i++)
         result = AspSequenceNext(engine, list, result.element);
 

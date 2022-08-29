@@ -23,16 +23,16 @@ AspSequenceResult AspSequenceAppend
     (AspEngine *, AspDataEntry *list, AspDataEntry *value);
 AspSequenceResult AspSequenceInsertByIndex
     (AspEngine *, AspDataEntry *list,
-     unsigned index, AspDataEntry *value);
+     int index, AspDataEntry *value);
 AspSequenceResult AspSequenceInsert
     (AspEngine *, AspDataEntry *list,
      AspDataEntry *element, AspDataEntry *value);
 bool AspSequenceErase
-    (AspEngine *, AspDataEntry *list, unsigned index, bool eraseValue);
+    (AspEngine *, AspDataEntry *list, int index, bool eraseValue);
 bool AspSequenceEraseElement
     (AspEngine *, AspDataEntry *list, AspDataEntry *element, bool eraseValue);
 AspSequenceResult AspSequenceIndex
-    (AspEngine *, AspDataEntry *list, unsigned index);
+    (AspEngine *, AspDataEntry *list, int index);
 AspSequenceResult AspSequenceNext
     (AspEngine *, AspDataEntry *list, AspDataEntry *element);
 
