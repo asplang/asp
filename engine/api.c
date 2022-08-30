@@ -36,14 +36,13 @@ bool AspIsFloat(const AspDataEntry *entry)
     return entry != 0 && AspDataGetType(entry) == DataType_Float;
 }
 
-bool AspIsNumeric(const AspDataEntry *entry)
+bool AspIsIntegral(const AspDataEntry *entry)
 {
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
         type == DataType_Boolean ||
-        type == DataType_Integer ||
-        type == DataType_Float;
+        type == DataType_Integer;
 }
 
 bool AspIsNumber(const AspDataEntry *entry)
@@ -51,6 +50,16 @@ bool AspIsNumber(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
+        type == DataType_Integer ||
+        type == DataType_Float;
+}
+
+bool AspIsNumeric(const AspDataEntry *entry)
+{
+    uint8_t type = AspDataGetType(entry);
+    return
+        entry != 0 &&
+        type == DataType_Boolean ||
         type == DataType_Integer ||
         type == DataType_Float;
 }
@@ -436,11 +445,12 @@ bool AspListInsert
 }
 
 bool AspStringAppend
-    (AspEngine *engine, AspDataEntry *str, char c)
+    (AspEngine *engine, AspDataEntry *str,
+     const char *buffer, size_t bufferSize)
 {
-    /* TODO: Implement. */
-    engine->runResult = AspRunResult_NotImplemented;
-    return 0;
+    AspRunResult result = AspStringAppendBuffer
+        (engine, str, buffer, bufferSize);
+    return result == AspRunResult_OK;
 }
 
 bool AspSetInsert

@@ -227,36 +227,13 @@ static AspRunResult Step(AspEngine *engine)
             printf("%d, ", size);
             #endif
 
-            AspDataEntry *stringEntry = AspAllocEntry(engine, DataType_String);
-            if (stringEntry == 0)
-            {
-                #ifdef ASP_DEBUG
-                puts("");
-                #endif
-                return AspRunResult_OutOfDataMemory;
-            }
-
-            /* Fetch and store the bytes of the string. */
+            /* Validate the bytes of the string. */
             #ifdef ASP_DEBUG
             putchar('\'');
             #endif
-            for (uint32_t i = 0; i < size;)
+            for (uint32_t i = 0; i < size; i++)
             {
-                AspDataEntry *fragment =
-                    AspAllocEntry(engine, DataType_StringFragment);
-                if (fragment == 0)
-                {
-                    #ifdef ASP_DEBUG
-                    puts("");
-                    #endif
-                    return AspRunResult_OutOfDataMemory;
-                }
-
-                uint32_t fragmentSize = size - i;
-                if (fragmentSize > AspDataGetStringFragmentMaxSize())
-                    fragmentSize = AspDataGetStringFragmentMaxSize();
-                if (engine->pc + fragmentSize >
-                    engine->code + engine->codeEndIndex)
+                if (engine->pc + i > engine->code + engine->codeEndIndex)
                 {
                     #ifdef ASP_DEBUG
                     puts("");
@@ -265,32 +242,26 @@ static AspRunResult Step(AspEngine *engine)
                 }
 
                 #ifdef ASP_DEBUG
-                for (uint32_t j = 0; j < fragmentSize; j++)
-                {
-                    uint8_t c = engine->pc[j];
-                    if (c == '\'')
-                        putchar('\\');
-                    putchar(isprint(c) ? c : '.');
-                }
+                uint8_t c = engine->pc[i];
+                if (c == '\'')
+                    putchar('\\');
+                putchar(isprint(c) ? c : '.');
                 #endif
-
-                AspDataSetStringFragment(fragment, engine->pc, fragmentSize);
-                i += fragmentSize;
-                engine->pc += fragmentSize;
-
-                AspSequenceResult appendResult = AspSequenceAppend
-                    (engine, stringEntry, fragment);
-                if (appendResult.result != AspRunResult_OK)
-                {
-                    #ifdef ASP_DEBUG
-                    puts("");
-                    #endif
-                    return appendResult.result;
-                }
             }
             #ifdef ASP_DEBUG
             puts("'");
             #endif
+
+            AspDataEntry *stringEntry = AspAllocEntry(engine, DataType_String);
+            if (stringEntry == 0)
+                return AspRunResult_OutOfDataMemory;
+
+            AspRunResult appendResult = AspStringAppendBuffer
+                (engine, stringEntry, (char *)engine->pc, (size_t)size);
+            if (appendResult != AspRunResult_OK)
+                return appendResult;
+
+            engine->pc += size;
 
             AspDataEntry *stackEntry = AspPush(engine, stringEntry);
             if (stackEntry == 0)
@@ -844,7 +815,7 @@ static AspRunResult Step(AspEngine *engine)
                     bool eraseResult = AspSequenceErase
                         (engine, container, indexValue, true);
                     if (!eraseResult)
-                        return AspRunResult_IndexOutOfRange;
+                        return AspRunResult_ValueOutOfRange;
 
                     break;
                 }
@@ -1627,7 +1598,6 @@ static AspRunResult Step(AspEngine *engine)
             engine->globalNamespace = AspValueEntry
                 (engine, AspDataGetModuleNamespaceIndex(module));
             engine->module = module;
-            AspUnref(engine, module);
 
             /* Save the return address. */
             uint32_t returnAddress = AspDataGetFrameReturnAddress(frame);
@@ -2375,7 +2345,7 @@ static AspRunResult Step(AspEngine *engine)
                         uint32_t count = AspDataGetSequenceCount(container);
                         if (indexValue >= count ||
                             indexValue < -(int32_t)count)
-                            return AspRunResult_IndexOutOfRange;
+                            return AspRunResult_ValueOutOfRange;
                     }
 
                     /* Create a single-character string fragment. */
@@ -2425,7 +2395,7 @@ static AspRunResult Step(AspEngine *engine)
                     if (indexResult.result != AspRunResult_OK)
                         return indexResult.result;
                     if (indexResult.value == 0)
-                        return AspRunResult_IndexOutOfRange;
+                        return AspRunResult_ValueOutOfRange;
 
                     /* Push the value or address as applicable. */
                     AspDataEntry *stackEntry = AspPush

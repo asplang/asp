@@ -8,6 +8,7 @@
 #include "asp-priv.h"
 #include "data.h"
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,21 +21,24 @@ typedef struct
 } AspSequenceResult;
 
 AspSequenceResult AspSequenceAppend
-    (AspEngine *, AspDataEntry *list, AspDataEntry *value);
+    (AspEngine *, AspDataEntry *sequence, AspDataEntry *value);
 AspSequenceResult AspSequenceInsertByIndex
-    (AspEngine *, AspDataEntry *list,
+    (AspEngine *, AspDataEntry *sequence,
      int index, AspDataEntry *value);
 AspSequenceResult AspSequenceInsert
-    (AspEngine *, AspDataEntry *list,
+    (AspEngine *, AspDataEntry *sequence,
      AspDataEntry *element, AspDataEntry *value);
 bool AspSequenceErase
-    (AspEngine *, AspDataEntry *list, int index, bool eraseValue);
+    (AspEngine *, AspDataEntry *sequence, int index, bool eraseValue);
 bool AspSequenceEraseElement
-    (AspEngine *, AspDataEntry *list, AspDataEntry *element, bool eraseValue);
+    (AspEngine *, AspDataEntry *sequence, AspDataEntry *element,
+     bool eraseValue);
 AspSequenceResult AspSequenceIndex
-    (AspEngine *, AspDataEntry *list, int index);
+    (AspEngine *, AspDataEntry *sequence, int index);
 AspSequenceResult AspSequenceNext
-    (AspEngine *, AspDataEntry *list, AspDataEntry *element);
+    (AspEngine *, AspDataEntry *sequence, AspDataEntry *element);
+AspRunResult AspStringAppendBuffer
+    (AspEngine *, AspDataEntry *str, const char *buffer, size_t bufferSize);
 
 #ifdef __cplusplus
 }

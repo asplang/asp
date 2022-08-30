@@ -32,7 +32,8 @@ int AspCompare
                 AspIntegerValue(leftEntry, &leftValue);
                 AspIntegerValue(rightEntry, &rightValue);
                 return
-                    leftValue == rightValue ? 0 :
+                    leftValue == rightValue ?
+                    leftType < rightType ? -1 : 1 :
                     leftValue < rightValue ? -1 : 1;
             }
             else
@@ -41,7 +42,8 @@ int AspCompare
                 AspFloatValue(leftEntry, &leftValue);
                 AspFloatValue(rightEntry, &rightValue);
                 return
-                    leftValue == rightValue ? 0 :
+                    leftValue == rightValue ?
+                    leftType < rightType ? -1 : 1 :
                     leftValue < rightValue ? -1 : 1;
             }
         }
@@ -83,7 +85,7 @@ int AspCompare
 
         case DataType_Float:
         {
-            int32_t
+            double
                 leftValue = AspDataGetFloat(leftEntry),
                 rightValue = AspDataGetFloat(rightEntry);
             return

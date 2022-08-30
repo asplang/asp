@@ -42,7 +42,7 @@ typedef enum
     AspRunResult_UnexpectedType = 0x0C,
     AspRunResult_NameNotFound = 0x10,
     AspRunResult_KeyNotFound = 0x11,
-    AspRunResult_IndexOutOfRange = 0x12,
+    AspRunResult_ValueOutOfRange = 0x12,
     AspRunResult_IteratorAtEnd = 0x13,
     AspRunResult_MalformedFunctionCall = 0x14,
     AspRunResult_UndefinedAppFunction = 0x15,
@@ -93,8 +93,9 @@ bool AspIsEllipsis(const AspDataEntry *);
 bool AspIsBoolean(const AspDataEntry *);
 bool AspIsInteger(const AspDataEntry *);
 bool AspIsFloat(const AspDataEntry *);
-bool AspIsNumeric(const AspDataEntry *);
+bool AspIsIntegral(const AspDataEntry *);
 bool AspIsNumber(const AspDataEntry *);
+bool AspIsNumeric(const AspDataEntry *);
 bool AspIsRange(const AspDataEntry *);
 bool AspIsString(const AspDataEntry *);
 bool AspIsTuple(const AspDataEntry *);
@@ -129,7 +130,9 @@ bool AspListAppend(AspEngine *, AspDataEntry *list, AspDataEntry *value);
 bool AspListInsert
     (AspEngine *, AspDataEntry *list,
      int index, AspDataEntry *value);
-bool AspStringAppend(AspEngine *, AspDataEntry *str, char);
+bool AspStringAppend
+    (AspEngine *, AspDataEntry *str,
+     const char *buffer, size_t bufferSize);
 bool AspSetInsert(AspEngine *, AspDataEntry *set, AspDataEntry *key);
 bool AspDictionaryInsert
     (AspEngine *, AspDataEntry *dictionary,

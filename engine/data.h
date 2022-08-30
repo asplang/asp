@@ -8,6 +8,7 @@
 #include "bits.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -297,6 +298,10 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     ((uint8_t)(offsetof(AspDataEntry, t) - offsetof(AspDataEntry, s)))
 #define AspDataSetStringFragment(eptr, value, count) \
     ((eptr)->c = (count), memcpy((eptr)->s, (value), (count)))
+#define AspDataSetStringFragmentData(eptr, index, value, count) \
+    (memcpy((eptr)->s + (index), (value), (count)))
+#define AspDataSetStringFragmentSize(eptr, count) \
+    ((eptr)->c = (count))
 #define AspDataGetStringFragmentSize(eptr) \
     ((eptr)->c)
 #define AspDataGetStringFragmentData(eptr) \

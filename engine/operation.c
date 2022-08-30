@@ -7,6 +7,7 @@
 #include "opcode.h"
 #include "data.h"
 #include "range.h"
+#include "sequence.h"
 #include <math.h>
 #include <stdint.h>
 
@@ -22,9 +23,9 @@ static AspOperationResult PerformArithmeticBinaryOperation
 static AspOperationResult PerformConcatenationBinaryOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
-static AspOperationResult PerformExpansionBinaryOperation
+static AspOperationResult PerformRepetitionBinaryOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     AspDataEntry *sequence, AspDataEntry *repeatCount);
 static AspOperationResult PerformEqualityOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
@@ -187,19 +188,40 @@ AspOperationResult AspPerformBinaryOperation
             /* Fall through... */
 
         case OpCode_MUL:
-            if (opCode == OpCode_MUL &&
-                (leftType == DataType_String ||
-                 leftType == DataType_Tuple ||
-                 leftType == DataType_List) &&
-                (rightType == DataType_Boolean ||
-                 rightType == DataType_Integer))
+        {
+            if (opCode == OpCode_MUL)
             {
-                result = PerformExpansionBinaryOperation
-                    (engine, opCode, left, right);
-                break;
+                bool isLeftSequence =
+                    leftType == DataType_String ||
+                    leftType == DataType_Tuple ||
+                    leftType == DataType_List;
+                bool isLeftInteger =
+                    leftType == DataType_Boolean ||
+                    leftType == DataType_Integer;
+                bool isRightSequence =
+                    rightType == DataType_String ||
+                    rightType == DataType_Tuple ||
+                    rightType == DataType_List;
+                bool isRightInteger =
+                    rightType == DataType_Boolean ||
+                    rightType == DataType_Integer;
+
+                if (isLeftSequence && isRightInteger)
+                {
+                    result = PerformRepetitionBinaryOperation
+                        (engine, opCode, left, right);
+                    break;
+                }
+                else if (isLeftInteger && isRightSequence)
+                {
+                    result = PerformRepetitionBinaryOperation
+                        (engine, opCode, right, left);
+                    break;
+                }
             }
 
             /* Fall through... */
+        }
 
         case OpCode_SUB:
         case OpCode_DIV:
@@ -358,6 +380,9 @@ static AspOperationResult PerformConcatenationBinaryOperation
     (AspEngine *engine, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right)
 {
+    uint8_t leftType = AspDataGetType(left);
+    uint8_t rightType = AspDataGetType(right);
+
     AspOperationResult result = {AspRunResult_OK, 0};
 
     switch (opCode)
@@ -367,19 +392,73 @@ static AspOperationResult PerformConcatenationBinaryOperation
             break;
 
         case OpCode_ADD:
-            /* TODO: Concatenate two sequences (or strings). */
-            result.result = AspRunResult_NotImplemented;
+        {
+            if (leftType != rightType)
+            {
+                result.result = AspRunResult_UnexpectedType;
+                break;
+            }
+            result.value = AspAllocEntry(engine, leftType);
+            if (result.value == 0)
+                break;
+
+            AspSequenceResult appendResult = {AspRunResult_OK, 0, 0};
+            AspDataEntry *operands[] = {left, right};
+            for (unsigned i = 0; i < sizeof operands / sizeof *operands; i++)
+            {
+                AspSequenceResult nextResult = AspSequenceNext
+                    (engine, operands[i], 0);
+                for (; nextResult.element != 0;
+                     nextResult = AspSequenceNext
+                        (engine, operands[i], nextResult.element))
+                {
+                    AspDataEntry *value = nextResult.value;
+
+                    if (leftType == DataType_String)
+                        appendResult.result = AspStringAppendBuffer
+                            (engine, result.value,
+                             AspDataGetStringFragmentData(value),
+                             AspDataGetStringFragmentSize(value));
+                    else
+                        appendResult = AspSequenceAppend
+                            (engine, result.value, value);
+                    if (appendResult.result != AspRunResult_OK)
+                    {
+                        result.result = appendResult.result;
+                        break;
+                    }
+                }
+            }
+
             break;
+        }
     }
 
+    if (result.result == AspRunResult_OK && result.value == 0)
+        result.result = AspRunResult_OutOfDataMemory;
     return result;
 }
 
-static AspOperationResult PerformExpansionBinaryOperation
+static AspOperationResult PerformRepetitionBinaryOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     AspDataEntry *sequence, AspDataEntry *repeatCount)
 {
+    uint8_t sequenceType = AspDataGetType(sequence);
+    uint8_t repeatCountType = AspDataGetType(repeatCount);
+
     AspOperationResult result = {AspRunResult_OK, 0};
+
+    AspAssert
+        (engine,
+         sequenceType == DataType_String ||
+         sequenceType == DataType_Tuple ||
+         sequenceType == DataType_List);
+    result.result = AspAssert
+        (engine,
+         repeatCountType == DataType_Boolean ||
+         repeatCountType == DataType_Integer);
+    if (result.result != AspRunResult_OK)
+        return result;
 
     switch (opCode)
     {
@@ -388,12 +467,51 @@ static AspOperationResult PerformExpansionBinaryOperation
             break;
 
         case OpCode_MUL:
-            /* TODO: Expand the left sequence (or string) a number of times
-               indicated by the right operand. */
-            result.result = AspRunResult_NotImplemented;
+        {
+            result.value = AspAllocEntry(engine, sequenceType);
+            if (result.value == 0)
+                break;
+
+            int32_t repeatCountValue = AspDataGetInteger(repeatCount);
+            if (repeatCountValue < 0)
+            {
+                result.result = AspRunResult_ValueOutOfRange;
+                break;
+            }
+
+            AspSequenceResult appendResult = {AspRunResult_OK, 0, 0};
+            for (int32_t i = 0; i < repeatCountValue; i++)
+            {
+                AspSequenceResult nextResult = AspSequenceNext
+                    (engine, sequence, 0);
+                for (; nextResult.element != 0;
+                     nextResult = AspSequenceNext
+                        (engine, sequence, nextResult.element))
+                {
+                    AspDataEntry *value = nextResult.value;
+
+                    if (sequenceType == DataType_String)
+                        appendResult.result = AspStringAppendBuffer
+                            (engine, result.value,
+                             AspDataGetStringFragmentData(value),
+                             AspDataGetStringFragmentSize(value));
+                    else
+                        appendResult = AspSequenceAppend
+                            (engine, result.value, value);
+                    if (appendResult.result != AspRunResult_OK)
+                    {
+                        result.result = appendResult.result;
+                        break;
+                    }
+                }
+            }
+
             break;
+        }
     }
 
+    if (result.result == AspRunResult_OK && result.value == 0)
+        result.result = AspRunResult_OutOfDataMemory;
     return result;
 }
 
