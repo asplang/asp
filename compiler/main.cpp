@@ -60,7 +60,7 @@ static int main1(int argc, char **argv)
         return 1;
     }
     string specFileName, mainModuleFileName;
-    size_t specSuffixIndex, mainModuleSuffixIndex;
+    size_t mainModuleSuffixIndex;
     struct InputSpec
     {
         string suffix;
@@ -69,7 +69,7 @@ static int main1(int argc, char **argv)
     };
     struct InputSpec inputs[] =
     {
-        {".aspec", &specFileName, &specSuffixIndex},
+        {".aspec", &specFileName, 0},
         {".asp", &mainModuleFileName, &mainModuleSuffixIndex},
     };
     for (int argi = 1; argi < argc; argi++)
@@ -81,15 +81,18 @@ static int main1(int argc, char **argv)
 
             if (fileName.size() <= input.suffix.size())
                 continue;
-            *input.suffixIndex = fileName.size() - input.suffix.size();
-            if (fileName.substr(*input.suffixIndex) == input.suffix)
+            auto suffixIndex = fileName.size() - input.suffix.size();
+            if (fileName.substr(suffixIndex) == input.suffix)
             {
                 if (!input.fileName->empty())
                 {
                     Usage();
                     return 1;
                 }
+
                 *input.fileName = fileName;
+                if (input.suffixIndex != 0)
+                    *input.suffixIndex = suffixIndex;
             }
         }
     }
