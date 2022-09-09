@@ -44,3 +44,7 @@ target_include_directories(aspg PRIVATE
     "${PROJECT_SOURCE_DIR}"
     ../compiler
     )
+
+install(TARGETS aspg
+    DESTINATION bin
+    )

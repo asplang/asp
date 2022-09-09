@@ -34,3 +34,7 @@ target_include_directories(aspe PUBLIC
     "${CMAKE_CURRENT_BINARY_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}"
     )
+
+install(TARGETS aspe
+    DESTINATION lib
+    )

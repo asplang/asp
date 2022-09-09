@@ -46,3 +46,7 @@ target_include_directories(aspc PRIVATE
     "${PROJECT_SOURCE_DIR}"
     ../engine
     )
+
+install(TARGETS aspc
+    DESTINATION bin
+    )
