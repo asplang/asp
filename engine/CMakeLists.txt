@@ -38,3 +38,9 @@ target_include_directories(aspe PUBLIC
 install(TARGETS aspe
     DESTINATION lib
     )
+
+install(FILES
+    asp.h
+    asp-priv.h
+    DESTINATION include
+    )
