@@ -7,9 +7,7 @@ option(BUILD_FOR_TARGET
     "Enable/disable building for the script engine target environment"
     TRUE)
 
-if (BUILD_FOR_TARGET)
-    add_subdirectory(engine)
-endif()
+add_subdirectory(engine)
 
 if (BUILD_FOR_HOST)
     add_subdirectory(lemon)
