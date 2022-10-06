@@ -73,9 +73,9 @@ typedef enum OpCode
     OpCode_LD1 = 0x81, /* load variable's value with 1-byte symbol */
     OpCode_LD2 = 0x82, /* load variable's value with 2-byte symbol */
     OpCode_LD4 = 0x83, /* load variable's value with 4-byte symbol */
-    OpCode_LDA1 = 0x85, /* load variable's "address" with 1-byte symbol */
-    OpCode_LDA2 = 0x86, /* load variable's "address" with 2-byte symbol */
-    OpCode_LDA4 = 0x87, /* load variable's "address" with 4-byte symbol */
+    OpCode_LDA1 = 0x85, /* load variable's address with 1-byte symbol */
+    OpCode_LDA2 = 0x86, /* load variable's address with 2-byte symbol */
+    OpCode_LDA4 = 0x87, /* load variable's address with 4-byte symbol */
 
     /* Assignment and deletion operations. */
     OpCode_SET = 0x88, /* assign variable (no pop) */

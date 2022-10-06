@@ -279,7 +279,7 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 #define AspDataGetFrameLocalNamespaceIndex(eptr) \
     (AspDataGetWord2((eptr)))
 
-/* Element entry field access. */
+/* Common element entry field access. */
 #define AspDataSetElementPreviousIndex(eptr, value) \
     (AspDataSetWord0((eptr), (value)))
 #define AspDataGetElementPreviousIndex(eptr) \
@@ -416,6 +416,7 @@ void AspClearData(AspEngine *);
 uint32_t AspAlloc(AspEngine *);
 bool AspFree(AspEngine *, uint32_t index);
 bool AspIsObject(const AspDataEntry *);
+bool AspIsImmutableObject(const AspDataEntry *);
 AspDataEntry *AspAllocEntry(AspEngine *, DataType);
 AspDataEntry *AspEntry(AspEngine *, uint32_t index);
 AspDataEntry *AspValueEntry(AspEngine *, uint32_t index);

@@ -4,14 +4,14 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(aspe VERSION 0.1)
+project(aspe VERSION 0.1 LANGUAGES C)
 
 if (BUILD_FOR_TARGET)
 
     set(CMAKE_C_STANDARD 99)
     set(CMAKE_C_STANDARD_REQUIRED True)
 
-    add_library(aspe SHARED
+    add_library(aspe
         engine.c
         step.c
         bits.c
@@ -22,6 +22,7 @@ if (BUILD_FOR_TARGET)
         stack.c
         sequence.c
         tree.c
+        assign.c
         compare.c
         operation.c
         function.c

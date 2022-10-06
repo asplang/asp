@@ -69,6 +69,7 @@ AspAddCodeResult AspAddCode
                 {
                     engine->state = AspEngineState_LoadError;
                     engine->loadResult = AspAddCodeResult_InvalidFormat;
+                    return engine->loadResult;
                 }
 
                 /* Check the application specification check value. */
@@ -83,10 +84,8 @@ AspAddCodeResult AspAddCode
                 {
                     engine->state = AspEngineState_LoadError;
                     engine->loadResult = AspAddCodeResult_InvalidCheckValue;
-                }
-
-                if (engine->loadResult != AspAddCodeResult_OK)
                     return engine->loadResult;
+                }
 
                 engine->state = AspEngineState_LoadingCode;
                 break;

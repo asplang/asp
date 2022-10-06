@@ -97,6 +97,17 @@ bool AspIsObject(const AspDataEntry *entry)
     return (AspDataGetType(entry) & ~DataType_ObjectMask) == 0;
 }
 
+bool AspIsImmutableObject(const AspDataEntry *entry)
+{
+    uint8_t type = AspDataGetType(entry);
+    return
+        AspIsObject(entry) &&
+        type != DataType_List &&
+        type != DataType_Set &&
+        type != DataType_Dictionary &&
+        type != DataType_Iterator;
+}
+
 AspDataEntry *AspAllocEntry(AspEngine *engine, DataType type)
 {
     /* Return the None singleton if the None type is requested. */

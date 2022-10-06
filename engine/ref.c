@@ -21,7 +21,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
 {
     AspDataEntry *startStackTop = engine->stackTop;
 
-    /* Avoid recursion by using Asp's stack. */
+    /* Avoid recursion by using the engine's stack. */
     while (true)
     {
         if (AspIsObject(entry))
@@ -62,13 +62,12 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     AspSequenceEraseElement
                         (engine, entry, nextResult.element, eraseValue);
 
-                    if (!eraseValue)
-                    {
-                        if (IsTerminal(nextResult.value))
-                            AspUnref(engine, nextResult.value);
-                        else
-                            AspPushNoUse(engine, nextResult.value);
-                    }
+                    /* Make sure not to free addresses (i.e., namespace nodes,
+                       dictionary nodes, and sequence elements) within address
+                       tuples. */
+                    if (!eraseValue &&
+                        (t != DataType_Tuple || AspIsObject(nextResult.value)))
+                        AspPushNoUse(engine, nextResult.value);
                 }
             }
             else if (t == DataType_Set || t == DataType_Dictionary ||
@@ -86,22 +85,12 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                          eraseKey, eraseValue);
 
                     if (nextResult.key != 0 && !eraseKey)
-                    {
-                        if (IsTerminal(nextResult.key))
-                            AspUnref(engine, nextResult.key);
-                        else
-                            AspPushNoUse(engine, nextResult.key);
-                    }
+                        AspPushNoUse(engine, nextResult.key);
                     if (nextResult.value != 0 && !eraseValue)
                     {
-                        if (IsTerminal(nextResult.value))
-                            AspUnref(engine, nextResult.value);
-                        else
-                        {
-                            AspDataEntry *entry = AspPushNoUse
-                                (engine, nextResult.value);
-                            AspAssert(engine, entry != 0);
-                        }
+                        AspDataEntry *entry = AspPushNoUse
+                            (engine, nextResult.value);
+                        AspAssert(engine, entry != 0);
                     }
                 }
             }

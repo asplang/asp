@@ -153,11 +153,15 @@ int AspCompare
 
         case DataType_Function:
         {
-            int32_t leftValue = AspDataGetFunctionSymbol(leftEntry);
-            int32_t rightValue = AspDataGetFunctionSymbol(rightEntry);
+            uint32_t leftModule = AspDataGetFunctionModuleIndex(leftEntry);
+            uint32_t rightModule = AspDataGetFunctionModuleIndex(rightEntry);
+            int32_t leftSymbol = AspDataGetFunctionSymbol(leftEntry);
+            int32_t rightSymbol = AspDataGetFunctionSymbol(rightEntry);
             return
-                leftValue == rightValue ? 0 :
-                leftValue < rightValue ? -1 : 1;
+                leftModule == rightModule ?
+                leftSymbol == rightSymbol ? 0 :
+                leftSymbol < rightSymbol ? -1 : 1 :
+                leftModule < rightModule ? -1 : 1;
         }
 
         case DataType_Module:

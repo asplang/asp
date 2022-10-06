@@ -5,7 +5,11 @@
 #include "sequence.h"
 #include "data.h"
 
+static AspSequenceResult AspSequenceInsert
+    (AspEngine *, AspDataEntry *sequence,
+     AspDataEntry *element, AspDataEntry *value);
 static bool IsSequenceType(DataType);
+static bool IsElementType(DataType);
 
 AspSequenceResult AspSequenceAppend
     (AspEngine *engine, AspDataEntry *sequence, AspDataEntry *value)
@@ -77,7 +81,7 @@ AspSequenceResult AspSequenceInsertByIndex
     return AspSequenceInsert(engine, sequence, result.element, value);
 }
 
-AspSequenceResult AspSequenceInsert
+static AspSequenceResult AspSequenceInsert
     (AspEngine *engine, AspDataEntry *sequence,
      AspDataEntry *element, AspDataEntry *value)
 {
@@ -86,7 +90,7 @@ AspSequenceResult AspSequenceInsert
     AspAssert
         (engine, sequence != 0 && IsSequenceType(AspDataGetType(sequence)));
     AspAssert
-        (engine, element != 0 && AspDataGetType(element) == DataType_Element);
+        (engine, element != 0 && IsElementType(AspDataGetType(element)));
     result.result = AspAssert(engine, value != 0);
     if (result.result != AspRunResult_OK)
         return result;
@@ -224,7 +228,7 @@ AspSequenceResult AspSequenceNext
     AspAssert
         (engine, sequence != 0 && IsSequenceType(AspDataGetType(sequence)));
     result.result = AspAssert
-        (engine, element == 0 || AspDataGetType(element) == DataType_Element);
+        (engine, element == 0 || IsElementType(AspDataGetType(element)));
     if (result.result != AspRunResult_OK)
         return result;
 
@@ -320,4 +324,10 @@ static bool IsSequenceType(DataType type)
         type == DataType_List ||
         type == DataType_ParameterList ||
         type == DataType_ArgumentList;
+}
+
+static bool IsElementType(DataType type)
+{
+    return
+        type == DataType_Element;
 }

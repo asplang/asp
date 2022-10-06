@@ -52,6 +52,12 @@ AspTreeResult AspTreeInsert
     if (result.result != AspRunResult_OK)
         return result;
 
+    if (!AspIsImmutableObject(key))
+    {
+        result.result = AspRunResult_UnexpectedType;
+        return result;
+    }
+
     /* Allocate a node entry and link it to the given key. */
     result.node = AspAllocEntry
         (engine,
@@ -240,6 +246,12 @@ AspTreeResult AspTreeFind
     result.result = AspAssert(engine, key != 0 && AspIsObject(key));
     if (result.result != AspRunResult_OK)
         return result;
+
+    if (!AspIsImmutableObject(key))
+    {
+        result.result = AspRunResult_UnexpectedType;
+        return result;
+    }
 
     AspDataEntry *keyNode = AspAllocEntry
         (engine,

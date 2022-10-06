@@ -25,9 +25,6 @@ AspSequenceResult AspSequenceAppend
 AspSequenceResult AspSequenceInsertByIndex
     (AspEngine *, AspDataEntry *sequence,
      int index, AspDataEntry *value);
-AspSequenceResult AspSequenceInsert
-    (AspEngine *, AspDataEntry *sequence,
-     AspDataEntry *element, AspDataEntry *value);
 bool AspSequenceErase
     (AspEngine *, AspDataEntry *sequence, int index, bool eraseValue);
 bool AspSequenceEraseElement

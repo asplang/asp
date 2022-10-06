@@ -10,6 +10,7 @@
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
+#include "assign.h"
 #include "function.h"
 #include "operation.h"
 #include <string.h>
@@ -738,39 +739,13 @@ static AspRunResult Step(AspEngine *engine)
             if (newValue == 0)
                 return AspRunResult_StackUnderflow;
             uint32_t newValueIndex = AspIndex(engine, newValue);
-            switch (AspDataGetType(address))
-            {
-                default:
-                    return AspRunResult_UnexpectedType;
 
-                case DataType_Tuple:
-                    /* TODO: Implement tuple of addresses. */
-                    return AspRunResult_NotImplemented;
-
-                case DataType_Element:
-                {
-                    AspDataEntry *oldValueEntry = AspValueEntry
-                        (engine, AspDataGetElementValueIndex(address));
-                    AspUnref(engine, oldValueEntry);
-                    AspDataSetElementValueIndex(address, newValueIndex);
-                    break;
-                }
-
-                case DataType_DictionaryNode:
-                case DataType_NamespaceNode:
-                {
-                    AspDataEntry *oldValueEntry = AspValueEntry
-                        (engine, AspDataGetTreeNodeValueIndex(address));
-                    AspUnref(engine, oldValueEntry);
-                    AspDataSetTreeNodeValueIndex(address, newValueIndex);
-                    break;
-                }
-            }
-
-            AspRef(engine, newValue);
-
-            if (AspIsObject(address))
-                AspUnref(engine, address);
+            AspRunResult assignResult =
+                AspDataGetType(address) == DataType_Tuple ?
+                AspAssignTuple(engine, address, newValue) :
+                AspAssignSimple(engine, address, newValue);
+            if (assignResult != AspRunResult_OK)
+                return assignResult;
 
             if (opCode == OpCode_SETP)
                 AspPop(engine);
@@ -2179,6 +2154,7 @@ static AspRunResult Step(AspEngine *engine)
                     if (opCode != OpCode_BLD)
                         return AspRunResult_UnexpectedType;
                     if (!AspIsObject(item) &&
+                        itemType != DataType_DictionaryNode &&
                         itemType != DataType_NamespaceNode &&
                         itemType != DataType_Element)
                         return AspRunResult_UnexpectedType;
@@ -2215,7 +2191,7 @@ static AspRunResult Step(AspEngine *engine)
                         return AspRunResult_UnexpectedType;
                     key = AspValueEntry
                         (engine, AspDataGetKeyValuePairKeyIndex(item));
-                    if (!AspIsObject(key))
+                    if (!AspIsImmutableObject(key))
                         return AspRunResult_UnexpectedType;
                     value = AspValueEntry
                         (engine, AspDataGetKeyValuePairValueIndex(item));
@@ -2305,7 +2281,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_IDXA:
         {
             #ifdef ASP_DEBUG
-            puts("IDX");
+            puts(opCode == OpCode_IDXA ? "IDXA" : "IDX");
             #endif
 
             /* Access the index/key on top of the stack. */
@@ -2470,12 +2446,14 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("MEM");
-            if (opCode == OpCode_MEMA1 ||
-                opCode == OpCode_MEMA2 ||
-                opCode == OpCode_MEMA4)
-                putchar('A');
-            putchar(' ');
+            {
+                bool isAddressInstruction =
+                    opCode == OpCode_MEMA1 ||
+                    opCode == OpCode_MEMA2 ||
+                    opCode == OpCode_MEMA4;
+                printf(isAddressInstruction ? "MEMA" : "MEM");
+                putchar(' ');
+            }
             #endif
 
             /* Fetch the member variables's symbol from the operand. */
