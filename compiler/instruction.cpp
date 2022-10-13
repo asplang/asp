@@ -194,8 +194,6 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_LNOT, "LNOT"},
         {OpCode_NEG, "NEG"},
         {OpCode_NOT, "NOT"},
-        {OpCode_LOR, "LOR"},
-        {OpCode_LAND, "LAND"},
         {OpCode_OR, "OR"},
         {OpCode_XOR, "XOR"},
         {OpCode_AND, "AND"},
@@ -218,7 +216,6 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_IN, "IN"},
         {OpCode_NIS, "NIS"},
         {OpCode_IS, "IS"},
-        {OpCode_COND, "COND"},
         {OpCode_SET, "SET"},
         {OpCode_SETP, "SETP"},
         {OpCode_ERASE, "ERASE"},
@@ -227,6 +224,11 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_NITER, "NITER"},
         {OpCode_DITER, "DITER"},
         {OpCode_NOOP, "NOOP"},
+        {OpCode_JMPF, "JMPF"},
+        {OpCode_JMPT, "JMPT"},
+        {OpCode_JMP, "JMP"},
+        {OpCode_LOR, "LOR"},
+        {OpCode_LAND, "LAND"},
         {OpCode_CALL, "CALL"},
         {OpCode_RET, "RET"},
         {OpCode_XMOD, "XMOD"},
@@ -436,9 +438,10 @@ BinaryInstruction::BinaryInstruction
 {
 }
 
-TernaryInstruction::TernaryInstruction
-    (uint8_t opCode, const string &comment) :
-    SimpleInstruction(opCode, comment)
+LogicalInstruction::LogicalInstruction
+    (uint8_t opCode, const Executable::Location &location,
+     const string &comment) :
+    SimpleInstruction(opCode, location, comment)
 {
 }
 
@@ -571,27 +574,17 @@ DereferenceIteratorInstruction::DereferenceIteratorInstruction
 ConditionalJumpInstruction::ConditionalJumpInstruction
     (bool condition, const Executable::Location &targetLocation,
      const string &comment) :
-    Instruction
+    SimpleInstruction
         (condition ? OpCode_JMPT : OpCode_JMPF,
          targetLocation, comment)
 {
 }
 
-void ConditionalJumpInstruction::PrintCode(ostream &os) const
-{
-    os << "JMP" << (OpCode() == OpCode_JMPT ? 'T' : 'F');
-}
-
 JumpInstruction::JumpInstruction
     (const Executable::Location &targetLocation,
      const string &comment) :
-    Instruction(OpCode_JMP, targetLocation, comment)
+    SimpleInstruction(OpCode_JMP, targetLocation, comment)
 {
-}
-
-void JumpInstruction::PrintCode(ostream &os) const
-{
-    os << "JMP";
 }
 
 CallInstruction::CallInstruction(const string &comment) :

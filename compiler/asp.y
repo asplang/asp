@@ -521,7 +521,7 @@ expression1(result) ::=
     expression1(conditionExpression) ELSE expression1(falseExpression).
 {
     result = ACTION
-        (MakeTernaryExpression, operatorToken,
+        (MakeConditionalExpression, operatorToken,
          conditionExpression, trueExpression, falseExpression);
 }
 
@@ -535,7 +535,7 @@ expression1(result) ::=
     expression1(rightExpression).
 {
     result = ACTION
-        (MakeBinaryExpression, operatorToken,
+        (MakeShortCircuitLogicalExpression, operatorToken,
          leftExpression, rightExpression);
 }
 
@@ -544,7 +544,7 @@ expression1(result) ::=
     expression1(rightExpression).
 {
     result = ACTION
-        (MakeBinaryExpression, operatorToken,
+        (MakeShortCircuitLogicalExpression, operatorToken,
          leftExpression, rightExpression);
 }
 

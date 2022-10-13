@@ -483,14 +483,107 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
-    (MakeTernaryExpression, Expression *,
+    (MakeConditionalExpression, Expression *,
      Token *, operatorToken, Expression *, conditionExpression,
      Expression *, trueExpression, Expression *, falseExpression)
 {
-    // TODO: Fold constant expressions. See unary expression logic.
-    auto result = new TernaryExpression
-        (*operatorToken, conditionExpression,
-         trueExpression, falseExpression);
+    // Attempt to fold constant expression if applicable.
+    // Note that not all valid constant expressions may folded (i.e. leaving
+    // the operation to run-time). In such cases, the folding routine returns
+    // a null pointer.
+    Expression *result = 0;
+    auto *conditionConstantExpression = dynamic_cast<ConstantExpression *>
+        (conditionExpression);
+    auto *trueConstantExpression = dynamic_cast<ConstantExpression *>
+        (trueExpression);
+    auto *falseConstantExpression = dynamic_cast<ConstantExpression *>
+        (falseExpression);
+    if (conditionConstantExpression &&
+        trueConstantExpression && falseConstantExpression)
+    {
+        try
+        {
+            result = conditionConstantExpression->FoldTernary
+                (operatorToken->type,
+                 trueConstantExpression, falseConstantExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+        if (result)
+        {
+            (SourceElement &)*result = *operatorToken;
+            if (conditionExpression != result)
+                delete conditionExpression;
+            if (trueExpression != result)
+                delete trueExpression;
+            if (falseExpression != result)
+                delete falseExpression;
+        }
+    }
+
+    if (result == 0)
+        result = new ConditionalExpression
+            (*operatorToken, conditionExpression,
+             trueExpression, falseExpression);
+
+    delete operatorToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeShortCircuitLogicalExpression, Expression *,
+     Token *, operatorToken,
+     Expression *, leftExpression, Expression *, rightExpression)
+{
+    // Attempt to fold constant expression if applicable.
+    // Note that not all valid constant expressions may folded (i.e. leaving
+    // the operation to run-time). In such cases, the folding routine returns
+    // a null pointer.
+    Expression *result = 0;
+    auto *leftConstantExpression = dynamic_cast<ConstantExpression *>
+        (leftExpression);
+    auto *rightConstantExpression = dynamic_cast<ConstantExpression *>
+        (rightExpression);
+    if (leftConstantExpression && rightConstantExpression)
+    {
+        try
+        {
+            result = leftConstantExpression->FoldBinary
+                (operatorToken->type, rightConstantExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+        if (result)
+        {
+            (SourceElement &)*result = *operatorToken;
+            if (leftExpression != result)
+                delete leftExpression;
+            if (rightExpression != result)
+                delete rightExpression;
+        }
+    }
+
+    if (result == 0)
+    {
+        auto castLeftExpression = dynamic_cast<ShortCircuitLogicalExpression *>
+            (leftExpression);
+        if (castLeftExpression != 0 &&
+            castLeftExpression->OperatorTokenType() == operatorToken->type)
+        {
+            castLeftExpression->Add(rightExpression);
+            result = leftExpression;
+        }
+        else
+        {
+            result = new ShortCircuitLogicalExpression
+                (*operatorToken, leftExpression, rightExpression);
+        }
+    }
+
     delete operatorToken;
     return result;
 }
@@ -500,9 +593,40 @@ DEFINE_ACTION
      Token *, operatorToken,
      Expression *, leftExpression, Expression *, rightExpression)
 {
-    // TODO: Fold constant expressions. See unary expression logic.
-    auto result = new BinaryExpression
-        (*operatorToken, leftExpression, rightExpression);
+    // Attempt to fold constant expression if applicable.
+    // Note that not all valid constant expressions may folded (i.e. leaving
+    // the operation to run-time). In such cases, the folding routine returns
+    // a null pointer.
+    Expression *result = 0;
+    auto *leftConstantExpression = dynamic_cast<ConstantExpression *>
+        (leftExpression);
+    auto *rightConstantExpression = dynamic_cast<ConstantExpression *>
+        (rightExpression);
+    if (leftConstantExpression && rightConstantExpression)
+    {
+        try
+        {
+            result = leftConstantExpression->FoldBinary
+                (operatorToken->type, rightConstantExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+        if (result)
+        {
+            (SourceElement &)*result = *operatorToken;
+            if (leftExpression != result)
+                delete leftExpression;
+            if (rightExpression != result)
+                delete rightExpression;
+        }
+    }
+
+    if (result == 0)
+        result = new BinaryExpression
+            (*operatorToken, leftExpression, rightExpression);
+
     delete operatorToken;
     return result;
 }
@@ -511,12 +635,11 @@ DEFINE_ACTION
     (MakeUnaryExpression, Expression *,
      Token *, operatorToken, Expression *, expression)
 {
-    Expression *result = 0;
-
     // Attempt to fold constant expression if applicable.
     // Note that not all valid constant expressions may folded (i.e. leaving
     // the operation to run-time). In such cases, the folding routine returns
     // a null pointer.
+    Expression *result = 0;
     auto *constantExpression = dynamic_cast<ConstantExpression *>(expression);
     if (constantExpression)
     {
@@ -529,8 +652,11 @@ DEFINE_ACTION
             ReportError(error);
         }
         if (result)
+        {
             (SourceElement &)*result = *operatorToken;
-        delete expression;
+            if (expression != result)
+                delete expression;
+        }
     }
 
     if (result == 0)

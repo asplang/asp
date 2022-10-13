@@ -620,7 +620,7 @@ void DefStatement::Emit(Executable &executable) const
     executable.Insert(new SetInstruction(true));
 }
 
-void TernaryExpression::Emit
+void ConditionalExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
@@ -628,16 +628,68 @@ void TernaryExpression::Emit
     else if (emitType == EmitType::Delete)
         throw string("Cannot delete value expression");
 
-    falseExpression->Emit(executable);
-    trueExpression->Emit(executable);
     conditionExpression->Emit(executable);
-    uint8_t opCode = OpCode_COND;
+
+    auto falseLocation = executable.Insert(new NullInstruction);
+    auto endLocation = executable.Insert(new NullInstruction);
+
+    executable.PushLocation(falseLocation);
+    executable.Insert(new ConditionalJumpInstruction
+        (false, falseLocation, "Jump if false to false expression"));
+    trueExpression->Emit(executable);
+    executable.Insert(new JumpInstruction(endLocation, "Jump to end"));
+    executable.PopLocation();
+
+    executable.PushLocation(endLocation);
+    falseExpression->Emit(executable);
+    executable.PopLocation();
+}
+
+void ShortCircuitLogicalExpression::Emit
+    (Executable &executable, EmitType emitType) const
+{
+    if (emitType == EmitType::Address)
+        throw string("Cannot take address of value expression");
+    else if (emitType == EmitType::Delete)
+        throw string("Cannot delete value expression");
+
+    auto expressionIter = expressions.begin();
+    auto leftExpression = *expressionIter;
+    leftExpression->Emit(executable);
+    expressionIter++;
+
+    auto endLocation = executable.Insert(new NullInstruction);
+
+    static map<int, uint8_t> opCodes =
+    {
+        {TOKEN_OR, OpCode_LOR},
+        {TOKEN_AND, OpCode_LAND},
+    };
+    auto iter = opCodes.find(operatorTokenType);
+    if (iter == opCodes.end())
+    {
+        ostringstream oss;
+        oss
+            << "Internal error: Cannot find op code for binary operator "
+            << operatorTokenType;
+        throw oss.str();
+    }
     ostringstream oss;
     oss
-        << "Perform ternary operation 0x"
+        << "Perform short-circuit logical operation 0x"
         << hex << setfill('0') << setw(2)
-        << static_cast<unsigned>(opCode);
-    executable.Insert(new TernaryInstruction(opCode, oss.str()));
+        << static_cast<unsigned>(iter->second);
+
+    executable.PushLocation(endLocation);
+    for (; expressionIter != expressions.end(); expressionIter++)
+    {
+        auto expression = *expressionIter;
+
+        executable.Insert(new LogicalInstruction
+            (iter->second, endLocation, oss.str()));
+        expression->Emit(executable);
+    }
+    executable.PopLocation();
 }
 
 void BinaryExpression::Emit
@@ -648,12 +700,10 @@ void BinaryExpression::Emit
     else if (emitType == EmitType::Delete)
         throw string("Cannot delete value expression");
 
-    rightExpression->Emit(executable);
     leftExpression->Emit(executable);
+    rightExpression->Emit(executable);
     static map<int, uint8_t> opCodes =
     {
-        {TOKEN_OR, OpCode_LOR},
-        {TOKEN_AND, OpCode_LAND},
         {TOKEN_BAR, OpCode_OR},
         {TOKEN_CARET, OpCode_XOR},
         {TOKEN_AMPERSAND, OpCode_AND},

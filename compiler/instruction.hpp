@@ -267,12 +267,13 @@ class BinaryInstruction : public SimpleInstruction
             (std::uint8_t opCode, const std::string &comment = "");
 };
 
-class TernaryInstruction : public SimpleInstruction
+class LogicalInstruction : public SimpleInstruction
 {
     public:
 
-        TernaryInstruction
-            (std::uint8_t opCode, const std::string &comment = "");
+        LogicalInstruction
+            (std::uint8_t opCode, const Executable::Location &,
+             const std::string &comment = "");
 };
 
 class LoadInstruction : public Instruction
@@ -381,31 +382,23 @@ class DereferenceIteratorInstruction : public SimpleInstruction
             (const std::string &comment = "");
 };
 
-class ConditionalJumpInstruction : public Instruction
+class ConditionalJumpInstruction : public SimpleInstruction
 {
     public:
 
         explicit ConditionalJumpInstruction
             (bool condition, const Executable::Location &,
              const std::string &comment = "");
-
-    protected:
-
-        virtual void PrintCode(std::ostream &) const;
 };
 
 
-class JumpInstruction : public Instruction
+class JumpInstruction : public SimpleInstruction
 {
     public:
 
         explicit JumpInstruction
             (const Executable::Location &,
              const std::string &comment = "");
-
-    protected:
-
-        virtual void PrintCode(std::ostream &) const;
 };
 
 class CallInstruction : public SimpleInstruction

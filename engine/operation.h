@@ -22,10 +22,6 @@ AspOperationResult AspPerformUnaryOperation
 AspOperationResult AspPerformBinaryOperation
     (AspEngine *engine, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
-AspOperationResult AspPerformTernaryOperation
-    (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *condition,
-     AspDataEntry *falseValue, AspDataEntry *trueValue);
 
 #ifdef __cplusplus
 }

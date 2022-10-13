@@ -161,8 +161,11 @@ class Compiler
 
     /* Expressions. */
     DECLARE_METHOD
-        (MakeTernaryExpression, Expression *,
+        (MakeConditionalExpression, Expression *,
          Token *, Expression *, Expression *, Expression *);
+    DECLARE_METHOD
+        (MakeShortCircuitLogicalExpression, Expression *,
+         Token *, Expression *, Expression *);
     DECLARE_METHOD
         (MakeBinaryExpression, Expression *,
          Token *, Expression *, Expression *);

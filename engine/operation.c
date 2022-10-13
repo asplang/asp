@@ -11,9 +11,6 @@
 #include <math.h>
 #include <stdint.h>
 
-static AspOperationResult PerformLogicalBinaryOperation
-    (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
 static AspOperationResult PerformBitwiseBinaryOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
@@ -157,12 +154,6 @@ AspOperationResult AspPerformBinaryOperation
             result.result = AspRunResult_InvalidInstruction;
             break;
 
-        case OpCode_LOR:
-        case OpCode_LAND:
-            result = PerformLogicalBinaryOperation
-                (engine, opCode, left, right);
-            break;
-
         case OpCode_OR:
         case OpCode_XOR:
         case OpCode_AND:
@@ -238,6 +229,8 @@ AspOperationResult AspPerformBinaryOperation
                 result = PerformArithmeticBinaryOperation
                     (engine, opCode, left, right);
             }
+            else
+                result.result = AspRunResult_UnexpectedType;
 
             break;
 
@@ -269,6 +262,8 @@ AspOperationResult AspPerformBinaryOperation
                 result = PerformSequenceComparisonOperation
                     (engine, opCode, left, right);
             }
+            else
+                result.result = AspRunResult_UnexpectedType;
 
             break;
 
@@ -290,32 +285,6 @@ AspOperationResult AspPerformBinaryOperation
     return result;
 }
 
-static AspOperationResult PerformLogicalBinaryOperation
-    (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
-{
-    AspOperationResult result = {AspRunResult_OK, 0};
-
-    switch (opCode)
-    {
-        default:
-            result.result = AspRunResult_InvalidInstruction;
-            break;
-
-        case OpCode_LOR:
-            result.value = AspIsTrue(engine, left) ? left : right;
-            AspRef(engine, result.value);
-            break;
-
-        case OpCode_LAND:
-            result.value = !AspIsTrue(engine, left) ? left : right;
-            AspRef(engine, result.value);
-            break;
-    }
-
-    return result;
-}
-
 static AspOperationResult PerformBitwiseBinaryOperation
     (AspEngine *engine, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right)
@@ -325,20 +294,23 @@ static AspOperationResult PerformBitwiseBinaryOperation
     uint8_t leftType = AspDataGetType(left);
     uint8_t rightType = AspDataGetType(right);
 
-    uint32_t leftBits = 0, rightBits = 0, resultBits = 0;
+    int32_t leftValue = 0, rightValue = 0;
     if (leftType == DataType_Boolean)
-        leftBits = (uint32_t)AspDataGetBoolean(left);
+        leftValue = (int32_t)AspDataGetBoolean(left);
     else if (leftType == DataType_Integer)
-        leftBits = *(uint32_t *)&AspDataGetInteger(left);
+        leftValue = AspDataGetInteger(left);
     else
         result.result = AspRunResult_UnexpectedType;
+    uint32_t leftBits = *(uint32_t *)&leftValue;
     if (rightType == DataType_Boolean)
-        rightBits = (uint32_t)AspDataGetBoolean(right);
+        rightValue = (int32_t)AspDataGetBoolean(right);
     else if (rightType == DataType_Integer)
-        rightBits = (uint32_t)AspDataGetInteger(right);
+        rightValue = AspDataGetInteger(right);
     else
         result.result = AspRunResult_UnexpectedType;
+    uint32_t rightBits = *(uint32_t *)&rightValue;
 
+    uint32_t resultBits = 0;
     switch (opCode)
     {
         default:
@@ -358,11 +330,17 @@ static AspOperationResult PerformBitwiseBinaryOperation
             break;
 
         case OpCode_LSH:
-            resultBits = leftBits << rightBits;
+            if (rightValue < 0)
+                result.result = AspRunResult_ValueOutOfRange;
+            else
+                resultBits = leftBits << rightValue;
             break;
 
         case OpCode_RSH:
-            resultBits = leftBits >> rightBits;
+            if (rightValue < 0)
+                result.result = AspRunResult_ValueOutOfRange;
+            else
+                resultBits = leftBits >> rightValue;
             break;
     }
 
@@ -539,8 +517,7 @@ static AspOperationResult PerformArithmeticBinaryOperation
 
     /* Determine the type and values of the operands, and therefore the
        type of the result. */
-    int32_t leftInt = 0, rightInt = 0, intResult = 0;
-    double leftFloat = 0.0, rightFloat = 0.0, floatResult = 0.0;
+    int32_t leftInt = 0, rightInt = 0;
     if (leftType == DataType_Boolean)
         leftInt = (uint32_t)AspDataGetBoolean(left);
     else if (leftType == DataType_Integer)
@@ -550,6 +527,7 @@ static AspOperationResult PerformArithmeticBinaryOperation
     else if (rightType == DataType_Integer)
         rightInt = (uint32_t)AspDataGetInteger(right);
     DataType resultType = DataType_Integer;
+    double leftFloat = 0.0, rightFloat = 0.0;
     if (leftType == DataType_Float || rightType == DataType_Float)
     {
         resultType = DataType_Float;
@@ -563,6 +541,8 @@ static AspOperationResult PerformArithmeticBinaryOperation
             rightFloat = AspDataGetFloat(right);
     }
 
+    int32_t intResult = 0;
+    double floatResult = 0.0;
     if (resultType == DataType_Integer)
     {
         switch (opCode)
@@ -600,12 +580,13 @@ static AspOperationResult PerformArithmeticBinaryOperation
                     break;
                 }
                 intResult = leftInt / rightInt;
+                if (leftInt < 0 != rightInt < 0 &&
+                    leftInt != intResult * rightInt)
+                    intResult--;
                 break;
 
             case OpCode_MOD:
             {
-                int32_t signedLeft, signedRight, quotient;
-
                 if (rightInt == 0)
                 {
                     result.result = AspRunResult_DivideByZero;
@@ -614,9 +595,9 @@ static AspOperationResult PerformArithmeticBinaryOperation
 
                 /* Compute using the quotient rounded toward negative
                    infinity. */
-                signedLeft = leftInt < 0 ? -leftInt : leftInt;
-                signedRight = rightInt < 0 ? -rightInt : rightInt;
-                quotient = signedLeft / signedRight;
+                int32_t signedLeft = leftInt < 0 ? -leftInt : leftInt;
+                int32_t signedRight = rightInt < 0 ? -rightInt : rightInt;
+                int32_t quotient = signedLeft / signedRight;
                 if (leftInt < 0 != rightInt < 0)
                 {
                     quotient = -quotient;
@@ -669,25 +650,20 @@ static AspOperationResult PerformArithmeticBinaryOperation
                     result.result = AspRunResult_DivideByZero;
                     break;
                 }
-                /* TODO: Research this and implement. */
-                result.result = AspRunResult_NotImplemented;
+                floatResult = floor(leftFloat / rightFloat);
                 break;
 
             case OpCode_MOD:
-            {
                 if (rightFloat == 0.0)
                 {
                     result.result = AspRunResult_DivideByZero;
                     break;
                 }
-
-                floatResult = (double)
+                floatResult =
                     (leftFloat - floor(leftFloat / rightFloat) * rightFloat);
                 break;
-            }
 
             case OpCode_POW:
-                resultType = DataType_Float;
                 floatResult = pow(leftFloat, rightFloat);
                 break;
         }
@@ -843,8 +819,7 @@ static AspOperationResult PerformNumericComparisonOperation
 
     /* Determine the type and values of the operands, and therefore the
        type of the result. */
-    int32_t leftInt = 0, rightInt = 0, intResult = 0;
-    double leftFloat = 0.0, rightFloat = 0.0, floatResult = 0.0;
+    int32_t leftInt = 0, rightInt = 0;
     if (leftType == DataType_Boolean)
         leftInt = (uint32_t)AspDataGetBoolean(left);
     else if (leftType == DataType_Integer)
@@ -854,6 +829,7 @@ static AspOperationResult PerformNumericComparisonOperation
     else if (rightType == DataType_Integer)
         rightInt = (uint32_t)AspDataGetInteger(right);
     DataType resultType = DataType_Integer;
+    double leftFloat = 0.0, rightFloat = 0.0;
     if (leftType == DataType_Float || rightType == DataType_Float)
     {
         resultType = DataType_Float;
@@ -994,39 +970,6 @@ static AspOperationResult PerformObjectEqualityOperation
         result.value = AspAllocEntry(engine, DataType_Boolean);
         if (result.value != 0)
             AspDataSetBoolean(result.value, resultValue);
-    }
-
-    return result;
-}
-
-AspOperationResult AspPerformTernaryOperation
-    (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *condition,
-     AspDataEntry *falseValue, AspDataEntry *trueValue)
-{
-    AspOperationResult result = {AspRunResult_OK, 0};
-
-    AspAssert
-        (engine, condition != 0 && AspIsObject(condition));
-    AspAssert
-        (engine, falseValue != 0 && AspIsObject(falseValue));
-    result.result = AspAssert
-        (engine, trueValue != 0 && AspIsObject(trueValue));
-    if (result.result != AspRunResult_OK)
-        return result;
-
-    bool isConditionTrue = AspIsTrue(engine, condition);
-
-    switch (opCode)
-    {
-        default:
-            result.result = AspRunResult_InvalidInstruction;
-            break;
-
-        case OpCode_COND:
-            result.value = isConditionTrue ? trueValue : falseValue;
-            AspRef(engine, result.value);
-            break;
     }
 
     return result;

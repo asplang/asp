@@ -476,8 +476,6 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
-        case OpCode_LOR:
-        case OpCode_LAND:
         case OpCode_OR:
         case OpCode_XOR:
         case OpCode_AND:
@@ -505,15 +503,6 @@ static AspRunResult Step(AspEngine *engine)
             puts("Binary op");
             #endif
 
-            /* Fetch the left value from the stack. */
-            AspDataEntry *left = AspTop(engine);
-            if (left == 0)
-                return AspRunResult_StackUnderflow;
-            if (!AspIsObject(left))
-                return AspRunResult_UnexpectedType;
-            AspRef(engine, left);
-            AspPop(engine);
-
             /* Access the right value from the stack. */
             AspDataEntry *right = AspTop(engine);
             if (right == 0)
@@ -521,6 +510,15 @@ static AspRunResult Step(AspEngine *engine)
             if (!AspIsObject(right))
                 return AspRunResult_UnexpectedType;
             AspRef(engine, right);
+            AspPop(engine);
+
+            /* Fetch the left value from the stack. */
+            AspDataEntry *left = AspTop(engine);
+            if (left == 0)
+                return AspRunResult_StackUnderflow;
+            if (!AspIsObject(left))
+                return AspRunResult_UnexpectedType;
+            AspRef(engine, left);
             AspPop(engine);
 
             /* Perform the operation. */
@@ -536,57 +534,6 @@ static AspRunResult Step(AspEngine *engine)
             AspUnref(engine, operationResult.value);
             AspUnref(engine, left);
             AspUnref(engine, right);
-
-            break;
-        }
-
-        case OpCode_COND:
-        {
-            #ifdef ASP_DEBUG
-            puts("COND");
-            #endif
-
-            /* Fetch the condition value from the stack. */
-            AspDataEntry *condition = AspTop(engine);
-            if (condition == 0)
-                return AspRunResult_StackUnderflow;
-            if (!AspIsObject(condition))
-                return AspRunResult_UnexpectedType;
-            AspRef(engine, condition);
-            AspPop(engine);
-
-            /* Access the true value from the stack. */
-            AspDataEntry *trueValue = AspTop(engine);
-            if (trueValue == 0)
-                return AspRunResult_StackUnderflow;
-            if (!AspIsObject(trueValue))
-                return AspRunResult_UnexpectedType;
-            AspRef(engine, trueValue);
-            AspPop(engine);
-
-            /* Access the false value from the stack. */
-            AspDataEntry *falseValue = AspTop(engine);
-            if (falseValue == 0)
-                return AspRunResult_StackUnderflow;
-            if (!AspIsObject(falseValue))
-                return AspRunResult_UnexpectedType;
-            AspRef(engine, falseValue);
-            AspPop(engine);
-
-            /* Perform the operation. */
-            AspOperationResult operationResult = AspPerformTernaryOperation
-                (engine, opCode, condition, falseValue, trueValue);
-            if (operationResult.result != AspRunResult_OK)
-                return operationResult.result;
-
-            /* Push the result onto the stack. */
-            AspDataEntry *stackEntry = AspPush(engine, operationResult.value);
-            if (stackEntry == 0)
-                return AspRunResult_OutOfDataMemory;
-            AspUnref(engine, operationResult.value);
-            AspUnref(engine, trueValue);
-            AspUnref(engine, falseValue);
-            AspUnref(engine, condition);
 
             break;
         }
@@ -1354,12 +1301,16 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_JMPF:
         case OpCode_JMPT:
         case OpCode_JMP:
+        case OpCode_LOR:
+        case OpCode_LAND:
         {
             #ifdef ASP_DEBUG
             printf
                 ("%s ",
                  opCode == OpCode_JMPF ? "JMPF" :
-                 opCode == OpCode_JMPT ? "JMPT" : "JMP");
+                 opCode == OpCode_JMPT ? "JMPT" :
+                 opCode == OpCode_LOR ? "LOR" :
+                 opCode == OpCode_LAND ? "LAND" : "JMP");
             #endif
 
             /* Fetch the code address from the operand. */
@@ -1379,20 +1330,26 @@ static AspRunResult Step(AspEngine *engine)
             if (codeAddress >= engine->codeEndIndex)
                 return AspRunResult_BeyondEndOfCode;
 
+            /* Determine condition if applicable. */
             bool condition = true;
             if (opCode != OpCode_JMP)
             {
-                /* Pop value off the stack. */
                 AspDataEntry *value = AspTop(engine);
                 if (value == 0)
                     return AspRunResult_StackUnderflow;
                 if (!AspIsObject(value))
                     return AspRunResult_UnexpectedType;
                 condition = AspIsTrue(engine, value);
-                AspPop(engine);
+
+                /* Pop value off the stack if applicable. */
+                if (opCode == OpCode_JMPF || opCode == OpCode_JMPT ||
+                    (opCode == OpCode_LOR && !condition) ||
+                    (opCode == OpCode_LAND && condition))
+                    AspPop(engine);
             }
 
-            if (condition == (opCode != OpCode_JMPF))
+            /* Transfer control to the code address if applicable. */
+            if (condition == (opCode != OpCode_JMPF && opCode != OpCode_LAND))
                 engine->pc = engine->code + codeAddress;
 
             break;

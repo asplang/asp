@@ -38,14 +38,14 @@ class Expression : public NonTerminal
         const Statement *parentStatement;
 };
 
-class TernaryExpression : public Expression
+class ConditionalExpression : public Expression
 {
     public:
 
-        TernaryExpression
+        ConditionalExpression
             (const Token &operatorToken,
              Expression *, Expression *, Expression *);
-        ~TernaryExpression();
+        ~ConditionalExpression();
 
         virtual void Parent(const Statement *);
 
@@ -55,6 +55,31 @@ class TernaryExpression : public Expression
 
         int operatorTokenType;
         Expression *conditionExpression, *trueExpression, *falseExpression;
+};
+
+class ShortCircuitLogicalExpression : public Expression
+{
+    public:
+
+        ShortCircuitLogicalExpression
+            (const Token &operatorToken, Expression *, Expression *);
+        ~ShortCircuitLogicalExpression();
+
+        void Add(Expression *);
+
+        virtual void Parent(const Statement *);
+
+        int OperatorTokenType() const
+        {
+            return operatorTokenType;
+        }
+
+        virtual void Emit(Executable &, EmitType) const;
+
+    private:
+
+        int operatorTokenType;
+        std::list<Expression *> expressions;
 };
 
 class BinaryExpression : public Expression
@@ -348,41 +373,41 @@ class ConstantExpression : public Expression
 
         explicit ConstantExpression(const Token &);
 
-        ConstantExpression *FoldUnary(int operatorTokenType) const;
+        ConstantExpression *FoldUnary(int operatorTokenType);
         ConstantExpression *FoldBinary
-            (int operatorTokenType, const ConstantExpression *) const;
+            (int operatorTokenType, ConstantExpression *);
         ConstantExpression *FoldTernary
             (int operatorTokenType,
-             const ConstantExpression *, const ConstantExpression *) const;
+             ConstantExpression *, ConstantExpression *);
 
         virtual void Emit(Executable &, EmitType) const;
 
     protected:
 
-        ConstantExpression *Not() const;
-        ConstantExpression *Plus() const;
-        ConstantExpression *Minus() const;
-        ConstantExpression *Invert() const;
-        ConstantExpression *Or(const ConstantExpression *) const;
-        ConstantExpression *And(const ConstantExpression *) const;
-        ConstantExpression *Equal(const ConstantExpression *) const;
-        ConstantExpression *NotEqual(const ConstantExpression *) const;
-        ConstantExpression *Less(const ConstantExpression *) const;
-        ConstantExpression *LessOrEqual(const ConstantExpression *) const;
-        ConstantExpression *Greater(const ConstantExpression *) const;
-        ConstantExpression *GreaterOrEqual(const ConstantExpression *) const;
-        ConstantExpression *BitOr(const ConstantExpression *) const;
-        ConstantExpression *BitExclusiveOr(const ConstantExpression *) const;
-        ConstantExpression *BitAnd(const ConstantExpression *) const;
-        ConstantExpression *LeftShift(const ConstantExpression *) const;
-        ConstantExpression *RightShift(const ConstantExpression *) const;
-        ConstantExpression *Multiply(const ConstantExpression *) const;
-        ConstantExpression *Divide(const ConstantExpression *) const;
-        ConstantExpression *FloorDivide(const ConstantExpression *) const;
-        ConstantExpression *Modulo(const ConstantExpression *) const;
-        ConstantExpression *Power(const ConstantExpression *) const;
+        bool IsTrue() const;
+        bool IsEqual(const ConstantExpression &) const;
+        int Compare(const ConstantExpression &) const;
+        int NumericCompare(const ConstantExpression &) const;
+        int StringCompare(const ConstantExpression &) const;
+
+        ConstantExpression *Not();
+        ConstantExpression *Plus();
+        ConstantExpression *Minus();
+        ConstantExpression *Invert();
+        ConstantExpression *Or(ConstantExpression *);
+        ConstantExpression *And(ConstantExpression *);
+        ConstantExpression *Equal(ConstantExpression *);
+        ConstantExpression *NotEqual(ConstantExpression *);
+        ConstantExpression *Less(ConstantExpression *);
+        ConstantExpression *LessOrEqual(ConstantExpression *);
+        ConstantExpression *Greater(ConstantExpression *);
+        ConstantExpression *GreaterOrEqual(ConstantExpression *);
+        ConstantExpression *BitwiseOperation
+            (int operatorTypeType, ConstantExpression *);
+        ConstantExpression *ArithmeticOperation
+            (int operatorTypeType, ConstantExpression *);
         ConstantExpression *Conditional
-            (const ConstantExpression *, const ConstantExpression *) const;
+            (ConstantExpression *, ConstantExpression *);
 
         enum class Type
         {

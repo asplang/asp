@@ -39,8 +39,6 @@ typedef enum OpCode
     OpCode_NOT = 0x4F, /* bitwise not */
 
     /* Binary logical and arithmetic operations. */
-    OpCode_LOR = 0x51, /* logical or */
-    OpCode_LAND = 0x52, /* logical and */
     OpCode_OR = 0x53, /* bitwise or */
     OpCode_XOR = 0x54, /* bitwise exclusive or */
     OpCode_AND = 0x55, /* bitwise and */
@@ -65,9 +63,6 @@ typedef enum OpCode
     OpCode_IN = 0x67, /* in */
     OpCode_NIS = 0x68, /* is not */
     OpCode_IS = 0x69, /* is */
-
-    /* Ternary operations. */
-    OpCode_COND = 0x70, /* true if cond else false */
 
     /* Load operations. */
     OpCode_LD1 = 0x81, /* load variable's value with 1-byte symbol */
@@ -104,10 +99,12 @@ typedef enum OpCode
     OpCode_JMPF = 0xB1, /* jump false */
     OpCode_JMPT = 0xB2, /* jump true */
     OpCode_JMP = 0xB3, /* unconditional jump */
+    OpCode_LOR = 0xB4, /* short-cut logical or */
+    OpCode_LAND = 0xB5, /* short-cut logical and */
 
     /* Function call/return operations. */
-    OpCode_CALL = 0xB4, /* call function */
-    OpCode_RET = 0xB5, /* return from function */
+    OpCode_CALL = 0xB6, /* call function */
+    OpCode_RET = 0xB7, /* return from function */
 
     /* Module operations. */
     OpCode_ADDMOD1 = 0xB9, /* add module with 1-byte symbol to engine */
