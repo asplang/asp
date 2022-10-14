@@ -458,62 +458,94 @@ ConstantExpression::ConstantExpression(const Token &token) :
     }
 }
 
-ConstantExpression *ConstantExpression::FoldUnary
-    (int operatorTokenType)
+Expression *FoldUnaryExpression
+    (int operatorTokenType, Expression *expression)
 {
+    auto *constExpression = dynamic_cast<ConstantExpression *>(expression);
+    if (constExpression == 0)
+        return 0;
+
     switch (operatorTokenType)
     {
         case TOKEN_NOT:
-            return Not();
+            return constExpression->FoldNot();
 
         case TOKEN_PLUS:
-            return Plus();
+            return constExpression->FoldPlus();
 
         case TOKEN_MINUS:
-            return Minus();
+            return constExpression->FoldMinus();
 
         case TOKEN_TILDE:
-            return Invert();
+            return constExpression->FoldInvert();
     }
 
     throw string("Invalid unary operator");
 }
 
-ConstantExpression *ConstantExpression::FoldBinary
-    (int operatorTokenType, ConstantExpression *rightExpression)
+Expression *FoldBinaryExpression
+    (int operatorTokenType,
+     Expression *leftExpression, Expression *rightExpression)
 {
+    auto *leftConstExpression = dynamic_cast<ConstantExpression *>
+        (leftExpression);
+    auto *rightConstExpression = dynamic_cast<ConstantExpression *>
+        (rightExpression);
+    if (leftConstExpression == 0 && rightConstExpression == 0)
+        return 0;
+
     switch (operatorTokenType)
     {
         case TOKEN_OR:
-            return Or(rightExpression);
+            return
+                leftConstExpression == 0 ? 0 :
+                FoldOr(leftConstExpression, rightExpression);
 
         case TOKEN_AND:
-            return And(rightExpression);
+            return
+                leftConstExpression == 0 ? 0 :
+                FoldAnd(leftConstExpression, rightExpression);
 
         case TOKEN_EQ:
-            return Equal(rightExpression);
+            return
+                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                FoldEqual(leftConstExpression, rightConstExpression);
 
         case TOKEN_NE:
-            return NotEqual(rightExpression);
+            return
+                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                FoldNotEqual(leftConstExpression, rightConstExpression);
 
         case TOKEN_LT:
-            return Less(rightExpression);
+            return
+                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                FoldLess(leftConstExpression, rightConstExpression);
 
         case TOKEN_LE:
-            return LessOrEqual(rightExpression);
+            return
+                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                FoldLessOrEqual(leftConstExpression, rightConstExpression);
 
         case TOKEN_GT:
-            return Greater(rightExpression);
+            return
+                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                FoldGreater(leftConstExpression, rightConstExpression);
 
         case TOKEN_GE:
-            return GreaterOrEqual(rightExpression);
+            return
+                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                FoldGreaterOrEqual(leftConstExpression, rightConstExpression);
 
         case TOKEN_BAR:
         case TOKEN_CARET:
         case TOKEN_AMPERSAND:
         case TOKEN_LEFT_SHIFT:
         case TOKEN_RIGHT_SHIFT:
-            return BitwiseOperation(operatorTokenType, rightExpression);
+            return
+                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                FoldBitwiseOperation
+                    (operatorTokenType,
+                     leftConstExpression, rightConstExpression);
 
         case TOKEN_PLUS:
         case TOKEN_MINUS:
@@ -522,21 +554,32 @@ ConstantExpression *ConstantExpression::FoldBinary
         case TOKEN_FLOOR_DIVIDE:
         case TOKEN_PERCENT:
         case TOKEN_POWER:
-            return ArithmeticOperation(operatorTokenType, rightExpression);
+            return
+                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                FoldArithmeticOperation
+                    (operatorTokenType,
+                     leftConstExpression, rightConstExpression);
     }
 
     throw string("Invalid binary operator");
 }
 
-ConstantExpression *ConstantExpression::FoldTernary
+Expression *FoldTernaryExpression
     (int operatorTokenType,
-     ConstantExpression *trueExpression,
-     ConstantExpression *falseExpression)
+     Expression *conditionExpression,
+     Expression *trueExpression, Expression *falseExpression)
 {
+    auto *conditionConstExpression = dynamic_cast<ConstantExpression *>
+        (conditionExpression);
+
     switch (operatorTokenType)
     {
         case TOKEN_IF:
-            return Conditional(trueExpression, falseExpression);
+            return
+                conditionConstExpression == 0 ? 0 :
+                FoldConditional
+                    (conditionConstExpression,
+                     trueExpression, falseExpression);
     }
 
     throw string("Invalid ternary operator");
@@ -654,13 +697,13 @@ int ConstantExpression::StringCompare(const ConstantExpression &right) const
     return s == right.s ? 0 : s < right.s ? -1 : +1;
 }
 
-ConstantExpression *ConstantExpression::Not()
+Expression *ConstantExpression::FoldNot()
 {
     return new ConstantExpression(Token(sourceLocation,
         !IsTrue() ? TOKEN_TRUE : TOKEN_FALSE));
 }
 
-ConstantExpression *ConstantExpression::Plus()
+Expression *ConstantExpression::FoldPlus()
 {
     switch (type)
     {
@@ -674,7 +717,7 @@ ConstantExpression *ConstantExpression::Plus()
     }
 }
 
-ConstantExpression *ConstantExpression::Minus()
+Expression *ConstantExpression::FoldMinus()
 {
     switch (type)
     {
@@ -693,7 +736,7 @@ ConstantExpression *ConstantExpression::Minus()
     }
 }
 
-ConstantExpression *ConstantExpression::Invert()
+Expression *ConstantExpression::FoldInvert()
 {
     switch (type)
     {
@@ -709,76 +752,83 @@ ConstantExpression *ConstantExpression::Invert()
     }
 }
 
-ConstantExpression *ConstantExpression::Or
-    (ConstantExpression *right)
+Expression *FoldOr
+    (ConstantExpression *leftExpression, Expression *rightExpression)
 {
-    return IsTrue() ? this : right;
+    return leftExpression->IsTrue() ? leftExpression : rightExpression;
 }
 
-ConstantExpression *ConstantExpression::And
-    (ConstantExpression *right)
+Expression *FoldAnd
+    (ConstantExpression *leftExpression, Expression *rightExpression)
 {
-    return !IsTrue() ? this : right;
+    return !leftExpression->IsTrue() ? leftExpression : rightExpression;
 }
 
-ConstantExpression *ConstantExpression::Equal
-    (ConstantExpression *right)
+Expression *FoldEqual
+    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
-    return new ConstantExpression(Token(sourceLocation,
-        IsEqual(*right) ? TOKEN_TRUE : TOKEN_FALSE));
+    return new ConstantExpression(Token(leftExpression->sourceLocation,
+        leftExpression->IsEqual(*rightExpression) ? TOKEN_TRUE : TOKEN_FALSE));
 }
 
-ConstantExpression *ConstantExpression::NotEqual
-    (ConstantExpression *right)
+Expression *FoldNotEqual
+    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
-    return new ConstantExpression(Token(sourceLocation,
-        !IsEqual(*right) ? TOKEN_TRUE : TOKEN_FALSE));
+    return new ConstantExpression(Token(leftExpression->sourceLocation,
+        !leftExpression->IsEqual(*rightExpression) ? TOKEN_TRUE : TOKEN_FALSE));
 }
 
-ConstantExpression *ConstantExpression::Less
-    (ConstantExpression *right)
+Expression *FoldLess
+    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
-    return new ConstantExpression(Token(sourceLocation,
-        Compare(*right) < 0 ? TOKEN_TRUE : TOKEN_FALSE));
+    return new ConstantExpression(Token(leftExpression->sourceLocation,
+        leftExpression->Compare(*rightExpression) < 0 ?
+        TOKEN_TRUE : TOKEN_FALSE));
 }
 
-ConstantExpression *ConstantExpression::LessOrEqual
-    (ConstantExpression *right)
+Expression *FoldLessOrEqual
+    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
-    return new ConstantExpression(Token(sourceLocation,
-            Compare(*right) <= 0 ? TOKEN_TRUE : TOKEN_FALSE));
+    return new ConstantExpression(Token(leftExpression->sourceLocation,
+        leftExpression->Compare(*rightExpression) <= 0 ?
+        TOKEN_TRUE : TOKEN_FALSE));
 }
 
-ConstantExpression *ConstantExpression::Greater
-    (ConstantExpression *right)
+Expression *FoldGreater
+    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
-    return new ConstantExpression(Token(sourceLocation,
-        Compare(*right) > 0 ? TOKEN_TRUE : TOKEN_FALSE));
+    return new ConstantExpression(Token(leftExpression->sourceLocation,
+        leftExpression->Compare(*rightExpression) > 0 ?
+        TOKEN_TRUE : TOKEN_FALSE));
 }
 
-ConstantExpression *ConstantExpression::GreaterOrEqual
-    (ConstantExpression *right)
+Expression *FoldGreaterOrEqual
+    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
-    return new ConstantExpression(Token(sourceLocation,
-        Compare(*right) >= 0 ? TOKEN_TRUE : TOKEN_FALSE));
+    return new ConstantExpression(Token(leftExpression->sourceLocation,
+        leftExpression->Compare(*rightExpression) >= 0 ?
+        TOKEN_TRUE : TOKEN_FALSE));
 }
 
-ConstantExpression *ConstantExpression::BitwiseOperation
-    (int operatorTokenType, ConstantExpression *right)
+Expression *FoldBitwiseOperation
+    (int operatorTokenType,
+     ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
+    typedef ConstantExpression::Type Type;
+
     int32_t leftValue = 0, rightValue = 0;
     uint32_t leftBits = 0, rightBits = 0;
-    if (type == Type::Boolean)
-        leftValue = b ? 1 : 0;
-    else if (type == Type::Integer)
-        leftValue = i;
+    if (leftExpression->type == Type::Boolean)
+        leftValue = leftExpression->b ? 1 : 0;
+    else if (leftExpression->type == Type::Integer)
+        leftValue = leftExpression->i;
     else
         throw string("Bad left operand type for binary bitwise operation");
     leftBits = *reinterpret_cast<uint32_t *>(&leftValue);
-    if (right->type == Type::Boolean)
-        rightValue = right->b ? 1 : 0;
-    else if (type == Type::Integer)
-        rightValue = right->i;
+    if (rightExpression->type == Type::Boolean)
+        rightValue = rightExpression->b ? 1 : 0;
+    else if (rightExpression->type == Type::Integer)
+        rightValue = rightExpression->i;
     else
         throw string("Bad right operand type for binary bitwise operation");
     rightBits = *reinterpret_cast<uint32_t *>(&rightValue);
@@ -789,66 +839,72 @@ ConstantExpression *ConstantExpression::BitwiseOperation
         default:
             return 0;
 
-        case TOKEN_BAR:
-            resultBits = leftBits | rightBits;
-            break;
+            case TOKEN_BAR:
+                resultBits = leftBits | rightBits;
+                break;
 
-        case TOKEN_CARET:
-            resultBits = leftBits ^ rightBits;
-            break;
+            case TOKEN_CARET:
+                resultBits = leftBits ^ rightBits;
+                break;
 
-        case TOKEN_AMPERSAND:
-            resultBits = leftBits & rightBits;
-            break;
+            case TOKEN_AMPERSAND:
+                resultBits = leftBits & rightBits;
+                break;
 
-        case TOKEN_LEFT_SHIFT:
-            if (rightValue < 0)
-                throw string("Negative shift count not permitted");
-            resultBits = leftBits << rightValue;
-            break;
+            case TOKEN_LEFT_SHIFT:
+                if (rightValue < 0)
+                    throw string("Negative shift count not permitted");
+                resultBits = leftBits << rightValue;
+                break;
 
-        case TOKEN_RIGHT_SHIFT:
-            if (rightValue < 0)
-                throw string("Negative shift count not permitted");
-            resultBits = leftBits >> rightValue;
-            break;
+            case TOKEN_RIGHT_SHIFT:
+                if (rightValue < 0)
+                    throw string("Negative shift count not permitted");
+                resultBits = leftBits >> rightValue;
+                break;
     }
 
     int32_t resultValue = *reinterpret_cast<int32_t *>(&resultBits);
-    return new ConstantExpression(Token(sourceLocation, resultValue, 0));
+    return new ConstantExpression
+        (Token(leftExpression->sourceLocation, resultValue, 0));
 }
 
-ConstantExpression *ConstantExpression::ArithmeticOperation
-    (int operatorTokenType, ConstantExpression *right)
+Expression *FoldArithmeticOperation
+    (int operatorTokenType,
+     ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
+    typedef ConstantExpression::Type Type;
+
     // Fold only numeric operands. Do not fold, for example, string
     // multiplication.
     int32_t leftInt = 0, rightInt = 0;
-    if (type == Type::Boolean)
-        leftInt = b ? 1 : 0;
-    else if (type == Type::Integer)
-        leftInt = i;
-    else if (type != Type::Float)
+    uint32_t leftBits = 0, rightBits = 0;
+    if (leftExpression->type == Type::Boolean)
+        leftInt = leftExpression->b ? 1 : 0;
+    else if (leftExpression->type == Type::Integer)
+        leftInt = leftExpression->i;
+    else if (leftExpression->type != Type::Float)
         return 0;
-    if (right->type == Type::Boolean)
-        rightInt = right->b ? 1 : 0;
-    else if (right->type == Type::Integer)
-        rightInt = right->i;
-    else if (right->type != Type::Float)
+    if (rightExpression->type == Type::Boolean)
+        rightInt = rightExpression->b ? 1 : 0;
+    else if (rightExpression->type == Type::Integer)
+        rightInt = rightExpression->i;
+    else if (rightExpression->type != Type::Float)
         return 0;
     Type resultType = Type::Integer;
     double leftFloat = 0, rightFloat = 0;
-    if (type == Type::Float || right->type == Type::Float)
+    if (leftExpression->type == Type::Float ||
+        rightExpression->type == Type::Float)
     {
         resultType = Type::Float;
-        if (type != Type::Float)
+        if (leftExpression->type != Type::Float)
             leftFloat = static_cast<double>(leftInt);
         else
-            leftFloat = f;
-        if (right->type != Type::Float)
+            leftFloat = leftExpression->f;
+        if (rightExpression->type != Type::Float)
             rightFloat = static_cast<double>(rightInt);
         else
-            rightFloat = right->f;
+            rightFloat = rightExpression->f;
     }
 
     int intResult = 0;
@@ -964,12 +1020,15 @@ ConstantExpression *ConstantExpression::ArithmeticOperation
     }
 
     return resultType == Type::Integer ?
-        new ConstantExpression(Token(sourceLocation, intResult, 0)) :
-        new ConstantExpression(Token(sourceLocation, floatResult));
+        new ConstantExpression
+            (Token(leftExpression->sourceLocation, intResult, 0)) :
+        new ConstantExpression
+            (Token(leftExpression->sourceLocation, floatResult));
 }
 
-ConstantExpression *ConstantExpression::Conditional
-    (ConstantExpression *left, ConstantExpression *right)
+Expression *FoldConditional
+    (ConstantExpression *conditionExpression,
+     Expression *leftExpression, Expression *rightExpression)
 {
-    return IsTrue() ? left : right;
+    return conditionExpression->IsTrue() ? leftExpression : rightExpression;
 }

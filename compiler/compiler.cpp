@@ -487,43 +487,29 @@ DEFINE_ACTION
      Token *, operatorToken, Expression *, conditionExpression,
      Expression *, trueExpression, Expression *, falseExpression)
 {
-    // Attempt to fold constant expression if applicable.
-    // Note that not all valid constant expressions may folded (i.e. leaving
-    // the operation to run-time). In such cases, the folding routine returns
-    // a null pointer.
+    // Attempt to fold constant expression.
     Expression *result = 0;
-    auto *conditionConstantExpression = dynamic_cast<ConstantExpression *>
-        (conditionExpression);
-    auto *trueConstantExpression = dynamic_cast<ConstantExpression *>
-        (trueExpression);
-    auto *falseConstantExpression = dynamic_cast<ConstantExpression *>
-        (falseExpression);
-    if (conditionConstantExpression &&
-        trueConstantExpression && falseConstantExpression)
+    try
     {
-        try
-        {
-            result = conditionConstantExpression->FoldTernary
-                (operatorToken->type,
-                 trueConstantExpression, falseConstantExpression);
-        }
-        catch (const string &error)
-        {
-            ReportError(error);
-        }
-        if (result)
-        {
-            (SourceElement &)*result = *operatorToken;
-            if (conditionExpression != result)
-                delete conditionExpression;
-            if (trueExpression != result)
-                delete trueExpression;
-            if (falseExpression != result)
-                delete falseExpression;
-        }
+        result = FoldTernaryExpression
+            (operatorToken->type,
+             conditionExpression, trueExpression, falseExpression);
     }
-
-    if (result == 0)
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+    if (result)
+    {
+        (SourceElement &)*result = *operatorToken;
+        if (conditionExpression != result)
+            delete conditionExpression;
+        if (trueExpression != result)
+            delete trueExpression;
+        if (falseExpression != result)
+            delete falseExpression;
+    }
+    else
         result = new ConditionalExpression
             (*operatorToken, conditionExpression,
              trueExpression, falseExpression);
@@ -537,37 +523,26 @@ DEFINE_ACTION
      Token *, operatorToken,
      Expression *, leftExpression, Expression *, rightExpression)
 {
-    // Attempt to fold constant expression if applicable.
-    // Note that not all valid constant expressions may folded (i.e. leaving
-    // the operation to run-time). In such cases, the folding routine returns
-    // a null pointer.
+    // Attempt to fold constant expression.
     Expression *result = 0;
-    auto *leftConstantExpression = dynamic_cast<ConstantExpression *>
-        (leftExpression);
-    auto *rightConstantExpression = dynamic_cast<ConstantExpression *>
-        (rightExpression);
-    if (leftConstantExpression && rightConstantExpression)
+    try
     {
-        try
-        {
-            result = leftConstantExpression->FoldBinary
-                (operatorToken->type, rightConstantExpression);
-        }
-        catch (const string &error)
-        {
-            ReportError(error);
-        }
-        if (result)
-        {
-            (SourceElement &)*result = *operatorToken;
-            if (leftExpression != result)
-                delete leftExpression;
-            if (rightExpression != result)
-                delete rightExpression;
-        }
+        result = FoldBinaryExpression
+            (operatorToken->type, leftExpression, rightExpression);
     }
-
-    if (result == 0)
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+    if (result)
+    {
+        (SourceElement &)*result = *operatorToken;
+        if (leftExpression != result)
+            delete leftExpression;
+        if (rightExpression != result)
+            delete rightExpression;
+    }
+    else
     {
         auto castLeftExpression = dynamic_cast<ShortCircuitLogicalExpression *>
             (leftExpression);
@@ -593,37 +568,26 @@ DEFINE_ACTION
      Token *, operatorToken,
      Expression *, leftExpression, Expression *, rightExpression)
 {
-    // Attempt to fold constant expression if applicable.
-    // Note that not all valid constant expressions may folded (i.e. leaving
-    // the operation to run-time). In such cases, the folding routine returns
-    // a null pointer.
+    // Attempt to fold constant expression.
     Expression *result = 0;
-    auto *leftConstantExpression = dynamic_cast<ConstantExpression *>
-        (leftExpression);
-    auto *rightConstantExpression = dynamic_cast<ConstantExpression *>
-        (rightExpression);
-    if (leftConstantExpression && rightConstantExpression)
+    try
     {
-        try
-        {
-            result = leftConstantExpression->FoldBinary
-                (operatorToken->type, rightConstantExpression);
-        }
-        catch (const string &error)
-        {
-            ReportError(error);
-        }
-        if (result)
-        {
-            (SourceElement &)*result = *operatorToken;
-            if (leftExpression != result)
-                delete leftExpression;
-            if (rightExpression != result)
-                delete rightExpression;
-        }
+        result = FoldBinaryExpression
+            (operatorToken->type, leftExpression, rightExpression);
     }
-
-    if (result == 0)
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+    if (result)
+    {
+        (SourceElement &)*result = *operatorToken;
+        if (leftExpression != result)
+            delete leftExpression;
+        if (rightExpression != result)
+            delete rightExpression;
+    }
+    else
         result = new BinaryExpression
             (*operatorToken, leftExpression, rightExpression);
 
@@ -635,31 +599,23 @@ DEFINE_ACTION
     (MakeUnaryExpression, Expression *,
      Token *, operatorToken, Expression *, expression)
 {
-    // Attempt to fold constant expression if applicable.
-    // Note that not all valid constant expressions may folded (i.e. leaving
-    // the operation to run-time). In such cases, the folding routine returns
-    // a null pointer.
+    // Attempt to fold constant expression.
     Expression *result = 0;
-    auto *constantExpression = dynamic_cast<ConstantExpression *>(expression);
-    if (constantExpression)
+    try
     {
-        try
-        {
-            result = constantExpression->FoldUnary(operatorToken->type);
-        }
-        catch (const string &error)
-        {
-            ReportError(error);
-        }
-        if (result)
-        {
-            (SourceElement &)*result = *operatorToken;
-            if (expression != result)
-                delete expression;
-        }
+        result = FoldUnaryExpression(operatorToken->type, expression);
     }
-
-    if (result == 0)
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+    if (result)
+    {
+        (SourceElement &)*result = *operatorToken;
+        if (expression != result)
+            delete expression;
+    }
+    else
         result = new UnaryExpression(*operatorToken, expression);
 
     delete operatorToken;

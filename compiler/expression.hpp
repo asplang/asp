@@ -367,18 +367,25 @@ class RangeExpression : public Expression
         Expression *startExpression, *endExpression, *stepExpression;
 };
 
+Expression *FoldUnaryExpression
+    (int operatorTokenType, Expression *);
+Expression *FoldBinaryExpression
+    (int operatorTokenType, Expression *, Expression *);
+Expression *FoldTernaryExpression
+    (int operatorTokenType, Expression *, Expression *, Expression *);
+
 class ConstantExpression : public Expression
 {
     public:
 
         explicit ConstantExpression(const Token &);
 
-        ConstantExpression *FoldUnary(int operatorTokenType);
-        ConstantExpression *FoldBinary
-            (int operatorTokenType, ConstantExpression *);
-        ConstantExpression *FoldTernary
-            (int operatorTokenType,
-             ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldUnaryExpression
+            (int operatorTokenType, Expression *);
+        friend Expression *FoldBinaryExpression
+            (int operatorTokenType, Expression *, Expression *);
+        friend Expression *FoldTernaryExpression
+            (int operatorTokenType, Expression *, Expression *, Expression *);
 
         virtual void Emit(Executable &, EmitType) const;
 
@@ -390,24 +397,30 @@ class ConstantExpression : public Expression
         int NumericCompare(const ConstantExpression &) const;
         int StringCompare(const ConstantExpression &) const;
 
-        ConstantExpression *Not();
-        ConstantExpression *Plus();
-        ConstantExpression *Minus();
-        ConstantExpression *Invert();
-        ConstantExpression *Or(ConstantExpression *);
-        ConstantExpression *And(ConstantExpression *);
-        ConstantExpression *Equal(ConstantExpression *);
-        ConstantExpression *NotEqual(ConstantExpression *);
-        ConstantExpression *Less(ConstantExpression *);
-        ConstantExpression *LessOrEqual(ConstantExpression *);
-        ConstantExpression *Greater(ConstantExpression *);
-        ConstantExpression *GreaterOrEqual(ConstantExpression *);
-        ConstantExpression *BitwiseOperation
-            (int operatorTypeType, ConstantExpression *);
-        ConstantExpression *ArithmeticOperation
-            (int operatorTypeType, ConstantExpression *);
-        ConstantExpression *Conditional
+        Expression *FoldNot();
+        Expression *FoldPlus();
+        Expression *FoldMinus();
+        Expression *FoldInvert();
+        friend Expression *FoldOr(ConstantExpression *, Expression *);
+        friend Expression *FoldAnd(ConstantExpression *, Expression *);
+        friend Expression *FoldEqual
             (ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldNotEqual
+            (ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldLess
+            (ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldLessOrEqual
+            (ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldGreater
+            (ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldGreaterOrEqual
+            (ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldBitwiseOperation
+            (int operatorTypeType, ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldArithmeticOperation
+            (int operatorTypeType, ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldConditional
+            (ConstantExpression *, Expression *, Expression *);
 
         enum class Type
         {
