@@ -16,7 +16,7 @@
 #include <ctype.h>
 #endif
 
-#define HEADER_SIZE 8
+#define HEADER_SIZE 12
 #define MAX_CODE_SIZE (1 << (AspWordBitSize))
 
 static AspRunResult ResetData(AspEngine *);
@@ -39,6 +39,22 @@ AspRunResult AspInitialize
     engine->inApp = false;
 
     return AspReset(engine);
+}
+
+void AspCodeVersion
+    (const AspEngine *engine, uint8_t version[sizeof engine->version])
+{
+    memcpy(version, engine->version, sizeof engine->version);
+}
+
+uint32_t AspMaxCodeSize(const AspEngine *engine)
+{
+    return engine->maxCodeSize;
+}
+
+uint32_t AspMaxDataSize(const AspEngine *engine)
+{
+    return engine->dataEndIndex;
 }
 
 AspAddCodeResult AspAddCode
@@ -72,8 +88,21 @@ AspAddCodeResult AspAddCode
                     return engine->loadResult;
                 }
 
+                /* Check the version of the executable to ensure
+                   compatibility. */
+                memcpy
+                    (engine->version, engine->code + 4,
+                     sizeof engine->version);
+                if (engine->version[0] != ASP_ENGINE_VERSION_MAJOR ||
+                    engine->version[1] != ASP_ENGINE_VERSION_MINOR)
+                {
+                    engine->state = AspEngineState_LoadError;
+                    engine->loadResult = AspAddCodeResult_InvalidVersion;
+                    return engine->loadResult;
+                }
+
                 /* Check the application specification check value. */
-                const uint8_t *checkValuePtr = engine->code + 4;
+                const uint8_t *checkValuePtr = engine->code + 8;
                 uint32_t checkValue = 0;
                 for (unsigned i = 0; i < 4; i++)
                 {

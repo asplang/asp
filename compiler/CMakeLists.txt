@@ -4,7 +4,18 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(aspc VERSION 0.1)
+set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+
+project(aspc
+    VERSION 0.1.0.0
+    )
+
+set(ABI_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
+    message(FATAL_ERROR
+        "${PROJECT_NAME} version not compatible with project version"
+        )
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -39,6 +50,13 @@ add_executable(aspc
     emit.cpp
     executable.cpp
     instruction.cpp
+    )
+
+target_compile_definitions(aspc PRIVATE
+    ASP_COMPILER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    ASP_COMPILER_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    ASP_COMPILER_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+    ASP_COMPILER_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
     )
 
 target_include_directories(aspc PRIVATE

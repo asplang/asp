@@ -21,9 +21,10 @@ typedef enum
 {
     AspAddCodeResult_OK = 0x00,
     AspAddCodeResult_InvalidFormat = 0x01,
-    AspAddCodeResult_InvalidCheckValue = 0x02,
-    AspAddCodeResult_OutOfCodeMemory = 0x03,
-    AspAddCodeResult_InvalidState = 0x04,
+    AspAddCodeResult_InvalidVersion = 0x02,
+    AspAddCodeResult_InvalidCheckValue = 0x03,
+    AspAddCodeResult_OutOfCodeMemory = 0x04,
+    AspAddCodeResult_InvalidState = 0x08,
 } AspAddCodeResult;
 
 /* Result returned from AspInitialize, AspReset, and AspStep. */
@@ -68,11 +69,15 @@ extern "C" {
 
 /* Initialization. */
 size_t AspDataEntrySize(void);
+void AspEngineVersion(uint8_t version[4]);
 AspRunResult AspInitialize
     (AspEngine *,
      void *code, size_t codeSize,
      void *data, size_t dataSize,
      AspAppSpec *, void *context);
+void AspCodeVersion(const AspEngine *, uint8_t version[4]);
+uint32_t AspMaxCodeSize(const AspEngine *);
+uint32_t AspMaxDataSize(const AspEngine *);
 AspAddCodeResult AspAddCode
     (AspEngine *, const char *code, size_t codeSize);
 AspAddCodeResult AspSeal(AspEngine *);

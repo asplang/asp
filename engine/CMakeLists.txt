@@ -4,7 +4,19 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(aspe VERSION 0.1 LANGUAGES C)
+set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+
+project(aspe
+    VERSION 0.1.0.0
+    LANGUAGES C
+    )
+
+set(ABI_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
+    message(FATAL_ERROR
+        "${PROJECT_NAME} version not compatible with project version"
+        )
+endif()
 
 if (BUILD_FOR_TARGET)
 
@@ -29,8 +41,15 @@ if (BUILD_FOR_TARGET)
         $<$<CONFIG:Debug>:debug.c>
         )
 
+    set_property(TARGET aspe
+        PROPERTY VERSION ${ABI_VERSION})
+
     target_compile_definitions(aspe PUBLIC
         $<$<CONFIG:Debug>:ASP_DEBUG>
+        ASP_ENGINE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        ASP_ENGINE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        ASP_ENGINE_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+        ASP_ENGINE_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
         )
 
     target_include_directories(aspe PUBLIC

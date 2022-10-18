@@ -120,14 +120,23 @@ void Executable::Finalize()
 
 void Executable::Write(ostream &os) const
 {
-    // Write header signature and check value.
+    // Write header signature.
     os.write("AspE", 4);
+
+    // Write header version information.
+    os.put(ASP_COMPILER_VERSION_MAJOR);
+    os.put(ASP_COMPILER_VERSION_MINOR);
+    os.put(ASP_COMPILER_VERSION_PATCH);
+    os.put(ASP_COMPILER_VERSION_TWEAK);
+
+    // Write header check value.
     {
         unsigned i = 4;
         while (i--)
             os << static_cast<char>((checkValue >> (i << 3)) & 0xFF);
     }
 
+    // Write all the instructions.
     for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
     {
         auto instruction = *iter;

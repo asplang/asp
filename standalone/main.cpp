@@ -76,6 +76,27 @@ int main(int argc, char **argv)
         return 2;
     }
 
+    // Report version information.
+    uint8_t engineVersion[4], codeVersion[4];
+    AspEngineVersion(engineVersion);
+    AspCodeVersion(&engine, codeVersion);
+    cout << "Engine version: ";
+    for (unsigned i = 0; i < sizeof engineVersion; i++)
+    {
+        if (i != 0)
+            cout.put('.');
+        cout << static_cast<unsigned>(engineVersion[i]);
+    }
+    cout << endl;
+    cout << "Code version: ";
+    for (unsigned i = 0; i < sizeof codeVersion; i++)
+    {
+        if (i != 0)
+            cout.put('.');
+        cout << static_cast<unsigned>(codeVersion[i]);
+    }
+    cout << endl;
+
     // Run the code.
     AspRunResult runResult;
     while (true)
@@ -94,6 +115,12 @@ int main(int argc, char **argv)
     cout << "Dump:" << endl;
     AspDump(&engine, stdout);
     #endif
+
+    // Report low free count.
+    cout
+        << "Low free count: "
+        << AspLowFreeCount(&engine)
+        << " (max " << AspMaxDataSize(&engine) << ')' << endl;
 
     return 0;
 }

@@ -11,6 +11,14 @@
 
 static AspDataEntry *AspNewObject(AspEngine *, DataType);
 
+void AspEngineVersion(uint8_t version[4])
+{
+    version[0] = ASP_ENGINE_VERSION_MAJOR;
+    version[1] = ASP_ENGINE_VERSION_MINOR;
+    version[2] = ASP_ENGINE_VERSION_PATCH;
+    version[3] = ASP_ENGINE_VERSION_TWEAK;
+}
+
 bool AspIsNone(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_None;

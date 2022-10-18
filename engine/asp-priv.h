@@ -63,6 +63,9 @@ typedef struct AspEngine
     bool again;
     AspRunResult runResult;
 
+    /* Version information. */
+    uint8_t version[4]; /* major, minor, patch, tweak */
+
     /* Code space. */
     uint8_t *code, *pc;
     uint32_t maxCodeSize, codeEndIndex;
