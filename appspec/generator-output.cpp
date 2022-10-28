@@ -10,6 +10,8 @@
 
 using namespace std;
 
+const uint32_t ParameterFlag_Group = 0x80000000;
+
 template <class T>
 static void Write(ostream &os, T value)
 {
@@ -97,7 +99,10 @@ void Generator::WriteApplicationHeader(ostream &os)
         {
             auto &parameter = **parameterIter;
 
-            os << "     AspDataEntry *" << parameter.Name() << ",\n";
+            os << "     AspDataEntry *" << parameter.Name() << ',';
+            if (parameter.IsGroup())
+                os << " /* group */";
+            os << '\n';
         }
 
         if (functionDefinition.Parameters().ParametersEmpty())
@@ -153,10 +158,24 @@ void Generator::WriteApplicationCode(ostream &os)
             const auto &parameterName = parameter.Name();
             int32_t parameterSymbol = symbolTable.Symbol(parameterName);
 
-            os
-                << "            AspDataEntry *" << parameterName << " = "
-                << "AspParameterValue(engine, ns, "
-                << parameterSymbol << ");\n";
+            if (parameter.IsGroup())
+            {
+                os
+                    << "            AspParameterResult " << parameterName
+                    << " = AspGroupParameterValue(engine, ns, "
+                    << parameterSymbol << ");\n"
+                    << "            if (" << parameterName
+                    << ".result != AspRunResult_OK)\n"
+                    << "                return " << parameterName
+                    << ".result;\n";
+            }
+            else
+            {
+                os
+                    << "            AspDataEntry *" << parameterName
+                    << " = AspParameterValue(engine, ns, "
+                    << parameterSymbol << ");\n";
+            }
         }
 
         os
@@ -170,7 +189,10 @@ void Generator::WriteApplicationCode(ostream &os)
         {
             auto &parameter = **parameterIter;
 
-            os << parameter.Name() << ", ";
+            os << parameter.Name();
+            if (parameter.IsGroup())
+                os << ".value";
+            os << ", ";
         }
 
         os
@@ -205,8 +227,11 @@ void Generator::WriteApplicationCode(ostream &os)
             auto &parameter = **parameterIter;
 
             int32_t parameterSymbol = symbolTable.Symbol(parameter.Name());
-
             uint32_t word = *reinterpret_cast<uint32_t *>(&parameterSymbol);
+
+            if (parameter.IsGroup())
+                word |= ParameterFlag_Group;
+
             for (unsigned i = 0; i < 4; i++)
             {
                 uint32_t byte = (word >> ((3 - i) * 8)) & 0xFF;

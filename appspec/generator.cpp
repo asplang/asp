@@ -133,6 +133,14 @@ DEFINE_ACTION
     return result;
 }
 
+DEFINE_ACTION
+    (MakeGroupParameter, Parameter *, Token *, nameToken)
+{
+    auto result = new Parameter(*nameToken, true);
+    delete nameToken;
+    return result;
+}
+
 DEFINE_UTIL(FreeNonTerminal, void, NonTerminal *, nt)
 {
     delete reinterpret_cast<NonTerminal *>(nt);

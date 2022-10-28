@@ -467,7 +467,7 @@ class MakeArgumentInstruction : public Instruction
     public:
 
         explicit MakeArgumentInstruction
-            (const std::string &comment = "");
+            (bool isGroup, const std::string &comment = "");
         explicit MakeArgumentInstruction
             (std::int32_t symbol, const std::string &comment = "");
 
@@ -487,7 +487,7 @@ class MakeParameterInstruction : public Instruction
     public:
 
         MakeParameterInstruction
-            (std::int32_t symbol, bool withDefault,
+            (std::int32_t symbol, bool withDefault, bool isGroup,
              const std::string &comment = "");
 
     protected:

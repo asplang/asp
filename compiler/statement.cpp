@@ -418,10 +418,14 @@ ForStatement::~ForStatement()
     delete falseBlock;
 }
 
-Parameter::Parameter(const Token &nameToken, Expression *defaultExpression) :
+Parameter::Parameter
+    (const Token &nameToken, Expression *defaultExpression, bool isGroup) :
     name(nameToken.s),
-    defaultExpression(defaultExpression)
+    defaultExpression(defaultExpression),
+    isGroup(isGroup)
 {
+    if (defaultExpression != 0 && isGroup)
+        throw string("Group parameter cannot have a default");
 }
 
 Parameter::~Parameter()

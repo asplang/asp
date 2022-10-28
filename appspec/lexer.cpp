@@ -55,6 +55,11 @@ Token *Lexer::Next()
             Get();
             return new Token(sourceLocation, TOKEN_RIGHT_PAREN);
         }
+        else if (c == '*')
+        {
+            Get();
+            return new Token(sourceLocation, TOKEN_ASTERISK);
+        }
         else
         {
             Get();

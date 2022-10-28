@@ -298,15 +298,17 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             if (AspDataGetParameterHasDefault(entry))
                 fprintf(fp, " dflt=0x%7.7X",
                     AspDataGetParameterDefaultIndex(entry));
-            else
-                fprintf(fp, " (no dflt)");
+            else if (AspDataGetParameterIsGroup(entry))
+                fprintf(fp, " grp");
             break;
         case DataType_Argument:
             fprintf(fp, " val=0x%7.7X", AspDataGetArgumentValueIndex(entry));
             if (AspDataGetArgumentHasName(entry))
                 fprintf(fp, " sym=%d", AspDataGetArgumentSymbol(entry));
+            else if (AspDataGetArgumentIsGroup(entry))
+                fprintf(fp, " grp");
             else
-                fprintf(fp, " (pos)");
+                fprintf(fp, " pos");
             break;
         case DataType_Free:
             fprintf(fp, " next=0x%7.7X", AspDataGetFreeNext(entry));

@@ -103,7 +103,16 @@ typedef struct AspEngine
 } AspEngine;
 
 /* Definitions used by auto-generated application function support code. */
+typedef struct
+{
+    AspRunResult result;
+    AspDataEntry *value;
+} AspParameterResult;
+
+/* Functions used by auto-generated application function support code. */
 AspDataEntry *AspParameterValue
+    (AspEngine *, AspDataEntry *ns, int32_t symbol);
+AspParameterResult AspGroupParameterValue
     (AspEngine *, AspDataEntry *ns, int32_t symbol);
 
 #ifdef __cplusplus

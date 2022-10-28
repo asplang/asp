@@ -6,7 +6,33 @@
 #include <stdio.h>
 #include <limits.h>
 
+static AspRunResult asp_print1
+    (AspEngine *engine,
+     AspDataEntry *value,
+     AspDataEntry **returnValue);
+
 extern "C" AspRunResult asp_print
+    (AspEngine *engine,
+     AspDataEntry *values, /* group */
+     AspDataEntry **returnValue)
+{
+    unsigned argCount = AspCount(values);
+    for (unsigned i = 0; i < argCount; i++)
+    {
+        if (i != 0)
+            putchar(' ');
+
+        AspDataEntry *value = AspListElement(engine, values, i);
+        AspRunResult result = asp_print1(engine, value, returnValue);
+        if (result != AspRunResult_OK)
+            return result;
+    }
+
+    puts("");
+    return AspRunResult_OK;
+}
+
+static AspRunResult asp_print1
     (AspEngine *engine,
      AspDataEntry *value,
      AspDataEntry **returnValue)
@@ -57,7 +83,6 @@ extern "C" AspRunResult asp_print
     }
     else
         printf("<unsupported type>");
-    puts("");
 
     return AspRunResult_OK;
 }

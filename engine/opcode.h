@@ -117,19 +117,25 @@ typedef enum OpCode
 
     /* Function argument and parameter operations. */
     OpCode_MKARG = 0xC0, /* make positional arg */
-    OpCode_MKARGN1 = 0xC1, /* make named argument with 1-byte symbol */
-    OpCode_MKARGN2 = 0xC2, /* make named argument with 2-byte symbol */
-    OpCode_MKARGN4 = 0xC3, /* make named argument with 4-byte symbol */
-    OpCode_MKPAR1 = 0xC4, /* make parameter with 1-byte symbol */
-    OpCode_MKPAR2 = 0xC5, /* make parameter with 2-byte symbol */
-    OpCode_MKPAR4 = 0xC6, /* make parameter with 4-byte symbol */
-    OpCode_MKPARD1 = 0xC8, /* make parameter with default with 1-byte symbol */
-    OpCode_MKPARD2 = 0xC9, /* make parameter with default with 2-byte symbol */
-    OpCode_MKPARD4 = 0xCA, /* make parameter with default with 4-byte symbol */
-    OpCode_MKFUN = 0xCF, /* make function */
+    OpCode_MKNARG1 = 0xC1, /* make named argument with 1-byte symbol */
+    OpCode_MKNARG2 = 0xC2, /* make named argument with 2-byte symbol */
+    OpCode_MKNARG4 = 0xC3, /* make named argument with 4-byte symbol */
+    OpCode_MKGARG = 0xC4, /* make group argument */
+    OpCode_MKPAR1 = 0xC5, /* make parameter with 1-byte symbol */
+    OpCode_MKPAR2 = 0xC6, /* make parameter with 2-byte symbol */
+    OpCode_MKPAR4 = 0xC7, /* make parameter with 4-byte symbol */
+    OpCode_MKDPAR1 = 0xC9, /* make parameter with default with 1-byte symbol */
+    OpCode_MKDPAR2 = 0xCA, /* make parameter with default with 2-byte symbol */
+    OpCode_MKDPAR4 = 0xCB, /* make parameter with default with 4-byte symbol */
+    OpCode_MKGPAR1 = 0xCD, /* make group parameter with 1-byte symbol */
+    OpCode_MKGPAR2 = 0xCE, /* make group parameter with 2-byte symbol */
+    OpCode_MKGPAR4 = 0xCF, /* make group parameter with 4-byte symbol */
+
+    /* Function definition operations. */
+    OpCode_MKFUN = 0xD0, /* make function */
 
     /* Container entry operations. */
-    OpCode_MKKVP = 0xD3, /* make key/value pair entry */
+    OpCode_MKKVP = 0xD4, /* make key/value pair entry */
 
     /* Range operations. */
     OpCode_MKR0 = 0xD8, /* make range .. */

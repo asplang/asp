@@ -553,11 +553,16 @@ void Parameter::Emit(Executable &executable) const
         defaultExpression->Emit(executable);
     auto symbol = executable.Symbol(name);
     ostringstream oss;
+    oss << "Make";
+    if (isGroup)
+        oss << " group";
     oss
-        << "Make parameter " << name
+        << " parameter " << name
         << " (" << symbol << ')';
+    if (defaultExpression != 0)
+        oss << " with default";
     executable.Insert(new MakeParameterInstruction
-        (symbol, defaultExpression != 0, oss.str()));
+        (symbol, defaultExpression != 0, isGroup, oss.str()));
 }
 
 void ParameterList::Emit(Executable &executable) const
@@ -790,8 +795,11 @@ void Argument::Emit(Executable &executable) const
         executable.Insert(new MakeArgumentInstruction(symbol, oss.str()));
     }
     else
-        executable.Insert(new MakeArgumentInstruction
-            ("Make positional argument"));
+    {
+        ostringstream oss;
+        oss << "Make " << (isGroup ? "group" : "positional") << " argument";
+        executable.Insert(new MakeArgumentInstruction(isGroup, oss.str()));
+    }
 }
 
 void ArgumentList::Emit(Executable &executable) const

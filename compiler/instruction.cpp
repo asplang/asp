@@ -656,8 +656,9 @@ void LoadModuleInstruction::PrintCode(ostream &os) const
     os << "LDMOD " << symbol;
 }
 
-MakeArgumentInstruction::MakeArgumentInstruction(const string &comment) :
-    Instruction(OpCode_MKARG, comment),
+MakeArgumentInstruction::MakeArgumentInstruction
+    (bool isGroup, const string &comment) :
+    Instruction(isGroup ? OpCode_MKGARG : OpCode_MKARG, comment),
     symbol(0)
 {
 }
@@ -665,8 +666,8 @@ MakeArgumentInstruction::MakeArgumentInstruction(const string &comment) :
 MakeArgumentInstruction::MakeArgumentInstruction
     (int32_t symbol, const string &comment) :
     Instruction
-        (OperandSize(symbol) <= 1 ? OpCode_MKARGN1 :
-         OperandSize(symbol) == 2 ? OpCode_MKARGN2 : OpCode_MKARGN4,
+        (OperandSize(symbol) <= 1 ? OpCode_MKNARG1 :
+         OperandSize(symbol) == 2 ? OpCode_MKNARG2 : OpCode_MKNARG4,
          comment),
     symbol(symbol)
 {
@@ -674,12 +675,14 @@ MakeArgumentInstruction::MakeArgumentInstruction
 
 unsigned MakeArgumentInstruction::OperandsSize() const
 {
-    return OpCode() == OpCode_MKARG ? 0 : max(1U, OperandSize(symbol));
+    return
+        OpCode() == OpCode_MKARG || OpCode() == OpCode_MKGARG ?
+        0 : max(1U, OperandSize(symbol));
 }
 
 void MakeArgumentInstruction::WriteOperands(ostream &os) const
 {
-    if (OpCode() != OpCode_MKARG)
+    if (OpCode() != OpCode_MKARG && OpCode() != OpCode_MKGARG)
     {
         uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
         WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
@@ -688,19 +691,27 @@ void MakeArgumentInstruction::WriteOperands(ostream &os) const
 
 void MakeArgumentInstruction::PrintCode(ostream &os) const
 {
-    os << "MKARG";
-    if (OpCode() != OpCode_MKARG)
-        os << "N " << symbol;
+    os << "MK";
+    if (OpCode() == OpCode_MKGARG)
+        os << 'G';
+    else if (OpCode() != OpCode_MKARG)
+        os << 'N';
+    os << "ARG";
+    if (OpCode() != OpCode_MKARG && OpCode() != OpCode_MKGARG)
+        os << ' ' << symbol;
 }
 
 MakeParameterInstruction::MakeParameterInstruction
-    (int32_t symbol, bool withDefault, const string &comment) :
+    (int32_t symbol, bool withDefault, bool isGroup, const string &comment) :
     Instruction
         (withDefault ?
-            (OperandSize(symbol) <= 1 ? OpCode_MKPARD1 :
-             OperandSize(symbol) == 2 ? OpCode_MKPARD2 : OpCode_MKPARD4) :
-            (OperandSize(symbol) <= 1 ? OpCode_MKPAR1 :
-             OperandSize(symbol) == 2 ? OpCode_MKPAR2 : OpCode_MKPAR4),
+            (OperandSize(symbol) <= 1 ? OpCode_MKDPAR1 :
+             OperandSize(symbol) == 2 ? OpCode_MKDPAR2 : OpCode_MKDPAR4) :
+             isGroup ?
+                (OperandSize(symbol) <= 1 ? OpCode_MKGPAR1 :
+                 OperandSize(symbol) == 2 ? OpCode_MKGPAR2 : OpCode_MKGPAR4) :
+                (OperandSize(symbol) <= 1 ? OpCode_MKPAR1 :
+                 OperandSize(symbol) == 2 ? OpCode_MKPAR2 : OpCode_MKPAR4),
          comment),
     symbol(symbol)
 {
@@ -719,12 +730,16 @@ void MakeParameterInstruction::WriteOperands(ostream &os) const
 
 void MakeParameterInstruction::PrintCode(ostream &os) const
 {
-    os << "MKPAR";
-    if (OpCode() == OpCode_MKPARD1 ||
-        OpCode() == OpCode_MKPARD2 ||
-        OpCode() == OpCode_MKPARD4)
+    os << "MK";
+    if (OpCode() == OpCode_MKGPAR1 ||
+        OpCode() == OpCode_MKGPAR2 ||
+        OpCode() == OpCode_MKGPAR4)
+        os << 'G';
+    if (OpCode() == OpCode_MKDPAR1 ||
+        OpCode() == OpCode_MKDPAR2 ||
+        OpCode() == OpCode_MKDPAR4)
         os << 'D';
-    os << ' ' << symbol;
+    os << "PAR " << symbol;
 }
 
 MakeFunctionInstruction::MakeFunctionInstruction

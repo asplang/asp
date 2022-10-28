@@ -1726,9 +1726,12 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_MKARG:
+        case OpCode_MKGARG:
         {
+            bool isGroup = opCode == OpCode_MKGARG;
+
             #ifdef ASP_DEBUG
-            puts("MKARG");
+            puts(isGroup ? "MKGARG" : "MKARG");
             #endif
 
             /* Access argument value on top of the stack. */
@@ -1736,11 +1739,16 @@ static AspRunResult Step(AspEngine *engine)
             if (top == 0)
                 return AspRunResult_StackUnderflow;
 
+            /* For a group argument, ensure the value is a tuple. */
+            if (isGroup && AspDataGetType(top) != DataType_Tuple)
+                return AspRunResult_UnexpectedType;
+
             /* Create an argument. */
             AspDataEntry *argument = AspAllocEntry(engine, DataType_Argument);
             if (argument == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetArgumentValueIndex(argument, AspIndex(engine, top));
+            AspDataSetArgumentIsGroup(argument, isGroup);
 
             /* Replace the top stack entry with the argument. */
             AspDataSetStackEntryValueIndex
@@ -1749,16 +1757,16 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
-        case OpCode_MKARGN4:
+        case OpCode_MKNARG4:
             operandSize += 2;
-        case OpCode_MKARGN2:
+        case OpCode_MKNARG2:
             operandSize++;
-        case OpCode_MKARGN1:
+        case OpCode_MKNARG1:
         {
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("MKARGN ");
+            printf("MKNARG ");
             #endif
 
             /* Fetch the argument's symbol from the operand. */
@@ -1797,15 +1805,23 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_MKPAR4:
+        case OpCode_MKGPAR4:
             operandSize += 2;
         case OpCode_MKPAR2:
+        case OpCode_MKGPAR2:
             operandSize++;
         case OpCode_MKPAR1:
+        case OpCode_MKGPAR1:
         {
             operandSize++;
 
+            bool isGroup =
+                opCode == OpCode_MKGPAR1 ||
+                opCode == OpCode_MKGPAR2 ||
+                opCode == OpCode_MKGPAR4;
+
             #ifdef ASP_DEBUG
-            printf("MKPAR ");
+            printf("%s ", isGroup ? "MKGPAR" : "MKPAR");
             #endif
 
             /* Fetch the parameter's symbol from the operand. */
@@ -1828,6 +1844,7 @@ static AspRunResult Step(AspEngine *engine)
             if (parameter == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetParameterSymbol(parameter, parameterSymbol);
+            AspDataSetParameterIsGroup(parameter, isGroup);
 
             /* Push the parameter onto the stack. */
             AspDataEntry *stackEntry = AspPush(engine, parameter);
@@ -1837,16 +1854,16 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
-        case OpCode_MKPARD4:
+        case OpCode_MKDPAR4:
             operandSize += 2;
-        case OpCode_MKPARD2:
+        case OpCode_MKDPAR2:
             operandSize++;
-        case OpCode_MKPARD1:
+        case OpCode_MKDPAR1:
         {
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("MKPARD ");
+            printf("MKDPAR ");
             #endif
 
             /* Fetch the parameter's symbol from the operand. */
@@ -2163,9 +2180,51 @@ static AspRunResult Step(AspEngine *engine)
                 default:
                     return AspRunResult_UnexpectedType;
 
+                case DataType_ArgumentList:
+                {
+                    if (AspDataGetArgumentIsGroup(item))
+                    {
+                        /* Access the underlying tuple. */
+                        AspDataEntry *tuple = AspValueEntry
+                            (engine, AspDataGetArgumentValueIndex(item));
+                        if (AspDataGetType(tuple) != DataType_Tuple)
+                            return AspRunResult_UnexpectedType;
+
+                        /* Add each value in the group as an argument. */
+                        for (AspSequenceResult nextResult =
+                             AspSequenceNext(engine, tuple, 0);
+                             nextResult.element != 0;
+                             nextResult = AspSequenceNext
+                                (engine, tuple, nextResult.element))
+                        {
+                            AspDataEntry *value = nextResult.value;
+
+                            /* Create an argument. */
+                            AspDataEntry *argument = AspAllocEntry
+                                (engine, DataType_Argument);
+                            if (argument == 0)
+                                return AspRunResult_OutOfDataMemory;
+                            AspDataSetArgumentValueIndex
+                                (argument, AspIndex(engine, value));
+                            AspRef(engine, value);
+
+                            /* Append the argument to the list. */
+                            AspSequenceResult appendResult = AspSequenceAppend
+                                (engine, container, argument);
+                            if (appendResult.result != AspRunResult_OK)
+                                return appendResult.result;
+                        }
+
+                        AspUnref(engine, item);
+
+                        break;
+                    }
+
+                    /* Fall through... */
+                }
+
                 case DataType_Tuple:
                 case DataType_ParameterList:
-                case DataType_ArgumentList:
                 {
                     AspSequenceResult appendResult = AspSequenceAppend
                         (engine, container, item);

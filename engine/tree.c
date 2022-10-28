@@ -353,12 +353,6 @@ AspTreeResult AspTreeNext
     return result;
 }
 
-AspDataEntry *AspTreeNodeValue(AspEngine *engine, AspDataEntry *node)
-{
-    return node == 0 || AspDataGetType(node) == DataType_SetNode ?
-        0 : AspValueEntry(engine, AspDataGetTreeNodeValueIndex(node));
-}
-
 static AspRunResult Insert
     (AspEngine *engine, AspDataEntry *tree, AspDataEntry *node)
 {

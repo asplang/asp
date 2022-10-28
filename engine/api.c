@@ -301,6 +301,7 @@ unsigned AspCount(const AspDataEntry *entry)
             return 1;
 
         case DataType_String:
+        case DataType_Tuple:
         case DataType_List:
             return AspDataGetSequenceCount(entry);
 

@@ -87,7 +87,7 @@ void Compiler::AddModuleFileName(const string &moduleFileName)
         oss
             << "Module file name '" << moduleFileName
             << "' does not end with '" << ModuleSuffix << '\'';
-        throw oss.str();
+        ReportError(oss.str());
     }
 
     // Strip off the suffix and add the module name.
@@ -157,7 +157,7 @@ void Compiler::Finalize()
         (t1 p1, t2 p2, t3 p3, t4 p4)
 #define DO_ACTION(action) \
     auto result = (action); \
-    if (result) \
+    if (result && result->sourceLocation.line != 0) \
         compiler->currentSourceLocation = result->sourceLocation; \
     return result;
 
@@ -452,22 +452,43 @@ DEFINE_ACTION
      Token *, nameToken, ParameterList *, parameterList, Block *, block)
 {
     // Ensure defaulted parameters follow positional ones.
-    bool positionalParameterAllowed = true;
+    bool groupSeen = false, defaultSeen = false;
     unsigned position = 1;
     for (auto iter = parameterList->ParametersBegin();
          iter != parameterList->ParametersEnd(); iter++, position++)
     {
         auto parameter = *iter;
 
-        if (parameter->HasDefault())
-            positionalParameterAllowed = false;
-        else if (!positionalParameterAllowed)
+        if (parameter->IsGroup())
         {
-            ostringstream oss;
-            oss
-                << "Parameter " << position
-                << " with no default follows parameter(s) with default(s)";
-            ReportError(oss.str());
+            if (groupSeen)
+            {
+                ostringstream oss;
+                oss
+                    << "Duplicate group parameter " << position
+                    << " not permitted";
+                ReportError(oss.str());
+            }
+            groupSeen = true;
+        }
+        else if (parameter->HasDefault())
+        {
+            defaultSeen = true;
+        }
+        else
+        {
+            if (groupSeen || defaultSeen)
+            {
+                ostringstream oss;
+                oss
+                    << "Parameter " << position
+                    << " with no default follows";
+                if (groupSeen)
+                    oss << " group parameter";
+                else if (defaultSeen)
+                    oss << " parameter(s) with default(s)";
+                ReportError(oss.str());
+            }
         }
     }
 
@@ -799,6 +820,15 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeGroupParameter, Parameter *,
+     Token *, nameToken)
+{
+    auto result = new Parameter(*nameToken, 0, true);
+    delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
     (MakeEmptyArgumentList, ArgumentList *, int, _)
 {
     return new ArgumentList;
@@ -821,6 +851,18 @@ DEFINE_ACTION
         new Argument(valueExpression);
     delete nameToken;
     return result;
+}
+
+DEFINE_ACTION
+    (MakeGroupArgument, Argument *,
+     Expression *, valueExpression)
+{
+     auto constantExpression = dynamic_cast<ConstantExpression *>
+        (valueExpression);
+    if (constantExpression != 0)
+        ReportError("Cannot pass non-tuple as a group argument");
+
+    return new Argument(valueExpression, true);
 }
 
 DEFINE_ACTION

@@ -118,16 +118,19 @@ void UnaryExpression::Parent(const Statement *statement)
     expression->Parent(statement);
 }
 
-Argument::Argument(const Token &nameToken, Expression *valueExpression) :
+Argument::Argument
+    (const Token &nameToken, Expression *valueExpression) :
     NonTerminal(nameToken),
     name(nameToken.s),
-    valueExpression(valueExpression)
+    valueExpression(valueExpression),
+    isGroup(false)
 {
 }
 
-Argument::Argument(Expression *valueExpression) :
+Argument::Argument(Expression *valueExpression, bool isGroup) :
     NonTerminal((SourceElement &)*valueExpression),
-    valueExpression(valueExpression)
+    valueExpression(valueExpression),
+    isGroup(isGroup)
 {
 }
 

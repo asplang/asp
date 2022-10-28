@@ -384,6 +384,10 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetBit0((eptr), (unsigned)(value)))
 #define AspDataGetParameterHasDefault(eptr) \
     ((bool)(AspDataGetBit0((eptr))))
+#define AspDataSetParameterIsGroup(eptr, value) \
+    (AspDataSetBit1((eptr), (unsigned)(value)))
+#define AspDataGetParameterIsGroup(eptr) \
+    ((bool)(AspDataGetBit1((eptr))))
 #define AspDataSetParameterDefaultIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetParameterDefaultIndex(eptr) \
@@ -398,6 +402,10 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetBit0((eptr), (unsigned)(value)))
 #define AspDataGetArgumentHasName(eptr) \
     ((bool)(AspDataGetBit0((eptr))))
+#define AspDataSetArgumentIsGroup(eptr, value) \
+    (AspDataSetBit1((eptr), (unsigned)(value)))
+#define AspDataGetArgumentIsGroup(eptr) \
+    ((bool)(AspDataGetBit1((eptr))))
 #define AspDataSetArgumentValueIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetArgumentValueIndex(eptr) \

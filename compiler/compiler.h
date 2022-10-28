@@ -227,6 +227,9 @@ class Compiler
     DECLARE_METHOD
         (MakeParameter, Parameter *,
          Token *, Expression *);
+    DECLARE_METHOD
+        (MakeGroupParameter, Parameter *,
+         Token *);
 
     /* Arguments. */
     DECLARE_METHOD
@@ -237,6 +240,9 @@ class Compiler
     DECLARE_METHOD
         (MakeArgument, Argument *,
          Token *, Expression *);
+    DECLARE_METHOD
+        (MakeGroupArgument, Argument *,
+         Expression *);
 
     /* Variables. */
     DECLARE_METHOD

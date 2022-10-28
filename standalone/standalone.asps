@@ -3,7 +3,7 @@
 #
 
 # General purpose print.
-def print(value) = asp_print
+def print(*values) = asp_print
 
 # Trigonometric functions.
 def cos(x) = asp_cos

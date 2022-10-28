@@ -367,7 +367,7 @@ class Parameter : public NonTerminal
 {
     public:
 
-        Parameter(const Token &name, Expression *);
+        Parameter(const Token &name, Expression *, bool group = false);
         ~Parameter();
 
         void Parent(const Statement *);
@@ -376,6 +376,10 @@ class Parameter : public NonTerminal
         {
             return defaultExpression != 0;
         }
+        bool IsGroup() const
+        {
+            return isGroup;
+        }
 
         void Emit(Executable &) const;
 
@@ -383,6 +387,7 @@ class Parameter : public NonTerminal
 
         std::string name;
         Expression *defaultExpression;
+        bool isGroup;
 };
 
 class ParameterList : public NonTerminal

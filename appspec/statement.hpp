@@ -13,16 +13,21 @@ class Parameter : public NonTerminal
 {
     public:
 
-        Parameter(const Token &name);
+        explicit Parameter(const Token &name, bool group = false);
 
         std::string Name() const
         {
             return name;
         }
+        bool IsGroup() const
+        {
+            return isGroup;
+        }
 
     private:
 
         std::string name;
+        bool isGroup;
 };
 
 class ParameterList : public NonTerminal

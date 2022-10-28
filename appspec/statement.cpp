@@ -6,8 +6,9 @@
 
 using namespace std;
 
-Parameter::Parameter(const Token &nameToken) :
-    name(nameToken.s)
+Parameter::Parameter(const Token &nameToken, bool isGroup) :
+    name(nameToken.s),
+    isGroup(isGroup)
 {
 }
 

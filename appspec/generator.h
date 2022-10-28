@@ -75,6 +75,8 @@ class Generator
          ParameterList *, Parameter *);
     DECLARE_METHOD
         (MakeParameter, Parameter *, Token *);
+    DECLARE_METHOD
+        (MakeGroupParameter, Parameter *, Token *);
 
     /* Miscellaneous methods. */
     DECLARE_METHOD(FreeNonTerminal, void, NonTerminal *);

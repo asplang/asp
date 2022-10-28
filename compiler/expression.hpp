@@ -122,7 +122,7 @@ class Argument : public NonTerminal
     public:
 
         Argument(const Token &, Expression *);
-        explicit Argument(Expression *);
+        explicit Argument(Expression *, bool isGroup = false);
         ~Argument();
 
         void Parent(const Statement *);
@@ -131,6 +131,10 @@ class Argument : public NonTerminal
         {
             return !name.empty();
         }
+        bool IsGroup() const
+        {
+            return isGroup;
+        }
 
         void Emit(Executable &) const;
 
@@ -138,6 +142,7 @@ class Argument : public NonTerminal
 
         std::string name;
         Expression *valueExpression;
+        bool isGroup;
 };
 
 class ArgumentList : public NonTerminal

@@ -49,7 +49,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             {
                 AspSequenceResult nextResult = {AspRunResult_OK, 0, 0};
                 while ((nextResult = AspSequenceNext
-                       (engine, entry, 0)).element != 0)
+                        (engine, entry, 0)).element != 0)
                 {
                     AspRunResult assertResult = AspAssert
                         (engine,

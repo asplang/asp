@@ -269,6 +269,12 @@ parameter(result) ::= NAME(nameToken).
     result = ACTION(MakeParameter, nameToken, 0);
 }
 
+parameter(result) ::=
+    ASTERISK NAME(nameToken).
+{
+    result = ACTION(MakeGroupParameter, nameToken);
+}
+
 %type block {Block *}
 
 block(result) ::= BLOCK_START statements(block) BLOCK_END.
@@ -878,6 +884,11 @@ argument(result) ::=
 argument(result) ::= expression1(valueExpression). [NAME]
 {
     result = ACTION(MakeArgument, 0, valueExpression);
+}
+
+argument(result) ::= ASTERISK expression1(valueExpression). [NAME]
+{
+    result = ACTION(MakeGroupArgument, valueExpression);
 }
 
 %type range {RangeExpression *}

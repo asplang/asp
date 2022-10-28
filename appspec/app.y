@@ -100,3 +100,8 @@ parameter(result) ::= NAME(nameToken).
 {
     result = ACTION(MakeParameter, nameToken);
 }
+
+parameter(result) ::= ASTERISK NAME(nameToken).
+{
+    result = ACTION(MakeGroupParameter, nameToken);
+}
