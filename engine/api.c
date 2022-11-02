@@ -399,11 +399,22 @@ AspDataEntry *AspNewFloat(AspEngine *engine, double value)
     return entry;
 }
 
-AspDataEntry *AspNewString(AspEngine *engine, const char *value)
+AspDataEntry *AspNewString
+    (AspEngine *engine, const char *buffer, size_t bufferSize)
 {
-    /* TODO: Implement using logic from engine.c, PUSHS instruction. */
-    engine->runResult = AspRunResult_NotImplemented;
-    return 0;
+    AspDataEntry *entry = AspNewObject(engine, DataType_String);
+    if (entry == 0)
+        return 0;
+
+    AspRunResult appendResult = AspStringAppendBuffer
+        (engine, entry, buffer, bufferSize);
+    if (appendResult != AspRunResult_OK)
+    {
+        AspFree(engine, AspIndex(engine, entry));
+        entry = 0;
+    }
+
+    return entry;
 }
 
 AspDataEntry *AspNewTuple(AspEngine *engine)

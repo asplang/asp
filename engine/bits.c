@@ -29,7 +29,7 @@ int32_t AspBitGetSignedField
 {
     uint32_t value = AspBitGetField(word, shift, width);
     if (AspBitGet(value, width - 1) != 0)
-        AspBitSetField(&value, width, 32U - width, 0xFFFF);
+        AspBitSetField(&value, width, 32U - width, 0xFFFFFFFF);
     return *(int32_t *)&value;
 }
 

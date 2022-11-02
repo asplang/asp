@@ -127,7 +127,7 @@ AspDataEntry *AspNewEllipsis(AspEngine *);
 AspDataEntry *AspNewBoolean(AspEngine *, bool);
 AspDataEntry *AspNewInteger(AspEngine *, int32_t);
 AspDataEntry *AspNewFloat(AspEngine *, double);
-AspDataEntry *AspNewString(AspEngine *, const char *);
+AspDataEntry *AspNewString(AspEngine *, const char *buffer, size_t bufferSize);
 AspDataEntry *AspNewTuple(AspEngine *);
 AspDataEntry *AspNewList(AspEngine *);
 AspDataEntry *AspNewSet(AspEngine *);

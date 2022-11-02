@@ -743,9 +743,23 @@ static AspOperationResult PerformEqualityOperation
             }
 
             case DataType_String:
-                /* TODO: Implement. */
-                result.result = AspRunResult_NotImplemented;
+            {
+                uint32_t leftCount = AspDataGetSequenceCount(left);
+                uint32_t rightCount = AspDataGetSequenceCount(right);
+                isEqual = leftCount == rightCount;
+                if (!isEqual)
+                    break;
+                for (uint32_t i = 0; i < leftCount; i++)
+                {
+                    if (AspStringElement(engine, left, i) !=
+                        AspStringElement(engine, right, i))
+                    {
+                        isEqual = false;
+                        break;
+                    }
+                }
                 break;
+            }
 
             case DataType_Tuple:
             case DataType_List:
@@ -757,9 +771,30 @@ static AspOperationResult PerformEqualityOperation
                 break;
 
             case DataType_Iterator:
-                /* TODO: Implement. */
-                result.result = AspRunResult_NotImplemented;
+            {
+                uint32_t leftIterableIndex =
+                    AspDataGetIteratorIterableIndex(left);
+                uint32_t rightIterableIndex =
+                    AspDataGetIteratorIterableIndex(right);
+                uint32_t leftMemberIndex =
+                    AspDataGetIteratorMemberIndex(left);
+                uint32_t rightMemberIndex =
+                    AspDataGetIteratorMemberIndex(right);
+                isEqual =
+                    leftIterableIndex == rightIterableIndex &&
+                    leftMemberIndex == rightMemberIndex;
+                if (!isEqual)
+                    break;
+                AspDataEntry *iterable = AspValueEntry
+                    (engine, leftIterableIndex);
+                if (iterable == 0 ||
+                    AspDataGetType(iterable) != DataType_String)
+                    break;
+                isEqual =
+                    AspDataGetIteratorStringIndex(left) ==
+                    AspDataGetIteratorStringIndex(right);
                 break;
+            }
 
             case DataType_Type:
                 isEqual =
