@@ -108,15 +108,18 @@ bool AspIsTuple(const AspDataEntry *);
 bool AspIsList(const AspDataEntry *);
 bool AspIsSet(const AspDataEntry *);
 bool AspIsDictionary(const AspDataEntry *);
+bool AspIsType(const AspDataEntry *);
 bool AspIsTrue(AspEngine *, const AspDataEntry *);
 bool AspIntegerValue(const AspDataEntry *, int32_t *);
 bool AspFloatValue(const AspDataEntry *, double *);
-bool AspRangeValue
+bool AspRangeValues
     (AspEngine *, const AspDataEntry *,
      int32_t *start, int32_t *end, int32_t *step);
 bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);
+AspDataEntry *AspToString(AspEngine *, AspDataEntry *);
+const char *AspTypeString(const AspDataEntry *type);
 unsigned AspCount(const AspDataEntry *);
 AspDataEntry *AspListElement(AspEngine *, AspDataEntry *list, int index);
 char AspStringElement(AspEngine *, const AspDataEntry *str, int index);

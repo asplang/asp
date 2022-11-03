@@ -38,6 +38,8 @@ if (BUILD_FOR_TARGET)
         compare.c
         operation.c
         function.c
+        lib-type.c
+        lib-math.c
         $<$<CONFIG:Debug>:debug.c>
         )
 

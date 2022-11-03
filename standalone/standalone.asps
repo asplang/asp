@@ -5,35 +5,43 @@
 # General purpose print.
 def print(*values) = asp_print
 
+# Type functions.
+def type(object) = AspLib_type
+def len(object) = AspLib_len
+def bool(x) = AspLib_bool
+def int(x) = AspLib_int
+def float(x) = AspLib_float
+def str(x) = AspLib_str
+
 # Trigonometric functions.
-def cos(x) = asp_cos
-def sin(x) = asp_sin
-def tan(x) = asp_tan
-def acos(x) = asp_acos
-def asin(x) = asp_asin
-def atan(x) = asp_atan
-def atan2(y, x) = asp_atan2
+def sin(x) = AspLib_sin
+def cos(x) = AspLib_cos
+def tan(x) = AspLib_tan
+def asin(x) = AspLib_asin
+def acos(x) = AspLib_acos
+def atan(x) = AspLib_atan
+def atan2(y, x) = AspLib_atan2
 
 # Hyperbolic functions.
-def cosh(x) = asp_cosh
-def sinh(x) = asp_sinh
-def tanh(x) = asp_tanh
-def acosh(x) = asp_acosh
-def asinh(x) = asp_asinh
-def atanh(x) = asp_atanh
+def sinh(x) = AspLib_sinh
+def cosh(x) = AspLib_cosh
+def tanh(x) = AspLib_tanh
+def asinh(x) = AspLib_asinh
+def acosh(x) = AspLib_acosh
+def atanh(x) = AspLib_atanh
 
 # Hypotenuse function.
-def hypot(x, y) = asp_hypot
+def hypot(x, y) = AspLib_hypot
 
 # Exponential and logarithmic functions.
-def exp(x) = asp_exp
-def log(x) = asp_log
-def log10(x) = asp_log10
+def exp(x) = AspLib_exp
+def log(x) = AspLib_log
+def log10(x) = AspLib_log10
 
 # Rounding functions.
-def ceil(x) = asp_ceil
-def floor(x) = asp_floor
-def round(x) = asp_round
+def ceil(x) = AspLib_ceil
+def floor(x) = AspLib_floor
+def round(x) = AspLib_round
 
 # Other functions.
-def abs(x) = asp_abs
+def abs(x) = AspLib_abs

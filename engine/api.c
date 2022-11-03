@@ -6,6 +6,7 @@
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
+#include <stdio.h>
 #include <string.h>
 #include <limits.h>
 
@@ -100,6 +101,11 @@ bool AspIsSet(const AspDataEntry *entry)
 bool AspIsDictionary(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Dictionary;
+}
+
+bool AspIsType(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Type;
 }
 
 bool AspIsTrue(AspEngine *engine, const AspDataEntry *entry)
@@ -220,7 +226,7 @@ bool AspFloatValue(const AspDataEntry *entry, double *result)
     return true;
 }
 
-bool AspRangeValue
+bool AspRangeValues
     (AspEngine *engine, const AspDataEntry *entry,
      int32_t *start, int32_t *end, int32_t *step)
 {
@@ -288,6 +294,102 @@ bool AspStringValue
     }
 
     return true;
+}
+
+AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
+{
+    if (AspIsString(entry))
+    {
+        AspRef(engine, entry);
+        return entry;
+    }
+
+    char buffer[100];
+    if (AspIsNone(entry))
+        strcpy(buffer, "None");
+    else if (AspIsEllipsis(entry))
+        strcpy(buffer, "...");
+    else if (AspIsBoolean(entry))
+        strcpy(buffer, AspIsTrue(engine, entry) ? "True" : "False");
+    else if (AspIsInteger(entry))
+    {
+        int32_t i;
+        AspIntegerValue(entry, &i);
+        sprintf(buffer, "%d", i);
+    }
+    else if (AspIsFloat(entry))
+    {
+        double f;
+        AspFloatValue(entry, &f);
+        sprintf(buffer, "%g", f);
+    }
+    else if (AspIsRange(entry))
+    {
+        int count = 0;
+        int32_t start, end, step;
+        AspRangeValues(engine, entry, &start, &end, &step);
+        if (start != 0)
+            count += sprintf(buffer + count, "%d", start);
+        count += sprintf(buffer + count, "..");
+        bool unbounded =
+            step < 0 && end == INT32_MIN ||
+            step > 0 && end == INT32_MAX;
+        if (!unbounded)
+            count += sprintf(buffer + count, "%d", end);
+        if (step != 1)
+            count += sprintf(buffer + count, ":%d", step);
+    }
+    else if (AspIsType(entry))
+    {
+        const char *typeString = AspTypeString(entry);
+        strcpy(buffer, typeString == 0 ? "?" : typeString);
+    }
+    else
+        strcpy(buffer, "<unsupported type>");
+
+    return AspNewString(engine, buffer, strlen(buffer));
+}
+
+const char *AspTypeString(const AspDataEntry *typeEntry)
+{
+    if (typeEntry == 0 || AspDataGetType(typeEntry) != DataType_Type)
+        return 0;
+
+    switch (AspDataGetTypeValue(typeEntry))
+    {
+        case DataType_None:
+            return "<type None>";
+        case DataType_Ellipsis:
+            return "<type ...>";
+        case DataType_Boolean:
+            return "<type bool>";
+        case DataType_Integer:
+            return "<type int>";
+        case DataType_Float:
+            return "<type float>";
+        case DataType_Range:
+            return "<type range>";
+        case DataType_String:
+            return "<type str>";
+        case DataType_Tuple:
+            return "<type tuple>";
+        case DataType_List:
+            return "<type list>";
+        case DataType_Set:
+            return "<type set>";
+        case DataType_Dictionary:
+            return "<type dict>";
+        case DataType_Iterator:
+            return "<type iter>";
+        case DataType_Function:
+            return "<type func>";
+        case DataType_Module:
+            return "<type mod>";
+        case DataType_Type:
+            return "<type type>";
+    }
+
+    return "<type ?>";
 }
 
 unsigned AspCount(const AspDataEntry *entry)

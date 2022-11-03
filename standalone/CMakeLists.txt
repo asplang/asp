@@ -31,7 +31,6 @@ add_executable(asps
     main.cpp
     standalone.c
     functions-print.cpp
-    functions-math.cpp
     )
 
 target_link_libraries(asps
