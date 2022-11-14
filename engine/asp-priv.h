@@ -83,13 +83,16 @@ typedef struct AspEngine
     AspDataEntry *stackTop;
     unsigned stackCount;
 
-    /* Modules. */
+    /* Modules namespace. */
     AspDataEntry *modules;
+
+    /* System module. */
+    AspDataEntry *systemModule;
 
     /* Current module. */
     AspDataEntry *module;
 
-    /* Current name spaces. */
+    /* Current namespaces. */
     AspDataEntry *systemNamespace, *globalNamespace, *localNamespace;
 
     /* Application specification (functions). */

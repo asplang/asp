@@ -3,6 +3,7 @@
  */
 
 #include "function.h"
+#include "symbols.h"
 #include "asp-priv.h"
 #include "sequence.h"
 #include "tree.h"
@@ -12,14 +13,17 @@
 #include <stdio.h>
 #endif
 
-const uint32_t ParameterSpecMask = 0x0FFFFFFF;
-const uint32_t ParameterFlag_Group = 0x80000000;
+static const uint32_t ParameterSpecMask = 0x0FFFFFFF;
+static const uint32_t ParameterFlag_Group = 0x80000000;
 
 AspRunResult AspInitializeAppFunctions(AspEngine *engine)
 {
-    /* Create definitions for application functions. */
+    /* Create definitions for application functions.
+       Note that the first few symbols are reserved:
+       0 - main module name
+       1 - args*/
     unsigned i = 0;
-    for (int32_t functionSymbol = 1; ; functionSymbol++)
+    for (int32_t functionSymbol = AspScriptSymbolBase; ; functionSymbol++)
     {
         if (i >= engine->appSpec->specSize)
             break;

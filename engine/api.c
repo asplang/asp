@@ -6,6 +6,7 @@
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
+#include "symbols.h"
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
@@ -588,6 +589,13 @@ bool AspDictionaryInsert
 {
     AspTreeResult result = AspTreeInsert(engine, dictionary, key, value);
     return result.result == AspRunResult_OK;
+}
+
+AspDataEntry *AspArguments(AspEngine *engine)
+{
+    AspTreeResult findResult = AspFindSymbol
+        (engine, engine->systemNamespace, AspSystemArgumentsSymbol);
+    return findResult.value;
 }
 
 void *AspContext(const AspEngine *engine)

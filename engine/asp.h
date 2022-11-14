@@ -82,6 +82,8 @@ AspAddCodeResult AspAddCode
     (AspEngine *, const char *code, size_t codeSize);
 AspAddCodeResult AspSeal(AspEngine *);
 AspRunResult AspReset(AspEngine *);
+AspRunResult AspSetArguments(AspEngine *, const char * const *);
+AspRunResult AspSetArgumentsString(AspEngine *, const char *);
 
 /* Execution control. */
 AspRunResult AspRestart(AspEngine *);
@@ -148,6 +150,7 @@ bool AspDictionaryInsert
      AspDataEntry *key, AspDataEntry *value);
 void AspRef(AspEngine *, AspDataEntry *);
 void AspUnref(AspEngine *, AspDataEntry *);
+AspDataEntry *AspArguments(AspEngine *);
 void *AspContext(const AspEngine *);
 bool AspAgain(const AspEngine *);
 AspRunResult AspAssert(AspEngine *, bool);

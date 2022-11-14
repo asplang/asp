@@ -5,7 +5,9 @@
 #include "asp-priv.h"
 #include "data.h"
 #include "tree.h"
+#include "arguments.h"
 #include "function.h"
+#include "symbols.h"
 #include <string.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -233,23 +235,36 @@ static AspRunResult ResetData(AspEngine *engine)
     if (engine->modules == 0)
         return AspRunResult_OutOfDataMemory;
 
-    /* Create system module. This is where app function definitions go. */
+    /* Create the system module. This is where app function definitions go. */
     engine->systemNamespace = AspAllocEntry(engine, DataType_Namespace);
     if (engine->systemNamespace == 0)
         return AspRunResult_OutOfDataMemory;
-    AspDataEntry *systemModule = AspAllocEntry(engine, DataType_Module);
-    if (systemModule == 0)
+    engine->systemModule = AspAllocEntry(engine, DataType_Module);
+    if (engine->systemModule == 0)
         return AspRunResult_OutOfDataMemory;
-    AspDataSetModuleCodeAddress(systemModule, 0);
+    AspDataSetModuleCodeAddress(engine->systemModule, 0);
     AspDataSetModuleNamespaceIndex
-        (systemModule, AspIndex(engine, engine->systemNamespace));
-    AspDataSetModuleIsLoaded(systemModule, true);
-    AspTreeResult addResult = AspTreeTryInsertBySymbol
-        (engine, engine->modules, -1, systemModule);
-    AspUnref(engine, systemModule);
-    if (addResult.result != AspRunResult_OK)
-        return addResult.result;
-    engine->module = systemModule;
+        (engine->systemModule, AspIndex(engine, engine->systemNamespace));
+    AspDataSetModuleIsLoaded(engine->systemModule, true);
+    AspTreeResult addSystemModuleResult = AspTreeTryInsertBySymbol
+        (engine, engine->modules, AspSystemModuleSymbol, engine->systemModule);
+    AspUnref(engine, engine->systemModule);
+    if (addSystemModuleResult.result != AspRunResult_OK)
+        return addSystemModuleResult.result;
+    engine->module = engine->systemModule;
+
+    /* Add an empty arguments tuple to the system module. */
+    AspDataEntry *arguments = AspAllocEntry(engine, DataType_Tuple);
+    if (arguments == 0)
+        return AspRunResult_OutOfDataMemory;
+    AspTreeResult addArgumentsResult = AspTreeTryInsertBySymbol
+        (engine, engine->systemNamespace, AspSystemArgumentsSymbol, arguments);
+    if (addArgumentsResult.result != AspRunResult_OK)
+        return addArgumentsResult.result;
+    AspUnref(engine, arguments);
+    AspRunResult argumentsResult = AspInitializeArguments(engine);
+    if (argumentsResult != AspRunResult_OK)
+        return argumentsResult;
 
     /* Set local and global namespaces initially to the system namespace. */
     engine->localNamespace = engine->globalNamespace = engine->systemNamespace;

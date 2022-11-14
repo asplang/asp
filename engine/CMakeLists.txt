@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspe
-    VERSION 0.2.0.0
+    VERSION 0.3.0.0
     LANGUAGES C
     )
 
@@ -38,6 +38,7 @@ if (BUILD_FOR_TARGET)
         compare.c
         operation.c
         function.c
+        arguments.c
         lib-type.c
         lib-math.c
         $<$<CONFIG:Debug>:debug.c>

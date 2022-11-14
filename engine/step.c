@@ -13,6 +13,7 @@
 #include "assign.h"
 #include "function.h"
 #include "operation.h"
+#include "symbols.h"
 #include <string.h>
 #include <stdint.h>
 
@@ -1597,6 +1598,15 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *ns = AspAllocEntry(engine, DataType_Namespace);
             if (ns == 0)
                 return AspRunResult_OutOfDataMemory;
+
+            /* Add an entry for the system module to the module's namespace. */
+            if (moduleSymbol != AspSystemModuleSymbol)
+            {
+                AspTreeResult addSystemResult = AspTreeTryInsertBySymbol
+                    (engine, ns, AspSystemModuleSymbol, engine->systemModule);
+                if (addSystemResult.result != AspRunResult_OK)
+                    return addSystemResult.result;
+            }
 
             /* Create the module. */
             AspDataEntry *module = AspAllocEntry(engine, DataType_Module);

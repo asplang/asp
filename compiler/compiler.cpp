@@ -7,6 +7,7 @@
 #include "expression.hpp"
 #include "statement.hpp"
 #include "instruction.hpp"
+#include "symbols.h"
 #include <iostream>
 #include <sstream>
 #include <cstring>
@@ -49,6 +50,10 @@ void Compiler::LoadApplicationSpec(istream &specStream)
     }
     executable.SetCheckValue(checkValue);
 
+    // Reserve symbols used in the system module.
+    symbolTable.Symbol(AspSystemModuleName);
+    symbolTable.Symbol(AspSystemArgumentsName);
+
     // Define symbols for all names used in the application.
     while (true)
     {
@@ -58,13 +63,27 @@ void Compiler::LoadApplicationSpec(istream &specStream)
             break;
         int32_t symbol = symbolTable.Symbol(name);
     }
-
-    // Reserve symbol for system namespace.
-    int32_t systemNamespaceSymbol = symbolTable.Symbol();
 }
 
 void Compiler::AddModule(const string &moduleName)
 {
+    // Ensure the module name does not conflict with a name reserved for use
+    // in the system.
+    if ((moduleName == AspSystemModuleName && moduleNames.empty()) ||
+        moduleName == AspSystemArgumentsName)
+    {
+        ostringstream oss;
+        oss
+            << "Cannot use module name '" << moduleName
+            << "' which is reserved for system use";
+        ReportError(oss.str());
+    }
+
+    // Ignore import of the system module. It is implicitly imported into
+    // every module anyway.
+    if (moduleName == AspSystemModuleName)
+        return;
+
     // Add the module only if it has never been added before.
     auto iter = moduleNames.find(moduleName);
     if (iter == moduleNames.end())

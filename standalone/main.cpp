@@ -16,7 +16,7 @@ const size_t ASP_CODE_BYTE_COUNT = 4096;
 int main(int argc, char **argv)
 {
     // Obtain executable file name.
-    if (argc != 2)
+    if (argc < 2)
     {
         cerr << "Specify program" << endl;
         return 1;
@@ -97,6 +97,16 @@ int main(int argc, char **argv)
     }
     cout << endl;
 
+    // Set arguments.
+    AspRunResult argumentResult = AspSetArguments(&engine, argv + 2);
+    if (argumentResult != AspRunResult_OK)
+    {
+        cerr
+            << "Error 0x" << hex << argumentResult
+            << " setting arguments" << endl;
+        return 2;
+    }
+
     // Run the code.
     AspRunResult runResult;
     while (true)
@@ -122,5 +132,5 @@ int main(int argc, char **argv)
         << AspLowFreeCount(&engine)
         << " (max " << AspMaxDataSize(&engine) << ')' << endl;
 
-    return 0;
+    return runResult == AspRunResult_Complete ? 0 : 2;
 }

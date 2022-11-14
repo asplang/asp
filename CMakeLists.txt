@@ -5,7 +5,7 @@ project(asp
     # Only major and minor components should be specified.
     # The version of the engine (aspe) and compiler (aspc) projects must be
     # compatible with this version (major and minor components must match).
-    VERSION 0.2
+    VERSION 0.3
     )
 
 option(BUILD_FOR_HOST

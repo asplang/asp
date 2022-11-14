@@ -4,6 +4,7 @@
 
 #include "generator.h"
 #include "symbol.hpp"
+#include "symbols.h"
 #include "crc.h"
 #include <iomanip>
 #include <set>
@@ -25,6 +26,10 @@ void Generator::WriteCompilerSpec(ostream &os)
     // Write the specification's check value.
     os.write("AspS", 4);
     Write(os, CheckValue());
+
+    // Reserve symbols used in the system module.
+    symbolTable.Symbol(AspSystemModuleName);
+    symbolTable.Symbol(AspSystemArgumentsName);
 
     // Assign symbols, function names first, then parameter names,
     // writing each name only once, in order of assigned symbol.
