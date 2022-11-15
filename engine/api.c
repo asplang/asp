@@ -562,6 +562,12 @@ static AspDataEntry *AspNewObject(AspEngine *engine, DataType type)
 bool AspListAppend
     (AspEngine *engine, AspDataEntry *list, AspDataEntry *value)
 {
+    /* Ensure the container is a list, not a tuple. */
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(list) == DataType_List);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
     AspSequenceResult result = AspSequenceAppend(engine, list, value);
     return result.result == AspRunResult_OK;
 }
@@ -570,6 +576,12 @@ bool AspListInsert
     (AspEngine *engine, AspDataEntry *list,
      int index, AspDataEntry *value)
 {
+    /* Ensure the container is a list, not a tuple. */
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(list) == DataType_List);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
     AspSequenceResult result = AspSequenceInsertByIndex
         (engine, list, index, value);
     return result.result == AspRunResult_OK;
@@ -579,6 +591,13 @@ bool AspStringAppend
     (AspEngine *engine, AspDataEntry *str,
      const char *buffer, size_t bufferSize)
 {
+    /* Ensure we're using a string that is not referenced anywhere else. */
+    AspAssert(AspDataGetType(str) == DataType_String);
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetUseCount(str) == 1);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
     AspRunResult result = AspStringAppendBuffer
         (engine, str, buffer, bufferSize);
     return result == AspRunResult_OK;
@@ -587,6 +606,12 @@ bool AspStringAppend
 bool AspSetInsert
     (AspEngine *engine, AspDataEntry *set, AspDataEntry *key)
 {
+    /* Ensure the container is a set. */
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(set) == DataType_Set);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
     AspTreeResult result = AspTreeInsert(engine, set, key, 0);
     return result.result == AspRunResult_OK;
 }
@@ -595,6 +620,12 @@ bool AspDictionaryInsert
     (AspEngine *engine, AspDataEntry *dictionary,
      AspDataEntry *key, AspDataEntry *value)
 {
+    /* Ensure the container is a dictionary. */
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(dictionary) == DataType_Dictionary);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
     AspTreeResult result = AspTreeInsert(engine, dictionary, key, value);
     return result.result == AspRunResult_OK;
 }
