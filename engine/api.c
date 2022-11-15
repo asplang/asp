@@ -592,7 +592,7 @@ bool AspStringAppend
      const char *buffer, size_t bufferSize)
 {
     /* Ensure we're using a string that is not referenced anywhere else. */
-    AspAssert(AspDataGetType(str) == DataType_String);
+    AspAssert(engine, AspDataGetType(str) == DataType_String);
     AspRunResult assertResult = AspAssert
         (engine, AspDataGetUseCount(str) == 1);
     if (assertResult != AspRunResult_OK)
