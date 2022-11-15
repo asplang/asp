@@ -18,6 +18,7 @@ option(BUILD_SHARED_LIBS
     "Enable/disable building of shared libraries"
     FALSE)
 
+add_subdirectory(version)
 add_subdirectory(engine)
 
 if (BUILD_FOR_HOST)

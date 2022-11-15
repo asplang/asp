@@ -18,12 +18,24 @@ if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
         )
 endif()
 
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/asp-ver.h
+    DEPENDS vergen
+    COMMAND vergen
+        ${PROJECT_VERSION_MAJOR}
+        ${PROJECT_VERSION_MINOR}
+        ${PROJECT_VERSION_PATCH}
+        ${PROJECT_VERSION_TWEAK}
+        > ${PROJECT_BINARY_DIR}/asp-ver.h
+    )
+
 if (BUILD_FOR_TARGET)
 
     set(CMAKE_C_STANDARD 99)
     set(CMAKE_C_STANDARD_REQUIRED True)
 
     add_library(aspe
+        asp-ver.h
         engine.c
         step.c
         bits.c
@@ -71,6 +83,7 @@ if (BUILD_FOR_HOST)
     install(FILES
         asp.h
         asp-priv.h
+        ${PROJECT_BINARY_DIR}/asp-ver.h
         DESTINATION include
         )
 

@@ -5,6 +5,7 @@
 #ifndef ASP_080177a8_14ce_11ed_b65f_7328ac4c64a3_H
 #define ASP_080177a8_14ce_11ed_b65f_7328ac4c64a3_H
 
+#include <asp-ver.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -61,7 +62,7 @@ typedef enum
 #endif
 
 /* Internal types. */
-#include "asp-priv.h"
+#include <asp-priv.h>
 
 #ifdef __cplusplus
 extern "C" {
