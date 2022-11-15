@@ -480,10 +480,18 @@ AspDataEntry *AspNewEllipsis(AspEngine *engine)
 
 AspDataEntry *AspNewBoolean(AspEngine *engine, bool value)
 {
-    AspDataEntry *entry = AspNewObject(engine, DataType_Boolean);
-    if (entry != 0)
-        AspDataSetBoolean(entry, value);
-    return entry;
+    /* Return one of the Boolean singletons. */
+    AspDataEntry **singleton =
+        value ? &engine->trueSingleton : &engine->falseSingleton;
+    if (*singleton != 0)
+        AspRef(engine, *singleton);
+    else
+    {
+        /* Create the singleton. */
+        *singleton = AspNewObject(engine, DataType_Boolean);
+        AspDataSetBoolean(*singleton, value);
+    }
+    return *singleton;
 }
 
 AspDataEntry *AspNewInteger(AspEngine *engine, int32_t value)

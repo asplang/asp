@@ -115,10 +115,10 @@ static AspRunResult Step(AspEngine *engine)
             printf("PUSH%c\n", opCode == OpCode_PUSHF ? 'F' : 'T');
             #endif
 
-            AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Boolean);
+            AspDataEntry *valueEntry = AspNewBoolean
+                (engine, opCode != OpCode_PUSHF);
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspDataSetBoolean(valueEntry, opCode != OpCode_PUSHF);
 
             AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
@@ -1043,11 +1043,10 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_UnexpectedType;
 
             /* Test the iterator and push the test result onto the stack. */
-            AspDataEntry *testResult = AspAllocEntry(engine, DataType_Boolean);
+            AspDataEntry *testResult = AspNewBoolean
+                (engine, AspDataGetIteratorMemberIndex(iterator) != 0);
             if (testResult == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspDataSetBoolean
-                (testResult, AspDataGetIteratorMemberIndex(iterator) != 0);
             AspDataEntry *stackEntry = AspPush(engine, testResult);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;

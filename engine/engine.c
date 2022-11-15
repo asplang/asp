@@ -226,6 +226,10 @@ static AspRunResult ResetData(AspEngine *engine)
         return assertResult;
     AspRef(engine, engine->noneSingleton);
 
+    /* Initialize singletons for other commonly used objects. */
+    engine->falseSingleton = 0;
+    engine->trueSingleton = 0;
+
     /* Initialize stack. */
     engine->stackTop = 0;
     engine->stackCount = 0;

@@ -57,10 +57,10 @@ AspOperationResult AspPerformUnaryOperation
             break;
 
         case OpCode_LNOT:
-            result.value = AspAllocEntry(engine, DataType_Boolean);
+            result.value = AspNewBoolean
+                (engine, !AspIsTrue(engine, operand));
             if (result.value == 0)
                 break;
-            AspDataSetBoolean(result.value, !AspIsTrue(engine, operand));
             break;
 
         case OpCode_NEG:
@@ -822,9 +822,9 @@ static AspOperationResult PerformEqualityOperation
 
     if (result.result == AspRunResult_OK)
     {
-        result.value = AspAllocEntry(engine, DataType_Boolean);
-        if (result.value != 0)
-            AspDataSetBoolean(result.value, resultValue);
+        result.value = AspNewBoolean(engine, resultValue);
+        if (result.value == 0)
+            result.result = AspRunResult_OutOfDataMemory;
     }
 
     return result;
@@ -908,9 +908,9 @@ static AspOperationResult PerformNumericComparisonOperation
 
     if (result.result == AspRunResult_OK)
     {
-        result.value = AspAllocEntry(engine, DataType_Boolean);
-        if (result.value != 0)
-            AspDataSetBoolean(result.value, resultValue);
+        result.value = AspNewBoolean(engine, resultValue);
+        if (result.value == 0)
+            result.result = AspRunResult_OutOfDataMemory;
     }
 
     return result;
@@ -968,9 +968,9 @@ static AspOperationResult PerformMembershipOperation
 
     if (result.result == AspRunResult_OK)
     {
-        result.value = AspAllocEntry(engine, DataType_Boolean);
-        if (result.value != 0)
-            AspDataSetBoolean(result.value, resultValue);
+        result.value = AspNewBoolean(engine, resultValue);
+        if (result.value == 0)
+            result.result = AspRunResult_OutOfDataMemory;
     }
 
     return result;
@@ -1002,9 +1002,9 @@ static AspOperationResult PerformObjectEqualityOperation
 
     if (result.result == AspRunResult_OK)
     {
-        result.value = AspAllocEntry(engine, DataType_Boolean);
-        if (result.value != 0)
-            AspDataSetBoolean(result.value, resultValue);
+        result.value = AspNewBoolean(engine, resultValue);
+        if (result.value == 0)
+            result.result = AspRunResult_OutOfDataMemory;
     }
 
     return result;

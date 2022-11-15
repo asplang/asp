@@ -29,7 +29,14 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
         if (!AspIsObject(entry) || AspDataGetUseCount(entry) == 0)
         {
             uint8_t t = AspDataGetType(entry);
-            if (t == DataType_Range)
+            if (t == DataType_Boolean)
+            {
+                AspDataEntry **singleton =
+                    AspDataGetBoolean(entry) ?
+                    &engine->trueSingleton : &engine->falseSingleton;
+                *singleton = 0;
+            }
+            else if (t == DataType_Range)
             {
                 if (AspDataGetRangeHasStart(entry))
                     AspUnref(engine, AspValueEntry(engine,

@@ -76,8 +76,8 @@ typedef struct AspEngine
     uint32_t freeCount, lowFreeCount;
     uint32_t freeListIndex;
 
-    /* Singleton for None value. */
-    AspDataEntry *noneSingleton;
+    /* Singletons for commonly used values. */
+    AspDataEntry *noneSingleton, *falseSingleton, *trueSingleton;
 
     /* Stack. */
     AspDataEntry *stackTop;
