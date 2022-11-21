@@ -36,7 +36,13 @@ add_executable(aspg
     app.c
     crc.c
     statement.cpp
+    ../compiler/search-path.cpp
     ../compiler/symbol.cpp
+    )
+
+target_compile_definitions(aspg PRIVATE
+    PATH_NAME_SEPARATOR='${PATH_NAME_SEPARATOR}'
+    FILE_NAME_SEPARATOR='${FILE_NAME_SEPARATOR}'
     )
 
 target_include_directories(aspg PRIVATE

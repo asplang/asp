@@ -7,6 +7,7 @@
 #include "executable.hpp"
 #include "symbol.hpp"
 #include "asp.h"
+#include "search-path.hpp"
 #include <fstream>
 #include <iostream>
 #include <cstdio>
@@ -28,9 +29,11 @@ static void Usage()
 {
     cerr
         << "Usage: aspc [spec] script\n"
+        << " or    aspc script [spec]\n"
         << "Arguments:\n"
-        << "spec    = Application specification file *.aspec."
-        << " Default is app.aspec.\n"
+        << "spec    = Application specification file *.aspec.\n"
+        << "          If omitted, the value of the ASP_SPEC_FILE environment\n"
+        << "          variable is used, or app.aspec if that is not defined.\n"
         << "script  = Script file *.asp.\n";
 }
 
@@ -60,17 +63,17 @@ static int main1(int argc, char **argv)
         return 1;
     }
     string specFileName, mainModuleFileName;
-    size_t mainModuleSuffixIndex;
+    size_t mainModuleSuffixPos;
     struct InputSpec
     {
         string suffix;
         string *fileName;
-        size_t *suffixIndex;
+        size_t *suffixPos;
     };
     struct InputSpec inputs[] =
     {
         {".aspec", &specFileName, 0},
-        {".asp", &mainModuleFileName, &mainModuleSuffixIndex},
+        {".asp", &mainModuleFileName, &mainModuleSuffixPos},
     };
     for (int argi = 1; argi < argc; argi++)
     {
@@ -81,8 +84,8 @@ static int main1(int argc, char **argv)
 
             if (fileName.size() <= input.suffix.size())
                 continue;
-            auto suffixIndex = fileName.size() - input.suffix.size();
-            if (fileName.substr(suffixIndex) == input.suffix)
+            auto suffixPos = fileName.size() - input.suffix.size();
+            if (fileName.substr(suffixPos) == input.suffix)
             {
                 if (!input.fileName->empty())
                 {
@@ -91,13 +94,16 @@ static int main1(int argc, char **argv)
                 }
 
                 *input.fileName = fileName;
-                if (input.suffixIndex != 0)
-                    *input.suffixIndex = suffixIndex;
+                if (input.suffixPos != 0)
+                    *input.suffixPos = suffixPos;
             }
         }
     }
 
     // Use default application specification if one is not given.
+    const char *specFileNameString = getenv("ASP_SPEC_FILE");
+    if (specFileNameString != 0)
+        specFileName = specFileNameString;
     if (specFileName.empty())
         specFileName = "app.aspec";
 
@@ -107,7 +113,15 @@ static int main1(int argc, char **argv)
         Usage();
         return 1;
     }
-    string baseFileName = mainModuleFileName.substr(0, mainModuleSuffixIndex);
+
+    // Split the main module file name into its constituent parts.
+    auto mainModuleDirectorySeparatorPos = mainModuleFileName.find_last_of
+        (FILE_NAME_SEPARATOR);
+    size_t baseNamePos = mainModuleDirectorySeparatorPos == string::npos ?
+        0 : mainModuleDirectorySeparatorPos + 1;
+    string mainModuleBaseFileName = mainModuleFileName.substr(baseNamePos);
+    string baseName = mainModuleBaseFileName.substr
+        (0, mainModuleSuffixPos - baseNamePos);
 
     // Open application specification.
     ifstream specStream(specFileName, ios::binary);
@@ -122,7 +136,7 @@ static int main1(int argc, char **argv)
 
     // Open output executable.
     static string executableSuffix = ".aspe";
-    string executableFileName = baseFileName + executableSuffix;
+    string executableFileName = baseName + executableSuffix;
     ofstream executableStream(executableFileName, ios::binary);
     if (!executableStream)
     {
@@ -135,7 +149,7 @@ static int main1(int argc, char **argv)
 
     // Open output listing.
     static string listingSuffix = ".lst";
-    string listingFileName = baseFileName + listingSuffix;
+    string listingFileName = baseName + listingSuffix;
     ofstream listingStream(listingFileName);
     if (!listingStream)
     {
@@ -150,8 +164,20 @@ static int main1(int argc, char **argv)
     SymbolTable symbolTable;
     Executable executable(symbolTable);
     Compiler compiler(cerr, symbolTable, executable);
-    compiler.AddModuleFileName(mainModuleFileName);
+    compiler.AddModuleFileName(mainModuleBaseFileName);
     compiler.LoadApplicationSpec(specStream);
+
+    // Prepare to search for imported module files.
+    vector<string> searchPath;
+    const char *includePathString = getenv("ASP_INCLUDE");
+    if (includePathString != 0)
+    {
+        auto includePath = SearchPath(includePathString);
+        searchPath.insert
+            (searchPath.end(), includePath.begin(), includePath.end());
+    }
+    if (searchPath.empty())
+        searchPath.emplace_back();
 
     // Compile main module and any other modules that are imported.
     bool errorDetected = false;
@@ -160,8 +186,41 @@ static int main1(int argc, char **argv)
         string moduleFileName = compiler.NextModuleFileName();
         if (moduleFileName.empty())
             break;
-        ifstream moduleStream(moduleFileName);
-        if (!moduleStream)
+
+        // Open module file.
+        ifstream *moduleStream = 0;
+        if (moduleFileName == mainModuleBaseFileName)
+        {
+            // Open specified main module file.
+            auto *stream = new ifstream(mainModuleFileName);
+            if (*stream)
+                moduleStream = stream;
+        }
+        else
+        {
+            // Search for module file.
+            for (auto iter = searchPath.begin();
+                 iter != searchPath.end(); iter++)
+            {
+                auto directory = *iter;
+
+                // Determine path name of module file.
+                if (!directory.empty() &&
+                    directory.back() != FILE_NAME_SEPARATOR)
+                    directory += FILE_NAME_SEPARATOR;
+                auto modulePathName = directory + moduleFileName;
+
+                // Attempt opening the module file.
+                auto *stream = new ifstream(modulePathName);
+                if (*stream)
+                {
+                    moduleStream = stream;
+                    break;
+                }
+                delete stream;
+            }
+        }
+        if (moduleStream == 0)
         {
             cerr
                 << "Error opening " << moduleFileName
@@ -169,7 +228,7 @@ static int main1(int argc, char **argv)
             errorDetected = true;
             break;
         }
-        Lexer lexer(moduleStream);
+        Lexer lexer(*moduleStream);
 
         #ifdef ASP_COMPILER_DEBUG
         cout << "Parsing module " << moduleFileName << "..." << endl;
@@ -206,6 +265,7 @@ static int main1(int argc, char **argv)
         } while (!errorDetected && token->type != 0);
 
         ParseFree(parser, free);
+        delete moduleStream;
     }
 
     compiler.Finalize();

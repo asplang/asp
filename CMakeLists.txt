@@ -18,15 +18,22 @@ option(BUILD_SHARED_LIBS
     "Enable/disable building of shared libraries"
     FALSE)
 
-add_subdirectory(version)
+if(WIN32)
+    set(PATH_NAME_SEPARATOR \\$<SEMICOLON>)
+    set(FILE_NAME_SEPARATOR \\\\)
+else()
+    set(PATH_NAME_SEPARATOR :)
+    set(FILE_NAME_SEPARATOR /)
+endif()
+
 add_subdirectory(engine)
 
-if (BUILD_FOR_HOST)
+if(BUILD_FOR_HOST)
     add_subdirectory(lemon)
     add_subdirectory(compiler)
     add_subdirectory(appspec)
 endif()
 
-if (BUILD_FOR_HOST AND BUILD_FOR_TARGET)
+if(BUILD_FOR_HOST AND BUILD_FOR_TARGET)
     add_subdirectory(standalone)
 endif()

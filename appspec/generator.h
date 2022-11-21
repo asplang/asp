@@ -11,7 +11,6 @@
 #include "statement.hpp"
 #include <iostream>
 #include <set>
-#include <vector>
 #include <string>
 class SymbolTable;
 #endif
@@ -53,6 +52,13 @@ class Generator
 
         // Generator methods.
         unsigned ErrorCount() const;
+
+        // Source file methods.
+        void CurrentSource
+            (const std::string &fileName,
+             const SourceLocation & = SourceLocation());
+        const std::string &CurrentSourceFileName() const;
+        SourceLocation CurrentSourceLocation() const;
 
         // Output methods.
         void WriteCompilerSpec(std::ostream &);
@@ -105,6 +111,9 @@ class Generator
         SourceLocation currentSourceLocation;
         SymbolTable &symbolTable;
         std::string baseFileName;
+
+        // Source file data.
+        std::string currentSourceFileName;
 
         // Spec data.
         std::set<FunctionDefinition> functionDefinitions;

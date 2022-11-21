@@ -7,6 +7,7 @@
 using namespace std;
 
 Parameter::Parameter(const Token &nameToken, bool isGroup) :
+    NonTerminal(nameToken),
     name(nameToken.s),
     isGroup(isGroup)
 {
@@ -30,10 +31,11 @@ ParameterList::~ParameterList()
 }
 
 FunctionDefinition::FunctionDefinition
-    (const string &name, const string &internalName,
+    (const Token &nameToken, const Token &internalNameToken,
      ParameterList *parameterList) :
-    name(name),
-    internalName(internalName),
+    NonTerminal(nameToken),
+    name(nameToken.s),
+    internalName(internalNameToken.s),
     parameterList(parameterList)
 {
 }

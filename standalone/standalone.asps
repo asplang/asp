@@ -2,46 +2,8 @@
 # Standalone Asp application function specifications.
 #
 
+include type
+include math
+
 # General purpose print.
 def print(*values) = asp_print
-
-# Type functions.
-def type(object) = AspLib_type
-def len(object) = AspLib_len
-def bool(x) = AspLib_bool
-def int(x) = AspLib_int
-def float(x) = AspLib_float
-def str(x) = AspLib_str
-
-# Trigonometric functions.
-def sin(x) = AspLib_sin
-def cos(x) = AspLib_cos
-def tan(x) = AspLib_tan
-def asin(x) = AspLib_asin
-def acos(x) = AspLib_acos
-def atan(x) = AspLib_atan
-def atan2(y, x) = AspLib_atan2
-
-# Hyperbolic functions.
-def sinh(x) = AspLib_sinh
-def cosh(x) = AspLib_cosh
-def tanh(x) = AspLib_tanh
-def asinh(x) = AspLib_asinh
-def acosh(x) = AspLib_acosh
-def atanh(x) = AspLib_atanh
-
-# Hypotenuse function.
-def hypot(x, y) = AspLib_hypot
-
-# Exponential and logarithmic functions.
-def exp(x) = AspLib_exp
-def log(x) = AspLib_log
-def log10(x) = AspLib_log10
-
-# Rounding functions.
-def ceil(x) = AspLib_ceil
-def floor(x) = AspLib_floor
-def round(x) = AspLib_round
-
-# Other functions.
-def abs(x) = AspLib_abs

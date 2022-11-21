@@ -6,9 +6,12 @@
 #include "generator.h"
 #include "symbol.hpp"
 #include "app.h"
+#include "search-path.hpp"
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <deque>
+#include <vector>
 #include <algorithm>
 #include <cstring>
 #include <cstdlib>
@@ -24,6 +27,15 @@ void ParseTrace(FILE *, const char *prefix);
 
 using namespace std;
 
+struct ActiveSourceFile
+{
+    string sourceFileName;
+    ifstream *sourceStream;
+    SourceLocation oldSourceLocation;
+    Lexer *lexer;
+    void *parser;
+};
+
 int main(int argc, char **argv)
 {
     // Obtain spec source file name.
@@ -37,23 +49,42 @@ int main(int argc, char **argv)
     // Validate file name suffix.
     static string sourceSuffix = ".asps";
     bool badSourceFileName = sourceFileName.size() <= sourceSuffix.size();
-    auto suffixIndex = sourceFileName.size() - sourceSuffix.size();
-    badSourceFileName = sourceFileName.substr(suffixIndex) != sourceSuffix;
+    size_t suffixPos;
+    if (!badSourceFileName)
+    {
+        suffixPos = sourceFileName.size() - sourceSuffix.size();
+        badSourceFileName = sourceFileName.substr(suffixPos) != sourceSuffix;
+    }
     if (badSourceFileName)
     {
         cerr << "File name must end with " << sourceSuffix << endl;
         return 1;
     }
+
+    // Split the source file name into its constituent parts.
+    auto sourceDirectorySeparatorPos = sourceFileName.find_last_of
+        (FILE_NAME_SEPARATOR);
+    size_t baseNamePos = sourceDirectorySeparatorPos == string::npos ?
+        0 : sourceDirectorySeparatorPos + 1;
+    auto baseName = sourceFileName.substr
+        (baseNamePos, suffixPos - baseNamePos);
+    if (baseName.empty())
+    {
+        cerr << "Invalid source file name: " << sourceFileName << endl;
+        return 1;
+    }
+
+    // Determine output file names.
     static string specSuffix = ".aspec", headerSuffix = ".h", codeSuffix = ".c";
-    string baseFileName = sourceFileName.substr(0, suffixIndex);
-    string specFileName = baseFileName + specSuffix;
-    string headerFileName = baseFileName + headerSuffix;
-    string codeFileName = baseFileName + codeSuffix;
+    string specFileName = baseName + specSuffix;
+    string headerFileName = baseName + headerSuffix;
+    string codeFileName = baseName + codeSuffix;
 
     // Open input source file.
-    ifstream sourceStream(sourceFileName);
-    if (!sourceStream)
+    auto *sourceStream = new ifstream(sourceFileName);
+    if (!*sourceStream)
     {
+        delete sourceStream;
         cerr
             << "Error opening " << sourceFileName
             << ": " << strerror(errno) << endl;
@@ -90,30 +121,38 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // Determine the base name for use in code generation.
-    auto baseNameIter = find_if_not
-        (baseFileName.rbegin(), baseFileName.rend(),
-         [](char c){return isalnum(c) || c == '_';});
-    string baseName =
-        baseFileName.substr(baseFileName.rend() - baseNameIter);
-
-    Lexer lexer(sourceStream);
     SymbolTable symbolTable;
     Generator generator(cerr, symbolTable, baseName);
+    generator.CurrentSource(sourceFileName);
 
     #ifdef ASP_APPSPEC_DEBUG
     cout << "Parsing module " << sourceFileName << "..." << endl;
     ParseTrace(stdout, "Trace: ");
     #endif
 
-    void *parser = ParseAlloc(malloc, &generator);
+    // Prepare to search for and process included files.
+    vector<string> includePath;
+    const char *includePathString = getenv("ASP_SPEC_INCLUDE");
+    if (includePathString != 0)
+        includePath = SearchPath(includePathString);
+
+    // Prepare to process top-level source file.
+    deque<ActiveSourceFile> activeSourceFiles;
+    activeSourceFiles.emplace_back(ActiveSourceFile
+    {
+        sourceFileName, sourceStream, SourceLocation(),
+        new Lexer(*sourceStream),
+        ParseAlloc(malloc, &generator)
+    });
 
     // Compile spec.
     bool errorDetected = false;
     Token *token;
-    do
+    while (true)
     {
-        token = lexer.Next();
+        auto &activeSourceFile = activeSourceFiles.back();
+
+        token = activeSourceFile.lexer->Next();
         if (token->type == -1)
         {
             cerr << "Error: BAD token: '" << token->s << '\'' << endl;
@@ -122,13 +161,102 @@ int main(int argc, char **argv)
             break;
         }
 
-        Parse(parser, token->type, token);
+        Parse(activeSourceFile.parser, token->type, token);
         if (generator.ErrorCount() > 0)
+        {
             errorDetected = true;
+            break;
+        }
 
-    } while (!errorDetected && token->type != 0);
+        // Check for end of source file.
+        if (token->type == 0)
+        {
+            // We're done with the current source file.
+            auto oldSourceLocation = activeSourceFile.oldSourceLocation;
+            ParseFree(activeSourceFile.parser, free);
+            delete activeSourceFile.lexer;
+            delete activeSourceFile.sourceStream;
+            activeSourceFiles.pop_back();
+            if (activeSourceFiles.empty())
+                break;
 
-    ParseFree(parser, free);
+            // Update source file name in generator for error reporting.
+            generator.CurrentSource
+                (activeSourceFiles.back().sourceFileName, oldSourceLocation);
+        }
+        else
+        {
+            // Check for included source file.
+            string includeFileName = generator.CurrentSourceFileName();
+            auto oldSourceFileName = activeSourceFile.sourceFileName;
+            if (includeFileName != oldSourceFileName)
+            {
+                // Determine search path for locating included file.
+                auto sourceDirectorySeparatorPos =
+                    oldSourceFileName.find_last_of(FILE_NAME_SEPARATOR);
+                auto localDirectoryName = oldSourceFileName.substr
+                    (0,
+                     sourceDirectorySeparatorPos == string::npos ?
+                     0 : sourceDirectorySeparatorPos + 1);
+                vector<string> searchPath {localDirectoryName};
+                searchPath.insert
+                    (searchPath.end(), includePath.begin(), includePath.end());
+
+                string newSourceFileName;
+                ifstream *newSourceStream = 0;
+                for (auto iter = searchPath.begin();
+                     iter != searchPath.end(); iter++)
+                {
+                    auto directory = *iter;
+
+                    // Determine path name of source file.
+                    if (!directory.empty() &&
+                        directory.back() != FILE_NAME_SEPARATOR)
+                        directory += FILE_NAME_SEPARATOR;
+                    newSourceFileName = directory + includeFileName;
+
+                    // Attempt opening the source file.
+                    auto *sourceStream = new ifstream(newSourceFileName);
+                    if (*sourceStream)
+                    {
+                        newSourceStream = sourceStream;
+                        break;
+                    }
+                    delete newSourceStream;
+                }
+                if (newSourceStream == 0)
+                {
+                    cerr
+                        << "Error opening " << includeFileName
+                        << ": " << strerror(errno) << endl;
+                    return 1;
+                }
+
+                // Ensure there's no recursive inclusion.
+                for (auto iter = activeSourceFiles.begin();
+                     iter != activeSourceFiles.end(); iter++)
+                {
+                    auto &lexer = *iter;
+                    if (newSourceFileName == lexer.sourceFileName)
+                    {
+                        cerr
+                            << "Include cycle detected: "
+                            << newSourceFileName << endl;
+                        return 1;
+                    }
+                }
+
+                auto oldSourceLocation = generator.CurrentSourceLocation();
+                generator.CurrentSource(newSourceFileName);
+                activeSourceFiles.emplace_back(ActiveSourceFile
+                {
+                    newSourceFileName, newSourceStream, oldSourceLocation,
+                    new Lexer(*newSourceStream),
+                    ParseAlloc(malloc, &generator)
+                });
+            }
+        }
+    }
 
     if (errorDetected)
     {
@@ -142,6 +270,7 @@ int main(int argc, char **argv)
     generator.WriteApplicationCode(codeStream);
 
     // Close all output files.
+    bool writeError = false;
     struct
     {
         string fileName;
@@ -156,10 +285,13 @@ int main(int argc, char **argv)
     {
         files[i].stream.close();
         if (!files[i].stream)
+        {
+            writeError = true;
             cerr
                 << "Error writing " << files[i].fileName
                 << ": " << strerror(errno) << endl;
+        }
     }
 
-    return 0;
+    return writeError ? 2 : 0;
 }

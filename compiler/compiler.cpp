@@ -1029,6 +1029,7 @@ DEFINE_UTIL(ReportError, void, const char *, error)
 void Compiler::ReportError(const string &error)
 {
     errorStream
+        << currentModuleName << ".asp: "
         << currentSourceLocation.line << ':'
         << currentSourceLocation.column << ": Error: "
         << error << endl;

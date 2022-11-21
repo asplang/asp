@@ -3,6 +3,7 @@
 //
 
 #include "generator.h"
+#include "app.h"
 #include "symbol.hpp"
 #include "grammar.hpp"
 #include <iostream>
@@ -30,6 +31,23 @@ unsigned Generator::ErrorCount() const
     return errorCount;
 }
 
+void Generator::CurrentSource
+    (const string &sourceFileName, const SourceLocation &sourceLocation)
+{
+    currentSourceFileName = sourceFileName;
+    currentSourceLocation = sourceLocation;
+}
+
+const string &Generator::CurrentSourceFileName() const
+{
+    return currentSourceFileName;
+}
+
+SourceLocation Generator::CurrentSourceLocation() const
+{
+    return currentSourceLocation;
+}
+
 #define DEFINE_ACTION(...) DEFINE_ACTION_N(__VA_ARGS__, \
     DEFINE_ACTION_3, ~, \
     DEFINE_ACTION_2, ~, \
@@ -53,7 +71,7 @@ unsigned Generator::ErrorCount() const
         (t1 p1, t2 p2, t3 p3)
 #define DO_ACTION(action) \
     auto result = (action); \
-    if (result) \
+    if (result && result->sourceLocation.line != 0) \
         generator->currentSourceLocation = result->sourceLocation; \
     return result;
 
@@ -82,7 +100,11 @@ unsigned Generator::ErrorCount() const
 DEFINE_ACTION
     (IncludeHeader, NonTerminal *, Token *, includeNameToken)
 {
-    // TODO: Implement inclusion of other specs.
+    currentSourceFileName = includeNameToken->s + ".asps";
+    currentSourceLocation = includeNameToken->sourceLocation;
+
+    delete includeNameToken;
+
     return 0;
 }
 
@@ -93,8 +115,9 @@ DEFINE_ACTION
 {
     // Replace any previous function definition having the same name with
     // this latter one.
+    static Token emptyNameToken = Token(SourceLocation(), TOKEN_NAME);
     auto findIter = functionDefinitions.find
-        (FunctionDefinition(nameToken->s, "", 0));
+        (FunctionDefinition(*nameToken, emptyNameToken, 0));
     if (findIter != functionDefinitions.end())
     {
         cout << "Warning: function " << nameToken->s << " redefined" << endl;
@@ -102,8 +125,10 @@ DEFINE_ACTION
     }
 
     functionDefinitions.emplace
-        (nameToken->s, internalNameToken->s, parameterList);
+        (*nameToken, *internalNameToken, parameterList);
     checkValueComputed = false;
+
+    currentSourceLocation = nameToken->sourceLocation;
 
     delete nameToken;
     delete internalNameToken;
@@ -154,4 +179,15 @@ DEFINE_UTIL(FreeToken, void, Token *, token)
 DEFINE_UTIL(ReportError, void, const char *, error)
 {
      ReportError(string(error));
+}
+
+void Generator::ReportError(const string &error)
+{
+    if (!currentSourceFileName.empty())
+        errorStream << currentSourceFileName << ": ";
+    errorStream
+        << currentSourceLocation.line << ':'
+        << currentSourceLocation.column << ": Error: "
+        << error << endl;
+    errorCount++;
 }

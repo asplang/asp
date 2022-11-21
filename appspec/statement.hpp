@@ -67,8 +67,8 @@ struct FunctionDefinition : public NonTerminal
     public:
 
         FunctionDefinition
-            (const std::string &name,
-             const std::string &internalName,
+            (const Token &name,
+             const Token &internalName,
              ParameterList *);
         ~FunctionDefinition();
 

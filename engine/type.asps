@@ -1,0 +1,15 @@
+#
+# Asp application function specifications - type.
+#
+
+# Object type function.
+def type(object) = AspLib_type
+
+# Container length function.
+def len(object) = AspLib_len
+
+# Type conversion functions.
+def bool(x) = AspLib_bool
+def int(x) = AspLib_int
+def float(x) = AspLib_float
+def str(x) = AspLib_str

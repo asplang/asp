@@ -12,19 +12,18 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_CX_STANDARD_REQUIRED True)
 
 add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/standalone.asps
-    DEPENDS ${PROJECT_SOURCE_DIR}/standalone.asps
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${PROJECT_SOURCE_DIR}/standalone.asps ${PROJECT_BINARY_DIR}
-    )
-
-add_custom_command(
     OUTPUT
         ${PROJECT_BINARY_DIR}/standalone.aspec
         ${PROJECT_BINARY_DIR}/standalone.c
         ${PROJECT_BINARY_DIR}/standalone.h
-    DEPENDS aspg ${PROJECT_BINARY_DIR}/standalone.asps
-    COMMAND aspg ${PROJECT_BINARY_DIR}/standalone.asps
+    DEPENDS
+        aspg
+        ${PROJECT_SOURCE_DIR}/standalone.asps
+        ../engine/math.asps
+        ../engine/type.asps
+    COMMAND ${CMAKE_COMMAND} -E env
+        ASP_SPEC_INCLUDE=${PATH_NAME_SEPARATOR}${aspe_SOURCE_DIR}
+        ${aspg_BINARY_DIR}/aspg ${PROJECT_SOURCE_DIR}/standalone.asps
     )
 
 add_executable(asps

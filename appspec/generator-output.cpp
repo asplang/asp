@@ -261,15 +261,6 @@ void Generator::WriteApplicationCode(ostream &os)
     os.fill(oldFill);
 }
 
-void Generator::ReportError(const string &error)
-{
-    errorStream
-        << currentSourceLocation.line << ':'
-        << currentSourceLocation.column << ": Error: "
-        << error << endl;
-    errorCount++;
-}
-
 uint32_t Generator::CheckValue()
 {
     if (!checkValueComputed)

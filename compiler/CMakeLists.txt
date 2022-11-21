@@ -46,6 +46,7 @@ add_executable(aspc
     asp.c
     expression.cpp
     statement.cpp
+    search-path.cpp
     symbol.cpp
     emit.cpp
     executable.cpp
@@ -57,6 +58,8 @@ target_compile_definitions(aspc PRIVATE
     ASP_COMPILER_VERSION_MINOR=${PROJECT_VERSION_MINOR}
     ASP_COMPILER_VERSION_PATCH=${PROJECT_VERSION_PATCH}
     ASP_COMPILER_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
+    PATH_NAME_SEPARATOR='${PATH_NAME_SEPARATOR}'
+    FILE_NAME_SEPARATOR='${FILE_NAME_SEPARATOR}'
     )
 
 target_include_directories(aspc PRIVATE

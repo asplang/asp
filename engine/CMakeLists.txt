@@ -95,4 +95,10 @@ if(BUILD_FOR_HOST)
         DESTINATION include
         )
 
+    install(FILES
+        type.asps
+        math.asps
+        DESTINATION include/asps
+        )
+
 endif()
