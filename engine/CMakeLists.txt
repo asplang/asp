@@ -18,18 +18,26 @@ if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
         )
 endif()
 
-add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/asp-ver.h
-    DEPENDS vergen
-    COMMAND vergen
-        ${PROJECT_VERSION_MAJOR}
-        ${PROJECT_VERSION_MINOR}
-        ${PROJECT_VERSION_PATCH}
-        ${PROJECT_VERSION_TWEAK}
-        > ${PROJECT_BINARY_DIR}/asp-ver.h
+math(EXPR VERSION_VALUE
+    "(${PROJECT_VERSION_MAJOR} << 24) +
+     (${PROJECT_VERSION_MINOR} << 16) +
+     (${PROJECT_VERSION_PATCH} << 8) +
+     ${PROJECT_VERSION_TWEAK}"
     )
 
-if (BUILD_FOR_TARGET)
+add_custom_command(
+    OUTPUT ${PROJECT_BINARY_DIR}/asp-ver.h
+    COMMAND ${CMAKE_COMMAND} -E echo "/* Asp engine version. */"
+        > ${PROJECT_BINARY_DIR}/asp-ver.h
+    COMMAND ${CMAKE_COMMAND} -E echo "\\#ifndef ASP_VERSION"
+        >> ${PROJECT_BINARY_DIR}/asp-ver.h
+    COMMAND ${CMAKE_COMMAND} -E echo "\\#define ASP_VERSION ${VERSION_VALUE}"
+        >> ${PROJECT_BINARY_DIR}/asp-ver.h
+    COMMAND ${CMAKE_COMMAND} -E echo "\\#endif"
+        >> ${PROJECT_BINARY_DIR}/asp-ver.h
+    )
+
+if(BUILD_FOR_TARGET)
 
     set(CMAKE_C_STANDARD 99)
     set(CMAKE_C_STANDARD_REQUIRED True)
@@ -78,7 +86,7 @@ if (BUILD_FOR_TARGET)
 
 endif()
 
-if (BUILD_FOR_HOST)
+if(BUILD_FOR_HOST)
 
     install(FILES
         asp.h
