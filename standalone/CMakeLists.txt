@@ -40,3 +40,7 @@ target_include_directories(asps PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
     )
+
+install(TARGETS asps
+    DESTINATION bin
+    )
