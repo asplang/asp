@@ -760,13 +760,10 @@ void UnaryExpression::Emit
 
     expression->Emit(executable);
 
-    // Ignore unary plus.
-    if (operatorTokenType == TOKEN_PLUS)
-        return;
-
     static map<int, uint8_t> opCodes =
     {
         {TOKEN_NOT, OpCode_LNOT},
+        {TOKEN_PLUS, OpCode_POS},
         {TOKEN_MINUS, OpCode_NEG},
         {TOKEN_TILDE, OpCode_NOT},
     };

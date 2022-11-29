@@ -63,6 +63,23 @@ AspOperationResult AspPerformUnaryOperation
                 break;
             break;
 
+        case OpCode_POS:
+            switch (operandType)
+            {
+                default:
+                    result.result = AspRunResult_UnexpectedType;
+                    break;
+
+                case DataType_Boolean:
+                case DataType_Integer:
+                case DataType_Float:
+                    AspRef(engine, operand);
+                    result.value = operand;
+                    break;
+            }
+
+            break;
+
         case OpCode_NEG:
             switch (operandType)
             {

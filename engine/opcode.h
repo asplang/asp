@@ -35,7 +35,8 @@ typedef enum OpCode
 
     /* Unary operations. */
     OpCode_LNOT = 0x40, /* logical not */
-    OpCode_NEG = 0x48, /* negate */
+    OpCode_POS = 0x48, /* positive value */
+    OpCode_NEG = 0x49, /* negate */
     OpCode_NOT = 0x4F, /* bitwise not */
 
     /* Binary logical and arithmetic operations. */

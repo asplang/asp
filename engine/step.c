@@ -445,6 +445,7 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_LNOT:
+        case OpCode_POS:
         case OpCode_NEG:
         case OpCode_NOT:
         {

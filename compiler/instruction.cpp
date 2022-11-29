@@ -192,6 +192,7 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_PUSHCA, "PUSHCA"},
         {OpCode_POP, "POP"},
         {OpCode_LNOT, "LNOT"},
+        {OpCode_POS, "POS"},
         {OpCode_NEG, "NEG"},
         {OpCode_NOT, "NOT"},
         {OpCode_OR, "OR"},
