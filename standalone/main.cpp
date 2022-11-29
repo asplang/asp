@@ -5,16 +5,58 @@
 #include "asp.h"
 #include "standalone.h"
 #include <iostream>
+#include <string>
+#include <cstring>
 #include <cstdio>
 #include <cstdlib>
 
 using namespace std;
 
+#ifndef COMMAND_OPTION_PREFIX
+#define COMMAND_OPTION_PREFIX "-"
+#endif
+
 const size_t ASP_DATA_ENTRY_COUNT = 2048;
 const size_t ASP_CODE_BYTE_COUNT = 4096;
 
+static void Usage()
+{
+    cerr
+        << "Usage: asps [options] script [args]\n"
+        << "Options:\n"
+        << "-v  Verbose. Output version and statistical information.\n"
+        << "Arguments:\n"
+        << "script  = Script executable (*.aspe). The suffix may be omitted.\n"
+        << "args    = Arguments passed to the script.\n";
+}
+
 int main(int argc, char **argv)
 {
+    // Process command line options.
+    bool verbose = false;
+    auto optionPrefixSize = strlen(COMMAND_OPTION_PREFIX);
+    for (; argc >= 2; argc--, argv++)
+    {
+        string arg1 = argv[1];
+        string prefix = arg1.substr(0, optionPrefixSize);
+        if (prefix != COMMAND_OPTION_PREFIX)
+            break;
+        string option = arg1.substr(optionPrefixSize);
+
+        if (option == "?" || option == "h")
+        {
+            Usage();
+            return 0;
+        }
+        else if (option == "v")
+            verbose = true;
+        else
+        {
+            cerr << "Invalid option: " << arg1 << endl;
+            return 1;
+        }
+    }
+
     // Obtain executable file name.
     if (argc < 2)
     {
@@ -23,8 +65,23 @@ int main(int argc, char **argv)
     }
 
     // Open the executable file.
-    const char *executableFileName = argv[1];
-    FILE *fp = fopen(executableFileName, "rb");
+    string executableFileName = argv[1];
+    auto openExecutable = [](const char *fileName)
+    {
+        return fopen(fileName, "rb");
+    };
+    FILE *fp = openExecutable(executableFileName.c_str());
+    if (fp == 0)
+    {
+        // Try appending the appropriate suffix if the specified file did not
+        // exist.
+        static const string suffix = ".aspe";
+        size_t suffixPos = executableFileName.size() - suffix.size();
+        if (executableFileName.size() < suffix.size() ||
+            executableFileName.substr(suffixPos) != suffix)
+        executableFileName += suffix;
+        fp = openExecutable(executableFileName.c_str());
+    }
     if (fp == 0)
     {
         cerr << "Error opening " << executableFileName << endl;
@@ -77,25 +134,28 @@ int main(int argc, char **argv)
     }
 
     // Report version information.
-    uint8_t engineVersion[4], codeVersion[4];
-    AspEngineVersion(engineVersion);
-    AspCodeVersion(&engine, codeVersion);
-    cout << "Engine version: ";
-    for (unsigned i = 0; i < sizeof engineVersion; i++)
+    if (verbose)
     {
-        if (i != 0)
-            cout.put('.');
-        cout << static_cast<unsigned>(engineVersion[i]);
+        uint8_t engineVersion[4], codeVersion[4];
+        AspEngineVersion(engineVersion);
+        AspCodeVersion(&engine, codeVersion);
+        cout << "Engine version: ";
+        for (unsigned i = 0; i < sizeof engineVersion; i++)
+        {
+            if (i != 0)
+                cout.put('.');
+            cout << static_cast<unsigned>(engineVersion[i]);
+        }
+        cout << endl;
+        cout << "Code version: ";
+        for (unsigned i = 0; i < sizeof codeVersion; i++)
+        {
+            if (i != 0)
+                cout.put('.');
+            cout << static_cast<unsigned>(codeVersion[i]);
+        }
+        cout << endl;
     }
-    cout << endl;
-    cout << "Code version: ";
-    for (unsigned i = 0; i < sizeof codeVersion; i++)
-    {
-        if (i != 0)
-            cout.put('.');
-        cout << static_cast<unsigned>(codeVersion[i]);
-    }
-    cout << endl;
 
     // Set arguments.
     AspRunResult argumentResult = AspSetArguments(&engine, argv + 2);
@@ -127,10 +187,13 @@ int main(int argc, char **argv)
     #endif
 
     // Report low free count.
-    cout
-        << "Low free count: "
-        << AspLowFreeCount(&engine)
-        << " (max " << AspMaxDataSize(&engine) << ')' << endl;
+    if (verbose)
+    {
+        cout
+            << "Low free count: "
+            << AspLowFreeCount(&engine)
+            << " (max " << AspMaxDataSize(&engine) << ')' << endl;
+    }
 
     return runResult == AspRunResult_Complete ? 0 : 2;
 }

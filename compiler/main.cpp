@@ -30,6 +30,8 @@ static void Usage()
     cerr
         << "Usage: aspc [spec] script\n"
         << " or    aspc script [spec]\n"
+        << "Options:\n"
+        << "-s  Silent. Don't output usual compiler information.\n"
         << "Arguments:\n"
         << "spec    = Application specification file *.aspec.\n"
         << "          If omitted, the value of the ASP_SPEC_FILE environment\n"
@@ -56,6 +58,31 @@ int main(int argc, char **argv)
 }
 static int main1(int argc, char **argv)
 {
+    // Process command line options.
+    bool silent = false;
+    auto optionPrefixSize = strlen(COMMAND_OPTION_PREFIX);
+    for (; argc >= 2; argc--, argv++)
+    {
+        string arg1 = argv[1];
+        string prefix = arg1.substr(0, optionPrefixSize);
+        if (prefix != COMMAND_OPTION_PREFIX)
+            break;
+        string option = arg1.substr(optionPrefixSize);
+
+        if (option == "?" || option == "h")
+        {
+            Usage();
+            return 0;
+        }
+        else if (option == "s")
+            silent = true;
+        else
+        {
+            cerr << "Invalid option: " << arg1 << endl;
+            return 1;
+        }
+    }
+
     // Obtain input file names.
     if (argc < 2 || argc > 3)
     {
@@ -78,6 +105,7 @@ static int main1(int argc, char **argv)
     for (int argi = 1; argi < argc; argi++)
     {
         string fileName(argv[argi]);
+        bool accepted = false;
         for (unsigned i = 0; i < sizeof inputs / sizeof *inputs; i++)
         {
             auto &input = inputs[i];
@@ -89,27 +117,39 @@ static int main1(int argc, char **argv)
             {
                 if (!input.fileName->empty())
                 {
+                    cerr << "Multiple files of the same type specified" << endl;
                     Usage();
                     return 1;
                 }
 
+                accepted = true;
                 *input.fileName = fileName;
                 if (input.suffixPos != 0)
                     *input.suffixPos = suffixPos;
             }
         }
+        if (!accepted)
+        {
+            cerr << "Unrecognized input file type" << endl;
+            Usage();
+            return 1;
+        }
     }
 
     // Use default application specification if one is not given.
-    const char *specFileNameString = getenv("ASP_SPEC_FILE");
-    if (specFileNameString != 0)
-        specFileName = specFileNameString;
+    if (specFileName.empty())
+    {
+        const char *specFileNameString = getenv("ASP_SPEC_FILE");
+        if (specFileNameString != 0)
+            specFileName = specFileNameString;
+    }
     if (specFileName.empty())
         specFileName = "app.aspec";
 
     // Ensure the script has been identified.
     if (mainModuleFileName.empty())
     {
+        cerr << "Script not specified" << endl;
         Usage();
         return 1;
     }
@@ -133,6 +173,8 @@ static int main1(int argc, char **argv)
         Usage();
         return 2;
     }
+    if (!silent)
+        cout << "Using " << specFileName << endl;
 
     // Open output executable.
     static string executableSuffix = ".aspe";
@@ -303,7 +345,7 @@ static int main1(int argc, char **argv)
         return 5;
 
     // Write statistics.
-    if (executableStream)
+    if (executableStream && !silent)
     {
         cout
             << executableFileName << ": "

@@ -15,7 +15,7 @@
 
 using namespace std;
 
-const static string ModuleSuffix = ".asp";
+static const string ModuleSuffix = ".asp";
 
 Compiler::Compiler
     (ostream &errorStream,

@@ -36,6 +36,10 @@ target_link_libraries(asps
     aspe
     )
 
+target_compile_definitions(asps PRIVATE
+    COMMAND_OPTION_PREFIX="${COMMAND_OPTION_PREFIX}"
+    )
+
 target_include_directories(asps PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
@@ -43,4 +47,9 @@ target_include_directories(asps PRIVATE
 
 install(TARGETS asps
     DESTINATION bin
+    )
+
+install(FILES
+    ${PROJECT_BINARY_DIR}/standalone.aspec
+    DESTINATION etc/asp
     )
