@@ -10,20 +10,49 @@ project(asp
 
 option(BUILD_FOR_HOST
     "Enable/disable building tools for the host environment"
-    TRUE)
+    FALSE)
 option(BUILD_FOR_TARGET
     "Enable/disable building for the script engine target environment"
-    TRUE)
+    FALSE)
+
+# If no build options are chosen, build them all.
+if(NOT ${BUILD_FOR_HOST} AND NOT ${BUILD_FOR_TARGET})
+    set(BUILD_FOR_HOST TRUE)
+    set(BUILD_FOR_TARGET TRUE)
+endif()
+
 option(BUILD_SHARED_LIBS
     "Enable/disable building of shared libraries"
     FALSE)
 
-if(WIN32)
-    set(PATH_NAME_SEPARATOR \\$<SEMICOLON>)
-    set(FILE_NAME_SEPARATOR \\\\)
-else()
-    set(PATH_NAME_SEPARATOR :)
-    set(FILE_NAME_SEPARATOR /)
+set(PATH_NAME_SEPARATOR "" CACHE STRING
+    "Path name separator (leave blank for platform default)")
+if("${PATH_NAME_SEPARATOR}" STREQUAL "")
+    if(WIN32)
+        set(PATH_NAME_SEPARATOR \\$<SEMICOLON>)
+    else()
+        set(PATH_NAME_SEPARATOR :)
+    endif()
+endif()
+
+set(FILE_NAME_SEPARATOR "" CACHE STRING
+    "File name separator (leave blank for platform default)")
+if("${FILE_NAME_SEPARATOR}" STREQUAL "")
+    if(WIN32)
+        set(FILE_NAME_SEPARATOR \\\\)
+    else()
+        set(FILE_NAME_SEPARATOR /)
+    endif()
+endif()
+
+set(COMMAND_OPTION_PREFIX "" CACHE STRING
+    "Command line option prefix (leave blank for platform default")
+if("${COMMAND_OPTION_PREFIX}" STREQUAL "")
+    if(WIN32)
+        set(COMMAND_OPTION_PREFIX /)
+    else()
+        set(COMMAND_OPTION_PREFIX -)
+    endif()
 endif()
 
 add_subdirectory(engine)
