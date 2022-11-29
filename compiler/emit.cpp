@@ -759,6 +759,11 @@ void UnaryExpression::Emit
         throw string("Cannot delete value expression");
 
     expression->Emit(executable);
+
+    // Ignore unary plus.
+    if (operatorTokenType == TOKEN_PLUS)
+        return;
+
     static map<int, uint8_t> opCodes =
     {
         {TOKEN_NOT, OpCode_LNOT},
