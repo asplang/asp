@@ -14,10 +14,8 @@ extern "C" {
 
 AspRunResult AspAssignSimple
     (AspEngine *, AspDataEntry *address, AspDataEntry *newValue);
-AspRunResult AspAssignTuple
+AspRunResult AspAssignSequence
     (AspEngine *, AspDataEntry *address, AspDataEntry *newValue);
-AspRunResult AspCheckTupleMatch
-    (AspEngine *, const AspDataEntry *address, const AspDataEntry *newValue);
 
 #ifdef __cplusplus
 }

@@ -924,9 +924,7 @@ void SetExpression::Emit
 void ListExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
-    if (emitType == EmitType::Address)
-        throw string("Cannot take address of list expression");
-    else if (emitType == EmitType::Delete)
+    if (emitType == EmitType::Delete)
         throw string("Cannot delete list expression");
 
     executable.Insert(new PushListInstruction
@@ -934,7 +932,7 @@ void ListExpression::Emit
     for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
     {
         auto expression = *iter;
-        expression->Emit(executable);
+        expression->Emit(executable, emitType);
         executable.Insert(new BuildInstruction("Add item to list"));
     }
 }

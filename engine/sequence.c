@@ -244,6 +244,30 @@ AspSequenceResult AspSequenceNext
     return result;
 }
 
+AspSequenceResult AspSequencePrevious
+    (AspEngine *engine, AspDataEntry *sequence, AspDataEntry *element)
+{
+    AspSequenceResult result = {AspRunResult_OK, 0, 0};
+
+    AspAssert
+        (engine, sequence != 0 && IsSequenceType(AspDataGetType(sequence)));
+    result.result = AspAssert
+        (engine, element == 0 || IsElementType(AspDataGetType(element)));
+    if (result.result != AspRunResult_OK)
+        return result;
+
+    result.element = AspEntry
+        (engine,
+         element == 0 ?
+         AspDataGetSequenceTailIndex(sequence) :
+         AspDataGetElementPreviousIndex(element));
+
+    result.value = result.element == 0 ? 0 :
+        AspValueEntry(engine, AspDataGetElementValueIndex(result.element));
+
+    return result;
+}
+
 AspRunResult AspStringAppendBuffer
     (AspEngine *engine, AspDataEntry *str,
      const char *buffer, size_t bufferSize)

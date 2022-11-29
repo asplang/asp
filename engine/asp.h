@@ -42,7 +42,7 @@ typedef enum
     AspRunResult_InvalidContext = 0x0A,
     AspRunResult_Redundant = 0x0B,
     AspRunResult_UnexpectedType = 0x0C,
-    AspRunResult_TupleMismatch = 0x0D,
+    AspRunResult_SequenceMismatch = 0x0D,
     AspRunResult_NameNotFound = 0x10,
     AspRunResult_KeyNotFound = 0x11,
     AspRunResult_ValueOutOfRange = 0x12,

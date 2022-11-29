@@ -689,8 +689,9 @@ static AspRunResult Step(AspEngine *engine)
             uint32_t newValueIndex = AspIndex(engine, newValue);
 
             AspRunResult assignResult =
-                AspDataGetType(address) == DataType_Tuple ?
-                AspAssignTuple(engine, address, newValue) :
+                AspDataGetType(address) == DataType_Tuple ||
+                AspDataGetType(address) == DataType_List ?
+                AspAssignSequence(engine, address, newValue) :
                 AspAssignSimple(engine, address, newValue);
             if (assignResult != AspRunResult_OK)
                 return assignResult;
@@ -2324,7 +2325,8 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_StackUnderflow;
             AspRef(engine, container);
             AspPop(engine);
-            switch (AspDataGetType(container))
+            DataType containerType = AspDataGetType(container);
+            switch (containerType)
             {
                 default:
                     return AspRunResult_UnexpectedType;
@@ -2334,45 +2336,126 @@ static AspRunResult Step(AspEngine *engine)
                     if (opCode == OpCode_IDXA)
                         return AspRunResult_UnexpectedType;
 
-                    /* Ensure the index is an integer. */
-                    if (AspDataGetType(index) != DataType_Integer)
-                        return AspRunResult_UnexpectedType;
-                    int32_t indexValue = AspDataGetInteger(index);
-
-                    /* Get the indexed character. */
-                    char c = AspStringElement(engine, container, indexValue);
-                    if (c == 0)
+                    switch (AspDataGetType(index))
                     {
-                        uint32_t count = AspDataGetSequenceCount(container);
-                        if (indexValue >= count ||
-                            indexValue < -(int32_t)count)
-                            return AspRunResult_ValueOutOfRange;
+                        default:
+                            return AspRunResult_UnexpectedType;
+
+                        case DataType_Integer:
+                        {
+                            int32_t indexValue = AspDataGetInteger(index);
+
+                            /* Get the indexed character. */
+                            char c = AspStringElement
+                                (engine, container, indexValue);
+                            if (c == 0)
+                            {
+                                uint32_t count = AspDataGetSequenceCount
+                                    (container);
+                                if (indexValue >= count ||
+                                    indexValue < -(int32_t)count)
+                                    return AspRunResult_ValueOutOfRange;
+                            }
+
+                            /* Create a single-character string fragment. */
+                            AspDataEntry *fragment =
+                                AspAllocEntry(engine, DataType_StringFragment);
+                            if (fragment == 0)
+                                return AspRunResult_OutOfDataMemory;
+                            AspDataSetStringFragment(fragment, &c, 1);
+
+                            /* Create a new string. */
+                            AspDataEntry *element = AspAllocEntry
+                                (engine, DataType_String);
+                            if (element == 0)
+                                return AspRunResult_OutOfDataMemory;
+
+                            /* Add the single-character fragment to the new
+                               string. */
+                            AspSequenceResult appendResult = AspSequenceAppend
+                                (engine, element, fragment);
+                            if (appendResult.result != AspRunResult_OK)
+                                return appendResult.result;
+
+                            /* Push the single-character string. */
+                            AspDataEntry *stackEntry = AspPush(engine, element);
+                            if (stackEntry == 0)
+                                return AspRunResult_OutOfDataMemory;
+                            AspUnref(engine, element);
+
+                            break;
+                        }
+
+                        case DataType_Range:
+                        {
+                            int32_t startValue, endValue, stepValue;
+                            AspGetRange
+                                (engine, index,
+                                 &startValue, &endValue, &stepValue);
+
+                            /* Create a new string to receive the sliced
+                               characters. */
+                            AspDataEntry *result = AspAllocEntry
+                                (engine, containerType);
+
+                            /* Perform the slice. */
+                            AspSequenceResult (*Navigate)
+                                (AspEngine *, AspDataEntry *, AspDataEntry *) =
+                                stepValue < 0 ?
+                                AspSequencePrevious : AspSequenceNext;
+                            int32_t i = stepValue < 0 ? -1 : 0;
+                            int32_t increment= stepValue < 0 ? -1 : +1;
+                            int32_t select = stepValue < 0 ?
+                                startValue + 1 : startValue;
+                            for (AspSequenceResult nextResult =
+                                 Navigate(engine, container, 0);
+                                 nextResult.element != 0 &&
+                                 (stepValue < 0 ? i > endValue : i < endValue);
+                                 nextResult = Navigate
+                                    (engine, container, nextResult.element))
+                            {
+                                AspDataEntry *fragment = nextResult.value;
+                                uint8_t fragmentSize =
+                                    AspDataGetStringFragmentSize(fragment);
+                                char *fragmentData =
+                                    AspDataGetStringFragmentData(fragment);
+
+                                for (uint8_t fragmentIndex = 0;
+                                     fragmentIndex < fragmentSize &&
+                                     (stepValue < 0 ?
+                                      i > endValue : i < endValue);
+                                     i += increment, select -= increment,
+                                     fragmentIndex++)
+                                {
+                                    /* Skip if not selected. */
+                                    if (select != 0)
+                                        continue;
+
+                                    /* Append the character. */
+                                    uint8_t charIndex =
+                                        stepValue < 0 ?
+                                        fragmentSize - fragmentIndex - 1 :
+                                        fragmentIndex;
+                                    char c = fragmentData[charIndex];
+                                    AspRunResult appendResult =
+                                        AspStringAppendBuffer
+                                        (engine, result, &c, 1);
+                                    if (appendResult != AspRunResult_OK)
+                                        return appendResult;
+
+                                    /* Prepare to identify the next element. */
+                                    select = stepValue;
+                                }
+                            }
+
+                            /* Push the resulting sequence. */
+                            AspDataEntry *stackEntry = AspPush(engine, result);
+                            if (stackEntry == 0)
+                                return AspRunResult_OutOfDataMemory;
+
+                            break;
+                        }
                     }
-
-                    /* Create a single-character string fragment. */
-                    AspDataEntry *fragment =
-                        AspAllocEntry(engine, DataType_StringFragment);
-                    if (fragment == 0)
-                        return AspRunResult_OutOfDataMemory;
-                    AspDataSetStringFragment(fragment, &c, 1);
-
-                    /* Create a new string. */
-                    AspDataEntry *element = AspAllocEntry
-                        (engine, DataType_String);
-                    if (element == 0)
-                        return AspRunResult_OutOfDataMemory;
-
-                    /* Add the single-character fragment to the new string. */
-                    AspSequenceResult appendResult = AspSequenceAppend
-                        (engine, element, fragment);
-                    if (appendResult.result != AspRunResult_OK)
-                        return appendResult.result;
-
-                    /* Push the single-character string. */
-                    AspDataEntry *stackEntry = AspPush(engine, element);
-                    if (stackEntry == 0)
-                        return AspRunResult_OutOfDataMemory;
-                    AspUnref(engine, element);
 
                     break;
                 }
@@ -2385,26 +2468,85 @@ static AspRunResult Step(AspEngine *engine)
 
                 case DataType_List:
                 {
-                    /* Ensure the index is an integer. */
-                    if (AspDataGetType(index) != DataType_Integer)
-                        return AspRunResult_UnexpectedType;
-                    int32_t indexValue = AspDataGetInteger(index);
+                    switch (AspDataGetType(index))
+                    {
+                        default:
+                            return AspRunResult_UnexpectedType;
 
-                    /* Locate the element. */
-                    AspSequenceResult indexResult = AspSequenceIndex
-                        (engine, container, indexValue);
-                    if (indexResult.result != AspRunResult_OK)
-                        return indexResult.result;
-                    if (indexResult.value == 0)
-                        return AspRunResult_ValueOutOfRange;
+                        case DataType_Integer:
+                        {
+                            int32_t indexValue = AspDataGetInteger(index);
 
-                    /* Push the value or address as applicable. */
-                    AspDataEntry *stackEntry = AspPush
-                        (engine,
-                         opCode == OpCode_IDX ?
-                         indexResult.value : indexResult.element);
-                    if (stackEntry == 0)
-                        return AspRunResult_OutOfDataMemory;
+                            /* Locate the element. */
+                            AspSequenceResult indexResult = AspSequenceIndex
+                                (engine, container, indexValue);
+                            if (indexResult.result != AspRunResult_OK)
+                                return indexResult.result;
+                            if (indexResult.value == 0)
+                                return AspRunResult_ValueOutOfRange;
+
+                            /* Push the value or address as applicable. */
+                            AspDataEntry *stackEntry = AspPush
+                                (engine,
+                                 opCode == OpCode_IDX ?
+                                 indexResult.value : indexResult.element);
+                            if (stackEntry == 0)
+                                return AspRunResult_OutOfDataMemory;
+
+                            break;
+                        }
+
+                        case DataType_Range:
+                        {
+                            int32_t startValue, endValue, stepValue;
+                            AspGetRange
+                                (engine, index,
+                                 &startValue, &endValue, &stepValue);
+
+                            /* Create a new container to receive the sliced
+                               elements. */
+                            AspDataEntry *result = AspAllocEntry
+                                (engine, containerType);
+
+                            /* Perform the slice. */
+                            AspSequenceResult (*Navigate)
+                                (AspEngine *, AspDataEntry *, AspDataEntry *) =
+                                stepValue < 0 ?
+                                AspSequencePrevious : AspSequenceNext;
+                            int32_t i = stepValue < 0 ? -1 : 0;
+                            int32_t increment= stepValue < 0 ? -1 : +1;
+                            int32_t select = stepValue < 0 ?
+                                startValue + 1 : startValue;
+                            for (AspSequenceResult nextResult =
+                                 Navigate(engine, container, 0);
+                                 nextResult.element != 0 &&
+                                 (stepValue < 0 ? i > endValue : i < endValue);
+                                 i += increment, select -= increment,
+                                 nextResult = Navigate
+                                    (engine, container, nextResult.element))
+                            {
+                                /* Skip if not selected. */
+                                if (select != 0)
+                                    continue;
+
+                                /* Append the value or address as applicable. */
+                                AspDataEntry *value =
+                                    opCode == OpCode_IDX ?
+                                    nextResult.value : nextResult.element;
+                                AspSequenceAppend(engine, result, value);
+
+                                /* Prepare to identify the next element. */
+                                select = stepValue;
+                            }
+
+                            /* Push the resulting sequence. */
+                            AspDataEntry *stackEntry = AspPush(engine, result);
+                            if (stackEntry == 0)
+                                return AspRunResult_OutOfDataMemory;
+
+                            break;
+                        }
+                    }
 
                     break;
                 }

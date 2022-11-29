@@ -6,12 +6,15 @@
 #include "stack.h"
 #include "sequence.h"
 
+
+static AspRunResult AspCheckSequenceMatch
+    (AspEngine *, const AspDataEntry *address, const AspDataEntry *newValue);
+
 AspRunResult AspAssignSimple
     (AspEngine *engine,
      AspDataEntry *address, AspDataEntry *newValue)
 {
     uint8_t addressType = AspDataGetType(address);
-
     AspRunResult assertResult = AspAssert
         (engine,
          addressType == DataType_Element ||
@@ -47,16 +50,19 @@ AspRunResult AspAssignSimple
     return AspRunResult_OK;
 }
 
-AspRunResult AspAssignTuple
+AspRunResult AspAssignSequence
     (AspEngine *engine,
      AspDataEntry *address, AspDataEntry *newValue)
 {
+    DataType addressType = AspDataGetType(address);
     AspRunResult assertResult = AspAssert
-        (engine, AspDataGetType(address) == DataType_Tuple);
+        (engine,
+         addressType == DataType_Tuple || addressType == DataType_List);
     if (assertResult != AspRunResult_OK)
         return assertResult;
 
-    AspRunResult checkResult = AspCheckTupleMatch(engine, address, newValue);
+    AspRunResult checkResult = AspCheckSequenceMatch
+        (engine, address, newValue);
     if (checkResult != AspRunResult_OK)
         return checkResult;
 
@@ -78,9 +84,11 @@ AspRunResult AspAssignTuple
                 (engine, newValue, newValueIterResult.element);
             AspDataEntry *newValueElement = newValueIterResult.value;
 
-            if (AspDataGetType(addressElement) == DataType_Tuple)
+            DataType addressElementType = AspDataGetType(addressElement);
+            if (addressElementType == DataType_Tuple ||
+                addressElementType == DataType_List)
             {
-                AspRunResult checkResult = AspCheckTupleMatch
+                AspRunResult checkResult = AspCheckSequenceMatch
                     (engine, addressElement, newValueElement);
                 if (checkResult != AspRunResult_OK)
                     return checkResult;
@@ -128,20 +136,23 @@ AspRunResult AspAssignTuple
     return AspRunResult_OK;
 }
 
-AspRunResult AspCheckTupleMatch
+AspRunResult AspCheckSequenceMatch
     (AspEngine *engine,
      const AspDataEntry *address, const AspDataEntry *value)
 {
+    DataType addressType = AspDataGetType(address);
     AspRunResult assertResult = AspAssert
-        (engine, AspDataGetType(address) == DataType_Tuple);
+        (engine,
+         addressType == DataType_Tuple || addressType == DataType_List);
     if (assertResult != AspRunResult_OK)
         return assertResult;
 
-    if (AspDataGetType(value) != DataType_Tuple)
+    DataType valueType = AspDataGetType(value);
+    if (valueType != DataType_Tuple && valueType != DataType_List)
         return AspRunResult_UnexpectedType;
     uint32_t addressCount = AspDataGetSequenceCount(address);
     uint32_t valueCount = AspDataGetSequenceCount(value);
     return
         addressCount != valueCount ?
-        AspRunResult_TupleMismatch : AspRunResult_OK;
+        AspRunResult_SequenceMismatch : AspRunResult_OK;
 }
