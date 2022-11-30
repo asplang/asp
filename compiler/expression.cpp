@@ -864,10 +864,15 @@ Expression *FoldBitwiseOperation
                 break;
 
             case TOKEN_RIGHT_SHIFT:
+            {
                 if (rightValue < 0)
                     throw string("Negative shift count not permitted");
-                resultBits = leftBits >> rightValue;
+
+                // Perform sign extension.
+                int32_t resultValue = leftValue >> rightValue;
+                resultBits = *reinterpret_cast<uint32_t *>(&resultValue);
                 break;
+            }
     }
 
     int32_t resultValue = *reinterpret_cast<int32_t *>(&resultBits);

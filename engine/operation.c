@@ -364,7 +364,11 @@ static AspOperationResult PerformBitwiseBinaryOperation
             if (rightValue < 0)
                 result.result = AspRunResult_ValueOutOfRange;
             else
-                resultBits = leftBits >> rightValue;
+            {
+                // Perform sign extension.
+                int32_t resultValue = leftValue >> rightValue;
+                resultBits = *(uint32_t *)&resultValue;
+            }
             break;
     }
 
