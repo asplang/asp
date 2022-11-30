@@ -71,6 +71,13 @@ AspOperationResult AspPerformUnaryOperation
                     break;
 
                 case DataType_Boolean:
+                    result.value = AspAllocEntry(engine, DataType_Integer);
+                    if (result.value == 0)
+                        break;
+                    AspDataSetInteger(result.value,
+                        (int32_t)AspDataGetBoolean(operand));
+                    break;
+
                 case DataType_Integer:
                 case DataType_Float:
                     AspRef(engine, operand);

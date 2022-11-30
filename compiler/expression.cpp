@@ -714,6 +714,9 @@ Expression *ConstantExpression::FoldPlus()
             throw string("Bad operand type for unary +");
 
         case Type::Boolean:
+            return new ConstantExpression(Token(sourceLocation,
+                b ? 1 : 0, 0));
+
         case Type::Integer:
         case Type::Float:
             return this;
@@ -729,7 +732,7 @@ Expression *ConstantExpression::FoldMinus()
 
         case Type::Boolean:
             return new ConstantExpression(Token(sourceLocation,
-                b ? -1 : 0));
+                b ? -1 : 0, 0));
 
         case Type::Integer:
             return new ConstantExpression(Token(sourceLocation, -i, 0));
