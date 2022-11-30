@@ -539,6 +539,12 @@ Expression *FoldBinaryExpression
                 leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
                 FoldGreaterOrEqual(leftConstExpression, rightConstExpression);
 
+        case TOKEN_IN:
+        case TOKEN_NOT_IN:
+        case TOKEN_IS:
+        case TOKEN_IS_NOT:
+            return 0;
+
         case TOKEN_BAR:
         case TOKEN_CARET:
         case TOKEN_AMPERSAND:

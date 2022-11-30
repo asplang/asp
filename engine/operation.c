@@ -8,6 +8,7 @@
 #include "data.h"
 #include "range.h"
 #include "sequence.h"
+#include "tree.h"
 #include <math.h>
 #include <stdint.h>
 
@@ -35,9 +36,11 @@ static AspOperationResult PerformSequenceComparisonOperation
 static AspOperationResult PerformMembershipOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
-static AspOperationResult PerformObjectEqualityOperation
+static AspOperationResult PerformIdentityOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
+static bool IsEqual
+    (AspEngine *engine, AspDataEntry *left, AspDataEntry *right);
 
 AspOperationResult AspPerformUnaryOperation
     (AspEngine *engine, uint8_t opCode, AspDataEntry *operand)
@@ -299,7 +302,7 @@ AspOperationResult AspPerformBinaryOperation
 
         case OpCode_NIS:
         case OpCode_IS:
-            result = PerformObjectEqualityOperation
+            result = PerformIdentityOperation
                 (engine, opCode, left, right);
             break;
     }
@@ -334,6 +337,9 @@ static AspOperationResult PerformBitwiseBinaryOperation
         result.result = AspRunResult_UnexpectedType;
     uint32_t rightBits = *(uint32_t *)&rightValue;
 
+    if (result.result != AspRunResult_OK)
+        return result;
+
     uint32_t resultBits = 0;
     switch (opCode)
     {
@@ -365,7 +371,7 @@ static AspOperationResult PerformBitwiseBinaryOperation
                 result.result = AspRunResult_ValueOutOfRange;
             else
             {
-                // Perform sign extension.
+                /* Perform sign extension. */
                 int32_t resultValue = leftValue >> rightValue;
                 resultBits = *(uint32_t *)&resultValue;
             }
@@ -718,120 +724,7 @@ static AspOperationResult PerformEqualityOperation
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
-    uint8_t leftType = AspDataGetType(left);
-    uint8_t rightType = AspDataGetType(right);
-
-    bool isEqual = left == right;
-    bool typesEqual = leftType == rightType;
-    if (!isEqual && typesEqual)
-    {
-        switch (leftType)
-        {
-            default:
-                break;
-
-            case DataType_None:
-            case DataType_Ellipsis:
-                isEqual = true;
-                break;
-
-            case DataType_Boolean:
-                isEqual =
-                    AspDataGetBoolean(left) ==
-                    AspDataGetBoolean(right);
-                break;
-
-            case DataType_Integer:
-                isEqual =
-                    AspDataGetInteger(left) ==
-                    AspDataGetInteger(right);
-                break;
-
-            case DataType_Float:
-                isEqual =
-                    AspDataGetFloat(left) ==
-                    AspDataGetFloat(right);
-                break;
-
-            case DataType_Range:
-            {
-                int32_t leftStartValue, leftEndValue, leftStepValue;
-                int32_t rightStartValue, rightEndValue, rightStepValue;
-                AspGetRange
-                    (engine, left,
-                     &leftStartValue, &leftEndValue, &leftStepValue);
-                AspGetRange
-                    (engine, right,
-                     &rightStartValue, &rightEndValue, &rightStepValue);
-                isEqual =
-                    leftStartValue == rightStartValue &&
-                    leftEndValue == rightEndValue &&
-                    leftStepValue == rightStepValue;
-                break;
-            }
-
-            case DataType_String:
-            {
-                uint32_t leftCount = AspDataGetSequenceCount(left);
-                uint32_t rightCount = AspDataGetSequenceCount(right);
-                isEqual = leftCount == rightCount;
-                if (!isEqual)
-                    break;
-                for (uint32_t i = 0; i < leftCount; i++)
-                {
-                    if (AspStringElement(engine, left, i) !=
-                        AspStringElement(engine, right, i))
-                    {
-                        isEqual = false;
-                        break;
-                    }
-                }
-                break;
-            }
-
-            case DataType_Tuple:
-            case DataType_List:
-            case DataType_Set:
-            case DataType_Dictionary:
-                /* TODO: Handle collections "recursively" (but implement
-                   with iteration). */
-                result.result = AspRunResult_NotImplemented;
-                break;
-
-            case DataType_Iterator:
-            {
-                uint32_t leftIterableIndex =
-                    AspDataGetIteratorIterableIndex(left);
-                uint32_t rightIterableIndex =
-                    AspDataGetIteratorIterableIndex(right);
-                uint32_t leftMemberIndex =
-                    AspDataGetIteratorMemberIndex(left);
-                uint32_t rightMemberIndex =
-                    AspDataGetIteratorMemberIndex(right);
-                isEqual =
-                    leftIterableIndex == rightIterableIndex &&
-                    leftMemberIndex == rightMemberIndex;
-                if (!isEqual)
-                    break;
-                AspDataEntry *iterable = AspValueEntry
-                    (engine, leftIterableIndex);
-                if (iterable == 0 ||
-                    AspDataGetType(iterable) != DataType_String)
-                    break;
-                isEqual =
-                    AspDataGetIteratorStringIndex(left) ==
-                    AspDataGetIteratorStringIndex(right);
-                break;
-            }
-
-            case DataType_Type:
-                isEqual =
-                    AspDataGetTypeValue(left) ==
-                    AspDataGetTypeValue(right);
-                break;
-        }
-    }
-
+    bool isEqual = IsEqual(engine, left, right);
     bool resultValue = false;
     switch (opCode)
     {
@@ -974,9 +867,56 @@ static AspOperationResult PerformMembershipOperation
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
-    /* TODO: Implement. */
-    result.result = AspRunResult_NotImplemented;
+    uint8_t leftType = AspDataGetType(left);
+    uint8_t rightType = AspDataGetType(right);
+
     bool isIn = false;
+    switch (rightType)
+    {
+        case DataType_String:
+        {
+            if (leftType != DataType_String)
+            {
+                result.result = AspRunResult_UnexpectedType;
+                break;
+            }
+
+            /* TODO: Implement. */
+            result.result = AspRunResult_NotImplemented;
+            break;
+        }
+
+        case DataType_Tuple:
+        case DataType_List:
+        {
+            for (AspSequenceResult nextResult = AspSequenceNext
+                    (engine, right, 0);
+                 !isIn && nextResult.element != 0;
+                 nextResult = AspSequenceNext
+                    (engine, right, nextResult.element))
+            {
+                AspDataEntry *value = nextResult.value;
+                isIn = IsEqual(engine, left, value);
+            }
+            break;
+        }
+
+        case DataType_Set:
+        case DataType_Dictionary:
+        {
+            AspTreeResult findResult = AspTreeFind(engine, right, left);
+            if (findResult.result != AspRunResult_OK)
+            {
+                result.result = findResult.result;
+                break;
+            }
+            isIn = findResult.node != 0;
+            break;
+        }
+    }
+
+    if (result.result != AspRunResult_OK)
+        return result;
 
     bool resultValue = false;
     switch (opCode)
@@ -1004,13 +944,13 @@ static AspOperationResult PerformMembershipOperation
     return result;
 }
 
-static AspOperationResult PerformObjectEqualityOperation
+static AspOperationResult PerformIdentityOperation
     (AspEngine *engine, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right)
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
-    bool isEqual = left == right;
+    bool isIdentical = left == right;
 
     bool resultValue = false;
     switch (opCode)
@@ -1020,11 +960,11 @@ static AspOperationResult PerformObjectEqualityOperation
             break;
 
         case OpCode_NIS:
-            resultValue = !isEqual;
+            resultValue = !isIdentical;
             break;
 
         case OpCode_IS:
-            resultValue = isEqual;
+            resultValue = isIdentical;
             break;
     }
 
@@ -1036,4 +976,104 @@ static AspOperationResult PerformObjectEqualityOperation
     }
 
     return result;
+}
+
+static bool IsEqual
+    (AspEngine *engine, AspDataEntry *left, AspDataEntry *right)
+{
+    if (left == right)
+        return true;
+
+    uint8_t leftType = AspDataGetType(left);
+    uint8_t rightType = AspDataGetType(right);
+    if (leftType != rightType)
+        return false;
+
+    switch (leftType)
+    {
+        default:
+            break;
+
+        case DataType_None:
+        case DataType_Ellipsis:
+            return true;
+
+        case DataType_Boolean:
+            return
+                AspDataGetBoolean(left) == AspDataGetBoolean(right);
+
+        case DataType_Integer:
+            return
+                AspDataGetInteger(left) == AspDataGetInteger(right);
+
+        case DataType_Float:
+            return
+                AspDataGetFloat(left) == AspDataGetFloat(right);
+
+        case DataType_Range:
+        {
+            int32_t leftStartValue, leftEndValue, leftStepValue;
+            int32_t rightStartValue, rightEndValue, rightStepValue;
+            AspGetRange
+                (engine, left,
+                 &leftStartValue, &leftEndValue, &leftStepValue);
+            AspGetRange
+                (engine, right,
+                 &rightStartValue, &rightEndValue, &rightStepValue);
+            return
+                leftStartValue == rightStartValue &&
+                leftEndValue == rightEndValue &&
+                leftStepValue == rightStepValue;
+        }
+
+        case DataType_String:
+        {
+            uint32_t leftCount = AspDataGetSequenceCount(left);
+            uint32_t rightCount = AspDataGetSequenceCount(right);
+            if (leftCount != rightCount)
+                return false;
+            for (uint32_t i = 0; i < leftCount; i++)
+            {
+                if (AspStringElement(engine, left, i) !=
+                    AspStringElement(engine, right, i))
+                    return false;
+            }
+            return true;
+        }
+
+        case DataType_Tuple:
+        case DataType_List:
+        case DataType_Set:
+        case DataType_Dictionary:
+            /* TODO: Handle collections "recursively" (but implement
+               with iteration). */
+            AspAssert(engine, false);
+            return false;
+
+        case DataType_Iterator:
+        {
+            uint32_t leftIterableIndex =
+                AspDataGetIteratorIterableIndex(left);
+            uint32_t rightIterableIndex =
+                AspDataGetIteratorIterableIndex(right);
+            uint32_t leftMemberIndex =
+                AspDataGetIteratorMemberIndex(left);
+            uint32_t rightMemberIndex =
+                AspDataGetIteratorMemberIndex(right);
+            if (leftIterableIndex != rightIterableIndex ||
+                leftMemberIndex != rightMemberIndex)
+                return false;
+            AspDataEntry *iterable = AspValueEntry
+                (engine, leftIterableIndex);
+            return
+                iterable == 0 ||
+                AspDataGetType(iterable) != DataType_String ||
+                AspDataGetIteratorStringIndex(left) ==
+                AspDataGetIteratorStringIndex(right);
+        }
+
+        case DataType_Type:
+            return
+                AspDataGetTypeValue(left) == AspDataGetTypeValue(right);
+    }
 }
