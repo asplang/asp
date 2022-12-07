@@ -851,11 +851,16 @@ void MemberExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     expression->Emit(executable);
+    auto symbol = executable.Symbol(name);
 
     if (emitType == EmitType::Delete)
+    {
+        ostringstream oss;
+        oss << "Push symbol of variable " << name << " (" << symbol << ')';
+        executable.Insert(new PushIntegerInstruction(symbol, oss.str()));
         return;
+    }
 
-    auto symbol = executable.Symbol(name);
     ostringstream oss;
     oss
         << "Lookup " << (emitType == EmitType::Address ? "address" : "value")

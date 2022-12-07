@@ -633,7 +633,7 @@ static AspRunResult Step(AspEngine *engine)
             printf("%d\n", variableSymbol);
             #endif
 
-            /* Look up variable, creating it if it doesn't exist. */
+            /* Look up the variable, creating it if it doesn't exist. */
             AspTreeResult insertResult = AspTreeTryInsertBySymbol
                 (engine, engine->localNamespace,
                  variableSymbol, engine->noneSingleton);
@@ -759,6 +759,34 @@ static AspRunResult Step(AspEngine *engine)
                     /* Erase the member. */
                     bool eraseResult = AspTreeEraseNode
                         (engine, container, findResult.node, true, true);
+                    if (eraseResult != AspRunResult_OK)
+                        return eraseResult;
+
+                    break;
+                }
+
+                case DataType_Module:
+                {
+                    /* Access the module's namespace. */
+                    AspDataEntry *ns = AspEntry
+                        (engine, AspDataGetModuleNamespaceIndex(container));
+
+                    /* Ensure the index is a symbol. */
+                    if (AspDataGetType(index) != DataType_Integer)
+                        return AspRunResult_UnexpectedType;
+                    int32_t symbol = AspDataGetInteger(index);
+
+                    /* Locate the entry. */
+                    AspTreeResult findResult = AspFindSymbol
+                        (engine, ns, symbol);
+                    if (findResult.result != AspRunResult_OK)
+                        return findResult.result;
+                    if (findResult.node == 0)
+                        return AspRunResult_KeyNotFound;
+
+                    /* Erase the member. */
+                    bool eraseResult = AspTreeEraseNode
+                        (engine, ns, findResult.node, true, true);
                     if (eraseResult != AspRunResult_OK)
                         return eraseResult;
 
@@ -1650,7 +1678,6 @@ static AspRunResult Step(AspEngine *engine)
             engine->globalNamespace = AspValueEntry
                 (engine, AspDataGetModuleNamespaceIndex(module));
             engine->module = module;
-            AspUnref(engine, module);
 
             /* Save the return address. */
             uint32_t returnAddress = AspDataGetFrameReturnAddress(frame);
@@ -2613,12 +2640,12 @@ static AspRunResult Step(AspEngine *engine)
         {
             operandSize++;
 
+            bool isAddressInstruction =
+                opCode == OpCode_MEMA1 ||
+                opCode == OpCode_MEMA2 ||
+                opCode == OpCode_MEMA4;
             #ifdef ASP_DEBUG
             {
-                bool isAddressInstruction =
-                    opCode == OpCode_MEMA1 ||
-                    opCode == OpCode_MEMA2 ||
-                    opCode == OpCode_MEMA4;
                 printf(isAddressInstruction ? "MEMA" : "MEM");
                 putchar(' ');
             }
@@ -2654,21 +2681,25 @@ static AspRunResult Step(AspEngine *engine)
             if (AspDataGetType(moduleNamespace) != DataType_Namespace)
                 return AspRunResult_UnexpectedType;
 
-            /* Look up the variable in the module's namespace. */
-            AspTreeResult findResult = AspFindSymbol
-                (engine, moduleNamespace, variableSymbol);
-            if (findResult.result != AspRunResult_OK)
-                return findResult.result;
-            if (findResult.value == 0)
+            /* Look up the variable in the module's namespace, creating
+               it for an address lookup if it doesn't exist. */
+            AspTreeResult memberResult =
+                isAddressInstruction ?
+                AspTreeTryInsertBySymbol
+                    (engine, moduleNamespace,
+                     variableSymbol, engine->noneSingleton) :
+                AspFindSymbol
+                    (engine, moduleNamespace, variableSymbol);
+            if (memberResult.result != AspRunResult_OK)
+                return memberResult.result;
+            if (memberResult.value == 0)
                 return AspRunResult_NameNotFound;
 
             /* Push variable's value or address as applicable. */
             AspDataEntry *stackEntry = AspPush
                 (engine,
-                 opCode == OpCode_MEM1 ||
-                 opCode == OpCode_MEM2 ||
-                 opCode == OpCode_MEM4 ?
-                 findResult.value : findResult.node);
+                 isAddressInstruction ?
+                 memberResult.node : memberResult.value);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
