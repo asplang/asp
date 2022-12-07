@@ -24,6 +24,9 @@ static AspOperationResult PerformConcatenationBinaryOperation
 static AspOperationResult PerformRepetitionBinaryOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *sequence, AspDataEntry *repeatCount);
+static AspOperationResult PerformFormatBinaryOperation
+    (AspEngine *, uint8_t opCode,
+     AspDataEntry *sequence, AspDataEntry *repeatCount);
 static AspOperationResult PerformEqualityOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
@@ -241,10 +244,25 @@ AspOperationResult AspPerformBinaryOperation
             /* Fall through... */
         }
 
+        case OpCode_MOD:
+        {
+            if (opCode == OpCode_MOD)
+            {
+                if (leftType == DataType_String &&
+                    rightType == DataType_Tuple)
+                {
+                    result = PerformFormatBinaryOperation
+                        (engine, opCode, right, left);
+                    break;
+                }
+            }
+
+            /* Fall through... */
+        }
+
         case OpCode_SUB:
         case OpCode_DIV:
         case OpCode_FDIV:
-        case OpCode_MOD:
         case OpCode_POW:
             if ((leftType == DataType_Boolean ||
                  leftType == DataType_Integer ||
@@ -715,6 +733,16 @@ static AspOperationResult PerformArithmeticBinaryOperation
         }
     }
 
+    return result;
+}
+
+static AspOperationResult PerformFormatBinaryOperation
+    (AspEngine *engine, uint8_t opCode,
+     AspDataEntry *left, AspDataEntry *right)
+{
+    /* TODO: Implement, either here or in AspLib_format, where it could be
+       overridden. */
+    AspOperationResult result = {AspRunResult_NotImplemented, 0};
     return result;
 }
 
