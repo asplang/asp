@@ -731,16 +731,86 @@ static AspRunResult Step(AspEngine *engine)
 
                 case DataType_List:
                 {
-                    /* Ensure the index is an integer. */
-                    if (AspDataGetType(index) != DataType_Integer)
-                        return AspRunResult_UnexpectedType;
-                    int32_t indexValue = AspDataGetInteger(index);
+                    switch (AspDataGetType(index))
+                    {
+                        default:
+                            return AspRunResult_UnexpectedType;
 
-                    /* Erase the element. */
-                    bool eraseResult = AspSequenceErase
-                        (engine, container, indexValue, true);
-                    if (!eraseResult)
-                        return AspRunResult_ValueOutOfRange;
+                        case DataType_Integer:
+                        {
+                            int32_t indexValue = AspDataGetInteger(index);
+
+                            /* Erase the element. */
+                            bool eraseResult = AspSequenceErase
+                                (engine, container, indexValue, true);
+                            if (!eraseResult)
+                                return AspRunResult_ValueOutOfRange;
+
+                            break;
+                        }
+
+                        case DataType_Range:
+                        {
+                            int32_t startValue, endValue, stepValue;
+                            AspGetRange
+                                (engine, index,
+                                 &startValue, &endValue, &stepValue);
+
+                            /* Erase the elements selected by the slice. */
+                            AspSequenceResult (*Navigate)
+                                (AspEngine *, AspDataEntry *, AspDataEntry *) =
+                                stepValue < 0 ?
+                                AspSequencePrevious : AspSequenceNext;
+                            int32_t i = stepValue < 0 ? -1 : 0;
+                            int32_t increment= stepValue < 0 ? -1 : +1;
+                            int32_t select = stepValue < 0 ?
+                                startValue + 1 : startValue;
+                            AspDataEntry *selectedElement = 0;
+                            for (AspSequenceResult nextResult =
+                                 Navigate(engine, container, 0);
+                                 nextResult.element != 0 &&
+                                 (stepValue < 0 ? i > endValue : i < endValue);
+                                 i += increment, select -= increment,
+                                 nextResult = Navigate
+                                    (engine, container, nextResult.element))
+                            {
+                                /* Erase the previously selected element,
+                                   if applicable. */
+                                if (selectedElement != 0)
+                                {
+                                    bool eraseResult = AspSequenceEraseElement
+                                        (engine, container,
+                                         selectedElement, true);
+                                    if (!eraseResult)
+                                        return AspRunResult_ValueOutOfRange;
+                                    selectedElement = 0;
+                                }
+
+                                /* Skip if not selected. */
+                                if (select != 0)
+                                    continue;
+
+                                /* Select the element for deletion. */
+                                selectedElement = nextResult.element;
+
+                                /* Prepare to identify the next element. */
+                                select = stepValue;
+                            }
+
+                            /* Erase the last selected element,
+                               if applicable. */
+                            if (selectedElement != 0)
+                            {
+                                bool eraseResult = AspSequenceEraseElement
+                                    (engine, container, selectedElement, true);
+                                if (!eraseResult)
+                                    return AspRunResult_ValueOutOfRange;
+                                selectedElement = 0;
+                            }
+
+                            break;
+                        }
+                    }
 
                     break;
                 }
