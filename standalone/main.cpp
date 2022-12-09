@@ -16,15 +16,19 @@ using namespace std;
 #define COMMAND_OPTION_PREFIX "-"
 #endif
 
-const size_t ASP_DATA_ENTRY_COUNT = 2048;
-const size_t ASP_CODE_BYTE_COUNT = 4096;
+static const size_t DEFAULT_CODE_BYTE_COUNT = 4096;
+static const size_t DEFAULT_DATA_ENTRY_COUNT = 2048;
 
 static void Usage()
 {
     cerr
         << "Usage: asps [options] script [args]\n"
         << "Options:\n"
-        << "-v  Verbose. Output version and statistical information.\n"
+        << "-v      Verbose. Output version and statistical information.\n"
+        << "-c n    Code size, in bytes."
+        << " Default is " << DEFAULT_CODE_BYTE_COUNT << ".\n"
+        << "-d n    Data entry count, where each entry is 16 bytes."
+        << " Default is " << DEFAULT_DATA_ENTRY_COUNT << ".\n"
         << "Arguments:\n"
         << "script  = Script executable (*.aspe). The suffix may be omitted.\n"
         << "args    = Arguments passed to the script.\n";
@@ -34,6 +38,8 @@ int main(int argc, char **argv)
 {
     // Process command line options.
     bool verbose = false;
+    size_t codeByteCount = DEFAULT_CODE_BYTE_COUNT;
+    size_t dataEntryCount = DEFAULT_DATA_ENTRY_COUNT;
     auto optionPrefixSize = strlen(COMMAND_OPTION_PREFIX);
     for (; argc >= 2; argc--, argv++)
     {
@@ -47,6 +53,18 @@ int main(int argc, char **argv)
         {
             Usage();
             return 0;
+        }
+        else if (option == "c")
+        {
+            string value = (++argv)[1];
+            argc--;
+            codeByteCount = atoi(value.c_str());
+        }
+        else if (option == "d")
+        {
+            string value = (++argv)[1];
+            argc--;
+            dataEntryCount = atoi(value.c_str());
         }
         else if (option == "v")
             verbose = true;
@@ -90,15 +108,15 @@ int main(int argc, char **argv)
 
     // Determine byte size of data area.
     size_t dataEntrySize = AspDataEntrySize();
-    size_t dataByteSize = ASP_DATA_ENTRY_COUNT * dataEntrySize;
+    size_t dataByteSize = dataEntryCount * dataEntrySize;
 
     // Initialize the Asp engine.
     AspEngine engine;
-    char *code = (char *)malloc(ASP_CODE_BYTE_COUNT);
+    char *code = (char *)malloc(codeByteCount);
     char *data = (char *)malloc(dataByteSize);
     AspRunResult initializeResult = AspInitialize
         (&engine,
-         code, ASP_CODE_BYTE_COUNT,
+         code, codeByteCount,
          data, dataByteSize,
          &AspAppSpec_standalone, 0);
     if (initializeResult != AspRunResult_OK)

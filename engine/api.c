@@ -346,7 +346,10 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
         strcpy(buffer, typeString == 0 ? "?" : typeString);
     }
     else
+    {
+        /* TODO: Add support for remaining types. */
         strcpy(buffer, "<unsupported type>");
+    }
 
     return AspNewString(engine, buffer, strlen(buffer));
 }

@@ -1,6 +1,6 @@
-//
-// Asp script function library implementation: math.
-//
+/*
+ * Asp script function library implementation: math.
+ */
 
 #include "asp.h"
 #include <math.h>
