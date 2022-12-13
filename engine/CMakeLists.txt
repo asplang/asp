@@ -26,7 +26,7 @@ math(EXPR VERSION_VALUE
     )
 
 add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/asp-ver.h
+    OUTPUT asp-ver.h
     COMMAND ${CMAKE_COMMAND} -E echo "/* Asp engine version. */"
         > ${PROJECT_BINARY_DIR}/asp-ver.h
     COMMAND ${CMAKE_COMMAND} -E echo "\\#ifndef ASP_VERSION"
@@ -35,6 +35,10 @@ add_custom_command(
         >> ${PROJECT_BINARY_DIR}/asp-ver.h
     COMMAND ${CMAKE_COMMAND} -E echo "\\#endif"
         >> ${PROJECT_BINARY_DIR}/asp-ver.h
+    )
+
+add_custom_target(asp-ver.h ALL
+    DEPENDS ${PROJECT_BINARY_DIR}/asp-ver.h
     )
 
 if(BUILD_FOR_TARGET)
