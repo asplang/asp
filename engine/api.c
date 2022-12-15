@@ -551,7 +551,7 @@ AspDataEntry *AspNewDictionary(AspEngine *engine)
     return AspNewObject(engine, DataType_Dictionary);
 }
 
-AspDataEntry *AspNewType(AspEngine *engine, AspDataEntry *object)
+AspDataEntry *AspNewType(AspEngine *engine, const AspDataEntry *object)
 {
     AspDataEntry *entry = AspNewObject(engine, DataType_Type);
     if (entry != 0)
