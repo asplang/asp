@@ -5,7 +5,9 @@
 #ifndef STATEMENT_HPP
 #define STATEMENT_HPP
 
+#include "literal.hpp"
 #include "grammar.hpp"
+#include "token.h"
 #include <list>
 #include <string>
 
@@ -13,11 +15,16 @@ class Parameter : public NonTerminal
 {
     public:
 
-        explicit Parameter(const Token &name, bool group = false);
+        Parameter
+            (const Token &name, Literal *, bool group = false);
 
         std::string Name() const
         {
             return name;
+        }
+        Literal *DefaultValue() const
+        {
+            return defaultValue;
         }
         bool IsGroup() const
         {
@@ -27,6 +34,7 @@ class Parameter : public NonTerminal
     private:
 
         std::string name;
+        Literal *defaultValue;
         bool isGroup;
 };
 

@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspc
-    VERSION 0.5.0.0
+    VERSION 0.6.0.0
     )
 
 set(ABI_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
@@ -42,7 +42,9 @@ add_executable(aspc
     main.cpp
     compiler.cpp
     lexer.cpp
+    lexer-common.cpp
     grammar.cpp
+    token.cpp
     asp.c
     expression.cpp
     statement.cpp

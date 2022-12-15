@@ -32,12 +32,15 @@ add_executable(aspg
     generator.cpp
     generator-output.cpp
     lexer.cpp
-    grammar.cpp
+    ../compiler/lexer-common.cpp
+    ../compiler/grammar.cpp
+    ../compiler/token.cpp
     app.c
-    crc.c
+    literal.cpp
     statement.cpp
     ../compiler/search-path.cpp
     ../compiler/symbol.cpp
+    crc.c
     )
 
 target_compile_definitions(aspg PRIVATE

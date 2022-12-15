@@ -138,6 +138,7 @@ AspDataEntry *AspNewTuple(AspEngine *);
 AspDataEntry *AspNewList(AspEngine *);
 AspDataEntry *AspNewSet(AspEngine *);
 AspDataEntry *AspNewDictionary(AspEngine *);
+AspDataEntry *AspNewType(AspEngine *, AspDataEntry *);
 bool AspListAppend(AspEngine *, AspDataEntry *list, AspDataEntry *value);
 bool AspListInsert
     (AspEngine *, AspDataEntry *list,

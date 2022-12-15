@@ -96,12 +96,55 @@ parameters(result) ::= .
 
 %type parameter {Parameter *}
 
+parameter(result) ::=
+    NAME(nameToken) ASSIGN literal(defaultValue).
+{
+    result = ACTION(MakeParameter, nameToken, defaultValue);
+}
+
 parameter(result) ::= NAME(nameToken).
 {
-    result = ACTION(MakeParameter, nameToken);
+    result = ACTION(MakeParameter, nameToken, 0);
 }
 
 parameter(result) ::= ASTERISK NAME(nameToken).
 {
     result = ACTION(MakeGroupParameter, nameToken);
+}
+
+%type literal {Literal *}
+
+literal(result) ::= NONE(token).
+{
+    result = ACTION(MakeLiteral, token);
+}
+
+literal(result) ::= FALSE(token).
+{
+    result = ACTION(MakeLiteral, token);
+}
+
+literal(result) ::= TRUE(token).
+{
+    result = ACTION(MakeLiteral, token);
+}
+
+literal(result) ::= ELLIPSIS(token).
+{
+    result = ACTION(MakeLiteral, token);
+}
+
+literal(result) ::= INTEGER(token).
+{
+    result = ACTION(MakeLiteral, token);
+}
+
+literal(result) ::= FLOAT(token).
+{
+    result = ACTION(MakeLiteral, token);
+}
+
+literal(result) ::= STRING(token).
+{
+    result = ACTION(MakeLiteral, token);
 }

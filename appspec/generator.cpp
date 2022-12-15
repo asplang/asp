@@ -151,9 +151,10 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
-    (MakeParameter, Parameter *, Token *, nameToken)
+    (MakeParameter, Parameter *,
+     Token *, nameToken, Literal *, defaultExpression)
 {
-    auto result = new Parameter(*nameToken);
+    auto result = new Parameter(*nameToken, defaultExpression);
     delete nameToken;
     return result;
 }
@@ -161,8 +162,16 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeGroupParameter, Parameter *, Token *, nameToken)
 {
-    auto result = new Parameter(*nameToken, true);
+    auto result = new Parameter(*nameToken, 0, true);
     delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeLiteral, Literal *, Token *, token)
+{
+    auto result = new Literal(*token);
+    delete token;
     return result;
 }
 

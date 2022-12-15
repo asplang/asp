@@ -14,7 +14,17 @@
 #endif
 
 static const uint32_t ParameterSpecMask = 0x0FFFFFFF;
-static const uint32_t ParameterFlag_Group = 0x80000000;
+static const uint32_t ParameterFlag_HasDefault = 0x10000000;
+static const uint32_t ParameterFlag_IsGroup    = 0x20000000;
+enum ParameterDefaultValueType
+{
+    ParameterDefaultValueType_None,
+    ParameterDefaultValueType_Ellipsis,
+    ParameterDefaultValueType_Boolean,
+    ParameterDefaultValueType_Integer,
+    ParameterDefaultValueType_Float,
+    ParameterDefaultValueType_String,
+};
 
 AspRunResult AspInitializeAppFunctions(AspEngine *engine)
 {
@@ -22,15 +32,12 @@ AspRunResult AspInitializeAppFunctions(AspEngine *engine)
        Note that the first few symbols are reserved:
        0 - main module name
        1 - args*/
-    unsigned i = 0;
+    unsigned specIndex = 0;
     for (int32_t functionSymbol = AspScriptSymbolBase; ; functionSymbol++)
     {
-        if (i >= engine->appSpec->specSize)
+        if (specIndex >= engine->appSpec->specSize)
             break;
-        unsigned parameterCount = engine->appSpec->spec[i++];
-
-        if (i + 4 * parameterCount > engine->appSpec->specSize)
-            return AspRunResult_InitializationError;
+        unsigned parameterCount = engine->appSpec->spec[specIndex++];
 
         AspDataEntry *parameters = AspAllocEntry
             (engine, DataType_ParameterList);
@@ -39,22 +46,101 @@ AspRunResult AspInitializeAppFunctions(AspEngine *engine)
         for (unsigned p = 0; p < parameterCount; p++)
         {
             uint32_t parameterSpec = 0;
-            for (unsigned j = 0; j < 4; j++)
+            for (unsigned i = 0; i < 4; i++)
             {
                 parameterSpec <<= 8;
-                parameterSpec |= engine->appSpec->spec[i++];
+                parameterSpec |= engine->appSpec->spec[specIndex++];
             }
             uint32_t parameterSymbol = parameterSpec & ParameterSpecMask;
-            bool isGroup = (parameterSpec & ParameterFlag_Group) != 0;
+            bool hasDefault = (parameterSpec & ParameterFlag_HasDefault) != 0;
+            bool isGroup = (parameterSpec & ParameterFlag_IsGroup) != 0;
 
             AspDataEntry *parameter = AspAllocEntry
                 (engine, DataType_Parameter);
             if (parameter == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetParameterSymbol(parameter, parameterSymbol);
-            AspDataSetParameterHasDefault(parameter, false);
+            AspDataSetParameterHasDefault(parameter, hasDefault);
             AspDataSetParameterIsGroup(parameter, isGroup);
-            AspSequenceAppend(engine, parameters, parameter);
+
+            if (hasDefault)
+            {
+                AspDataEntry *defaultValue = 0;
+
+                uint32_t valueType = engine->appSpec->spec[specIndex++];
+                switch (valueType)
+                {
+                    default:
+                        return AspRunResult_InitializationError;
+
+                    case ParameterDefaultValueType_None:
+                        defaultValue = AspNewNone(engine);
+                        break;
+
+                    case ParameterDefaultValueType_Ellipsis:
+                        defaultValue = AspNewEllipsis(engine);
+                        break;
+
+                    case ParameterDefaultValueType_Boolean:
+                    {
+                        uint8_t value = engine->appSpec->spec[specIndex++];
+                        defaultValue = AspNewBoolean(engine, value != 0);
+                        break;
+                    }
+
+                    case ParameterDefaultValueType_Integer:
+                    {
+                        uint32_t uValue = 0;
+                        for (unsigned i = 0; i < 4; i++)
+                        {
+                            uValue <<= 8;
+                            uValue |= engine->appSpec->spec[specIndex++];
+                        }
+                        int32_t value = *(int32_t *)&uValue;
+                        defaultValue = AspNewInteger(engine, value);
+                        break;
+                    }
+
+                    case ParameterDefaultValueType_Float:
+                    {
+                        static const uint16_t word = 1;
+                        bool be = *(const char *)&word == 0;
+
+                        uint8_t data[sizeof(double)];
+                        for (unsigned i = 0; i < sizeof(double); i++)
+                            data[be ? i : sizeof(double) - 1 - i] =
+                                engine->appSpec->spec[specIndex++];
+                        double value = *(double *)data;
+                        defaultValue = AspNewFloat(engine, value);
+                        break;
+                    }
+
+                    case ParameterDefaultValueType_String:
+                    {
+                        uint32_t valueSize = 0;
+                        for (unsigned i = 0; i < 4; i++)
+                        {
+                            valueSize <<= 8;
+                            valueSize |= engine->appSpec->spec[specIndex++];
+                        }
+                        defaultValue = AspNewString
+                            (engine,
+                             engine->appSpec->spec + specIndex, valueSize);
+                        specIndex += valueSize;
+                        break;
+                    }
+                }
+
+                if (defaultValue == 0)
+                    return AspRunResult_OutOfDataMemory;
+                AspDataSetParameterDefaultIndex
+                    (parameter, AspIndex(engine, defaultValue));
+            }
+
+            AspSequenceResult parameterResult = AspSequenceAppend
+                (engine, parameters, parameter);
+            if (parameterResult.result != AspRunResult_OK)
+                return parameterResult.result;
         }
 
         AspDataEntry *function = AspAllocEntry(engine, DataType_Function);
@@ -76,6 +162,10 @@ AspRunResult AspInitializeAppFunctions(AspEngine *engine)
             return AspRunResult_InitializationError;
         AspUnref(engine, function);
     }
+
+    /* Ensure we read the application spec correctly. */
+    if (specIndex != engine->appSpec->specSize)
+        return AspRunResult_InitializationError;
 
     return AspRunResult_OK;
 }

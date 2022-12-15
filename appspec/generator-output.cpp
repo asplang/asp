@@ -11,7 +11,8 @@
 
 using namespace std;
 
-const uint32_t ParameterFlag_Group = 0x80000000;
+static const uint32_t ParameterFlag_HasDefault = 0x10000000;
+static const uint32_t ParameterFlag_IsGroup    = 0x20000000;
 
 template <class T>
 static void Write(ostream &os, T value)
@@ -19,6 +20,32 @@ static void Write(ostream &os, T value)
     unsigned i = sizeof value;
     while (i--)
         os << static_cast<char>((value >> (i << 3)) & 0xFF);
+}
+
+static void WriteStringEscapedHexByte(ostream &os, uint8_t value)
+{
+    auto oldFlags = os.flags();
+    auto oldFill = os.fill();
+
+    os << hex << setprecision(2) << setfill('0');
+    if (value == 0)
+        os << "\\0";
+    else
+        os << "\\x" << setw(2) << static_cast<unsigned>(value);
+
+    os.flags(oldFlags);
+    os.fill(oldFill);
+}
+
+template <class T>
+static void WriteStringEscapedHex(ostream &os, T value)
+{
+    unsigned i = sizeof value;
+    while (i--)
+    {
+        auto byte = static_cast<uint8_t>((value >> (i << 3)) & 0xFF);
+        WriteStringEscapedHexByte(os, byte);
+    }
 }
 
 void Generator::WriteCompilerSpec(ostream &os)
@@ -128,20 +155,19 @@ void Generator::WriteApplicationHeader(ostream &os)
 
 void Generator::WriteApplicationCode(ostream &os)
 {
-    auto oldFlags = os.flags();
-    auto oldFill = os.fill();
-
     os
         << "/*** AUTO-GENERATED; DO NOT EDIT ***/\n\n"
            "#include \"" << baseFileName << ".h\"\n"
-           "#include <stdint.h>\n\n"
-           "static AspRunResult AspDispatch_" << baseFileName
+           "#include <stdint.h>\n";
+
+    // Write the dispatch function.
+    os
+        << "\nstatic AspRunResult AspDispatch_" << baseFileName
         << "\n    (AspEngine *engine, int32_t symbol, AspDataEntry *ns,\n"
            "     AspDataEntry **returnValue)\n"
            "{\n"
            "    switch (symbol)\n"
            "    {\n";
-
     for (auto iter = functionDefinitions.begin();
          iter != functionDefinitions.end(); iter++)
     {
@@ -204,24 +230,24 @@ void Generator::WriteApplicationCode(ostream &os)
             << "returnValue);\n"
                "        }\n";
     }
-
     os
         << "    }\n"
            "    return AspRunResult_UndefinedAppFunction;\n"
-           "}\n\n"
-           "AspAppSpec AspAppSpec_" << baseFileName << " =\n"
-           "{"
-        << hex << setprecision(2) << setfill('0');
+           "}\n";
 
+    // Write the application specification structure.
+    os
+        << "\nAspAppSpec AspAppSpec_" << baseFileName << " =\n"
+           "{";
     unsigned specByteCount = 0;
     for (auto iter = functionDefinitions.begin();
          iter != functionDefinitions.end(); iter++)
     {
         auto &functionDefinition = *iter;
 
-        os
-            << "\n    \"\\x" << setw(2)
-            << functionDefinition.Parameters().ParametersSize();
+        os << "\n    \"";
+        auto parameterCount = functionDefinition.Parameters().ParametersSize();
+        WriteStringEscapedHex(os, static_cast<uint8_t>(parameterCount));
         specByteCount++;
 
         for (auto parameterIter =
@@ -234,31 +260,89 @@ void Generator::WriteApplicationCode(ostream &os)
             int32_t parameterSymbol = symbolTable.Symbol(parameter.Name());
             uint32_t word = *reinterpret_cast<uint32_t *>(&parameterSymbol);
 
+            const auto &defaultValue = parameter.DefaultValue();
+            if (defaultValue != 0)
+                word |= ParameterFlag_HasDefault;
             if (parameter.IsGroup())
-                word |= ParameterFlag_Group;
+                word |= ParameterFlag_IsGroup;
 
-            for (unsigned i = 0; i < 4; i++)
+            WriteStringEscapedHex(os, word);
+            specByteCount += sizeof word;
+
+            if (defaultValue != 0)
             {
-                uint32_t byte = (word >> ((3 - i) * 8)) & 0xFF;
-                if (byte == 0)
-                    os << "\\0";
-                else
-                    os << "\\x" << setw(2) << byte;
+                auto valueType = defaultValue->GetType();
+                WriteStringEscapedHex(os, static_cast<uint8_t>(valueType));
+                specByteCount++;
+
+                switch (valueType)
+                {
+                    case Literal::Type::Boolean:
+                    {
+                        auto value = defaultValue->BooleanValue();
+                        WriteStringEscapedHex
+                            (os, static_cast<uint8_t>(value));
+                        specByteCount++;
+                        break;
+                    }
+
+                    case Literal::Type::Integer:
+                    {
+                        auto value = defaultValue->IntegerValue();
+                        WriteStringEscapedHex
+                            (os, *reinterpret_cast<uint32_t *>(&value));
+                        specByteCount += sizeof value;
+                        break;
+                    }
+
+                    case Literal::Type::Float:
+                    {
+                        static const uint16_t word = 1;
+                        bool be = *(const char *)&word == 0;
+
+                        auto value = defaultValue->FloatValue();
+                        auto data = reinterpret_cast<const uint8_t *>(&value);
+                        for (unsigned i = 0; i < sizeof value; i++)
+                        {
+                            auto b = data[be ? i : sizeof value - 1 - i];
+                            WriteStringEscapedHex(os, b);
+                        }
+                        specByteCount += sizeof value;
+                        break;
+                    }
+
+                    case Literal::Type::String:
+                    {
+                        auto value = defaultValue->StringValue();
+                        uint32_t valueSize = static_cast<uint32_t>
+                            (value.size());
+                        WriteStringEscapedHex(os, valueSize);
+                        for (unsigned i = 0; i < valueSize; i++)
+                            WriteStringEscapedHex
+                                (os, static_cast<uint8_t>(value[i]));
+                        specByteCount += sizeof(valueSize) + valueSize;
+                        break;
+                    }
+                }
             }
-            specByteCount += 4;
         }
         os << '"';
     }
-    os << dec;
 
-    os
-        << ",\n    " << specByteCount
-        << ", 0x" << hex << setfill('0') << setw(4) << CheckValue() << dec
-        << ", AspDispatch_" << baseFileName << "\n"
-           "};\n";
+    {
+        auto oldFlags = os.flags();
+        auto oldFill = os.fill();
 
-    os.flags(oldFlags);
-    os.fill(oldFill);
+        os
+            << ",\n    " << specByteCount
+            << hex << setprecision(4) << setfill('0')
+            << ", 0x" << setw(4) << CheckValue() << dec
+            << ", AspDispatch_" << baseFileName << "\n"
+               "};\n";
+
+        os.flags(oldFlags);
+        os.fill(oldFill);
+    }
 }
 
 uint32_t Generator::CheckValue()
@@ -318,6 +402,59 @@ void Generator::ComputeCheckValue()
                 (&spec, &session,
                  parameterName.c_str(),
                  static_cast<unsigned>(parameterName.size()));
+
+            // Contribute the default value if present.
+            const auto &defaultValue = parameter.DefaultValue();
+            if (defaultValue != 0)
+            {
+                auto valueType = defaultValue->GetType();
+                auto b = static_cast<uint8_t>(valueType);
+                crc_add(&spec, &session, &b, 1);
+
+                switch (valueType)
+                {
+                    case Literal::Type::Boolean:
+                    {
+                        uint8_t b = defaultValue->BooleanValue() ? 1 : 0;
+                        crc_add(&spec, &session, &b, 1);
+                        break;
+                    }
+
+                    case Literal::Type::Integer:
+                    {
+                        auto value = defaultValue->IntegerValue();
+                        auto uValue = *reinterpret_cast<uint32_t *>(&value);
+                        for (unsigned i = 0; i < sizeof value; i++)
+                        {
+                            uint8_t b =
+                                uValue >> 8 * (sizeof value - 1 - i) & 0xFF;
+                            crc_add(&spec, &session, &b, 1);
+                        }
+                        break;
+                    }
+
+                    case Literal::Type::Float:
+                    {
+                        static const uint16_t word = 1;
+                        bool be = *(const char *)&word == 0;
+
+                        auto value = defaultValue->FloatValue();
+                        auto data = reinterpret_cast<const uint8_t *>(&value);
+                        for (unsigned i = 0; i < sizeof value; i++)
+                        {
+                            auto b = data[be ? i : sizeof value - 1 - i];
+                            crc_add(&spec, &session, &b, 1);
+                        }
+                        break;
+                    }
+
+                    case Literal::Type::String:
+                    {
+                        const auto &s = defaultValue->StringValue();
+                        crc_add(&spec, &session, s.c_str(), s.size());
+                    }
+                }
+            }
         }
     }
     checkValue = static_cast<uint32_t>(crc_finish(&spec, &session));

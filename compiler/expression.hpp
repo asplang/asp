@@ -6,6 +6,7 @@
 #define EXPRESSION_HPP
 
 #include "grammar.hpp"
+#include "token.h"
 #include "executable.hpp"
 #include <list>
 #include <string>

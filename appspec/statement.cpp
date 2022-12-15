@@ -6,11 +6,15 @@
 
 using namespace std;
 
-Parameter::Parameter(const Token &nameToken, bool isGroup) :
+Parameter::Parameter
+    (const Token &nameToken, Literal *defaultValue, bool isGroup) :
     NonTerminal(nameToken),
     name(nameToken.s),
+    defaultValue(defaultValue),
     isGroup(isGroup)
 {
+    if (defaultValue != 0 && isGroup)
+        throw string("Group parameter cannot have a default");
 }
 
 ParameterList::ParameterList()

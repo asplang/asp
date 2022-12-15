@@ -36,7 +36,24 @@ struct ActiveSourceFile
     void *parser;
 };
 
+static int main1(int argc, char **argv);
 int main(int argc, char **argv)
+{
+    try
+    {
+        return main1(argc, argv);
+    }
+    catch (const string &e)
+    {
+        cerr << "Error: " << e << endl;
+    }
+    catch (...)
+    {
+        cerr << "Unknown error" << endl;
+    }
+    return EXIT_FAILURE;
+}
+static int main1(int argc, char **argv)
 {
     // Obtain spec source file name.
     if (argc != 2)

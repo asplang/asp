@@ -5,55 +5,25 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include "token.h"
+
 #ifdef __cplusplus
 #include <iostream>
 #include <deque>
+#include <map>
 #include <string>
 #include <cstdint>
-#endif
 
-#ifndef __cplusplus
-typedef struct Token Token;
-#else
 extern "C" {
-
-struct Token;
-
-struct SourceLocation
-{
-    SourceLocation() :
-        line(0), column(0)
-    {
-    }
-
-    SourceLocation(unsigned line, unsigned column) :
-        line(line), column(column)
-    {
-    }
-
-    unsigned line, column;
-};
-
-struct SourceElement
-{
-    SourceElement()
-    {
-    }
-
-    explicit SourceElement(const SourceLocation &sourceLocation) :
-        sourceLocation(sourceLocation)
-    {
-    }
-
-    SourceLocation sourceLocation;
-};
 
 class Lexer
 {
     public:
 
+        // Constructor.
         explicit Lexer(std::istream &);
 
+        // Next token method.
         Token *Next();
 
     protected:
@@ -64,6 +34,9 @@ class Lexer
 
         // Token scanning methods.
         Token *ProcessStatementEnd();
+        Token *ProcessNumber();
+        Token *ProcessSignedNumber();
+        Token *ProcessString();
         Token *ProcessName();
         Token *ProcessSpecial();
 
@@ -74,19 +47,15 @@ class Lexer
 
     private:
 
+        // Constants.
+        const int CHAR_LINE_CONTINUATION = 0x100;
+        static const std::map<std::string, int> keywords;
+
+        // Data.
         std::istream &is;
         std::deque<int> prefetch;
         std::deque<int> readahead;
         SourceLocation sourceLocation, caret = {1, 1};
-};
-
-struct Token : public SourceElement
-{
-    explicit Token
-        (const SourceLocation &, int type = 0, const std::string & = "");
-
-    int type;
-    std::string s;
 };
 
 } // extern "C"

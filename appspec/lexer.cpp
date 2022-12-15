@@ -3,21 +3,19 @@
 //
 
 #include "lexer.h"
-#include "app.h"
+#include "token-types.h"
 #include <cctype>
-#include <cstring>
-#include <map>
-#include <algorithm>
-#include <limits>
 
 using namespace std;
 
-const int CHAR_LINE_CONTINUATION = 0x100;
-
-Lexer::Lexer(istream &is) :
-    is(is)
+const map<string, int> Lexer::keywords =
 {
-}
+    {"def", TOKEN_DEF},
+    {"include", TOKEN_INCLUDE},
+    {"False", TOKEN_FALSE},
+    {"None", TOKEN_NONE},
+    {"True", TOKEN_TRUE},
+};
 
 Token *Lexer::Next()
 {
@@ -33,8 +31,27 @@ Token *Lexer::Next()
             break;
         else if (c == '\n')
             return ProcessStatementEnd();
+        else if (isdigit(c))
+            return ProcessNumber();
         else if (isalpha(c) || c == '_')
             return ProcessName();
+        else if (c == '\'' || c == '"')
+            return ProcessString();
+        else if (c == '.')
+        {
+            if (isdigit(Peek(1)))
+                return ProcessNumber();
+            else if (Peek(1) == '.' && Peek(2) == '.')
+            {
+                Get(); Get(); Get();
+                return new Token(sourceLocation, TOKEN_ELLIPSIS);
+            }
+        }
+        else if (c == '-' &&
+                 (isdigit(Peek(1)) || Peek(1) == '.' && isdigit(Peek(2))))
+        {
+            return ProcessSignedNumber();
+        }
         else if (c == '=')
         {
             Get();
@@ -71,36 +88,21 @@ Token *Lexer::Next()
     return new Token(sourceLocation);
 }
 
-Token *Lexer::ProcessStatementEnd()
+Token *Lexer::ProcessSignedNumber()
 {
-    Get(); // newline
-    return new Token(sourceLocation, TOKEN_STATEMENT_END);
-}
-
-Token *Lexer::ProcessName()
-{
-    string lex;
-    while (!is.eof())
+    Get(); // -
+    Token *result = ProcessNumber();
+    switch (result->type)
     {
-        auto c = Peek();
-        if (!isalpha(c) && !isdigit(c) && c != '_')
+        case TOKEN_INTEGER:
+            result->i = -result->i;
             break;
-        lex += static_cast<char>(c);
-        Get();
-    }
 
-    // Extract keywords.
-    static const map<string, int> keywords =
-    {
-        {"def", TOKEN_DEF},
-        {"include", TOKEN_INCLUDE},
-    };
-    int type;
-    auto iter = keywords.find(lex);
-    return
-        iter != keywords.end() ?
-        new Token(sourceLocation, iter->second, lex) :
-        new Token(sourceLocation, TOKEN_NAME, lex);
+        case TOKEN_FLOAT:
+            result->f = -result->f;
+            break;
+    }
+    return result;
 }
 
 int Lexer::Get()
@@ -124,71 +126,4 @@ int Lexer::Get()
     caret.column++;
 
     return c == CHAR_LINE_CONTINUATION ? ' ' : c;
-}
-
-int Lexer::Peek(unsigned n)
-{
-    if (n < prefetch.size())
-        return prefetch[n];
-
-    int c = EOF;
-    for (n -= prefetch.size(), n++; !is.eof() && n > 0; n--)
-    {
-        c = Read();
-        prefetch.push_back(c);
-    }
-
-    return c;
-}
-
-int Lexer::Read()
-{
-    int c;
-    if (!readahead.empty())
-    {
-        c = readahead.front();
-        readahead.pop_front();
-        if (c == EOF)
-            return c;
-    }
-    else
-        c = is.get();
-
-    // Join continued lines with an intervening space.
-    if (c == '\\')
-    {
-        int c2 = is.get();
-        if (c2 == '\n')
-            c = CHAR_LINE_CONTINUATION;
-        else
-        {
-            if (c2 == EOF)
-                c = '\n';
-            readahead.push_back(c2);
-        }
-    }
-
-    // Discard comments.
-    if (c == '#')
-    {
-        is.ignore(numeric_limits<streamsize>::max(), '\n');
-        c = is.eof() ? EOF : '\n';
-    }
-
-    // Ensure last character ends a line.
-    if (c == EOF)
-    {
-        readahead.push_back(c);
-        c = '\n';
-    }
-
-    return c;
-}
-
-Token::Token
-    (const SourceLocation &sourceLocation, int type, const string &s) :
-    SourceElement(sourceLocation),
-    type(type),
-    s(s)
-{
 }

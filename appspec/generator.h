@@ -31,6 +31,7 @@ class SymbolTable;
 
 DECLARE_TYPE(SourceElement)
 DECLARE_TYPE(NonTerminal)
+DECLARE_TYPE(Literal)
 DECLARE_TYPE(Statement)
 DECLARE_TYPE(ParameterList)
 DECLARE_TYPE(Parameter)
@@ -80,9 +81,13 @@ class Generator
         (AddParameterToList, ParameterList *,
          ParameterList *, Parameter *);
     DECLARE_METHOD
-        (MakeParameter, Parameter *, Token *);
+        (MakeParameter, Parameter *, Token *, Literal *);
     DECLARE_METHOD
         (MakeGroupParameter, Parameter *, Token *);
+
+    /* Literals. */
+    DECLARE_METHOD
+        (MakeLiteral, Literal *, Token *);
 
     /* Miscellaneous methods. */
     DECLARE_METHOD(FreeNonTerminal, void, NonTerminal *);
