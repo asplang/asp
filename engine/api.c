@@ -94,6 +94,16 @@ bool AspIsList(const AspDataEntry *entry)
     return entry != 0 && AspDataGetType(entry) == DataType_List;
 }
 
+bool AspIsSequence(const AspDataEntry *entry)
+{
+    /* In this case, strings are not considered sequences. */
+    uint8_t type = AspDataGetType(entry);
+    return
+        entry != 0 &&
+        type == DataType_Tuple ||
+        type == DataType_List;
+}
+
 bool AspIsSet(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Set;
@@ -417,14 +427,14 @@ unsigned AspCount(const AspDataEntry *entry)
     }
 }
 
-AspDataEntry *AspListElement
-    (AspEngine *engine, AspDataEntry *list, int index)
+AspDataEntry *AspElement
+    (AspEngine *engine, AspDataEntry *sequence, int index)
 {
-    uint8_t type = AspDataGetType(list);
+    uint8_t type = AspDataGetType(sequence);
     if (type != DataType_Tuple && type != DataType_List)
         return 0;
 
-    AspSequenceResult result = AspSequenceIndex(engine, list, index);
+    AspSequenceResult result = AspSequenceIndex(engine, sequence, index);
     if (result.result != AspRunResult_OK)
         return 0;
     return result.value;
@@ -568,6 +578,20 @@ static AspDataEntry *AspNewObject(AspEngine *engine, DataType type)
         return 0;
     }
     return entry;
+}
+
+bool AspTupleAppend
+    (AspEngine *engine, AspDataEntry *tuple, AspDataEntry *value)
+{
+    /* Ensure the container is a tuple. Note that this is for building
+       new tuples, not modifying existing ones. */
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(tuple) == DataType_Tuple);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
+    AspSequenceResult result = AspSequenceAppend(engine, tuple, value);
+    return result.result == AspRunResult_OK;
 }
 
 bool AspListAppend

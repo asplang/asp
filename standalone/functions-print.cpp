@@ -27,7 +27,7 @@ extern "C" AspRunResult asp_print
         if (i != 0)
             putchar(' ');
 
-        AspDataEntry *value = AspListElement(engine, values, i);
+        AspDataEntry *value = AspElement(engine, values, i);
         AspRunResult result = asp_print1(engine, value, returnValue);
         if (result != AspRunResult_OK)
             return result;

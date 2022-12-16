@@ -109,6 +109,7 @@ bool AspIsRange(const AspDataEntry *);
 bool AspIsString(const AspDataEntry *);
 bool AspIsTuple(const AspDataEntry *);
 bool AspIsList(const AspDataEntry *);
+bool AspIsSequence(const AspDataEntry *);
 bool AspIsSet(const AspDataEntry *);
 bool AspIsDictionary(const AspDataEntry *);
 bool AspIsType(const AspDataEntry *);
@@ -124,7 +125,7 @@ bool AspStringValue
 AspDataEntry *AspToString(AspEngine *, AspDataEntry *);
 const char *AspTypeString(const AspDataEntry *type);
 unsigned AspCount(const AspDataEntry *);
-AspDataEntry *AspListElement(AspEngine *, AspDataEntry *list, int index);
+AspDataEntry *AspElement(AspEngine *, AspDataEntry *sequence, int index);
 char AspStringElement(AspEngine *, const AspDataEntry *str, int index);
 AspDataEntry *AspFind
     (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
@@ -139,6 +140,7 @@ AspDataEntry *AspNewList(AspEngine *);
 AspDataEntry *AspNewSet(AspEngine *);
 AspDataEntry *AspNewDictionary(AspEngine *);
 AspDataEntry *AspNewType(AspEngine *, const AspDataEntry *);
+bool AspTupleAppend(AspEngine *, AspDataEntry *tuple, AspDataEntry *value);
 bool AspListAppend(AspEngine *, AspDataEntry *list, AspDataEntry *value);
 bool AspListInsert
     (AspEngine *, AspDataEntry *list,
