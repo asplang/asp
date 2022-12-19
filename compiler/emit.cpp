@@ -33,6 +33,9 @@ void AssignmentStatement::Emit(Executable &executable) const
 
 void AssignmentStatement::Emit1(Executable &executable, bool top) const
 {
+    if (assignmentTokenType != TOKEN_ASSIGN)
+        targetExpression->Emit(executable, Expression::EmitType::Value);
+
     if (valueAssignmentStatement != 0)
         valueAssignmentStatement->Emit1(executable, false);
     else
@@ -40,7 +43,6 @@ void AssignmentStatement::Emit1(Executable &executable, bool top) const
 
     if (assignmentTokenType != TOKEN_ASSIGN)
     {
-        targetExpression->Emit(executable, Expression::EmitType::Value);
         static map<int, uint8_t> opCodes =
         {
             {TOKEN_BIT_OR_ASSIGN, OpCode_OR},
