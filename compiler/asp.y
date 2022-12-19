@@ -339,6 +339,11 @@ simple_statement_stem(result) ::= return(statement).
     result = ACTION(AssignStatement, statement);
 }
 
+simple_statement_stem(result) ::= assert(statement).
+{
+    result = ACTION(AssignStatement, statement);
+}
+
 simple_statement_stem(result) ::= BREAK(token).
 {
     result = ACTION(MakeBreakStatement, token);
@@ -1027,6 +1032,13 @@ return(result) ::= RETURN(keywordToken) expression(expression).
 return(result) ::= RETURN(keywordToken).
 {
     result = ACTION(MakeReturnStatement, keywordToken, 0);
+}
+
+%type assert {Statement *}
+
+assert(result) ::= ASSERT expression(expression).
+{
+    result = ACTION(MakeAssertStatement, expression);
 }
 
 %type set {SetExpression *}

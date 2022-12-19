@@ -298,6 +298,15 @@ class ReturnStatement : public Statement
         Expression *expression;
 };
 
+class AssertStatement : public ExpressionStatement
+{
+    public:
+
+        explicit AssertStatement(Expression *);
+
+        virtual void Emit(Executable &) const;
+};
+
 class IfStatement : public Statement
 {
     public:

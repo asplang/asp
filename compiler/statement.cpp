@@ -305,6 +305,11 @@ ReturnStatement::~ReturnStatement()
     delete expression;
 }
 
+AssertStatement::AssertStatement(Expression *expression) :
+    ExpressionStatement(expression)
+{
+}
+
 IfStatement::IfStatement
     (Expression *conditionExpression, Block *trueBlock,
      IfStatement *elsePart) :

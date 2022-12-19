@@ -334,6 +334,25 @@ void ReturnStatement::Emit(Executable &executable) const
     executable.Insert(new ReturnInstruction);
 }
 
+void AssertStatement::Emit(Executable &executable) const
+{
+    auto *constantExpression = dynamic_cast<const ConstantExpression *>
+        (expression);
+    if (constantExpression != 0 && !constantExpression->IsTrue())
+        executable.Insert(new AbortInstruction);
+    else
+    {
+        expression->Emit(executable);
+        auto endLocation = executable.Insert(new NullInstruction);
+
+        executable.PushLocation(endLocation);
+        executable.Insert(new ConditionalJumpInstruction
+            (true, endLocation, "Jump if true to end"));
+        executable.Insert(new AbortInstruction);
+        executable.PopLocation();
+    }
+}
+
 void IfStatement::Emit(Executable &executable) const
 {
     conditionExpression->Emit(executable);

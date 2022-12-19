@@ -408,6 +408,13 @@ DEFINE_ACTION
     return result;
 }
 
+DEFINE_ACTION
+    (MakeAssertStatement, Statement *,
+     Expression *, expression)
+{
+    return new AssertStatement(expression);
+}
+
 DEFINE_ACTION(MakeBreakStatement, Statement *, Token *, token)
 {
     auto result = new BreakStatement(*token);

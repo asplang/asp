@@ -569,6 +569,14 @@ class MemberInstruction : public Instruction
         std::int32_t symbol;
 };
 
+class AbortInstruction : public SimpleInstruction
+{
+    public:
+
+        explicit AbortInstruction
+            (const std::string &comment = "");
+};
+
 class EndInstruction : public SimpleInstruction
 {
     public:

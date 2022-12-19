@@ -166,6 +166,7 @@ typedef enum OpCode
     OpCode_MEMA4 = 0xFA, /* 4-byte member lookup address by symbol */
 
     /* End operation. */
+    OpCode_ABORT = 0xFE, /* abnormal exit (assertion failure) */
     OpCode_END = 0xFF, /* normal exit, stack must be empty */
 
 } OpCode;

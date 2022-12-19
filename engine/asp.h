@@ -52,6 +52,7 @@ typedef enum
     AspRunResult_DivideByZero = 0x18,
     AspRunResult_OutOfDataMemory = 0x20,
     AspRunResult_Again = 0xFA,
+    AspRunResult_Abort = 0xFB,
     AspRunResult_InternalError = 0xFE,
     AspRunResult_NotImplemented = 0xFF,
     AspRunResult_Application = 0x100,

@@ -133,6 +133,8 @@ class Compiler
         (MakeReturnStatement, Statement *,
          Token *, Expression *);
     DECLARE_METHOD
+        (MakeAssertStatement, Statement *, Expression *);
+    DECLARE_METHOD
         (MakeBreakStatement, Statement *, Token *);
     DECLARE_METHOD
         (MakeContinueStatement, Statement *, Token *);

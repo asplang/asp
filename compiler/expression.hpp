@@ -395,9 +395,10 @@ class ConstantExpression : public Expression
 
         virtual void Emit(Executable &, EmitType) const;
 
+        bool IsTrue() const;
+
     protected:
 
-        bool IsTrue() const;
         bool IsEqual(const ConstantExpression &) const;
         int Compare(const ConstantExpression &) const;
         int NumericCompare(const ConstantExpression &) const;

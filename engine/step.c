@@ -2778,6 +2778,9 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
+        case OpCode_ABORT:
+            return AspRunResult_Abort;
+
         case OpCode_END:
         {
             #ifdef ASP_DEBUG

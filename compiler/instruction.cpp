@@ -248,6 +248,7 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_BLD, "BLD"},
         {OpCode_IDX, "IDX"},
         {OpCode_IDXA, "IDXA"},
+        {OpCode_ABORT, "ABORT"},
         {OpCode_END, "END"},
     };
     auto iter = mnemonics.find(OpCode());
@@ -814,6 +815,11 @@ void MemberInstruction::PrintCode(ostream &os) const
         OpCode() == OpCode_MEMA2 ||
         OpCode() == OpCode_MEMA4;
     os << (address ? "MEMA" : "MEM") << ' ' << symbol;
+}
+
+AbortInstruction::AbortInstruction(const string &comment) :
+    SimpleInstruction(OpCode_ABORT, comment)
+{
 }
 
 EndInstruction::EndInstruction(const string &comment) :
