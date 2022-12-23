@@ -81,7 +81,8 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                      t == DataType_Namespace)
             {
                 AspTreeResult nextResult = {AspRunResult_OK, 0, 0, 0, false};
-                while ((nextResult = AspTreeNext(engine, entry, 0)).node != 0)
+                while ((nextResult =
+                        AspTreeNext(engine, entry, 0, true)).node != 0)
                 {
                     bool eraseKey =
                         nextResult.key != 0 && IsTerminal(nextResult.key);

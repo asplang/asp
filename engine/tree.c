@@ -10,8 +10,8 @@ static AspRunResult Insert
     (AspEngine *, AspDataEntry *tree, AspDataEntry *node);
 static AspDataEntry *FindNode
     (AspEngine *, AspDataEntry *tree, AspDataEntry *keyNode);
-static AspDataEntry *Min
-    (AspEngine *, AspDataEntry *tree, AspDataEntry *node);
+static AspDataEntry *GetLimitNode
+    (AspEngine *, AspDataEntry *tree, AspDataEntry *node, bool right);
 static AspRunResult Shift
     (AspEngine *, AspDataEntry *tree,
      AspDataEntry *node1, AspDataEntry *node2);
@@ -19,12 +19,9 @@ static int CompareKeys
     (AspEngine *, const AspDataEntry *tree,
      const AspDataEntry *leftNode, const AspDataEntry *rightNode);
 
-static AspRunResult SetLeftIndex
-    (AspEngine *, AspDataEntry *node, uint32_t index);
-static uint32_t GetLeftIndex(AspEngine *, AspDataEntry *node);
-static AspRunResult SetRightIndex
-    (AspEngine *, AspDataEntry *node, uint32_t index);
-static uint32_t GetRightIndex(AspEngine *, AspDataEntry *node);
+static AspRunResult SetChildIndex
+    (AspEngine *, AspDataEntry *node, uint32_t index, bool right);
+static uint32_t GetChildIndex(AspEngine *, AspDataEntry *node, bool right);
 static void PruneLinks(AspEngine *, AspDataEntry *node);
 static bool IsTreeType(DataType type);
 static bool IsNodeType(DataType type);
@@ -164,8 +161,8 @@ AspRunResult AspTreeEraseNode
     if (entry == 0)
         return NotFoundResult(tree);
 
-    uint32_t leftIndex = GetLeftIndex(engine, entry);
-    uint32_t rightIndex = GetRightIndex(engine, entry);
+    uint32_t leftIndex = GetChildIndex(engine, entry, false);
+    uint32_t rightIndex = GetChildIndex(engine, entry, true);
     if (leftIndex == 0)
     {
         AspDataEntry *rightNode = AspEntry(engine, rightIndex);
@@ -178,20 +175,22 @@ AspRunResult AspTreeEraseNode
     }
     else
     {
-        AspTreeResult nextResult = AspTreeNext(engine, tree, entry);
+        AspTreeResult nextResult = AspTreeNext(engine, tree, entry, true);
         AspDataEntry *nextNode = nextResult.node;
         if (AspDataGetTreeNodeParentIndex(nextNode) != AspIndex(engine, entry))
         {
             AspDataEntry *rightNode = AspEntry
-                (engine, GetRightIndex(engine, nextNode));
+                (engine, GetChildIndex(engine, nextNode, true));
             result = Shift(engine, tree, nextNode, rightNode);
             if (result != AspRunResult_OK)
                 return result;
-            result = SetRightIndex
-                (engine, nextNode, GetRightIndex(engine, entry));
+            result = SetChildIndex
+                (engine, nextNode,
+                 GetChildIndex(engine, entry, true), true);
             if (result != AspRunResult_OK)
                 return result;
-            rightNode = AspEntry(engine, GetRightIndex(engine, nextNode));
+            rightNode = AspEntry
+                (engine, GetChildIndex(engine, nextNode, true));
             AspDataSetTreeNodeParentIndex
                 (rightNode, AspIndex(engine, nextNode));
         }
@@ -199,12 +198,13 @@ AspRunResult AspTreeEraseNode
         result = Shift(engine, tree, entry, nextNode);
         if (result != AspRunResult_OK)
             return result;
-        result = SetLeftIndex
-            (engine, nextNode, GetLeftIndex(engine, entry));
+        result = SetChildIndex
+            (engine, nextNode,
+             GetChildIndex(engine, entry, false), false);
         if (result != AspRunResult_OK)
             return result;
         AspDataEntry *leftNode = AspEntry
-            (engine, GetLeftIndex(engine, nextNode));
+            (engine, GetChildIndex(engine, nextNode, false));
         AspDataSetTreeNodeParentIndex
             (leftNode, AspIndex(engine, nextNode));
     }
@@ -300,7 +300,7 @@ AspTreeResult AspFindSymbol
 }
 
 AspTreeResult AspTreeNext
-    (AspEngine *engine, AspDataEntry *tree, AspDataEntry *node)
+    (AspEngine *engine, AspDataEntry *tree, AspDataEntry *node, bool right)
 {
     AspTreeResult result = {AspRunResult_OK, 0, 0, 0, false};
 
@@ -319,20 +319,21 @@ AspTreeResult AspTreeNext
     if (result.node == 0)
     {
         AspDataEntry *rootNode = AspEntry(engine, rootIndex);
-        result.node = Min(engine, tree, rootNode);
+        result.node = GetLimitNode(engine, tree, rootNode, !right);
     }
-    else if (GetRightIndex(engine, result.node) != 0)
+    else if (GetChildIndex(engine, result.node, right) != 0)
     {
-        AspDataEntry *rightNode = AspEntry
-            (engine, GetRightIndex(engine, result.node));
-        result.node = Min(engine, tree, rightNode);
+        AspDataEntry *nextNode = AspEntry
+            (engine, GetChildIndex(engine, result.node, right));
+        result.node = GetLimitNode(engine, tree, nextNode, !right);
     }
     else
     {
         uint32_t parentIndex = AspDataGetTreeNodeParentIndex(node);
         result.node = AspEntry(engine, parentIndex);
         while (result.node != 0 &&
-               AspIndex(engine, node) == GetRightIndex(engine, result.node))
+               AspIndex(engine, node) ==
+               GetChildIndex(engine, result.node, right))
         {
             node = result.node;
             parentIndex = AspDataGetTreeNodeParentIndex(result.node);
@@ -370,10 +371,9 @@ static AspRunResult Insert
     while (targetNode != 0)
     {
         parentNode = targetNode;
-        uint32_t childIndex =
-            CompareKeys(engine, tree, node, targetNode) < 0 ?
-            GetLeftIndex(engine, targetNode) :
-            GetRightIndex(engine, targetNode);
+        uint32_t childIndex = GetChildIndex
+            (engine, targetNode,
+             CompareKeys(engine, tree, node, targetNode) > 0);
         targetNode = AspEntry(engine, childIndex);
     }
 
@@ -381,10 +381,11 @@ static AspRunResult Insert
     uint32_t nodeIndex = AspIndex(engine, node);
     if (parentNode == 0)
         AspDataSetTreeRootIndex(tree, nodeIndex);
-    else if (CompareKeys(engine, tree, node, parentNode) < 0)
-        result = SetLeftIndex(engine, parentNode, nodeIndex);
     else
-        result = SetRightIndex(engine, parentNode, nodeIndex);
+        result = SetChildIndex
+            (engine, parentNode, nodeIndex,
+             CompareKeys(engine, tree, node, parentNode) > 0);
+
     if (result != AspRunResult_OK)
         return result;
 
@@ -404,16 +405,16 @@ static AspDataEntry *FindNode
         return 0;
 
     AspDataEntry *node = AspEntry(engine, AspDataGetTreeRootIndex(tree));
-    while (node != 0 && CompareKeys(engine, tree, keyNode, node) != 0)
-        node = AspEntry(engine,
-            CompareKeys(engine, tree, keyNode, node) < 0 ?
-            GetLeftIndex(engine, node) : GetRightIndex(engine, node));
+    int compare;
+    while (node != 0 &&
+           (compare = CompareKeys(engine, tree, keyNode, node)) != 0)
+        node = AspEntry(engine, GetChildIndex(engine, node, compare > 0));
 
     return node;
 }
 
-static AspDataEntry *Min
-    (AspEngine *engine, AspDataEntry *tree, AspDataEntry *node)
+static AspDataEntry *GetLimitNode
+    (AspEngine *engine, AspDataEntry *tree, AspDataEntry *node, bool right)
 {
     AspAssert
         (engine, tree != 0 && IsTreeType(AspDataGetType(tree)));
@@ -422,8 +423,9 @@ static AspDataEntry *Min
     if (assertResult != AspRunResult_OK)
         return 0;
 
-    while (GetLeftIndex(engine, node) != 0)
-        node = AspEntry(engine, GetLeftIndex(engine, node));
+    uint32_t childIndex;
+    while ((childIndex = GetChildIndex(engine, node, right)) != 0)
+        node = AspEntry(engine, childIndex);
 
     return node;
 }
@@ -450,10 +452,10 @@ static AspRunResult Shift
     {
         AspDataEntry *parentNode = AspEntry(engine, node1ParentIndex);
         uint32_t index2 = AspIndex(engine, node2);
-        if (AspIndex(engine, node1) == GetLeftIndex(engine, parentNode))
-            result = SetLeftIndex(engine, parentNode, index2);
-        else
-            result = SetRightIndex(engine, parentNode, index2);
+        result = SetChildIndex
+            (engine, parentNode, index2,
+             AspIndex(engine, node1) !=
+             GetChildIndex(engine, parentNode, false));
     }
     if (result != AspRunResult_OK)
         return result;
@@ -494,8 +496,8 @@ static int CompareKeys
              AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(rightNode)));
 }
 
-static AspRunResult SetLeftIndex
-    (AspEngine *engine, AspDataEntry *node, uint32_t index)
+static AspRunResult SetChildIndex
+    (AspEngine *engine, AspDataEntry *node, uint32_t index, bool right)
 {
     AspRunResult result = AspRunResult_OK;
 
@@ -505,7 +507,12 @@ static AspRunResult SetLeftIndex
         return result;
 
     if (AspDataGetType(node) == DataType_SetNode)
-        AspDataSetSetNodeLeftIndex(node, index);
+    {
+        if (!right)
+            AspDataSetSetNodeLeftIndex(node, index);
+        else
+            AspDataSetSetNodeRightIndex(node, index);
+    }
     else
     {
         AspDataEntry *linksNode = AspEntry
@@ -519,7 +526,10 @@ static AspRunResult SetLeftIndex
         }
         if (linksNode != 0)
         {
-            AspDataSetTreeLinksNodeLeftIndex(linksNode, index);
+            if (!right)
+                AspDataSetTreeLinksNodeLeftIndex(linksNode, index);
+            else
+                AspDataSetTreeLinksNodeRightIndex(linksNode, index);
             PruneLinks(engine, node);
         }
     }
@@ -527,79 +537,30 @@ static AspRunResult SetLeftIndex
     return result;
 }
 
-static uint32_t GetLeftIndex(AspEngine *engine, AspDataEntry *node)
+static uint32_t GetChildIndex
+    (AspEngine *engine, AspDataEntry *node, bool right)
 {
     AspRunResult assertResult = AspAssert
         (engine, node != 0 && IsNodeType(AspDataGetType(node)));
     if (assertResult != AspRunResult_OK)
         return 0;
 
-    uint32_t leftIndex = 0;
+    uint32_t index = 0;
     if (AspDataGetType(node) == DataType_SetNode)
-        leftIndex = AspDataGetSetNodeLeftIndex(node);
+        index = !right ?
+            AspDataGetSetNodeLeftIndex(node) :
+            AspDataGetSetNodeRightIndex(node);
     else
     {
         AspDataEntry *linksNode = AspEntry
             (engine, AspDataGetTreeNodeLinksIndex(node));
         if (linksNode != 0)
-            leftIndex = AspDataGetTreeLinksNodeLeftIndex(linksNode);
+            index = !right ?
+                AspDataGetTreeLinksNodeLeftIndex(linksNode) :
+                AspDataGetTreeLinksNodeRightIndex(linksNode);
     }
 
-    return leftIndex;
-}
-
-static AspRunResult SetRightIndex
-    (AspEngine *engine, AspDataEntry *node, uint32_t index)
-{
-    AspRunResult result = AspRunResult_OK;
-
-    result = AspAssert
-        (engine, node != 0 && IsNodeType(AspDataGetType(node)));
-    if (result != AspRunResult_OK)
-        return result;
-
-    if (AspDataGetType(node) == DataType_SetNode)
-        AspDataSetSetNodeRightIndex(node, index);
-    else
-    {
-        AspDataEntry *linksNode = AspEntry
-            (engine, AspDataGetTreeNodeLinksIndex(node));
-        if (linksNode == 0 && index != 0)
-        {
-            linksNode = AspAllocEntry(engine, DataType_TreeLinksNode);
-            if (linksNode == 0)
-                return AspRunResult_OutOfDataMemory;
-            AspDataSetTreeNodeLinksIndex(node, AspIndex(engine, linksNode));
-        }
-        if (linksNode != 0)
-        {
-            AspDataSetTreeLinksNodeRightIndex(linksNode, index);
-            PruneLinks(engine, node);
-        }
-    }
-
-    return result;
-}
-
-static uint32_t GetRightIndex(AspEngine *engine, AspDataEntry *node)
-{
-    AspRunResult assertResult = AspAssert
-        (engine, node != 0 && IsNodeType(AspDataGetType(node)));
-    if (assertResult != AspRunResult_OK)
-        return 0;
-
-    uint32_t rightIndex = 0;
-    if (AspDataGetType(node) == DataType_SetNode)
-        rightIndex = AspDataGetSetNodeRightIndex(node);
-    else
-    {
-        AspDataEntry *linksNode = AspEntry
-            (engine, AspDataGetTreeNodeLinksIndex(node));
-        if (linksNode != 0)
-            rightIndex = AspDataGetTreeLinksNodeRightIndex(linksNode);
-    }
-
-    return rightIndex;
+    return index;
 }
 
 static void PruneLinks(AspEngine *engine, AspDataEntry *node)

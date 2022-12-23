@@ -35,7 +35,7 @@ AspTreeResult AspTreeFind
 AspTreeResult AspFindSymbol
     (AspEngine *, AspDataEntry *tree, int32_t symbol);
 AspTreeResult AspTreeNext
-    (AspEngine *, AspDataEntry *tree, AspDataEntry *node);
+    (AspEngine *, AspDataEntry *tree, AspDataEntry *node, bool right);
 
 #ifdef __cplusplus
 }

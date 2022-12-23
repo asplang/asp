@@ -1112,7 +1112,7 @@ static AspRunResult Step(AspEngine *engine)
                 case DataType_Dictionary:
                 {
                     AspTreeResult startResult = AspTreeNext
-                        (engine, iterable, 0);
+                        (engine, iterable, 0, true);
                     if (startResult.result != AspRunResult_OK)
                         return startResult.result;
                     member = startResult.node;
@@ -1256,7 +1256,7 @@ static AspRunResult Step(AspEngine *engine)
                         memberType != DataType_DictionaryNode)
                         return AspRunResult_UnexpectedType;
                     AspTreeResult nextResult = AspTreeNext
-                        (engine, iterable, member);
+                        (engine, iterable, member, true);
                     if (nextResult.result != AspRunResult_OK)
                         return nextResult.result;
                     member = nextResult.node;

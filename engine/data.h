@@ -326,14 +326,6 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetTreeNodeParentIndex(eptr) \
     (AspDataGetWord1((eptr)))
-#define AspDataSetTreeNodeLinksIndex(eptr, value) \
-    (AspDataSetWord2((eptr), (value)))
-#define AspDataGetTreeNodeLinksIndex(eptr) \
-    (AspDataGetWord2((eptr)))
-#define AspDataSetTreeNodeValueIndex(eptr, value) \
-    (AspDataSetWord3((eptr), (value)))
-#define AspDataGetTreeNodeValueIndex(eptr) \
-    (AspDataGetWord3((eptr)))
 #define AspDataSetTreeNodeIsBlack(eptr, value) \
     (AspDataSetBit0((eptr), (unsigned)(value)))
 #define AspDataGetTreeNodeIsBlack(eptr) \
@@ -349,7 +341,15 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 #define AspDataGetSetNodeRightIndex(eptr) \
     (AspDataGetWord3((eptr)))
 
-/* DictionaryNode entry field access - Use common tree routines. */
+/* DictionaryNode and NamespaceNode entry field access. */
+#define AspDataSetTreeNodeLinksIndex(eptr, value) \
+    (AspDataSetWord2((eptr), (value)))
+#define AspDataGetTreeNodeLinksIndex(eptr) \
+    (AspDataGetWord2((eptr)))
+#define AspDataSetTreeNodeValueIndex(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetTreeNodeValueIndex(eptr) \
+    (AspDataGetWord3((eptr)))
 
 /* NamespaceNode entry field access. */
 #define AspDataSetNamespaceNodeSymbol(eptr, value) \
