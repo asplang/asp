@@ -5,10 +5,7 @@
 #include "asp.h"
 #include <stdio.h>
 
-static AspRunResult asp_print1
-    (AspEngine *engine,
-     AspDataEntry *value,
-     AspDataEntry **returnValue);
+static AspRunResult asp_print1(AspEngine *, AspDataEntry *);
 
 /* print(*values)
  * Print value to standard output.
@@ -28,7 +25,7 @@ extern "C" AspRunResult asp_print
             putchar(' ');
 
         AspDataEntry *value = AspElement(engine, values, i);
-        AspRunResult result = asp_print1(engine, value, returnValue);
+        AspRunResult result = asp_print1(engine, value);
         if (result != AspRunResult_OK)
             return result;
     }
@@ -38,9 +35,7 @@ extern "C" AspRunResult asp_print
 }
 
 static AspRunResult asp_print1
-    (AspEngine *engine,
-     AspDataEntry *value,
-     AspDataEntry **returnValue)
+    (AspEngine *engine, AspDataEntry *value)
 {
     AspDataEntry *valueString = AspToString(engine, value);
     if (valueString == 0)

@@ -28,6 +28,15 @@ enum ParameterDefaultValueType
 
 AspRunResult AspInitializeAppFunctions(AspEngine *engine)
 {
+    if (engine->appSpec == 0)
+    {
+        #ifdef ASP_TEST
+        return AspRunResult_OK;
+        #else
+        return AspRunResult_InitializationError;
+        #endif
+    }
+
     /* Create definitions for application functions.
        Note that the first few symbols are reserved:
        0 - main module name

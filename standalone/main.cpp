@@ -5,6 +5,7 @@
 #include "asp.h"
 #include "standalone.h"
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <cstring>
 #include <cstdio>
@@ -196,7 +197,15 @@ int main(int argc, char **argv)
 
     // Check completion status of the run.
     if (runResult != AspRunResult_Complete)
-        cerr << "Run error 0x" << hex << runResult << endl;
+    {
+        auto oldFlags = cerr.flags();
+        auto oldFill = cerr.fill();
+        cerr
+            << "Run error 0x" << hex << setfill('0')
+            << setw(2) << runResult << endl;
+        cerr.flags(oldFlags);
+        cerr.fill(oldFill);
+    }
 
     // Dump data area in debug mode.
     #ifdef ASP_DEBUG

@@ -1,5 +1,8 @@
 /*
  * Asp engine tree implementation.
+ *
+ * The red-black tree logic implemented here is based on the algorithms
+ * described in Introduction to Algorithms, Thomas H. Cormen, et al., 3e.
  */
 
 #include "tree.h"
@@ -15,17 +18,25 @@ static AspDataEntry *GetLimitNode
 static AspRunResult Shift
     (AspEngine *, AspDataEntry *tree,
      AspDataEntry *node1, AspDataEntry *node2);
+static AspRunResult Rotate
+    (AspEngine *, AspDataEntry *tree, AspDataEntry *node, bool right);
 static int CompareKeys
     (AspEngine *, const AspDataEntry *tree,
      const AspDataEntry *leftNode, const AspDataEntry *rightNode);
-
 static AspRunResult SetChildIndex
-    (AspEngine *, AspDataEntry *node, uint32_t index, bool right);
+    (AspEngine *, AspDataEntry *node, bool right, uint32_t index);
 static uint32_t GetChildIndex(AspEngine *, AspDataEntry *node, bool right);
 static void PruneLinks(AspEngine *, AspDataEntry *node);
 static bool IsTreeType(DataType type);
 static bool IsNodeType(DataType type);
 static AspRunResult NotFoundResult(AspDataEntry *tree);
+
+#ifdef ASP_TEST
+static bool IsRedBlack
+    (AspEngine *, AspDataEntry *node, unsigned depth, unsigned *blackDepth);
+static void Tally
+    (AspEngine *, AspDataEntry *node, unsigned *tally);
+#endif
 
 AspTreeResult AspTreeInsert
     (AspEngine *engine, AspDataEntry *tree,
@@ -157,74 +168,208 @@ AspRunResult AspTreeEraseNode
     if (result != AspRunResult_OK)
         return result;
 
-    AspDataEntry *entry = FindNode(engine, tree, keyNode);
-    if (entry == 0)
+    AspDataEntry *node = FindNode(engine, tree, keyNode);
+    if (node == 0)
         return NotFoundResult(tree);
 
-    uint32_t leftIndex = GetChildIndex(engine, entry, false);
-    uint32_t rightIndex = GetChildIndex(engine, entry, true);
+    /* Remove node from tree and determine whether rebalancing is required. */
+    bool rebalance = AspDataGetTreeNodeIsBlack(node);
+    uint32_t nodeIndex = AspIndex(engine, node);
+    uint32_t parentIndex = AspDataGetTreeNodeParentIndex(node);
+    uint32_t leftIndex = GetChildIndex(engine, node, false);
+    uint32_t rightIndex = GetChildIndex(engine, node, true);
+    AspDataEntry *fixNode = node;
     if (leftIndex == 0)
     {
-        AspDataEntry *rightNode = AspEntry(engine, rightIndex);
-        result = Shift(engine, tree, entry, rightNode);
+        if (rightIndex != 0)
+        {
+            fixNode = AspEntry(engine, rightIndex);
+            result = Shift(engine, tree, node, fixNode);
+            if (result != AspRunResult_OK)
+                return result;
+        }
     }
     else if (rightIndex == 0)
     {
-        AspDataEntry *leftNode = AspEntry(engine, leftIndex);
-        result = Shift(engine, tree, entry, leftNode);
+        fixNode = AspEntry(engine, leftIndex);
+        result = Shift(engine, tree, node, fixNode);
+        if (result != AspRunResult_OK)
+            return result;
     }
     else
     {
-        AspTreeResult nextResult = AspTreeNext(engine, tree, entry, true);
+        AspTreeResult nextResult = AspTreeNext(engine, tree, node, true);
+        if (nextResult.result != AspRunResult_OK)
+            return nextResult.result;
         AspDataEntry *nextNode = nextResult.node;
-        if (AspDataGetTreeNodeParentIndex(nextNode) != AspIndex(engine, entry))
+        result = AspAssert(engine, nextNode != 0);
+        if (result != AspRunResult_OK)
+            return result;
+        uint32_t nextIndex = AspIndex(engine, nextNode);
+        rebalance = AspDataGetTreeNodeIsBlack(nextNode);
+
+        bool nodeIsBlack = AspDataGetTreeNodeIsBlack(node);
+        AspDataEntry *nextRightNode = AspEntry
+            (engine, GetChildIndex(engine, nextNode, true));
+        if (nextRightNode != 0)
+            fixNode = nextRightNode;
+
+        if (AspDataGetTreeNodeParentIndex(nextNode) == AspIndex(engine, node))
         {
+            AspDataSetTreeNodeParentIndex(fixNode, nextIndex);
+            if (fixNode == node)
+                SetChildIndex
+                    (engine, nextNode, true, AspIndex(engine, fixNode));
+        }
+        else
+        {
+            result = Shift(engine, tree, nextNode, fixNode);
+            if (result != AspRunResult_OK)
+                return result;
+            result = SetChildIndex(engine, nextNode, true, rightIndex);
+            if (result != AspRunResult_OK)
+                return result;
             AspDataEntry *rightNode = AspEntry
                 (engine, GetChildIndex(engine, nextNode, true));
-            result = Shift(engine, tree, nextNode, rightNode);
-            if (result != AspRunResult_OK)
-                return result;
-            result = SetChildIndex
-                (engine, nextNode,
-                 GetChildIndex(engine, entry, true), true);
-            if (result != AspRunResult_OK)
-                return result;
-            rightNode = AspEntry
-                (engine, GetChildIndex(engine, nextNode, true));
-            AspDataSetTreeNodeParentIndex
-                (rightNode, AspIndex(engine, nextNode));
+            AspDataSetTreeNodeParentIndex(rightNode, nextIndex);
         }
 
-        result = Shift(engine, tree, entry, nextNode);
+        if (parentIndex == 0)
+            AspDataSetTreeRootIndex(tree, nextIndex);
+        else
+        {
+            AspDataEntry *parentNode = AspEntry(engine, parentIndex);
+            result = SetChildIndex
+                (engine, parentNode,
+                 nodeIndex == GetChildIndex(engine, parentNode, true),
+                 nextIndex);
+            if (result != AspRunResult_OK)
+                return result;
+        }
+        AspDataSetTreeNodeParentIndex(nextNode, parentIndex);
+
+        result = SetChildIndex(engine, nextNode, false, leftIndex);
         if (result != AspRunResult_OK)
             return result;
-        result = SetChildIndex
-            (engine, nextNode,
-             GetChildIndex(engine, entry, false), false);
-        if (result != AspRunResult_OK)
-            return result;
-        AspDataEntry *leftNode = AspEntry
-            (engine, GetChildIndex(engine, nextNode, false));
-        AspDataSetTreeNodeParentIndex
-            (leftNode, AspIndex(engine, nextNode));
+        AspDataEntry *leftNode = AspEntry(engine, leftIndex);
+        AspDataSetTreeNodeParentIndex(leftNode, nextIndex);
+        AspDataSetTreeNodeIsBlack(nextNode, nodeIsBlack);
+        if (fixNode == node)
+            AspDataSetTreeNodeIsBlack(fixNode, true);
     }
 
-    if (result != AspRunResult_OK)
-        return result;
-
-    uint8_t type = AspDataGetType(entry);
+    uint8_t type = AspDataGetType(node);
     if (eraseKey && type != DataType_NamespaceNode)
+    {
         AspUnref(engine, AspValueEntry
-            (engine, AspDataGetTreeNodeKeyIndex(entry)));
+            (engine, AspDataGetTreeNodeKeyIndex(node)));
+        AspDataSetTreeNodeKeyIndex(node, 0);
+    }
     if (eraseValue && type != DataType_SetNode)
+    {
         AspUnref(engine, AspValueEntry
-            (engine, AspDataGetTreeNodeValueIndex(entry)));
+            (engine, AspDataGetTreeNodeValueIndex(node)));
+        AspDataSetTreeNodeValueIndex(node, 0);
+    }
+    if (type != DataType_SetNode)
+    {
+        uint32_t linksIndex = AspDataGetTreeNodeLinksIndex(node);
+        if (linksIndex != 0)
+        {
+            AspUnref(engine, AspEntry(engine, linksIndex));
+            AspDataSetTreeNodeLinksIndex(node, 0);
+        }
+    }
 
-    if (type != DataType_SetNode && AspDataGetTreeNodeLinksIndex(entry) != 0)
-        AspUnref(engine, AspValueEntry
-            (engine, AspDataGetTreeNodeLinksIndex(entry)));
+    /* Rebalance the tree if required. */
+    if (rebalance)
+    {
+        AspDataEntry *workNode = fixNode;
+        AspDataEntry *rootNode = AspEntry
+            (engine, AspDataGetTreeRootIndex(tree));
+        while (workNode != rootNode && AspDataGetTreeNodeIsBlack(workNode))
+        {
+            uint32_t workIndex = AspIndex(engine, workNode);
+            AspDataEntry *parentNode = AspEntry
+                (engine, AspDataGetTreeNodeParentIndex(workNode));
+            bool right =
+                GetChildIndex(engine, parentNode, true) == workIndex;
+            AspDataEntry *siblingNode = AspEntry
+                (engine, GetChildIndex(engine, parentNode, !right));
+            result = AspAssert(engine, siblingNode != 0);
+            if (result != AspRunResult_OK)
+                return result;
+            if (!AspDataGetTreeNodeIsBlack(siblingNode))
+            {
+                AspDataSetTreeNodeIsBlack(siblingNode, true);
+                AspDataSetTreeNodeIsBlack(parentNode, false);
+                result = Rotate(engine, tree, parentNode, right);
+                if (result != AspRunResult_OK)
+                    return result;
+                parentNode = AspEntry
+                    (engine, AspDataGetTreeNodeParentIndex(workNode));
+                siblingNode = AspEntry
+                    (engine, GetChildIndex(engine, parentNode, !right));
+            }
 
-    AspUnref(engine, entry);
+            AspDataEntry *nearNode = AspEntry
+                (engine, GetChildIndex(engine, siblingNode, right));
+            AspDataEntry *farNode = AspEntry
+                (engine, GetChildIndex(engine, siblingNode, !right));
+            if ((nearNode == 0 || AspDataGetTreeNodeIsBlack(nearNode)) &&
+                (farNode == 0 || AspDataGetTreeNodeIsBlack(farNode)))
+            {
+                AspDataSetTreeNodeIsBlack(siblingNode, false);
+                workNode = parentNode;
+            }
+            else
+            {
+                if (farNode == 0 || AspDataGetTreeNodeIsBlack(farNode))
+                {
+                    if (nearNode != 0)
+                        AspDataSetTreeNodeIsBlack(nearNode, true);
+                    AspDataSetTreeNodeIsBlack(siblingNode, false);
+                    result = Rotate(engine, tree, siblingNode, !right);
+                    if (result != AspRunResult_OK)
+                        return result;
+                    parentNode = AspEntry
+                        (engine, AspDataGetTreeNodeParentIndex(workNode));
+                    siblingNode = AspEntry
+                        (engine, GetChildIndex(engine, parentNode, !right));
+                    farNode = AspEntry
+                        (engine, GetChildIndex(engine, siblingNode, !right));
+                }
+
+                AspDataSetTreeNodeIsBlack
+                    (siblingNode, AspDataGetTreeNodeIsBlack(parentNode));
+                AspDataSetTreeNodeIsBlack(parentNode, true);
+                if (farNode != 0)
+                    AspDataSetTreeNodeIsBlack(farNode, true);
+                result = Rotate(engine, tree, parentNode, right);
+                if (result != AspRunResult_OK)
+                    return result;
+                break;
+            }
+        }
+        if (workNode)
+            AspDataSetTreeNodeIsBlack(workNode, true);
+    }
+    if (fixNode == node)
+    {
+        uint32_t fixParentIndex = AspDataGetTreeNodeParentIndex(fixNode);
+        if (fixParentIndex == 0)
+            AspDataSetTreeRootIndex(tree, 0);
+        else
+        {
+            AspDataEntry *fixParentNode = AspEntry(engine, fixParentIndex);
+            result = SetChildIndex
+                (engine, fixParentNode,
+                 nodeIndex == GetChildIndex(engine, fixParentNode, true),
+                 0);
+        }
+    }
+
+    AspUnref(engine, node);
     AspDataSetTreeCount(tree, AspDataGetTreeCount(tree) - 1U);
 
     return result;
@@ -382,12 +527,69 @@ static AspRunResult Insert
     if (parentNode == 0)
         AspDataSetTreeRootIndex(tree, nodeIndex);
     else
+    {
         result = SetChildIndex
-            (engine, parentNode, nodeIndex,
-             CompareKeys(engine, tree, node, parentNode) > 0);
+            (engine, parentNode,
+             CompareKeys(engine, tree, node, parentNode) > 0,
+             nodeIndex);
+        if (result != AspRunResult_OK)
+            return result;
 
-    if (result != AspRunResult_OK)
-        return result;
+        /* Rebalance the tree. */
+        AspDataEntry *workNode = node;
+        uint32_t workIndex = nodeIndex;
+        while (parentNode != 0 && !AspDataGetTreeNodeIsBlack(parentNode))
+        {
+            uint32_t grandparentIndex = AspDataGetTreeNodeParentIndex
+                (parentNode);
+            AspDataEntry *grandparentNode = AspEntry(engine, grandparentIndex);
+            result = AspAssert(engine, grandparentNode != 0);
+            if (result != AspRunResult_OK)
+                return result;
+
+            uint32_t parentIndex = AspIndex(engine, parentNode);
+            bool right =
+                GetChildIndex(engine, grandparentNode, true) == parentIndex;
+            AspDataEntry *uncleNode = AspEntry
+                (engine, GetChildIndex(engine, grandparentNode, !right));
+            if (uncleNode != 0 && !AspDataGetTreeNodeIsBlack(uncleNode))
+            {
+                AspDataSetTreeNodeIsBlack(parentNode, true);
+                AspDataSetTreeNodeIsBlack(uncleNode, true);
+                AspDataSetTreeNodeIsBlack(grandparentNode, false);
+                workNode = grandparentNode;
+                workIndex = grandparentIndex;
+                parentNode = AspEntry
+                    (engine, AspDataGetTreeNodeParentIndex(workNode));
+            }
+            else
+            {
+                if (workIndex == GetChildIndex(engine, parentNode, !right))
+                {
+                    workNode = parentNode;
+                    workIndex = parentIndex;
+                    result = Rotate(engine, tree, workNode, right);
+                    if (result != AspRunResult_OK)
+                        return result;
+                    parentNode = AspEntry
+                        (engine, AspDataGetTreeNodeParentIndex(workNode));
+                    grandparentIndex = AspDataGetTreeNodeParentIndex
+                        (parentNode);
+                    grandparentNode = AspEntry(engine, grandparentIndex);
+                }
+
+                AspDataSetTreeNodeIsBlack(parentNode, true);
+                AspDataSetTreeNodeIsBlack(grandparentNode, false);
+                result = Rotate(engine, tree, grandparentNode, !right);
+                if (result != AspRunResult_OK)
+                    return result;
+                parentNode = AspEntry
+                    (engine, AspDataGetTreeNodeParentIndex(workNode));
+            }
+        }
+    }
+    AspDataSetTreeNodeIsBlack
+        (AspEntry(engine, AspDataGetTreeRootIndex(tree)), true);
 
     AspDataSetTreeCount(tree, AspDataGetTreeCount(tree) + 1U);
 
@@ -440,8 +642,8 @@ static AspRunResult Shift
         (engine, tree != 0 && IsTreeType(AspDataGetType(tree)));
     AspAssert
         (engine, node1 != 0 && IsNodeType(AspDataGetType(node1)));
-    result = AspAssert
-        (engine, node2 == 0 || IsNodeType(AspDataGetType(node2)));
+    AspAssert
+        (engine, node2 != 0 && IsNodeType(AspDataGetType(node2)));
     if (result != AspRunResult_OK)
         return 0;
 
@@ -450,19 +652,66 @@ static AspRunResult Shift
         AspDataSetTreeRootIndex(tree, AspIndex(engine, node2));
     else
     {
-        AspDataEntry *parentNode = AspEntry(engine, node1ParentIndex);
+        AspDataEntry *parent1Node = AspEntry(engine, node1ParentIndex);
         uint32_t index2 = AspIndex(engine, node2);
         result = SetChildIndex
-            (engine, parentNode, index2,
-             AspIndex(engine, node1) !=
-             GetChildIndex(engine, parentNode, false));
+            (engine, parent1Node,
+             AspIndex(engine, node1) ==
+             GetChildIndex(engine, parent1Node, true),
+             index2);
     }
     if (result != AspRunResult_OK)
         return result;
 
-    if (node2 != 0)
+    AspDataSetTreeNodeParentIndex(node2, node1ParentIndex);
+
+    return result;
+}
+
+static AspRunResult Rotate
+    (AspEngine *engine, AspDataEntry *tree, AspDataEntry *node, bool right)
+{
+    AspRunResult result = AspRunResult_OK;
+
+    AspAssert
+        (engine, tree != 0 && IsTreeType(AspDataGetType(tree)));
+    result = AspAssert
+        (engine, node != 0 && IsNodeType(AspDataGetType(node)));
+    if (result != AspRunResult_OK)
+        return result;
+
+    uint32_t nodeIndex = AspIndex(engine, node);
+    uint32_t parentIndex = AspDataGetTreeNodeParentIndex(node);
+    uint32_t siblingIndex = GetChildIndex(engine, node, !right);
+    result = AspAssert(engine, siblingIndex != 0);
+    if (result != AspRunResult_OK)
+        return result;
+    AspDataEntry *siblingNode = AspEntry(engine, siblingIndex);
+    uint32_t nephewIndex = GetChildIndex(engine, siblingNode, right);
+
+    result = SetChildIndex(engine, node, !right, nephewIndex);
+    if (result != AspRunResult_OK)
+        return result;
+    if (nephewIndex != 0)
         AspDataSetTreeNodeParentIndex
-            (node2, AspDataGetTreeNodeParentIndex(node1));
+            (AspEntry(engine, nephewIndex), nodeIndex);
+
+    result = SetChildIndex(engine, siblingNode, right, nodeIndex);
+    if (result != AspRunResult_OK)
+        return result;
+    AspDataSetTreeNodeParentIndex(node, siblingIndex);
+
+    AspDataSetTreeNodeParentIndex(siblingNode, parentIndex);
+    if (parentIndex != 0)
+    {
+        AspDataEntry *parentNode = AspEntry(engine, parentIndex);
+        result = SetChildIndex
+            (engine, parentNode,
+             nodeIndex == GetChildIndex(engine, parentNode, true),
+             siblingIndex);
+    }
+    else
+        AspDataSetTreeRootIndex(tree, siblingIndex);
 
     return result;
 }
@@ -497,7 +746,7 @@ static int CompareKeys
 }
 
 static AspRunResult SetChildIndex
-    (AspEngine *engine, AspDataEntry *node, uint32_t index, bool right)
+    (AspEngine *engine, AspDataEntry *node, bool right, uint32_t index)
 {
     AspRunResult result = AspRunResult_OK;
 
@@ -605,3 +854,74 @@ static AspRunResult NotFoundResult(AspDataEntry *tree)
     return AspDataGetType(tree) == DataType_Namespace ?
         AspRunResult_NameNotFound : AspRunResult_KeyNotFound;
 }
+
+#ifdef ASP_TEST
+
+bool AspTreeIsRedBlack(AspEngine *engine, AspDataEntry *tree)
+{
+    uint32_t rootIndex = AspDataGetTreeRootIndex(tree);
+    if (rootIndex == 0)
+        return true;
+
+    AspDataEntry *rootNode = AspEntry(engine, rootIndex);
+    if (!AspDataGetTreeNodeIsBlack(rootNode))
+        return false;
+
+    unsigned blackDepth = 0;
+    return IsRedBlack(engine, rootNode, 0, &blackDepth);
+}
+
+static bool IsRedBlack
+    (AspEngine *engine, AspDataEntry *node,
+     unsigned depth, unsigned *blackDepth)
+{
+    uint32_t leftIndex = GetChildIndex(engine, node, false);
+    AspDataEntry *leftNode = AspEntry(engine, leftIndex);
+    uint32_t rightIndex = GetChildIndex(engine, node, true);
+    AspDataEntry *rightNode = AspEntry(engine, rightIndex);
+    if (!AspDataGetTreeNodeIsBlack(node) &&
+        leftIndex != 0 && rightIndex != 0 &&
+        (!AspDataGetTreeNodeIsBlack(leftNode) ||
+         !AspDataGetTreeNodeIsBlack(rightNode)))
+        return false;
+
+    if (AspDataGetTreeNodeIsBlack(node))
+        depth++;
+
+    if (leftIndex == 0 && rightIndex == 0)
+    {
+        if (*blackDepth == 0)
+            *blackDepth = depth + 1;
+        else if (*blackDepth != depth + 1)
+            return false;
+    }
+
+    return
+        (leftIndex == 0 || IsRedBlack(engine, leftNode, depth, blackDepth)) &&
+        (rightIndex == 0 || IsRedBlack(engine, rightNode, depth, blackDepth));
+}
+
+unsigned AspTreeTally(AspEngine *engine, AspDataEntry *tree)
+{
+    uint32_t rootIndex = AspDataGetTreeRootIndex(tree);
+    if (rootIndex == 0)
+        return 0;
+    unsigned tally = 0;
+    Tally(engine, AspEntry(engine, rootIndex), &tally);
+    return tally;
+}
+
+static void Tally(AspEngine *engine, AspDataEntry *node, unsigned *tally)
+{
+    uint32_t leftIndex = GetChildIndex(engine, node, false);
+    if (leftIndex != 0)
+        Tally(engine, AspEntry(engine, leftIndex), tally);
+
+    (*tally)++;
+
+    uint32_t rightIndex = GetChildIndex(engine, node, true);
+    if (rightIndex != 0)
+        Tally(engine, AspEntry(engine, rightIndex), tally);
+}
+
+#endif /* ASP_TEST */

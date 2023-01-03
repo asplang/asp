@@ -1,3 +1,7 @@
+#
+# Asp top-level build specification.
+#
+
 cmake_minimum_required(VERSION 3.10)
 
 project(asp
@@ -23,6 +27,9 @@ endif()
 
 option(BUILD_SHARED_LIBS
     "Enable/disable building of shared libraries"
+    FALSE)
+option(BUILD_TEST_TARGETS
+    "Enable/disable building of tests"
     FALSE)
 
 set(PATH_NAME_SEPARATOR "" CACHE STRING
@@ -65,4 +72,8 @@ endif()
 
 if(BUILD_FOR_HOST AND BUILD_FOR_TARGET)
     add_subdirectory(standalone)
+endif()
+
+if(BUILD_TEST_TARGETS)
+    add_subdirectory(test)
 endif()

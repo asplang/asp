@@ -37,6 +37,11 @@ AspTreeResult AspFindSymbol
 AspTreeResult AspTreeNext
     (AspEngine *, AspDataEntry *tree, AspDataEntry *node, bool right);
 
+#ifdef ASP_TEST
+bool AspTreeIsRedBlack(AspEngine *, AspDataEntry *tree);
+unsigned AspTreeTally(AspEngine *, AspDataEntry *tree);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
