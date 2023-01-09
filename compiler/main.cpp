@@ -206,8 +206,8 @@ static int main1(int argc, char **argv)
     SymbolTable symbolTable;
     Executable executable(symbolTable);
     Compiler compiler(cerr, symbolTable, executable);
-    compiler.AddModuleFileName(mainModuleBaseFileName);
     compiler.LoadApplicationSpec(specStream);
+    compiler.AddModuleFileName(mainModuleBaseFileName);
 
     // Prepare to search for imported module files.
     vector<string> searchPath;

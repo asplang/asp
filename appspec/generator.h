@@ -104,6 +104,8 @@ class Generator
         Generator(const Generator &) = delete;
         Generator &operator =(const Generator &) = delete;
 
+        bool CheckReservedNameError(const std::string &);
+
         void ReportError(const std::string &);
         std::uint32_t CheckValue();
         void ComputeCheckValue();

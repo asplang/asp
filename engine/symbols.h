@@ -9,9 +9,9 @@
 extern "C" {
 #endif
 
-#define AspSystemModuleSymbol 1
-#define AspSystemArgumentsSymbol 2
-#define AspScriptSymbolBase 3
+#define AspSystemModuleSymbol 0
+#define AspSystemArgumentsSymbol 1
+#define AspScriptSymbolBase 2
 
 #define AspSystemModuleName "sys"
 #define AspSystemArgumentsName "args"

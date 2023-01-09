@@ -10,6 +10,7 @@
 
 using namespace std;
 
+static const char AppSpecVersion[1] = {'\x00'};
 static const uint32_t ParameterFlag_HasDefault = 0x10000000;
 static const uint32_t ParameterFlag_IsGroup    = 0x20000000;
 
@@ -52,11 +53,12 @@ static void WriteStringEscapedHex(ostream &os, T value)
 
 void Generator::WriteCompilerSpec(ostream &os)
 {
-    // Write the specification's check value.
+    // Write the specification's header, including check value.
     os.write("AspS", 4);
+    os.write(AppSpecVersion, sizeof AppSpecVersion);
     Write(os, CheckValue());
 
-    // Reserve symbols used in the system module.
+    // Reserve symbols used by the system module.
     symbolTable.Symbol(AspSystemModuleName);
     symbolTable.Symbol(AspSystemArgumentsName);
 

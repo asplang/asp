@@ -5,8 +5,10 @@
 #include "generator.h"
 #include "app.h"
 #include "symbol.hpp"
+#include "symbols.h"
 #include "grammar.hpp"
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -18,8 +20,6 @@ Generator::Generator
     symbolTable(symbolTable),
     baseFileName(baseFileName)
 {
-    // Reserve main module symbol.
-    symbolTable.Symbol("!");
 }
 
 Generator::~Generator()
@@ -114,6 +114,9 @@ DEFINE_ACTION
     (MakeAssignment, NonTerminal *,
      Token *, nameToken, Literal *, value)
 {
+    if (CheckReservedNameError(nameToken->s))
+        return 0;
+
     // Replace any previous definition having the same name with this
     // latter one.
     auto findIter = definitions.find(nameToken->s);
@@ -140,6 +143,9 @@ DEFINE_ACTION
      Token *, nameToken, ParameterList *, parameterList,
      Token *, internalNameToken)
 {
+    if (CheckReservedNameError(nameToken->s))
+        return 0;
+
     // Replace any previous definition having the same name with this
     // latter one.
     auto findIter = definitions.find(nameToken->s);
@@ -216,6 +222,20 @@ DEFINE_UTIL(FreeToken, void, Token *, token)
 DEFINE_UTIL(ReportError, void, const char *, error)
 {
      ReportError(string(error));
+}
+
+bool Generator::CheckReservedNameError(const string &name)
+{
+    if (name == AspSystemModuleName ||
+        name == AspSystemArgumentsName)
+    {
+        ostringstream oss;
+        oss << "Cannot redefine reserved name '" << name << '\'';
+        ReportError(oss.str());
+        return true;
+    }
+
+    return false;
 }
 
 void Generator::ReportError(const string &error)

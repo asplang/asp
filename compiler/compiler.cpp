@@ -39,6 +39,18 @@ void Compiler::LoadApplicationSpec(istream &specStream)
     if (memcmp(header, "AspS", 4) != 0)
         throw string("Invalid format in application spec file");
 
+    // Read and check application spec version.
+    uint8_t version;
+    specStream >> version;
+    if (version != 0)
+    {
+        ostringstream oss;
+        oss
+            << "Unrecognized application specification file version: "
+            << static_cast<unsigned>(version);
+        throw oss.str();
+    }
+
     // Read application spec check value and store.
     uint32_t checkValue = 0;
     for (unsigned i = 0; i < 4; i++)
@@ -67,22 +79,14 @@ void Compiler::LoadApplicationSpec(istream &specStream)
 
 void Compiler::AddModule(const string &moduleName)
 {
-    // Ensure the module name does not conflict with a name reserved for use
-    // in the system.
-    if ((moduleName == AspSystemModuleName && moduleNames.empty()) ||
-        moduleName == AspSystemArgumentsName)
-    {
-        ostringstream oss;
-        oss
-            << "Cannot use module name '" << moduleName
-            << "' which is reserved for system use";
-        ReportError(oss.str());
-    }
-
     // Ignore import of the system module. It is implicitly imported into
     // every module anyway.
     if (moduleName == AspSystemModuleName)
         return;
+
+    // Store the top-level module name.
+    if (moduleNames.empty())
+        topModuleName = moduleName;
 
     // Add the module only if it has never been added before.
     auto iter = moduleNames.find(moduleName);
@@ -110,7 +114,17 @@ void Compiler::AddModuleFileName(const string &moduleFileName)
     }
 
     // Strip off the suffix and add the module name.
-    AddModule(moduleFileName.substr(0, suffixIndex));
+    string moduleName = moduleFileName.substr(0, suffixIndex);
+    if (moduleName == AspSystemModuleName)
+    {
+        ostringstream oss;
+        oss
+            << "Cannot use module name '" << moduleName
+            << "' which is reserved for system use";
+        ReportError(oss.str());
+    }
+
+    AddModule(moduleName);
 }
 
 string Compiler::NextModuleFileName()
@@ -139,7 +153,7 @@ void Compiler::Finalize()
     // Invoke the top-level module.
     executable.PushLocation(topLocation);
     executable.Insert(new LoadModuleInstruction
-        (0, "Load top-level module"));
+        (symbolTable.Symbol(topModuleName), "Load top-level module"));
     executable.Insert(new EndInstruction("End script"));
     executable.PopLocation();
 

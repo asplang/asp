@@ -323,6 +323,7 @@ class Compiler
 
         // Module data.
         std::set<std::string> moduleNames;
+        std::string topModuleName;
         std::deque<std::string> moduleNamesToImport;
         std::string currentModuleName;
         std::int32_t currentModuleSymbol;
