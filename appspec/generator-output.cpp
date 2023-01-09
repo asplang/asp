@@ -7,12 +7,14 @@
 #include "symbols.h"
 #include "crc.h"
 #include <iomanip>
-#include <set>
 
 using namespace std;
 
 static const uint32_t ParameterFlag_HasDefault = 0x10000000;
 static const uint32_t ParameterFlag_IsGroup    = 0x20000000;
+
+static void WriteValue(ostream &, unsigned *specByteCount, const Literal &);
+static void ContributeValue(crc_spec &, crc_session &, const Literal &);
 
 template <class T>
 static void Write(ostream &os, T value)
@@ -58,45 +60,41 @@ void Generator::WriteCompilerSpec(ostream &os)
     symbolTable.Symbol(AspSystemModuleName);
     symbolTable.Symbol(AspSystemArgumentsName);
 
-    // Assign symbols, function names first, then parameter names,
-    // writing each name only once, in order of assigned symbol.
-    set<int> writtenSymbols;
-    for (auto iter = functionDefinitions.begin();
-         iter != functionDefinitions.end(); iter++)
+    // Assign symbols, to variable and function names first, then to parameter
+    // names, writing each name only once, in order of assigned symbol.
+    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
     {
-        auto &functionDefinition = *iter;
+        auto &name = iter->first;
+        auto &definition = iter->second;
 
-        auto functionName = functionDefinition.Name();
-        auto symbol = symbolTable.Symbol(functionName);
+        bool wasDefined = symbolTable.IsDefined(name);
+        auto symbol = symbolTable.Symbol(name);
 
-        auto writtenIter = writtenSymbols.find(symbol);
-        if (writtenIter == writtenSymbols.end())
-        {
-            os << functionName << '\n';
-            writtenSymbols.insert(symbol);
-        }
+        if (!wasDefined)
+            os << name << '\n';
     }
-    for (auto iter = functionDefinitions.begin();
-         iter != functionDefinitions.end(); iter++)
+    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
     {
-        auto &functionDefinition = *iter;
+        auto &definition = iter->second;
+        auto functionDefinition =
+            dynamic_cast<const FunctionDefinition *>(definition);
+        if (functionDefinition == 0)
+            continue;
 
-        for (auto parameterIter =
-             functionDefinition.Parameters().ParametersBegin();
-             parameterIter != functionDefinition.Parameters().ParametersEnd();
+        auto &parameters = functionDefinition->Parameters();
+
+        for (auto parameterIter = parameters.ParametersBegin();
+             parameterIter != parameters.ParametersEnd();
              parameterIter++)
         {
             auto &parameter = **parameterIter;
-
             const auto &parameterName = parameter.Name();
+
+            bool wasDefined = symbolTable.IsDefined(parameterName);
             auto parameterSymbol = symbolTable.Symbol(parameterName);
 
-            auto writtenIter = writtenSymbols.find(parameterSymbol);
-            if (writtenIter == writtenSymbols.end())
-            {
+            if (!wasDefined)
                 os << parameterName << '\n';
-                writtenSymbols.insert(parameterSymbol);
-            }
         }
     }
 }
@@ -113,20 +111,25 @@ void Generator::WriteApplicationHeader(ostream &os)
            "#endif\n\n"
            "extern AspAppSpec AspAppSpec_" << baseFileName << ";\n";
 
-    for (auto iter = functionDefinitions.begin();
-         iter != functionDefinitions.end(); iter++)
+    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
     {
-        auto &functionDefinition = *iter;
+        auto &definition = iter->second;
+        auto functionDefinition =
+            dynamic_cast<const FunctionDefinition *>(definition);
+        if (functionDefinition == 0)
+            continue;
 
         os
-            << "\nAspRunResult " << functionDefinition.InternalName() << "\n"
+            << "\nAspRunResult " << functionDefinition->InternalName() << "\n"
                "    (AspEngine *,";
-        if (!functionDefinition.Parameters().ParametersEmpty())
+
+        auto &parameters = functionDefinition->Parameters();
+
+        if (!parameters.ParametersEmpty())
             os << "\n";
 
-        for (auto parameterIter =
-             functionDefinition.Parameters().ParametersBegin();
-             parameterIter != functionDefinition.Parameters().ParametersEnd();
+        for (auto parameterIter = parameters.ParametersBegin();
+             parameterIter != parameters.ParametersEnd();
              parameterIter++)
         {
             auto &parameter = **parameterIter;
@@ -137,7 +140,7 @@ void Generator::WriteApplicationHeader(ostream &os)
             os << '\n';
         }
 
-        if (functionDefinition.Parameters().ParametersEmpty())
+        if (parameters.ParametersEmpty())
             os << ' ';
         else
             os << "     ";
@@ -168,20 +171,24 @@ void Generator::WriteApplicationCode(ostream &os)
            "{\n"
            "    switch (symbol)\n"
            "    {\n";
-    for (auto iter = functionDefinitions.begin();
-         iter != functionDefinitions.end(); iter++)
+    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
     {
-        auto &functionDefinition = *iter;
+        auto &definition = iter->second;
+        auto functionDefinition =
+            dynamic_cast<const FunctionDefinition *>(definition);
+        if (functionDefinition == 0)
+            continue;
 
-        auto symbol = symbolTable.Symbol(functionDefinition.Name());
+        auto symbol = symbolTable.Symbol(functionDefinition->Name());
 
         os
             << "        case " << symbol << ":\n"
             << "        {\n";
 
-        for (auto parameterIter =
-             functionDefinition.Parameters().ParametersBegin();
-             parameterIter != functionDefinition.Parameters().ParametersEnd();
+        auto &parameters = functionDefinition->Parameters();
+
+        for (auto parameterIter = parameters.ParametersBegin();
+             parameterIter != parameters.ParametersEnd();
              parameterIter++)
         {
             auto &parameter = **parameterIter;
@@ -210,12 +217,11 @@ void Generator::WriteApplicationCode(ostream &os)
         }
 
         os
-            << "            return " << functionDefinition.InternalName()
+            << "            return " << functionDefinition->InternalName()
             << "(engine, ";
 
-        for (auto parameterIter =
-             functionDefinition.Parameters().ParametersBegin();
-             parameterIter != functionDefinition.Parameters().ParametersEnd();
+        for (auto parameterIter = parameters.ParametersBegin();
+             parameterIter != parameters.ParametersEnd();
              parameterIter++)
         {
             auto &parameter = **parameterIter;
@@ -240,90 +246,52 @@ void Generator::WriteApplicationCode(ostream &os)
         << "\nAspAppSpec AspAppSpec_" << baseFileName << " =\n"
            "{";
     unsigned specByteCount = 0;
-    for (auto iter = functionDefinitions.begin();
-         iter != functionDefinitions.end(); iter++)
+    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
     {
-        auto &functionDefinition = *iter;
+        auto &definition = iter->second;
+        auto assignment =
+            dynamic_cast<const Assignment *>(definition);
+        auto functionDefinition =
+            dynamic_cast<const FunctionDefinition *>(definition);
 
         os << "\n    \"";
-        auto parameterCount = functionDefinition.Parameters().ParametersSize();
-        WriteStringEscapedHex(os, static_cast<uint8_t>(parameterCount));
-        specByteCount++;
 
-        for (auto parameterIter =
-             functionDefinition.Parameters().ParametersBegin();
-             parameterIter != functionDefinition.Parameters().ParametersEnd();
-             parameterIter++)
+        if (assignment != 0)
         {
-            auto &parameter = **parameterIter;
+            WriteStringEscapedHex(os, static_cast<uint8_t>(0xFF));
+            specByteCount++;
 
-            int32_t parameterSymbol = symbolTable.Symbol(parameter.Name());
-            uint32_t word = *reinterpret_cast<uint32_t *>(&parameterSymbol);
+            const auto &value = assignment->Value();
+            WriteValue(os, &specByteCount, *value);
+        }
+        else if (functionDefinition != 0)
+        {
+            auto &parameters = functionDefinition->Parameters();
 
-            const auto &defaultValue = parameter.DefaultValue();
-            if (defaultValue != 0)
-                word |= ParameterFlag_HasDefault;
-            if (parameter.IsGroup())
-                word |= ParameterFlag_IsGroup;
+            auto parameterCount = parameters.ParametersSize();
+            WriteStringEscapedHex(os, static_cast<uint8_t>(parameterCount));
+            specByteCount++;
 
-            WriteStringEscapedHex(os, word);
-            specByteCount += sizeof word;
-
-            if (defaultValue != 0)
+            for (auto parameterIter = parameters.ParametersBegin();
+                 parameterIter != parameters.ParametersEnd();
+                 parameterIter++)
             {
-                auto valueType = defaultValue->GetType();
-                WriteStringEscapedHex(os, static_cast<uint8_t>(valueType));
-                specByteCount++;
+                auto &parameter = **parameterIter;
 
-                switch (valueType)
-                {
-                    case Literal::Type::Boolean:
-                    {
-                        auto value = defaultValue->BooleanValue();
-                        WriteStringEscapedHex
-                            (os, static_cast<uint8_t>(value));
-                        specByteCount++;
-                        break;
-                    }
+                int32_t parameterSymbol = symbolTable.Symbol(parameter.Name());
+                uint32_t word = *reinterpret_cast<uint32_t *>(&parameterSymbol);
 
-                    case Literal::Type::Integer:
-                    {
-                        auto value = defaultValue->IntegerValue();
-                        WriteStringEscapedHex
-                            (os, *reinterpret_cast<uint32_t *>(&value));
-                        specByteCount += sizeof value;
-                        break;
-                    }
+                const auto &defaultValue = parameter.DefaultValue();
+                if (defaultValue != 0)
+                    word |= ParameterFlag_HasDefault;
+                if (parameter.IsGroup())
+                    word |= ParameterFlag_IsGroup;
 
-                    case Literal::Type::Float:
-                    {
-                        static const uint16_t word = 1;
-                        bool be = *(const char *)&word == 0;
+                WriteStringEscapedHex(os, word);
+                specByteCount += sizeof word;
 
-                        auto value = defaultValue->FloatValue();
-                        auto data = reinterpret_cast<const uint8_t *>(&value);
-                        for (unsigned i = 0; i < sizeof value; i++)
-                        {
-                            auto b = data[be ? i : sizeof value - 1 - i];
-                            WriteStringEscapedHex(os, b);
-                        }
-                        specByteCount += sizeof value;
-                        break;
-                    }
-
-                    case Literal::Type::String:
-                    {
-                        auto value = defaultValue->StringValue();
-                        uint32_t valueSize = static_cast<uint32_t>
-                            (value.size());
-                        WriteStringEscapedHex(os, valueSize);
-                        for (unsigned i = 0; i < valueSize; i++)
-                            WriteStringEscapedHex
-                                (os, static_cast<uint8_t>(value[i]));
-                        specByteCount += sizeof(valueSize) + valueSize;
-                        break;
-                    }
-                }
+                if (defaultValue != 0)
+                    WriteValue(os, &specByteCount, *defaultValue);
             }
         }
         os << '"';
@@ -363,99 +331,186 @@ void Generator::ComputeCheckValue()
     crc_session session;
     crc_start(&spec, &session);
 
-    // Compute a check value based on the signature of each function.
+    // Contribute each definition to the check value.
     static const string
+        CheckValueVariablePrefix = "\v",
         CheckValueFunctionPrefix = "\f",
         CheckValueParameterPrefix = "(";
-    for (auto iter = functionDefinitions.begin();
-         iter != functionDefinitions.end(); iter++)
+    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
     {
-        auto &functionDefinition = *iter;
+        auto &name = iter->first;
+        auto &definition = iter->second;
 
-        const auto &functionName = functionDefinition.Name();
+        auto assignment =
+            dynamic_cast<const Assignment *>(definition);
+        auto functionDefinition =
+            dynamic_cast<const FunctionDefinition *>(definition);
 
-        // Contribute the function name.
-        crc_add
-            (&spec, &session,
-             CheckValueFunctionPrefix.c_str(),
-             static_cast<unsigned>(CheckValueFunctionPrefix.size()));
-        crc_add
-            (&spec, &session,
-             functionName.c_str(),
-             static_cast<unsigned>(functionName.size()));
-
-        for (auto parameterIter =
-             functionDefinition.Parameters().ParametersBegin();
-             parameterIter != functionDefinition.Parameters().ParametersEnd();
-             parameterIter++)
+        if (assignment != 0)
         {
-            auto &parameter = **parameterIter;
+            const auto &value = assignment->Value();
 
-            const auto &parameterName = parameter.Name();
-
-            // Contribute the parameter name.
+            // Contribute the variable name.
             crc_add
                 (&spec, &session,
-                 CheckValueParameterPrefix.c_str(),
-                 static_cast<unsigned>(CheckValueParameterPrefix.size()));
+                 CheckValueVariablePrefix.c_str(),
+                 static_cast<unsigned>(CheckValueVariablePrefix.size()));
             crc_add
                 (&spec, &session,
-                 parameterName.c_str(),
-                 static_cast<unsigned>(parameterName.size()));
+                 name.c_str(), static_cast<unsigned>(name.size()));
 
-            // Contribute the default value if present.
-            const auto &defaultValue = parameter.DefaultValue();
-            if (defaultValue != 0)
+            // Contribute the variable value.
+            ContributeValue(spec, session, *value);
+        }
+        else if (functionDefinition != 0)
+        {
+            // Contribute the function name.
+            crc_add
+                (&spec, &session,
+                 CheckValueFunctionPrefix.c_str(),
+                 static_cast<unsigned>(CheckValueFunctionPrefix.size()));
+            crc_add
+                (&spec, &session,
+                 name.c_str(), static_cast<unsigned>(name.size()));
+
+            auto &parameters = functionDefinition->Parameters();
+
+            for (auto parameterIter = parameters.ParametersBegin();
+                 parameterIter != parameters.ParametersEnd();
+                 parameterIter++)
             {
-                auto valueType = defaultValue->GetType();
-                auto b = static_cast<uint8_t>(valueType);
-                crc_add(&spec, &session, &b, 1);
+                auto &parameter = **parameterIter;
 
-                switch (valueType)
-                {
-                    case Literal::Type::Boolean:
-                    {
-                        uint8_t b = defaultValue->BooleanValue() ? 1 : 0;
-                        crc_add(&spec, &session, &b, 1);
-                        break;
-                    }
+                const auto &parameterName = parameter.Name();
 
-                    case Literal::Type::Integer:
-                    {
-                        auto value = defaultValue->IntegerValue();
-                        auto uValue = *reinterpret_cast<uint32_t *>(&value);
-                        for (unsigned i = 0; i < sizeof value; i++)
-                        {
-                            uint8_t b =
-                                uValue >> 8 * (sizeof value - 1 - i) & 0xFF;
-                            crc_add(&spec, &session, &b, 1);
-                        }
-                        break;
-                    }
+                // Contribute the parameter name.
+                crc_add
+                    (&spec, &session,
+                     CheckValueParameterPrefix.c_str(),
+                     static_cast<unsigned>(CheckValueParameterPrefix.size()));
+                crc_add
+                    (&spec, &session,
+                     parameterName.c_str(),
+                     static_cast<unsigned>(parameterName.size()));
 
-                    case Literal::Type::Float:
-                    {
-                        static const uint16_t word = 1;
-                        bool be = *(const char *)&word == 0;
-
-                        auto value = defaultValue->FloatValue();
-                        auto data = reinterpret_cast<const uint8_t *>(&value);
-                        for (unsigned i = 0; i < sizeof value; i++)
-                        {
-                            auto b = data[be ? i : sizeof value - 1 - i];
-                            crc_add(&spec, &session, &b, 1);
-                        }
-                        break;
-                    }
-
-                    case Literal::Type::String:
-                    {
-                        const auto &s = defaultValue->StringValue();
-                        crc_add(&spec, &session, s.c_str(), s.size());
-                    }
-                }
+                // Contribute the default value if present.
+                const auto &defaultValue = parameter.DefaultValue();
+                if (defaultValue != 0)
+                    ContributeValue(spec, session, *defaultValue);
             }
         }
+        else
+            throw string("Internal error");
     }
     checkValue = static_cast<uint32_t>(crc_finish(&spec, &session));
+}
+
+static void WriteValue
+    (ostream &os, unsigned *specByteCount, const Literal &literal)
+{
+    auto valueType = literal.GetType();
+    WriteStringEscapedHex(os, static_cast<uint8_t>(valueType));
+    (*specByteCount)++;
+
+    switch (valueType)
+    {
+        case AppSpecValueType_Boolean:
+        {
+            auto value = literal.BooleanValue();
+            WriteStringEscapedHex
+                (os, static_cast<uint8_t>(value));
+            (*specByteCount)++;
+            break;
+        }
+
+        case AppSpecValueType_Integer:
+        {
+            auto value = literal.IntegerValue();
+            WriteStringEscapedHex
+                (os, *reinterpret_cast<uint32_t *>(&value));
+            *specByteCount += sizeof value;
+            break;
+        }
+
+        case AppSpecValueType_Float:
+        {
+            static const uint16_t word = 1;
+            bool be = *(const char *)&word == 0;
+
+            auto value = literal.FloatValue();
+            auto data = reinterpret_cast<const uint8_t *>(&value);
+            for (unsigned i = 0; i < sizeof value; i++)
+            {
+                auto b = data[be ? i : sizeof value - 1 - i];
+                WriteStringEscapedHex(os, b);
+            }
+            *specByteCount += sizeof value;
+            break;
+        }
+
+        case AppSpecValueType_String:
+        {
+            auto value = literal.StringValue();
+            uint32_t valueSize = static_cast<uint32_t>
+                (value.size());
+            WriteStringEscapedHex(os, valueSize);
+            for (unsigned i = 0; i < valueSize; i++)
+                WriteStringEscapedHex
+                    (os, static_cast<uint8_t>(value[i]));
+            *specByteCount += sizeof(valueSize) + valueSize;
+            break;
+        }
+    }
+}
+
+static void ContributeValue
+    (crc_spec &spec, crc_session &session, const Literal &literal)
+{
+    auto valueType = literal.GetType();
+    auto b = static_cast<uint8_t>(valueType);
+    crc_add(&spec, &session, &b, 1);
+
+    switch (valueType)
+    {
+        case AppSpecValueType_Boolean:
+        {
+            uint8_t b = literal.BooleanValue() ? 1 : 0;
+            crc_add(&spec, &session, &b, 1);
+            break;
+        }
+
+        case AppSpecValueType_Integer:
+        {
+            auto value = literal.IntegerValue();
+            auto uValue = *reinterpret_cast<uint32_t *>(&value);
+            for (unsigned i = 0; i < sizeof value; i++)
+            {
+                uint8_t b =
+                    uValue >> 8 * (sizeof value - 1 - i) & 0xFF;
+                crc_add(&spec, &session, &b, 1);
+            }
+            break;
+        }
+
+        case AppSpecValueType_Float:
+        {
+            static const uint16_t word = 1;
+            bool be = *(const char *)&word == 0;
+
+            auto value = literal.FloatValue();
+            auto data = reinterpret_cast<const uint8_t *>(&value);
+            for (unsigned i = 0; i < sizeof value; i++)
+            {
+                auto b = data[be ? i : sizeof value - 1 - i];
+                crc_add(&spec, &session, &b, 1);
+            }
+            break;
+        }
+
+        case AppSpecValueType_String:
+        {
+            const auto &s = literal.StringValue();
+            crc_add(&spec, &session, s.c_str(), s.size());
+        }
+    }
 }

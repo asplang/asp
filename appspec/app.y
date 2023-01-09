@@ -65,6 +65,12 @@ statement(result) ::= INCLUDE NAME(includeName) STATEMENT_END.
 }
 
 statement(result) ::=
+    NAME(nameToken) ASSIGN literal(value).
+{
+    result = ACTION(MakeAssignment, nameToken, value);
+}
+
+statement(result) ::=
     DEF NAME(nameToken) LEFT_PAREN parameters(parameterList) RIGHT_PAREN
     ASSIGN NAME(internalName).
 {

@@ -20,6 +20,11 @@ int32_t SymbolTable::Symbol(const string &name)
     return result.first->second;
 }
 
+bool SymbolTable::IsDefined(const string &name) const
+{
+    return symbolsByName.find(name) != symbolsByName.end();
+}
+
 SymbolTable::Map::const_iterator SymbolTable::Begin() const
 {
     return symbolsByName.begin();

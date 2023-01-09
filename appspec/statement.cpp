@@ -6,6 +6,18 @@
 
 using namespace std;
 
+Assignment::Assignment
+    (const Token &nameToken, Literal *value) :
+    name(nameToken.s),
+    value(value)
+{
+}
+
+Assignment::~Assignment()
+{
+    delete value;
+}
+
 Parameter::Parameter
     (const Token &nameToken, Literal *defaultValue, bool isGroup) :
     NonTerminal(nameToken),
@@ -15,6 +27,11 @@ Parameter::Parameter
 {
     if (defaultValue != 0 && isGroup)
         throw string("Group parameter cannot have a default");
+}
+
+Parameter::~Parameter()
+{
+    delete defaultValue;
 }
 
 ParameterList::ParameterList()
@@ -47,9 +64,4 @@ FunctionDefinition::FunctionDefinition
 FunctionDefinition::~FunctionDefinition()
 {
     delete parameterList;
-}
-
-bool FunctionDefinition::operator <(const FunctionDefinition &right) const
-{
-    return name < right.name;
 }

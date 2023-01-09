@@ -10,7 +10,7 @@
 #ifdef __cplusplus
 #include "statement.hpp"
 #include <iostream>
-#include <set>
+#include <map>
 #include <string>
 class SymbolTable;
 #endif
@@ -72,6 +72,8 @@ class Generator
     DECLARE_METHOD
         (IncludeHeader, NonTerminal *, Token *);
     DECLARE_METHOD
+        (MakeAssignment, NonTerminal *, Token *, Literal *);
+    DECLARE_METHOD
         (MakeFunction, NonTerminal *, Token *, ParameterList *, Token *);
 
     /* Parameters. */
@@ -121,7 +123,7 @@ class Generator
         std::string currentSourceFileName;
 
         // Spec data.
-        std::set<FunctionDefinition> functionDefinitions;
+        std::map<std::string, NonTerminal *> definitions;
         bool checkValueComputed = false;
         std::uint32_t checkValue = 0;
 };

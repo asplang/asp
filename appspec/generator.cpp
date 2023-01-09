@@ -24,6 +24,8 @@ Generator::Generator
 
 Generator::~Generator()
 {
+    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
+        delete iter->second;
 }
 
 unsigned Generator::ErrorCount() const
@@ -109,23 +111,49 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeAssignment, NonTerminal *,
+     Token *, nameToken, Literal *, value)
+{
+    // Replace any previous definition having the same name with this
+    // latter one.
+    auto findIter = definitions.find(nameToken->s);
+    if (findIter != definitions.end())
+    {
+        cout << "Warning: " << nameToken->s << " redefined" << endl;
+        delete findIter->second;
+        definitions.erase(findIter);
+    }
+
+    definitions.emplace
+        (nameToken->s, new Assignment(*nameToken, value));
+    checkValueComputed = false;
+
+    currentSourceLocation = nameToken->sourceLocation;
+
+    delete nameToken;
+
+    return 0;
+}
+
+DEFINE_ACTION
     (MakeFunction, NonTerminal *,
      Token *, nameToken, ParameterList *, parameterList,
      Token *, internalNameToken)
 {
-    // Replace any previous function definition having the same name with
-    // this latter one.
-    static Token emptyNameToken = Token(SourceLocation(), TOKEN_NAME);
-    auto findIter = functionDefinitions.find
-        (FunctionDefinition(*nameToken, emptyNameToken, 0));
-    if (findIter != functionDefinitions.end())
+    // Replace any previous definition having the same name with this
+    // latter one.
+    auto findIter = definitions.find(nameToken->s);
+    if (findIter != definitions.end())
     {
-        cout << "Warning: function " << nameToken->s << " redefined" << endl;
-        functionDefinitions.erase(findIter);
+        cout << "Warning: " << nameToken->s << " redefined" << endl;
+        delete findIter->second;
+        definitions.erase(findIter);
     }
 
-    functionDefinitions.emplace
-        (*nameToken, *internalNameToken, parameterList);
+    definitions.emplace
+        (nameToken->s,
+         new FunctionDefinition
+            (*nameToken, *internalNameToken, parameterList));
     checkValueComputed = false;
 
     currentSourceLocation = nameToken->sourceLocation;
@@ -152,9 +180,9 @@ DEFINE_ACTION
 
 DEFINE_ACTION
     (MakeParameter, Parameter *,
-     Token *, nameToken, Literal *, defaultExpression)
+     Token *, nameToken, Literal *, defaultValue)
 {
-    auto result = new Parameter(*nameToken, defaultExpression);
+    auto result = new Parameter(*nameToken, defaultValue);
     delete nameToken;
     return result;
 }

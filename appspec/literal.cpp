@@ -15,35 +15,35 @@ Literal::Literal(const Token &token)
             throw string("Invalid token");
 
         case TOKEN_NONE:
-            type = Type::None;
+            type = AppSpecValueType_None;
             break;
 
         case TOKEN_ELLIPSIS:
-            type = Type::Ellipsis;
+            type = AppSpecValueType_Ellipsis;
             break;
 
         case TOKEN_FALSE:
-            type = Type::Boolean;
+            type = AppSpecValueType_Boolean;
             b = false;
             break;
 
         case TOKEN_TRUE:
-            type = Type::Boolean;
+            type = AppSpecValueType_Boolean;
             b = true;
             break;
 
         case TOKEN_INTEGER:
-            type = Type::Integer;
+            type = AppSpecValueType_Integer;
             i = token.i;
             break;
 
         case TOKEN_FLOAT:
-            type = Type::Float;
+            type = AppSpecValueType_Float;
             f = token.f;
             break;
 
         case TOKEN_STRING:
-            type = Type::String;
+            type = AppSpecValueType_String;
             s = token.s;
             break;
     }

@@ -17,6 +17,9 @@ class SymbolTable
         // If the name is empty, get a new symbol for a temporary.
         std::int32_t Symbol(const std::string & = "");
 
+        // Symbol check method.
+        bool IsDefined(const std::string &) const;
+
         // Symbol iteration methods.
         typedef std::map<std::string, std::int32_t> Map;
         Map::const_iterator Begin() const;

@@ -7,6 +7,7 @@
 
 #include "grammar.hpp"
 #include "token.h"
+#include "appspec.h"
 #include <string>
 #include <cstdint>
 
@@ -17,19 +18,8 @@ class Literal : public NonTerminal
         // Constructor.
         explicit Literal(const Token &);
 
-        // Type enumeration.
-        enum class Type
-        {
-            None,
-            Ellipsis,
-            Boolean,
-            Integer,
-            Float,
-            String,
-        };
-
         // Methods.
-        Type GetType() const
+        AppSpecValueType GetType() const
         {
             return type;
         }
@@ -53,7 +43,7 @@ class Literal : public NonTerminal
     private:
 
         // Data.
-        Type type;
+        AppSpecValueType type;
         union
         {
             bool b;

@@ -11,12 +11,35 @@
 #include <list>
 #include <string>
 
+class Assignment : public NonTerminal
+{
+    public:
+
+        Assignment(const Token &name, Literal *);
+        ~Assignment();
+
+        std::string Name() const
+        {
+            return name;
+        }
+        Literal *Value() const
+        {
+            return value;
+        }
+
+    private:
+
+        std::string name;
+        Literal *value;
+};
+
 class Parameter : public NonTerminal
 {
     public:
 
         Parameter
             (const Token &name, Literal *, bool group = false);
+        ~Parameter();
 
         std::string Name() const
         {
@@ -92,8 +115,6 @@ struct FunctionDefinition : public NonTerminal
         {
             return *parameterList;
         }
-
-        bool operator <(const FunctionDefinition &right) const;
 
     private:
 

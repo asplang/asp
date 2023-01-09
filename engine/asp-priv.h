@@ -33,7 +33,7 @@ typedef AspRunResult (AspDispatchFunction)
 
 typedef struct AspAppSpec
 {
-    char *spec;
+    uint8_t *spec;
     unsigned specSize;
     uint32_t checkValue;
     AspDispatchFunction *dispatch;
