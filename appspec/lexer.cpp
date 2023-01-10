@@ -8,14 +8,18 @@
 
 using namespace std;
 
-const map<string, int> Lexer::keywords =
+bool Lexer::keywordsInitialized = false;
+
+Lexer::Lexer(istream &is) :
+    is(is)
 {
-    {"def", TOKEN_DEF},
-    {"include", TOKEN_INCLUDE},
-    {"False", TOKEN_FALSE},
-    {"None", TOKEN_NONE},
-    {"True", TOKEN_TRUE},
-};
+    // Add keywords specific to the application specification language.
+    if (!keywordsInitialized)
+    {
+        keywordsInitialized = true;
+        keywords.emplace("include", TOKEN_INCLUDE);
+    }
+}
 
 Token *Lexer::Next()
 {

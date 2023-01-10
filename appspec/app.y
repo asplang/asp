@@ -18,6 +18,11 @@
 %left LEFT_PAREN.
 %nonassoc NAME.
 
+// Reserved keyword tokens.
+%token AND AS ASSERT BREAK CLASS CONTINUE DEL ELIF ELSE EXCEPT EXEC.
+%token FINALLY FOR FROM GLOBAL IF IMPORT IN IS LAMBDA LOCAL NONLOCAL NOT OR.
+%token PASS RAISE RETURN TRY WHILE WITH YIELD.
+
 %include
 {
 #include "generator.h"

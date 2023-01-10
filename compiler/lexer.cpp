@@ -12,44 +12,12 @@ using namespace std;
 
 static bool IsSpecial(int);
 
-const map<string, int> Lexer::keywords =
+bool Lexer::keywordsInitialized = true;
+
+Lexer::Lexer(istream &is) :
+    is(is)
 {
-    {"and", TOKEN_AND},
-    {"as", TOKEN_AS},
-    {"assert", TOKEN_ASSERT},
-    {"break", TOKEN_BREAK},
-    {"class", TOKEN_CLASS},
-    {"continue", TOKEN_CONTINUE},
-    {"def", TOKEN_DEF},
-    {"del", TOKEN_DEL},
-    {"elif", TOKEN_ELIF},
-    {"else", TOKEN_ELSE},
-    {"except", TOKEN_EXCEPT},
-    {"exec", TOKEN_EXEC},
-    {"finally", TOKEN_FINALLY},
-    {"for", TOKEN_FOR},
-    {"from", TOKEN_FROM},
-    {"global", TOKEN_GLOBAL},
-    {"if", TOKEN_IF},
-    {"import", TOKEN_IMPORT},
-    {"in", TOKEN_IN},
-    {"is", TOKEN_IS},
-    {"lambda", TOKEN_LAMBDA},
-    {"local", TOKEN_LOCAL},
-    {"nonlocal", TOKEN_NONLOCAL},
-    {"not", TOKEN_NOT},
-    {"or", TOKEN_OR},
-    {"pass", TOKEN_PASS},
-    {"raise", TOKEN_RAISE},
-    {"return", TOKEN_RETURN},
-    {"try", TOKEN_TRY},
-    {"while", TOKEN_WHILE},
-    {"with", TOKEN_WITH},
-    {"yield", TOKEN_YIELD},
-    {"False", TOKEN_FALSE},
-    {"None", TOKEN_NONE},
-    {"True", TOKEN_TRUE},
-};
+}
 
 Token *Lexer::Next()
 {

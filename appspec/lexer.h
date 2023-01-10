@@ -49,7 +49,8 @@ class Lexer
 
         // Constants.
         const int CHAR_LINE_CONTINUATION = 0x100;
-        static const std::map<std::string, int> keywords;
+        static bool keywordsInitialized;
+        static std::map<std::string, int> keywords;
 
         // Data.
         std::istream &is;
