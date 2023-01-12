@@ -581,7 +581,7 @@ static AspDataEntry *AspNewObject(AspEngine *engine, DataType type)
 }
 
 bool AspTupleAppend
-    (AspEngine *engine, AspDataEntry *tuple, AspDataEntry *value)
+    (AspEngine *engine, AspDataEntry *tuple, AspDataEntry *value, bool take)
 {
     /* Ensure the container is a tuple. Note that this is for building
        new tuples, not modifying existing ones. */
@@ -591,11 +591,17 @@ bool AspTupleAppend
         return false;
 
     AspSequenceResult result = AspSequenceAppend(engine, tuple, value);
-    return result.result == AspRunResult_OK;
+    if (result.result != AspRunResult_OK)
+        return false;
+
+    if (take)
+        AspUnref(engine, value);
+
+    return true;
 }
 
 bool AspListAppend
-    (AspEngine *engine, AspDataEntry *list, AspDataEntry *value)
+    (AspEngine *engine, AspDataEntry *list, AspDataEntry *value, bool take)
 {
     /* Ensure the container is a list, not a tuple. */
     AspRunResult assertResult = AspAssert
@@ -604,12 +610,18 @@ bool AspListAppend
         return false;
 
     AspSequenceResult result = AspSequenceAppend(engine, list, value);
-    return result.result == AspRunResult_OK;
+    if (result.result != AspRunResult_OK)
+        return false;
+
+    if (take)
+        AspUnref(engine, value);
+
+    return true;
 }
 
 bool AspListInsert
     (AspEngine *engine, AspDataEntry *list,
-     int index, AspDataEntry *value)
+     int index, AspDataEntry *value, bool take)
 {
     /* Ensure the container is a list, not a tuple. */
     AspRunResult assertResult = AspAssert
@@ -619,7 +631,13 @@ bool AspListInsert
 
     AspSequenceResult result = AspSequenceInsertByIndex
         (engine, list, index, value);
-    return result.result == AspRunResult_OK;
+    if (result.result != AspRunResult_OK)
+        return false;
+
+    if (take)
+        AspUnref(engine, value);
+
+    return true;
 }
 
 bool AspStringAppend
@@ -639,7 +657,7 @@ bool AspStringAppend
 }
 
 bool AspSetInsert
-    (AspEngine *engine, AspDataEntry *set, AspDataEntry *key)
+    (AspEngine *engine, AspDataEntry *set, AspDataEntry *key, bool take)
 {
     /* Ensure the container is a set. */
     AspRunResult assertResult = AspAssert
@@ -648,12 +666,18 @@ bool AspSetInsert
         return false;
 
     AspTreeResult result = AspTreeInsert(engine, set, key, 0);
-    return result.result == AspRunResult_OK;
+    if (result.result != AspRunResult_OK)
+        return false;
+
+    if (take)
+        AspUnref(engine, key);
+
+    return true;
 }
 
 bool AspDictionaryInsert
     (AspEngine *engine, AspDataEntry *dictionary,
-     AspDataEntry *key, AspDataEntry *value)
+     AspDataEntry *key, AspDataEntry *value, bool take)
 {
     /* Ensure the container is a dictionary. */
     AspRunResult assertResult = AspAssert
@@ -662,7 +686,16 @@ bool AspDictionaryInsert
         return false;
 
     AspTreeResult result = AspTreeInsert(engine, dictionary, key, value);
-    return result.result == AspRunResult_OK;
+    if (result.result != AspRunResult_OK)
+        return false;
+
+    if (take)
+    {
+        AspUnref(engine, key);
+        AspUnref(engine, value);
+    }
+
+    return true;
 }
 
 AspDataEntry *AspArguments(AspEngine *engine)

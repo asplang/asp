@@ -141,18 +141,21 @@ AspDataEntry *AspNewList(AspEngine *);
 AspDataEntry *AspNewSet(AspEngine *);
 AspDataEntry *AspNewDictionary(AspEngine *);
 AspDataEntry *AspNewType(AspEngine *, const AspDataEntry *);
-bool AspTupleAppend(AspEngine *, AspDataEntry *tuple, AspDataEntry *value);
-bool AspListAppend(AspEngine *, AspDataEntry *list, AspDataEntry *value);
+bool AspTupleAppend
+    (AspEngine *, AspDataEntry *tuple, AspDataEntry *value, bool take);
+bool AspListAppend
+    (AspEngine *, AspDataEntry *list, AspDataEntry *value, bool take);
 bool AspListInsert
     (AspEngine *, AspDataEntry *list,
-     int index, AspDataEntry *value);
+     int index, AspDataEntry *value, bool take);
 bool AspStringAppend
     (AspEngine *, AspDataEntry *str,
      const char *buffer, size_t bufferSize);
-bool AspSetInsert(AspEngine *, AspDataEntry *set, AspDataEntry *key);
+bool AspSetInsert
+    (AspEngine *, AspDataEntry *set, AspDataEntry *key, bool take);
 bool AspDictionaryInsert
     (AspEngine *, AspDataEntry *dictionary,
-     AspDataEntry *key, AspDataEntry *value);
+     AspDataEntry *key, AspDataEntry *value, bool take);
 void AspRef(AspEngine *, AspDataEntry *);
 void AspUnref(AspEngine *, AspDataEntry *);
 AspDataEntry *AspArguments(AspEngine *);

@@ -11,7 +11,6 @@ extern "C" {
 
 #include "asp-priv.h"
 
-AspRunResult AspInitializeAppFunctions(AspEngine *);
 AspRunResult AspLoadArguments
     (AspEngine *,
      AspDataEntry *argumentList, AspDataEntry *parameterList,

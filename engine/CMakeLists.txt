@@ -81,9 +81,24 @@ if(BUILD_FOR_TARGET)
         "${CMAKE_CURRENT_SOURCE_DIR}"
         )
 
+
     install(TARGETS aspe
-        DESTINATION lib
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib/asp-${ABI_VERSION}
         )
+
+    # Note: Normally a generator expression would be used to express the
+    # library's file name in the CODE text. This is supported in CMake 3.14,
+    # but since only version 3.10 is required, we must hard-code the library
+    # file name instead.
+    if(NOT BUILD_SHARED_LIBS)
+        install(CODE "execute_process(
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                \"asp-${ABI_VERSION}/libaspe.a\"
+                \"${CMAKE_INSTALL_PREFIX}/lib/libaspe.a\"
+                )"
+            )
+    endif()
 
 endif()
 
@@ -99,13 +114,31 @@ if(BUILD_FOR_HOST)
         asp.h
         asp-priv.h
         ${PROJECT_BINARY_DIR}/asp-ver.h
-        DESTINATION include
+        DESTINATION include/asp-${ABI_VERSION}
         )
+
+    foreach(file asp.h asp-priv.h asp-ver.h)
+        install(CODE "execute_process(
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                \"asp-${ABI_VERSION}/${file}\"
+                \"${CMAKE_INSTALL_PREFIX}/include/${file}\"
+                )"
+            )
+    endforeach()
 
     install(FILES
         type.asps
         math.asps
-        DESTINATION include/asps
+        DESTINATION include/asps/${ABI_VERSION}
         )
+
+    foreach(file type.asps math.asps)
+        install(CODE "execute_process(
+            COMMAND ${CMAKE_COMMAND} -E create_symlink
+                \"${ABI_VERSION}/${file}\"
+                \"${CMAKE_INSTALL_PREFIX}/include/asps/${file}\"
+                )"
+            )
+    endforeach()
 
 endif()
