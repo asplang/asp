@@ -99,6 +99,7 @@ bool AspIsObject(const AspDataEntry *entry)
 
 bool AspIsImmutableObject(const AspDataEntry *entry)
 {
+    /* TODO: For tuples, we must dig to test that the tuple contains. */
     uint8_t type = AspDataGetType(entry);
     return
         AspIsObject(entry) &&

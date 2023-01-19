@@ -222,5 +222,8 @@ int main(int argc, char **argv)
             << " (max " << AspMaxDataSize(&engine) << ')' << endl;
     }
 
+    free(code);
+    free(data);
+
     return runResult == AspRunResult_Complete ? 0 : 2;
 }
