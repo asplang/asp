@@ -3,8 +3,12 @@
  */
 
 #include "data.h"
+#include "stack.h"
+#include "sequence.h"
 #include "asp-priv.h"
 #include <string.h>
+
+static bool IsSimpleImmutableObject(const AspDataEntry *);
 
 void AspDataSetWord3(AspDataEntry *entry, uint32_t value)
 {
@@ -97,12 +101,60 @@ bool AspIsObject(const AspDataEntry *entry)
     return (AspDataGetType(entry) & ~DataType_ObjectMask) == 0;
 }
 
-bool AspIsImmutableObject(const AspDataEntry *entry)
+bool AspIsImmutableObject(AspEngine *engine, const AspDataEntry *entry)
 {
-    /* TODO: For tuples, we must dig to test that the tuple contains. */
+    /* Perform a simple check if possible. */
+    if (AspDataGetType(entry) != DataType_Tuple)
+        return IsSimpleImmutableObject(entry);
+
+    /* For tuples, we must examine the contents. Avoid recursion by using
+       the engine's stack. */
+    bool isImmutable = true;
+    AspDataEntry *startStackTop = engine->stackTop;
+    while (true)
+    {
+        for (AspSequenceResult nextResult = AspSequenceNext
+                (engine, (AspDataEntry *)entry, 0);
+             nextResult.element != 0;
+             nextResult = AspSequenceNext
+                (engine, (AspDataEntry *)entry, nextResult.element))
+        {
+            AspDataEntry *value = nextResult.value;
+
+            if (AspDataGetType(value) == DataType_Tuple)
+                AspPushNoUse(engine, nextResult.value);
+            else if (!IsSimpleImmutableObject(value))
+            {
+                isImmutable = false;
+                break;
+            }
+        }
+        if (!isImmutable)
+            break;
+
+        /* Check if there's more to do. */
+        if (engine->stackTop == startStackTop ||
+            engine->runResult != AspRunResult_OK)
+            break;
+
+        entry = AspTop(engine);
+        AspPopNoErase(engine);
+    }
+
+    /* Unwind the working stack if necessary. */
+    if (engine->runResult == AspRunResult_OK)
+        while (engine->stackTop != startStackTop)
+            AspPopNoErase(engine);
+
+    return isImmutable;
+}
+
+static bool IsSimpleImmutableObject(const AspDataEntry *entry)
+{
     uint8_t type = AspDataGetType(entry);
     return
         AspIsObject(entry) &&
+        type != DataType_Tuple &&
         type != DataType_List &&
         type != DataType_Set &&
         type != DataType_Dictionary &&

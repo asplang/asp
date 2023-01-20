@@ -66,9 +66,8 @@ AspRunResult AspAssignSequence
     if (checkResult != AspRunResult_OK)
         return checkResult;
 
-    AspDataEntry *startStackTop = engine->stackTop;
-
     /* Avoid recursion by using the engine's stack. */
+    AspDataEntry *startStackTop = engine->stackTop;
     for (bool unrefNewValue = false; ; unrefNewValue = true)
     {
         AspSequenceResult newValueIterResult = {AspRunResult_OK, 0, 0};

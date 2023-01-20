@@ -60,7 +60,7 @@ AspTreeResult AspTreeInsert
     if (result.result != AspRunResult_OK)
         return result;
 
-    if (!AspIsImmutableObject(key))
+    if (!AspIsImmutableObject(engine, key))
     {
         result.result = AspRunResult_UnexpectedType;
         return result;
@@ -392,7 +392,7 @@ AspTreeResult AspTreeFind
     if (result.result != AspRunResult_OK)
         return result;
 
-    if (!AspIsImmutableObject(key))
+    if (!AspIsImmutableObject(engine, key))
     {
         result.result = AspRunResult_UnexpectedType;
         return result;

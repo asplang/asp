@@ -2255,8 +2255,6 @@ static AspRunResult Step(AspEngine *engine)
                     break;
 
                 case DataType_Set:
-                    if (!AspIsObject(item))
-                        return AspRunResult_UnexpectedType;
                     break;
 
                 case DataType_List:
@@ -2273,12 +2271,8 @@ static AspRunResult Step(AspEngine *engine)
                         return AspRunResult_UnexpectedType;
                     key = AspValueEntry
                         (engine, AspDataGetKeyValuePairKeyIndex(item));
-                    if (!AspIsImmutableObject(key))
-                        return AspRunResult_UnexpectedType;
                     value = AspValueEntry
                         (engine, AspDataGetKeyValuePairValueIndex(item));
-                    if (!AspIsObject(value))
-                        return AspRunResult_UnexpectedType;
                     break;
             }
 

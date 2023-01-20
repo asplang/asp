@@ -424,7 +424,7 @@ void AspClearData(AspEngine *);
 uint32_t AspAlloc(AspEngine *);
 bool AspFree(AspEngine *, uint32_t index);
 bool AspIsObject(const AspDataEntry *);
-bool AspIsImmutableObject(const AspDataEntry *);
+bool AspIsImmutableObject(AspEngine *, const AspDataEntry *);
 AspDataEntry *AspAllocEntry(AspEngine *, DataType);
 AspDataEntry *AspEntry(AspEngine *, uint32_t index);
 AspDataEntry *AspValueEntry(AspEngine *, uint32_t index);

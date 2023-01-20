@@ -19,9 +19,8 @@ void AspRef(AspEngine *engine, AspDataEntry *entry)
 
 void AspUnref(AspEngine *engine, AspDataEntry *entry)
 {
-    AspDataEntry *startStackTop = engine->stackTop;
-
     /* Avoid recursion by using the engine's stack. */
+    AspDataEntry *startStackTop = engine->stackTop;
     while (true)
     {
         if (AspIsObject(entry))
