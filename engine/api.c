@@ -7,11 +7,12 @@
 #include "sequence.h"
 #include "tree.h"
 #include "symbols.h"
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
 
-static AspDataEntry *AspNewObject(AspEngine *, DataType);
+static AspDataEntry *NewObject(AspEngine *, DataType);
 
 void AspEngineVersion(uint8_t version[4])
 {
@@ -196,7 +197,7 @@ bool AspIntegerValue(const AspDataEntry *entry, int32_t *result)
                 valid = false;
             }
             else
-                value = (int)f;
+                value = (int)round(f);
             break;
         }
     }
@@ -332,7 +333,9 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
     {
         double f;
         AspFloatValue(entry, &f);
-        sprintf(buffer, "%g", f);
+        int count = sprintf(buffer, "%g", f);
+        if (strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
+            strcat(buffer, ".0");
     }
     else if (AspIsRange(entry))
     {
@@ -483,12 +486,12 @@ AspDataEntry *AspFind
 
 AspDataEntry *AspNewNone(AspEngine *engine)
 {
-    return AspNewObject(engine, DataType_None);
+    return NewObject(engine, DataType_None);
 }
 
 AspDataEntry *AspNewEllipsis(AspEngine *engine)
 {
-    return AspNewObject(engine, DataType_Ellipsis);
+    return NewObject(engine, DataType_Ellipsis);
 }
 
 AspDataEntry *AspNewBoolean(AspEngine *engine, bool value)
@@ -501,7 +504,7 @@ AspDataEntry *AspNewBoolean(AspEngine *engine, bool value)
     else
     {
         /* Create the singleton. */
-        *singleton = AspNewObject(engine, DataType_Boolean);
+        *singleton = NewObject(engine, DataType_Boolean);
         AspDataSetBoolean(*singleton, value);
     }
     return *singleton;
@@ -509,7 +512,7 @@ AspDataEntry *AspNewBoolean(AspEngine *engine, bool value)
 
 AspDataEntry *AspNewInteger(AspEngine *engine, int32_t value)
 {
-    AspDataEntry *entry = AspNewObject(engine, DataType_Integer);
+    AspDataEntry *entry = NewObject(engine, DataType_Integer);
     if (entry != 0)
         AspDataSetInteger(entry, value);
     return entry;
@@ -517,7 +520,7 @@ AspDataEntry *AspNewInteger(AspEngine *engine, int32_t value)
 
 AspDataEntry *AspNewFloat(AspEngine *engine, double value)
 {
-    AspDataEntry *entry = AspNewObject(engine, DataType_Float);
+    AspDataEntry *entry = NewObject(engine, DataType_Float);
     if (entry != 0)
         AspDataSetFloat(entry, value);
     return entry;
@@ -526,7 +529,7 @@ AspDataEntry *AspNewFloat(AspEngine *engine, double value)
 AspDataEntry *AspNewString
     (AspEngine *engine, const char *buffer, size_t bufferSize)
 {
-    AspDataEntry *entry = AspNewObject(engine, DataType_String);
+    AspDataEntry *entry = NewObject(engine, DataType_String);
     if (entry == 0)
         return 0;
 
@@ -543,33 +546,33 @@ AspDataEntry *AspNewString
 
 AspDataEntry *AspNewTuple(AspEngine *engine)
 {
-    return AspNewObject(engine, DataType_Tuple);
+    return NewObject(engine, DataType_Tuple);
 }
 
 AspDataEntry *AspNewList(AspEngine *engine)
 {
-    return AspNewObject(engine, DataType_List);
+    return NewObject(engine, DataType_List);
 }
 
 AspDataEntry *AspNewSet(AspEngine *engine)
 {
-    return AspNewObject(engine, DataType_Set);
+    return NewObject(engine, DataType_Set);
 }
 
 AspDataEntry *AspNewDictionary(AspEngine *engine)
 {
-    return AspNewObject(engine, DataType_Dictionary);
+    return NewObject(engine, DataType_Dictionary);
 }
 
 AspDataEntry *AspNewType(AspEngine *engine, const AspDataEntry *object)
 {
-    AspDataEntry *entry = AspNewObject(engine, DataType_Type);
+    AspDataEntry *entry = NewObject(engine, DataType_Type);
     if (entry != 0)
         AspDataSetTypeValue(entry, AspDataGetType(object));
     return entry;
 }
 
-static AspDataEntry *AspNewObject(AspEngine *engine, DataType type)
+static AspDataEntry *NewObject(AspEngine *engine, DataType type)
 {
     AspDataEntry *entry = AspAllocEntry(engine, type);
     if (entry == 0)
