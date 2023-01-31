@@ -228,6 +228,9 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fprintf(fp, " prev=0x%7.7X val=0x%7.7X",
                 AspDataGetStackEntryPreviousIndex(entry),
                 AspDataGetStackEntryValueIndex(entry));
+            if (AspDataGetStackEntryHasValue2(entry))
+                fprintf(fp, " val2=0x%7.7X",
+                    AspDataGetStackEntryValue2Index(entry));
             break;
         case DataType_Frame:
             fprintf(fp, " ra=0x%7.7X mod=0x%7.7X locns=0x%7.7X",

@@ -41,12 +41,21 @@ static AspDataEntry *AspPush1(AspEngine *engine, AspDataEntry *value, bool use)
     return newTopEntry;
 }
 
-AspDataEntry *AspTop(AspEngine *engine)
+AspDataEntry *AspTopValue(AspEngine *engine)
 {
     if (engine->stackTop == 0)
         return 0;
     return AspValueEntry(engine,
         AspDataGetStackEntryValueIndex(engine->stackTop));
+}
+
+AspDataEntry *AspTopValue2(AspEngine *engine)
+{
+    if (engine->stackTop == 0 ||
+        !AspDataGetStackEntryHasValue2(engine->stackTop))
+        return 0;
+    return AspValueEntry(engine,
+        AspDataGetStackEntryValue2Index(engine->stackTop));
 }
 
 bool AspPop(AspEngine *engine)

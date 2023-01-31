@@ -6,7 +6,6 @@
 #include "stack.h"
 #include "sequence.h"
 
-
 static AspRunResult AspCheckSequenceMatch
     (AspEngine *, const AspDataEntry *address, const AspDataEntry *newValue);
 
@@ -120,12 +119,12 @@ AspRunResult AspAssignSequence
             engine->runResult != AspRunResult_OK)
             break;
 
-        address = AspTop(engine);
+        address = AspTopValue(engine);
         if (address == 0)
             return AspRunResult_StackUnderflow;
         AspRef(engine, address);
         AspPop(engine);
-        newValue = AspTop(engine);
+        newValue = AspTopValue(engine);
         if (newValue == 0)
             return AspRunResult_StackUnderflow;
         AspRef(engine, newValue);

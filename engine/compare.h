@@ -12,9 +12,17 @@
 extern "C" {
 #endif
 
-int AspCompare
+typedef enum
+{
+    AspCompareType_Equality,
+    AspCompareType_Relational,
+    AspCompareType_Key,
+} AspCompareType;
+
+AspRunResult AspCompare
     (AspEngine *engine,
-     const AspDataEntry *leftEntry, const AspDataEntry *rightEntry);
+     const AspDataEntry *left, const AspDataEntry *right,
+     AspCompareType, int *result);
 
 #ifdef __cplusplus
 }

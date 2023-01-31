@@ -101,11 +101,15 @@ bool AspIsObject(const AspDataEntry *entry)
     return (AspDataGetType(entry) & ~DataType_ObjectMask) == 0;
 }
 
-bool AspIsImmutableObject(AspEngine *engine, const AspDataEntry *entry)
+AspRunResult AspCheckIsImmutableObject
+    (AspEngine *engine, const AspDataEntry *entry, bool *result)
 {
     /* Perform a simple check if possible. */
     if (AspDataGetType(entry) != DataType_Tuple)
-        return IsSimpleImmutableObject(entry);
+    {
+        *result = IsSimpleImmutableObject(entry);
+        return AspRunResult_OK;
+    }
 
     /* For tuples, we must examine the contents. Avoid recursion by using
        the engine's stack. */
@@ -122,7 +126,10 @@ bool AspIsImmutableObject(AspEngine *engine, const AspDataEntry *entry)
             AspDataEntry *value = nextResult.value;
 
             if (AspDataGetType(value) == DataType_Tuple)
-                AspPushNoUse(engine, nextResult.value);
+            {
+                if (AspPushNoUse(engine, nextResult.value) == 0)
+                    return AspRunResult_OutOfDataMemory;
+            }
             else if (!IsSimpleImmutableObject(value))
             {
                 isImmutable = false;
@@ -137,7 +144,8 @@ bool AspIsImmutableObject(AspEngine *engine, const AspDataEntry *entry)
             engine->runResult != AspRunResult_OK)
             break;
 
-        entry = AspTop(engine);
+        /* Fetch the next item from the stack. */
+        entry = AspTopValue(engine);
         AspPopNoErase(engine);
     }
 
@@ -146,7 +154,8 @@ bool AspIsImmutableObject(AspEngine *engine, const AspDataEntry *entry)
         while (engine->stackTop != startStackTop)
             AspPopNoErase(engine);
 
-    return isImmutable;
+    *result = isImmutable;
+    return AspRunResult_OK;
 }
 
 static bool IsSimpleImmutableObject(const AspDataEntry *entry)

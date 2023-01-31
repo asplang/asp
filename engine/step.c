@@ -434,7 +434,7 @@ static AspRunResult Step(AspEngine *engine)
             puts("POP");
             #endif
 
-            AspDataEntry *operand = AspTop(engine);
+            AspDataEntry *operand = AspTopValue(engine);
             if (operand == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(operand))
@@ -454,7 +454,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Fetch the operand from the stack. */
-            AspDataEntry *operand = AspTop(engine);
+            AspDataEntry *operand = AspTopValue(engine);
             if (operand == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(operand))
@@ -506,7 +506,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the right value from the stack. */
-            AspDataEntry *right = AspTop(engine);
+            AspDataEntry *right = AspTopValue(engine);
             if (right == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(right))
@@ -515,7 +515,7 @@ static AspRunResult Step(AspEngine *engine)
             AspPop(engine);
 
             /* Fetch the left value from the stack. */
-            AspDataEntry *left = AspTop(engine);
+            AspDataEntry *left = AspTopValue(engine);
             if (left == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(left))
@@ -676,7 +676,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Obtain destination from the stack. */
-            AspDataEntry *address = AspTop(engine);
+            AspDataEntry *address = AspTopValue(engine);
             if (address == 0)
                 return AspRunResult_StackUnderflow;
             if (AspIsObject(address))
@@ -684,7 +684,7 @@ static AspRunResult Step(AspEngine *engine)
             AspPop(engine);
 
             /* Access value entry on the top of the stack. */
-            AspDataEntry *newValue = AspTop(engine);
+            AspDataEntry *newValue = AspTopValue(engine);
             if (newValue == 0)
                 return AspRunResult_StackUnderflow;
             uint32_t newValueIndex = AspIndex(engine, newValue);
@@ -710,7 +710,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the index/key on top of the stack. */
-            AspDataEntry *index = AspTop(engine);
+            AspDataEntry *index = AspTopValue(engine);
             if (index == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(index))
@@ -719,7 +719,7 @@ static AspRunResult Step(AspEngine *engine)
             AspPop(engine);
 
             /* Access the container on top of the stack. */
-            AspDataEntry *container = AspTop(engine);
+            AspDataEntry *container = AspTopValue(engine);
             if (container == 0)
                 return AspRunResult_StackUnderflow;
             AspRef(engine, container);
@@ -1049,7 +1049,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the iterable on top of the stack. */
-            AspDataEntry *iterable = AspTop(engine);
+            AspDataEntry *iterable = AspTopValue(engine);
             if (index == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(iterable))
@@ -1136,7 +1136,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the iterator on top of the stack. */
-            AspDataEntry *iterator = AspTop(engine);
+            AspDataEntry *iterator = AspTopValue(engine);
             if (iterator == 0)
                 return AspRunResult_StackUnderflow;
             if (AspDataGetType(iterator) != DataType_Iterator)
@@ -1162,7 +1162,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the iterator on top of the stack. */
-            AspDataEntry *iterator = AspTop(engine);
+            AspDataEntry *iterator = AspTopValue(engine);
             if (iterator == 0)
                 return AspRunResult_StackUnderflow;
             if (AspDataGetType(iterator) != DataType_Iterator)
@@ -1278,7 +1278,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the iterator on top of the stack. */
-            AspDataEntry *iterator = AspTop(engine);
+            AspDataEntry *iterator = AspTopValue(engine);
             if (iterator == 0)
                 return AspRunResult_StackUnderflow;
             if (AspDataGetType(iterator) != DataType_Iterator)
@@ -1434,7 +1434,7 @@ static AspRunResult Step(AspEngine *engine)
             bool condition = true;
             if (opCode != OpCode_JMP)
             {
-                AspDataEntry *value = AspTop(engine);
+                AspDataEntry *value = AspTopValue(engine);
                 if (value == 0)
                     return AspRunResult_StackUnderflow;
                 if (!AspIsObject(value))
@@ -1465,7 +1465,7 @@ static AspRunResult Step(AspEngine *engine)
             if (!engine->again)
             {
                 /* Pop the function off the stack. */
-                function = AspTop(engine);
+                function = AspTopValue(engine);
                 if (function == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(function) != DataType_Function)
@@ -1474,7 +1474,7 @@ static AspRunResult Step(AspEngine *engine)
                 AspPop(engine);
 
                 /* Pop argument list off the stack. */
-                AspDataEntry *arguments = AspTop(engine);
+                AspDataEntry *arguments = AspTopValue(engine);
                 if (arguments == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(arguments) != DataType_ArgumentList)
@@ -1602,7 +1602,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the return value on top of the stack. */
-            AspDataEntry *returnValue = AspTop(engine);
+            AspDataEntry *returnValue = AspTopValue(engine);
             if (returnValue == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(returnValue))
@@ -1614,7 +1614,7 @@ static AspRunResult Step(AspEngine *engine)
             AspUnref(engine, engine->localNamespace);
 
             /* Access the frame on top of the stack. */
-            AspDataEntry *frame = AspTop(engine);
+            AspDataEntry *frame = AspTopValue(engine);
             if (frame == 0)
                 return AspRunResult_StackUnderflow;
             if (AspDataGetType(frame) != DataType_Frame)
@@ -1732,7 +1732,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the frame on top of the stack. */
-            AspDataEntry *frame = AspTop(engine);
+            AspDataEntry *frame = AspTopValue(engine);
             if (frame == 0)
                 return AspRunResult_StackUnderflow;
             if (AspDataGetType(frame) != DataType_Frame)
@@ -1843,7 +1843,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access argument value on top of the stack. */
-            AspDataEntry *top = AspTop(engine);
+            AspDataEntry *top = AspTopValue(engine);
             if (top == 0)
                 return AspRunResult_StackUnderflow;
 
@@ -1893,7 +1893,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access argument value on top of the stack. */
-            AspDataEntry *top = AspTop(engine);
+            AspDataEntry *top = AspTopValue(engine);
             if (top == 0)
                 return AspRunResult_StackUnderflow;
 
@@ -1990,7 +1990,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access parameter default value on top of the stack. */
-            AspDataEntry *defaultValue = AspTop(engine);
+            AspDataEntry *defaultValue = AspTopValue(engine);
             if (defaultValue == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(defaultValue))
@@ -2019,7 +2019,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access code address on top of the stack. */
-            AspDataEntry *codeAddressEntry = AspTop(engine);
+            AspDataEntry *codeAddressEntry = AspTopValue(engine);
             if (codeAddressEntry == 0)
             {
                 #ifdef ASP_DEBUG
@@ -2044,7 +2044,7 @@ static AspRunResult Step(AspEngine *engine)
             AspUnref(engine, codeAddressEntry);
 
             /* Access parameter list on top of the stack. */
-            AspDataEntry *parameters = AspTop(engine);
+            AspDataEntry *parameters = AspTopValue(engine);
             if (parameters == 0)
                 return AspRunResult_StackUnderflow;
             if (AspDataGetType(parameters) != DataType_ParameterList)
@@ -2055,6 +2055,7 @@ static AspRunResult Step(AspEngine *engine)
             if (function == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetFunctionCodeAddress(function, codeAddress);
+            AspRef(engine, engine->module);
             AspDataSetFunctionModuleIndex
                 (function, AspIndex(engine, engine->module));
             AspDataSetFunctionParametersIndex
@@ -2074,7 +2075,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the key on top of the stack. */
-            AspDataEntry *key = AspTop(engine);
+            AspDataEntry *key = AspTopValue(engine);
             if (key == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(key))
@@ -2083,7 +2084,7 @@ static AspRunResult Step(AspEngine *engine)
             AspPop(engine);
 
             /* Access the value on top of the stack. */
-            AspDataEntry *value = AspTop(engine);
+            AspDataEntry *value = AspTopValue(engine);
             if (value == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(value))
@@ -2149,7 +2150,7 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *start = 0, *end = 0, *step = 0;
             if (hasStart)
             {
-                start = AspTop(engine);
+                start = AspTopValue(engine);
                 if (start == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(start) != DataType_Integer)
@@ -2159,7 +2160,7 @@ static AspRunResult Step(AspEngine *engine)
             }
             if (hasEnd)
             {
-                end = AspTop(engine);
+                end = AspTopValue(engine);
                 if (end == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(end) != DataType_Integer)
@@ -2169,7 +2170,7 @@ static AspRunResult Step(AspEngine *engine)
             }
             if (hasStep)
             {
-                step = AspTop(engine);
+                step = AspTopValue(engine);
                 if (step == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(step) != DataType_Integer)
@@ -2212,7 +2213,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access item on top of the stack to insert. */
-            AspDataEntry *item = AspTop(engine);
+            AspDataEntry *item = AspTopValue(engine);
             if (item == 0)
                 return AspRunResult_StackUnderflow;
             AspRef(engine, item);
@@ -2220,7 +2221,7 @@ static AspRunResult Step(AspEngine *engine)
             uint8_t itemType = AspDataGetType(item);
 
             /* Access object on top of the stack to build/insert into. */
-            AspDataEntry *container = AspTop(engine);
+            AspDataEntry *container = AspTopValue(engine);
             if (container == 0)
                 return AspRunResult_StackUnderflow;
 
@@ -2403,7 +2404,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the index/key on top of the stack. */
-            AspDataEntry *index = AspTop(engine);
+            AspDataEntry *index = AspTopValue(engine);
             if (index == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(index))
@@ -2412,7 +2413,7 @@ static AspRunResult Step(AspEngine *engine)
             AspPop(engine);
 
             /* Access the container on top of the stack. */
-            AspDataEntry *container = AspTop(engine);
+            AspDataEntry *container = AspTopValue(engine);
             if (container == 0)
                 return AspRunResult_StackUnderflow;
             AspRef(engine, container);
@@ -2731,7 +2732,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Obtain the module from the stack. */
-            AspDataEntry *module = AspTop(engine);
+            AspDataEntry *module = AspTopValue(engine);
             if (module == 0)
                 return AspRunResult_StackUnderflow;
             if (AspDataGetType(module) != DataType_Module)

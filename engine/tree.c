@@ -20,9 +20,10 @@ static AspRunResult Shift
      AspDataEntry *node1, AspDataEntry *node2);
 static AspRunResult Rotate
     (AspEngine *, AspDataEntry *tree, AspDataEntry *node, bool right);
-static int CompareKeys
+static AspRunResult CompareKeys
     (AspEngine *, const AspDataEntry *tree,
-     const AspDataEntry *leftNode, const AspDataEntry *rightNode);
+     const AspDataEntry *leftNode, const AspDataEntry *rightNode,
+     int *comparison);
 static AspRunResult SetChildIndex
     (AspEngine *, AspDataEntry *node, bool right, uint32_t index);
 static uint32_t GetChildIndex(AspEngine *, AspDataEntry *node, bool right);
@@ -60,7 +61,15 @@ AspTreeResult AspTreeInsert
     if (result.result != AspRunResult_OK)
         return result;
 
-    if (!AspIsImmutableObject(engine, key))
+    bool isImmutable;
+    AspRunResult isImmutableResult = AspCheckIsImmutableObject
+        (engine, key, &isImmutable);
+    if (isImmutableResult != AspRunResult_OK)
+    {
+        result.result = isImmutableResult;
+        return result;
+    }
+    if (!isImmutable)
     {
         result.result = AspRunResult_UnexpectedType;
         return result;
@@ -392,7 +401,15 @@ AspTreeResult AspTreeFind
     if (result.result != AspRunResult_OK)
         return result;
 
-    if (!AspIsImmutableObject(engine, key))
+    bool isImmutable;
+    AspRunResult isImmutableResult = AspCheckIsImmutableObject
+        (engine, key, &isImmutable);
+    if (isImmutableResult != AspRunResult_OK)
+    {
+        result.result = isImmutableResult;
+        return result;
+    }
+    if (!isImmutable)
     {
         result.result = AspRunResult_UnexpectedType;
         return result;
@@ -516,9 +533,13 @@ static AspRunResult Insert
     while (targetNode != 0)
     {
         parentNode = targetNode;
+        int comparison;
+        AspRunResult compareResult = CompareKeys
+            (engine, tree, node, targetNode, &comparison);
+        if (compareResult != AspRunResult_OK)
+            return compareResult;
         uint32_t childIndex = GetChildIndex
-            (engine, targetNode,
-             CompareKeys(engine, tree, node, targetNode) > 0);
+            (engine, targetNode, comparison > 0);
         targetNode = AspEntry(engine, childIndex);
     }
 
@@ -528,9 +549,11 @@ static AspRunResult Insert
         AspDataSetTreeRootIndex(tree, nodeIndex);
     else
     {
+        int comparison;
+        AspRunResult compareResult = CompareKeys
+            (engine, tree, node, parentNode, &comparison);
         result = SetChildIndex
-            (engine, parentNode,
-             CompareKeys(engine, tree, node, parentNode) > 0,
+            (engine, parentNode, comparison > 0,
              nodeIndex);
         if (result != AspRunResult_OK)
             return result;
@@ -608,9 +631,16 @@ static AspDataEntry *FindNode
 
     AspDataEntry *node = AspEntry(engine, AspDataGetTreeRootIndex(tree));
     int compare;
-    while (node != 0 &&
-           (compare = CompareKeys(engine, tree, keyNode, node)) != 0)
-        node = AspEntry(engine, GetChildIndex(engine, node, compare > 0));
+    while (node != 0)
+    {
+        int comparison;
+        AspRunResult compareResult = CompareKeys
+            (engine, tree, keyNode, node, &comparison);
+        assertResult = AspAssert(engine, compareResult == AspRunResult_OK);
+        if (assertResult != AspRunResult_OK || comparison == 0)
+            break;
+        node = AspEntry(engine, GetChildIndex(engine, node, comparison > 0));
+    }
 
     return node;
 }
@@ -716,10 +746,12 @@ static AspRunResult Rotate
     return result;
 }
 
-static int CompareKeys
+static AspRunResult CompareKeys
     (AspEngine *engine, const AspDataEntry *tree,
-     const AspDataEntry *leftNode, const AspDataEntry *rightNode)
+     const AspDataEntry *leftNode, const AspDataEntry *rightNode,
+     int *comparison)
 {
+    *comparison = 0;
     AspAssert
         (engine, tree != 0 && IsTreeType(AspDataGetType(tree)));
     AspAssert
@@ -727,22 +759,24 @@ static int CompareKeys
     AspRunResult assertResult = AspAssert
         (engine, rightNode != 0 && IsNodeType(AspDataGetType(rightNode)));
     if (assertResult != AspRunResult_OK)
-        return 0;
+        return assertResult;
 
     /* For namespaces, compare the symbols. Otherwise, compare objects. */
     if (AspDataGetType(tree) == DataType_Namespace)
     {
         int32_t leftSymbol = AspDataGetNamespaceNodeSymbol(leftNode);
         int32_t rightSymbol = AspDataGetNamespaceNodeSymbol(rightNode);
-        return
+        *comparison =
             leftSymbol == rightSymbol ? 0 :
             leftSymbol < rightSymbol ? -1 : 1;
+        return AspRunResult_OK;
     }
     else
         return AspCompare
             (engine,
              AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(leftNode)),
-             AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(rightNode)));
+             AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(rightNode)),
+             AspCompareType_Key, comparison);
 }
 
 static AspRunResult SetChildIndex

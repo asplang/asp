@@ -5,6 +5,7 @@
 #ifndef ASP_DATA_H
 #define ASP_DATA_H
 
+#include "asp.h"
 #include "bits.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -264,6 +265,14 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetStackEntryValueIndex(eptr) \
     (AspDataGetWord1((eptr)))
+#define AspDataSetStackEntryHasValue2(eptr, value) \
+    (AspDataSetBit0((eptr), (unsigned)(value)))
+#define AspDataGetStackEntryHasValue2(eptr) \
+    ((bool)(AspDataGetBit0((eptr))))
+#define AspDataSetStackEntryValue2Index(eptr, value) \
+    (AspDataSetWord2((eptr), (value)))
+#define AspDataGetStackEntryValue2Index(eptr) \
+    (AspDataGetWord2((eptr)))
 
 /* Frame entry field access. */
 #define AspDataSetFrameReturnAddress(eptr, value) \
@@ -417,14 +426,13 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 #define AspDataGetFreeNext(eptr) \
     (AspDataGetWord0((eptr)))
 
-typedef struct AspEngine AspEngine;
-
 /* Functions. */
 void AspClearData(AspEngine *);
 uint32_t AspAlloc(AspEngine *);
 bool AspFree(AspEngine *, uint32_t index);
 bool AspIsObject(const AspDataEntry *);
-bool AspIsImmutableObject(AspEngine *, const AspDataEntry *);
+AspRunResult AspCheckIsImmutableObject
+    (AspEngine *, const AspDataEntry *, bool *isImmutable);
 AspDataEntry *AspAllocEntry(AspEngine *, DataType);
 AspDataEntry *AspEntry(AspEngine *, uint32_t index);
 AspDataEntry *AspValueEntry(AspEngine *, uint32_t index);

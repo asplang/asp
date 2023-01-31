@@ -14,7 +14,8 @@ extern "C" {
 
 AspDataEntry *AspPush(AspEngine *, AspDataEntry *value);
 AspDataEntry *AspPushNoUse(AspEngine *, AspDataEntry *value);
-AspDataEntry *AspTop(AspEngine *);
+AspDataEntry *AspTopValue(AspEngine *);
+AspDataEntry *AspTopValue2(AspEngine *);
 bool AspPop(AspEngine *);
 bool AspPopNoErase(AspEngine *);
 

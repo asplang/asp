@@ -91,13 +91,23 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                         (engine, entry, nextResult.node,
                          eraseKey, eraseValue);
 
-                    if (nextResult.key != 0 && !eraseKey)
+                    bool pushKey = nextResult.key != 0 && !eraseKey;
+                    if (pushKey)
                         AspPushNoUse(engine, nextResult.key);
                     if (nextResult.value != 0 && !eraseValue)
                     {
-                        AspDataEntry *entry = AspPushNoUse
-                            (engine, nextResult.value);
-                        AspAssert(engine, entry != 0);
+                        if (pushKey)
+                        {
+                            AspDataEntry *entry = engine->stackTop;
+                            AspDataSetStackEntryHasValue2(entry, true);
+                            AspDataSetStackEntryValue2Index
+                                (entry, AspIndex(engine, nextResult.value));
+                        }
+                        else
+                        {
+                            AspDataEntry *entry = AspPushNoUse
+                                (engine, nextResult.value);
+                        }
                     }
                 }
             }
@@ -187,8 +197,18 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             engine->runResult != AspRunResult_OK)
             break;
 
-        entry = AspTop(engine);
-        AspPopNoErase(engine);
+        /* Fetch the next item from the stack. */
+        entry = AspTopValue2(engine);
+        if (entry != 0)
+        {
+            AspDataSetStackEntryHasValue2(engine->stackTop, false);
+            AspDataSetStackEntryValue2Index(engine->stackTop, 0);
+        }
+        else
+        {
+            entry = AspTopValue(engine);
+            AspPopNoErase(engine);
+        }
     }
 }
 
