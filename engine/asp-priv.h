@@ -96,7 +96,7 @@ typedef struct AspEngine
     AspDataEntry *systemNamespace, *globalNamespace, *localNamespace;
 
     /* Application specification (functions). */
-    AspAppSpec *appSpec;
+    const AspAppSpec *appSpec;
 
     /* Application function call state. */
     bool inApp;

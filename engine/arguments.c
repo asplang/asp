@@ -199,7 +199,7 @@ static AspRunResult InitializeArguments
     (AspEngine *engine, AspDataEntry **arguments, AspDataEntry **argument0)
 {
     /* Ensure we're in the right state. */
-    if ((arguments != 0 || arguments != 0) &&
+    if ((arguments != 0 || argument0 != 0) &&
         engine->state != AspEngineState_Ready)
         return AspRunResult_InvalidState;
 

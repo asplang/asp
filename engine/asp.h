@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-/* Result returned from AspAddCode. */
+/* Result returned from AspAddCode and AspSeal. */
 typedef enum
 {
     AspAddCodeResult_OK = 0x00,
@@ -28,7 +28,7 @@ typedef enum
     AspAddCodeResult_InvalidState = 0x08,
 } AspAddCodeResult;
 
-/* Result returned from AspInitialize, AspReset, and AspStep. */
+/* Result returned from AspInitialize, AspReset, and AspStep, among others. */
 typedef enum
 {
     AspRunResult_OK = 0x00,
@@ -76,12 +76,12 @@ AspRunResult AspInitialize
     (AspEngine *,
      void *code, size_t codeSize,
      void *data, size_t dataSize,
-     AspAppSpec *, void *context);
+     const AspAppSpec *, void *context);
 void AspCodeVersion(const AspEngine *, uint8_t version[4]);
 uint32_t AspMaxCodeSize(const AspEngine *);
 uint32_t AspMaxDataSize(const AspEngine *);
 AspAddCodeResult AspAddCode
-    (AspEngine *, const char *code, size_t codeSize);
+    (AspEngine *, const void *code, size_t codeSize);
 AspAddCodeResult AspSeal(AspEngine *);
 AspRunResult AspReset(AspEngine *);
 AspRunResult AspSetArguments(AspEngine *, const char * const *);

@@ -36,7 +36,7 @@ AspRunResult AspInitialize
     (AspEngine *engine,
      void *code, size_t codeSize,
      void *data, size_t dataSize,
-     AspAppSpec *appSpec, void *context)
+     const AspAppSpec *appSpec, void *context)
 {
     if (codeSize > MaxCodeSize)
         return AspRunResult_InitializationError;
@@ -69,7 +69,7 @@ uint32_t AspMaxDataSize(const AspEngine *engine)
 }
 
 AspAddCodeResult AspAddCode
-    (AspEngine *engine, const char *code, size_t codeSize)
+    (AspEngine *engine, const void *code, size_t codeSize)
 {
     if (engine->state == AspEngineState_LoadError)
         return engine->loadResult;
@@ -82,11 +82,12 @@ AspAddCodeResult AspAddCode
              engine->state != AspEngineState_LoadingCode)
         return AspAddCodeResult_InvalidState;
 
+    const uint8_t *codePtr = (const uint8_t *)code;
     if (engine->state == AspEngineState_LoadingHeader)
     {
         while (engine->headerIndex < HeaderSize && codeSize > 0)
         {
-            engine->code[engine->headerIndex++] = *code++;
+            engine->code[engine->headerIndex++] = *codePtr++;
             codeSize--;
 
             if (engine->headerIndex == HeaderSize)
@@ -150,7 +151,7 @@ AspAddCodeResult AspAddCode
         engine->loadResult = AspAddCodeResult_OutOfCodeMemory;
     }
 
-    memcpy(engine->code + engine->codeEndIndex, code, codeSize);
+    memcpy(engine->code + engine->codeEndIndex, codePtr, codeSize);
     engine->codeEndIndex += codeSize;
 
     return engine->loadResult;
@@ -181,9 +182,10 @@ AspRunResult AspReset(AspEngine *engine)
     engine->loadResult = AspAddCodeResult_OK;
     engine->again = false;
     engine->runResult = AspRunResult_OK;
+    memset(engine->version, 0, sizeof engine->version);
+    memset(engine->code, 0, engine->maxCodeSize);
     engine->pc = engine->code;
     engine->codeEndIndex = 0;
-    memset(engine->code, 0, engine->maxCodeSize);
     engine->appFunctionSymbol = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
