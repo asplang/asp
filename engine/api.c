@@ -643,6 +643,17 @@ bool AspListInsert
     return true;
 }
 
+bool AspListErase(AspEngine *engine, AspDataEntry *list, int index)
+{
+    /* Ensure the container is a list, not a tuple. */
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(list) == DataType_List);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
+    return AspSequenceErase(engine, list, index, true);
+}
+
 bool AspStringAppend
     (AspEngine *engine, AspDataEntry *str,
      const char *buffer, size_t bufferSize)
@@ -668,7 +679,8 @@ bool AspSetInsert
     if (assertResult != AspRunResult_OK)
         return false;
 
-    AspTreeResult result = AspTreeInsert(engine, set, key, 0);
+    AspTreeResult result = AspTreeInsert
+        (engine, set, key, 0);
     if (result.result != AspRunResult_OK)
         return false;
 
@@ -676,6 +688,22 @@ bool AspSetInsert
         AspUnref(engine, key);
 
     return true;
+}
+
+bool AspSetErase(AspEngine *engine, AspDataEntry *set, AspDataEntry *key)
+{
+    /* Ensure the container is a set. */
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(set) == DataType_Set);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
+    AspTreeResult findResult = AspTreeFind(engine, set, key);
+    if (findResult.result != AspRunResult_OK)
+        return false;
+    AspRunResult result = AspTreeEraseNode
+        (engine, set, findResult.node, true, true);
+    return result == AspRunResult_OK;
 }
 
 bool AspDictionaryInsert
@@ -688,7 +716,8 @@ bool AspDictionaryInsert
     if (assertResult != AspRunResult_OK)
         return false;
 
-    AspTreeResult result = AspTreeInsert(engine, dictionary, key, value);
+    AspTreeResult result = AspTreeInsert
+        (engine, dictionary, key, value);
     if (result.result != AspRunResult_OK)
         return false;
 
@@ -699,6 +728,23 @@ bool AspDictionaryInsert
     }
 
     return true;
+}
+
+bool AspDictionaryErase
+    (AspEngine *engine, AspDataEntry *dictionary, AspDataEntry *key)
+{
+    /* Ensure the container is a dictionary. */
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(dictionary) == DataType_Dictionary);
+    if (assertResult != AspRunResult_OK)
+        return false;
+
+    AspTreeResult findResult = AspTreeFind(engine, dictionary, key);
+    if (findResult.result != AspRunResult_OK)
+        return false;
+    AspRunResult result = AspTreeEraseNode
+        (engine, dictionary, findResult.node, true, true);
+    return result == AspRunResult_OK;
 }
 
 AspDataEntry *AspArguments(AspEngine *engine)

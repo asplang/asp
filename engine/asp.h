@@ -148,14 +148,18 @@ bool AspListAppend
 bool AspListInsert
     (AspEngine *, AspDataEntry *list,
      int index, AspDataEntry *value, bool take);
+bool AspListErase(AspEngine *, AspDataEntry *list, int index);
 bool AspStringAppend
     (AspEngine *, AspDataEntry *str,
      const char *buffer, size_t bufferSize);
 bool AspSetInsert
     (AspEngine *, AspDataEntry *set, AspDataEntry *key, bool take);
+bool AspSetErase(AspEngine *, AspDataEntry *set, AspDataEntry *key);
 bool AspDictionaryInsert
     (AspEngine *, AspDataEntry *dictionary,
      AspDataEntry *key, AspDataEntry *value, bool take);
+bool AspDictionaryErase
+    (AspEngine *, AspDataEntry *dictionary, AspDataEntry *key);
 void AspRef(AspEngine *, AspDataEntry *);
 void AspUnref(AspEngine *, AspDataEntry *);
 AspDataEntry *AspArguments(AspEngine *);
