@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspe
-    VERSION 0.7.1.0
+    VERSION 0.7.2.0
     LANGUAGES C
     )
 

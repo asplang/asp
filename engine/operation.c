@@ -829,8 +829,37 @@ static AspOperationResult PerformMembershipOperation
                 break;
             }
 
-            /* TODO: Implement. */
-            result.result = AspRunResult_NotImplemented;
+            /* Search for substring. */
+            int
+                leftCount = (int)AspDataGetSequenceCount(left),
+                rightCount = (int)AspDataGetSequenceCount(right);
+            if (leftCount == 0)
+                isIn = true;
+            else if (leftCount > rightCount)
+                isIn = false;
+            else
+            {
+                for (int index = 0;
+                     index <= rightCount - leftCount;
+                     index++)
+                {
+                    isIn = true;
+                    int rightIndex = index;
+                    for (int leftIndex = 0; leftIndex < leftCount;
+                         leftIndex++, rightIndex++)
+                    {
+                        if (AspStringElement(engine, left, leftIndex) !=
+                            AspStringElement(engine, right, rightIndex))
+                        {
+                            isIn = false;
+                            break;
+                        }
+                    }
+                    if (isIn)
+                        break;
+                }
+            }
+
             break;
         }
 
