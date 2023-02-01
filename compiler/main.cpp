@@ -285,7 +285,12 @@ static int main1(int argc, char **argv)
             token = lexer.Next();
             if (token->type == -1)
             {
-                cerr << "Error: BAD token: '" << token->s << '\'' << endl;
+                cerr
+                    << moduleFileName << ": "
+                    << token->sourceLocation.line << ':'
+                    << token->sourceLocation.column
+                    << ": Bad token encountered: '"
+                    << token->s << '\'' << endl;
                 delete token;
                 errorDetected = true;
                 break;

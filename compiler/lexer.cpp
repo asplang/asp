@@ -63,12 +63,19 @@ void Lexer::FetchNext()
     while (pendingTokens.empty())
     {
         sourceLocation = caret;
+        Token *token = 0;
 
         // Check indent if applicable. Note that this may generate pending
         // tokens to indicate block-end or indent errors.
         int c = Peek();
-        if (c == CHAR_LINE_CONTINUATION)
-            continueLine = true;
+        if (c == '\\')
+        {
+            token = ProcessLineContinuation();
+            if (token)
+                pendingTokens.push_back(token);
+            else
+                continueLine = true;
+        }
         else
         {
              if (c == '\n' && !continueLine)
@@ -80,9 +87,11 @@ void Lexer::FetchNext()
         if (!pendingTokens.empty())
             continue;
 
-        Token *token = 0;
+        c = Peek();
         if (c == EOF)
             token = new Token(sourceLocation);
+        else if (c == '#')
+            token = ProcessComment();
         else if (c == '\n' || c == ';')
             token = ProcessStatementEnd();
         else if (isdigit(c))
@@ -94,13 +103,21 @@ void Lexer::FetchNext()
         else if (c == '.')
             token = isdigit(Peek(1)) ? ProcessNumber() : ProcessSpecial();
         else if (c == ':')
-            token = Peek(1) == '\n' ? ProcessIndent() : ProcessSpecial();
+        {
+            int cx;
+            int offset = 1;
+            while (cx = Peek(offset), isspace(cx) && cx != '\n')
+                offset++;
+            token =
+                isspace(cx) || cx == '#' ?
+                ProcessIndent() : ProcessSpecial();
+        }
         else if (IsSpecial(c))
             token = ProcessSpecial();
         else
         {
             Get();
-            if (!isspace(c) && c != CHAR_LINE_CONTINUATION)
+            if (!isspace(c))
                 token = new Token(sourceLocation, -1, string(1, c));
         }
 
@@ -207,7 +224,15 @@ Token *Lexer::ProcessSpecial()
 Token *Lexer::ProcessIndent()
 {
     Get(); // :
-    Get(); // \n
+
+    // Allow trailing whitespace and/or a comment.
+    int c;
+    while (c = Peek(), isspace(c) && c != '\n')
+        Get();
+    if (c == '#')
+        ProcessComment();
+    Get(); // newline
+
     expectIndent = true;
     checkIndent = true;
     return new Token(sourceLocation, TOKEN_BLOCK_START);
@@ -230,7 +255,7 @@ int Lexer::Get()
         currIndent += c;
 
     // Maintain line/column.
-    if (c == '\n' || c == CHAR_LINE_CONTINUATION)
+    if (c == '\n')
     {
         caret.column = 0;
         caret.line++;

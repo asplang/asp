@@ -34,6 +34,8 @@ class Lexer
 
         // Token scanning methods.
         void FetchNext();
+        Token *ProcessLineContinuation();
+        Token *ProcessComment();
         Token *ProcessStatementEnd();
         Token *ProcessNumber();
         Token *ProcessString();
@@ -50,7 +52,6 @@ class Lexer
     private:
 
         // Constants.
-        const int CHAR_LINE_CONTINUATION = 0x100;
         static bool keywordsInitialized;
         static std::map<std::string, int> keywords;
 

@@ -23,7 +23,8 @@ Lexer::Lexer(istream &is) :
 
 Token *Lexer::Next()
 {
-    while (true)
+    Token *token = 0;
+    while (token == 0)
     {
         sourceLocation = caret;
 
@@ -32,64 +33,68 @@ Token *Lexer::Next()
         int c = Peek();
 
         if (c == EOF)
-            break;
+            token = new Token(sourceLocation);
+        else if (c == '\\')
+            token = ProcessLineContinuation();
+        else if (c == '#')
+            token = ProcessComment();
         else if (c == '\n')
-            return ProcessStatementEnd();
+            token = ProcessStatementEnd();
         else if (isdigit(c))
-            return ProcessNumber();
+            token = ProcessNumber();
         else if (isalpha(c) || c == '_')
-            return ProcessName();
+            token = ProcessName();
         else if (c == '\'' || c == '"')
-            return ProcessString();
+            token = ProcessString();
         else if (c == '.')
         {
             if (isdigit(Peek(1)))
-                return ProcessNumber();
+                token = ProcessNumber();
             else if (Peek(1) == '.' && Peek(2) == '.')
             {
                 Get(); Get(); Get();
-                return new Token(sourceLocation, TOKEN_ELLIPSIS);
+                token = new Token(sourceLocation, TOKEN_ELLIPSIS);
             }
         }
         else if (c == '-' &&
                  (isdigit(Peek(1)) || Peek(1) == '.' && isdigit(Peek(2))))
         {
-            return ProcessSignedNumber();
+            token = ProcessSignedNumber();
         }
         else if (c == '=')
         {
             Get();
-            return new Token(sourceLocation, TOKEN_ASSIGN);
+            token = new Token(sourceLocation, TOKEN_ASSIGN);
         }
         else if (c == ',')
         {
             Get();
-            return new Token(sourceLocation, TOKEN_COMMA);
+            token = new Token(sourceLocation, TOKEN_COMMA);
         }
         else if (c == '(')
         {
             Get();
-            return new Token(sourceLocation, TOKEN_LEFT_PAREN);
+            token = new Token(sourceLocation, TOKEN_LEFT_PAREN);
         }
         else if (c == ')')
         {
             Get();
-            return new Token(sourceLocation, TOKEN_RIGHT_PAREN);
+            token = new Token(sourceLocation, TOKEN_RIGHT_PAREN);
         }
         else if (c == '*')
         {
             Get();
-            return new Token(sourceLocation, TOKEN_ASTERISK);
+            token = new Token(sourceLocation, TOKEN_ASTERISK);
         }
         else
         {
             Get();
-            if (!isspace(c) && c != CHAR_LINE_CONTINUATION)
-                return new Token(sourceLocation, -1, string(1, c));
+            if (!isspace(c))
+                token = new Token(sourceLocation, -1, string(1, c));
         }
     }
 
-    return new Token(sourceLocation);
+    return token;
 }
 
 Token *Lexer::ProcessSignedNumber()
@@ -122,12 +127,12 @@ int Lexer::Get()
         c = Read();
 
     // Maintain line/column.
-    if (c == '\n' || c == CHAR_LINE_CONTINUATION)
+    if (c == '\n')
     {
         caret.column = 0;
         caret.line++;
     }
     caret.column++;
 
-    return c == CHAR_LINE_CONTINUATION ? ' ' : c;
+    return c;
 }

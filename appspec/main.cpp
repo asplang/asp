@@ -172,7 +172,12 @@ static int main1(int argc, char **argv)
         token = activeSourceFile.lexer->Next();
         if (token->type == -1)
         {
-            cerr << "Error: BAD token: '" << token->s << '\'' << endl;
+            cerr
+                << activeSourceFile.sourceFileName << ": "
+                << token->sourceLocation.line << ':'
+                << token->sourceLocation.column
+                << ": Bad token encountered: '"
+                << token->s << '\'' << endl;
             delete token;
             errorDetected = true;
             break;
@@ -244,7 +249,10 @@ static int main1(int argc, char **argv)
                 if (newSourceStream == 0)
                 {
                     cerr
-                        << "Error opening " << includeFileName
+                        << activeSourceFile.sourceFileName << ": "
+                        << token->sourceLocation.line << ':'
+                        << token->sourceLocation.column
+                        << ": Error opening " << includeFileName
                         << ": " << strerror(errno) << endl;
                     return 1;
                 }
@@ -257,7 +265,10 @@ static int main1(int argc, char **argv)
                     if (newSourceFileName == lexer.sourceFileName)
                     {
                         cerr
-                            << "Include cycle detected: "
+                            << activeSourceFile.sourceFileName << ": "
+                            << token->sourceLocation.line << ':'
+                            << token->sourceLocation.column
+                            << ": Include cycle detected: "
                             << newSourceFileName << endl;
                         return 1;
                     }

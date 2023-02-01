@@ -5,11 +5,11 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(asp
-    # This top-level version identifies the version of the engine ABI.
-    # Only major and minor components should be specified.
-    # The version of the engine (aspe) and compiler (aspc) projects must be
+    # The engine ABI version (used in compatibility checking) consists of the
+    # major and minor components of the top-level version. Therefore, the
+    # version of the engine (aspe) and compiler (aspc) projects must be
     # compatible with this version (major and minor components must match).
-    VERSION 0.7
+    VERSION 0.7.1.0
     )
 
 option(BUILD_FOR_HOST

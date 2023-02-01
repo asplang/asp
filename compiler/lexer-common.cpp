@@ -51,6 +51,37 @@ map<string, int> Lexer::keywords =
     {"True", TOKEN_TRUE},
 };
 
+Token *Lexer::ProcessLineContinuation()
+{
+    string lex;
+    lex += Get(); // backslash
+
+    // Allow trailing whitespace only if followed by a comment.
+    bool trailingSpace = false;
+    int c;
+    while (c = Peek(), isspace(c) && c != '\n')
+    {
+        trailingSpace = true;
+        lex += Get();
+    }
+    if (c == '#')
+    {
+        trailingSpace = false;
+        ProcessComment();
+    }
+    Get(); // newline
+
+    return !trailingSpace ? 0 : new Token(sourceLocation, -1, lex);
+}
+
+Token *Lexer::ProcessComment()
+{
+    int c;
+    while (c = Peek(), c != '\n' && c != EOF)
+        Get();
+    return 0; // no token
+}
+
 Token *Lexer::ProcessStatementEnd()
 {
     Get(); // ; or newline
@@ -421,27 +452,6 @@ int Lexer::Read()
     }
     else
         c = is.get();
-
-    // Join continued lines with an intervening space.
-    if (c == '\\')
-    {
-        int c2 = is.get();
-        if (c2 == '\n')
-            c = CHAR_LINE_CONTINUATION;
-        else
-        {
-            if (c2 == EOF)
-                c = '\n';
-            readahead.push_back(c2);
-        }
-    }
-
-    // Discard comments.
-    if (c == '#')
-    {
-        is.ignore(numeric_limits<streamsize>::max(), '\n');
-        c = is.eof() ? EOF : '\n';
-    }
 
     // Ensure the last character ends a line.
     if (c == EOF)
