@@ -480,11 +480,11 @@ DEFINE_ACTION
 
 DEFINE_ACTION
     (MakeForStatement, Statement *,
-     VariableList *, variableList, Expression *,expression,
+     TargetExpression *, targetExpression, Expression *,expression,
      Block *, trueBlock, Block *, falseBlock)
 {
     return new ForStatement
-        (variableList, expression, trueBlock, falseBlock);
+        (targetExpression, expression, trueBlock, falseBlock);
 }
 
 DEFINE_ACTION
@@ -783,7 +783,7 @@ DEFINE_ACTION
      Expression *, leftExpression, Expression *, rightExpression)
 {
     auto result = dynamic_cast<TupleExpression *>(leftExpression);
-    if (result == 0)
+    if (result == 0 || result->IsEnclosed())
     {
         result = new TupleExpression(*token);
         if (leftExpression)
@@ -805,9 +805,70 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeEnclosedExpression, Expression *, Expression *, expression)
+{
+    // Enclose the expression in parentheses. This prevents tuples in
+    // parentheses from being added to.
+    expression->Enclose();
+    return expression;
+}
+
+DEFINE_ACTION
     (AssignExpression, Expression *, Expression *, expression)
 {
     return expression;
+}
+
+DEFINE_ACTION
+    (MakeTargetExpression, TargetExpression *,
+     Token *, token,
+     TargetExpression *, leftTargetExpression,
+     TargetExpression *, rightTargetExpression)
+{
+    TargetExpression *result = 0;
+    if (leftTargetExpression == 0)
+        result = new TargetExpression(*token);
+    else
+    {
+        if (leftTargetExpression->IsTuple())
+        {
+            if (leftTargetExpression->IsEnclosed())
+            {
+                result = new TargetExpression;
+                result->Add(leftTargetExpression);
+            }
+            else
+                result = leftTargetExpression;
+        }
+        else
+        {
+            // Convert single variable into a tuple.
+            result = new TargetExpression;
+            result->Add(leftTargetExpression);
+        }
+        if (rightTargetExpression != 0)
+            result->Add(rightTargetExpression);
+    }
+
+    delete token;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeEnclosedTargetExpression, TargetExpression *,
+     TargetExpression *, targetExpression)
+{
+    // Enclose the expression in parentheses. This prevents tuples in
+    // parentheses from being added to.
+    targetExpression->Enclose();
+    return targetExpression;
+}
+
+DEFINE_ACTION
+    (AssignTargetExpression, TargetExpression *,
+     TargetExpression *, targetExpression)
+{
+    return targetExpression;
 }
 
 DEFINE_ACTION
@@ -897,7 +958,7 @@ DEFINE_ACTION
     (MakeGroupArgument, Argument *,
      Expression *, valueExpression)
 {
-     auto constantExpression = dynamic_cast<ConstantExpression *>
+    auto constantExpression = dynamic_cast<ConstantExpression *>
         (valueExpression);
     if (constantExpression != 0)
         ReportError("Cannot pass non-tuple as a group argument");
@@ -955,9 +1016,7 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeEmptySet, SetExpression *, Token *, token)
 {
-    auto result = new SetExpression;
-    if (token != 0)
-        (SourceElement &)*result = *token;
+    auto result = new SetExpression(*token);
     delete token;
     return result;
 }
@@ -966,16 +1025,11 @@ DEFINE_ACTION
     (AssignSet, SetExpression *,
      Token *, token, ListExpression *, listExpression)
 {
-    auto result = new SetExpression;
-    if (token != 0)
-        (SourceElement &)*result = *token;
+    auto result = new SetExpression(*token);
     delete token;
-    for (auto iter = listExpression->ExpressionsBegin();
-         iter != listExpression->ExpressionsEnd(); iter++)
-    {
-        auto expression = *iter;
+    while (auto expression = listExpression->PopFront())
         result->Add(expression);
-    }
+    delete listExpression;
     return result;
 }
 
@@ -1001,7 +1055,7 @@ DEFINE_ACTION
     (AssignList, ListExpression *,
      Token *, token, ListExpression *, listExpression)
 {
-    if (listExpression->Empty())
+    if (listExpression->IsEmpty())
         (SourceElement &)*listExpression = *token;
     delete token;
     return listExpression;

@@ -193,37 +193,75 @@ while(result) ::=
 %type for {Statement *}
 
 for(result) ::=
-    FOR variable_tuple(variableList) FOR_IN expression(expression)
+    FOR target(targetExpression) FOR_IN expression(iterableExpression)
     block(trueBlock) else(falseBlock).
 {
     result = ACTION
-        (MakeForStatement, variableList, expression, trueBlock, falseBlock);
+        (MakeForStatement,
+         targetExpression, iterableExpression, trueBlock, falseBlock);
 }
 
 for(result) ::=
-    FOR variable_tuple(variableList) FOR_IN expression(expression)
+    FOR target(targetExpression) FOR_IN expression(iterableExpression)
     block(trueBlock).
 {
     result = ACTION
-        (MakeForStatement, variableList, expression, trueBlock, 0);
+        (MakeForStatement,
+         targetExpression, iterableExpression, trueBlock, 0);
 }
 
-%type variable_tuple {VariableList *}
+%type target {TargetExpression *}
 
-variable_tuple(result) ::=
-    LEFT_PAREN variable_tuple(variableList) RIGHT_PAREN.
+target(result) ::= target1(targetExpression).
 {
-    result = ACTION(AssignVariableList, variableList);
+    result = ACTION(AssignTargetExpression, targetExpression);
 }
 
-variable_tuple(result) ::= variables(variableList) COMMA.
+target(result) ::= target2(targetExpression).
 {
-    result = ACTION(AssignVariableList, variableList);
+    result = ACTION(AssignTargetExpression, targetExpression);
 }
 
-variable_tuple(result) ::= variables(variableList).
+%type target1 {TargetExpression *}
+
+target1(result) ::=
+    target1(leftTargetExpression) COMMA(operatorToken)
+    target1(rightTargetExpression).
 {
-    result = ACTION(AssignVariableList, variableList);
+    result = ACTION
+        (MakeTargetExpression, operatorToken,
+         leftTargetExpression, rightTargetExpression);
+}
+
+target1(result) ::=
+    LEFT_PAREN target1(targetExpression) RIGHT_PAREN.
+{
+    result = ACTION(MakeEnclosedTargetExpression, targetExpression);
+}
+
+target1(result) ::=
+    LEFT_PAREN target2(targetExpression) RIGHT_PAREN.
+{
+    result = ACTION(MakeEnclosedTargetExpression, targetExpression);
+}
+
+target1(result) ::= LEFT_PAREN(token) RIGHT_PAREN.
+{
+    result = ACTION(MakeTargetExpression, token, 0, 0);
+}
+
+target1(result) ::= NAME(nameToken).
+{
+    result = ACTION(MakeTargetExpression, nameToken, 0, 0);
+}
+
+%type target2 {TargetExpression *}
+
+target2(result) ::=
+    target1(leftTargetExpression) COMMA(operatorToken).
+{
+    result = ACTION
+        (MakeTargetExpression, operatorToken, leftTargetExpression, 0);
 }
 
 %type def {Statement *}
@@ -788,13 +826,13 @@ expression1(result) ::=
 expression1(result) ::=
     LEFT_PAREN expression1(expression) RIGHT_PAREN.
 {
-    result = ACTION(AssignExpression, expression);
+    result = ACTION(MakeEnclosedExpression, expression);
 }
 
 expression1(result) ::=
     LEFT_PAREN expression2(expression) RIGHT_PAREN.
 {
-    result = ACTION(AssignExpression, expression);
+    result = ACTION(MakeEnclosedExpression, expression);
 }
 
 expression1(result) ::= LEFT_PAREN(token) RIGHT_PAREN.

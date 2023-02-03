@@ -74,7 +74,6 @@ class ExpressionStatement : public Statement
 
 class AssignmentStatement : public Statement
 {
-
     public:
 
         AssignmentStatement
@@ -242,7 +241,7 @@ class VariableList : public NonTerminal
 
     private:
 
-        const Statement *parentStatement;
+        const Statement *parentStatement = 0;
         std::list<std::string> names;
 };
 
@@ -360,14 +359,16 @@ class ForStatement : public LoopStatement
 {
     public:
 
-        ForStatement(VariableList *, Expression *, Block *, Block *);
+        ForStatement
+            (TargetExpression *, Expression *,
+             Block *, Block *);
         ~ForStatement();
 
         virtual void Emit(Executable &) const;
 
     private:
 
-        VariableList *variableList;
+        TargetExpression *targetExpression;
         Expression *iterableExpression;
         Block *trueBlock, *falseBlock;
 };

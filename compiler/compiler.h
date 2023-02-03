@@ -49,6 +49,7 @@ DECLARE_TYPE(SetExpression)
 DECLARE_TYPE(ListExpression)
 DECLARE_TYPE(KeyValuePair)
 DECLARE_TYPE(RangeExpression)
+DECLARE_TYPE(TargetExpression)
 DECLARE_TYPE(VariableList)
 DECLARE_TYPE(Block)
 DECLARE_TYPE(Module)
@@ -154,7 +155,7 @@ class Compiler
          Expression *, Block *, Block *);
     DECLARE_METHOD
         (MakeForStatement, Statement *,
-         VariableList *, Expression *, Block *, Block *);
+         TargetExpression *, Expression *, Block *, Block *);
     DECLARE_METHOD
         (MakeDefStatement, Statement *,
          Token *, ParameterList *, Block *);
@@ -201,14 +202,24 @@ class Compiler
         (MakeTupleExpression, Expression *,
          Token *, Expression *, Expression *);
     DECLARE_METHOD
-        (MakeVariableTuple, Expression *, VariableList *);
-    DECLARE_METHOD
         (MakeRangeExpression, Expression *, RangeExpression *);
     DECLARE_METHOD
         (MakeConstantExpression, ConstantExpression *,
          Token *);
     DECLARE_METHOD
+        (MakeEnclosedExpression, Expression *, Expression *);
+    DECLARE_METHOD
         (AssignExpression, Expression *, Expression *);
+
+    /* Target expressions. */
+    DECLARE_METHOD
+        (MakeTargetExpression, TargetExpression *,
+         Token *, TargetExpression *, TargetExpression *);
+    DECLARE_METHOD
+        (MakeEnclosedTargetExpression,
+         TargetExpression *, TargetExpression *);
+    DECLARE_METHOD
+        (AssignTargetExpression, TargetExpression *, TargetExpression *);
 
     /* Imports. */
     DECLARE_METHOD

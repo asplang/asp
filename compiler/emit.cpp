@@ -474,26 +474,6 @@ void ForStatement::Emit(Executable &executable) const
     iterableExpression->Emit(executable);
     executable.Insert(new StartIteratorInstruction);
 
-    string targetName;
-    int targetSymbol = 0;
-    Expression *targetExpression = 0;
-    if (variableList->NamesSize() == 1)
-    {
-        targetName = *variableList->NamesBegin();
-        targetSymbol = executable.Symbol(targetName);
-    }
-    else
-    {
-        targetSymbol = executable.TemporarySymbol();
-        variableList->Emit(executable);
-        targetExpression = new VariableExpression
-            ((SourceElement &)*this, targetSymbol);
-        targetExpression->Parent(this);
-        targetExpression->Emit
-            (executable, Expression::EmitType::Address);
-        executable.Insert(new SetInstruction(true));
-    }
-
     auto testLocation = executable.Insert(new NullInstruction);
     continueLocation = executable.Insert(new NullInstruction);
     auto elseLocation = executable.Insert(new NullInstruction);
@@ -519,17 +499,9 @@ void ForStatement::Emit(Executable &executable) const
     }
     executable.Insert(new DereferenceIteratorInstruction
         ("Dereference iterator"));
-    if (variableList->NamesSize() == 1)
-    {
-        ostringstream oss;
-        oss
-            << "Push address of variable " << targetName
-            << " (" << targetSymbol << ')';
-        executable.Insert(new LoadInstruction
-            (targetSymbol, true, oss.str()));
-    }
-    else
-        variableList->Emit(executable);
+    targetExpression->Emit
+        (executable, Expression::EmitType::Address);
+
     executable.Insert(new SetInstruction(true));
     trueBlock->Emit(executable);
     executable.PopLocation();
@@ -803,6 +775,39 @@ void UnaryExpression::Emit
         << hex << setfill('0') << setw(2)
         << static_cast<unsigned>(iter->second);
     executable.Insert(new UnaryInstruction(iter->second, oss.str()));
+}
+
+void TargetExpression::Emit
+    (Executable &executable, EmitType emitType) const
+{
+    if (emitType != EmitType::Address)
+        throw string("Unexpected use of target expression");
+
+    if (!name.empty())
+    {
+        if (!targetExpressions.empty())
+            throw string("Internal error: Invalid target expression");
+
+        auto symbol = executable.Symbol(name);
+        ostringstream oss;
+        oss
+            << "Push address of variable " << name << " (" << symbol << ')';
+        executable.Insert(new LoadInstruction
+            (symbol, true, oss.str()));
+    }
+    else
+    {
+        executable.Insert(new PushTupleInstruction
+            ("Create empty tuple"));
+
+        for (auto iter = targetExpressions.begin();
+             iter != targetExpressions.end(); iter++)
+        {
+            auto targetExpression = *iter;
+            targetExpression->Emit(executable, emitType);
+            executable.Insert(new BuildInstruction("Add item to tuple"));
+        }
+    }
 }
 
 void Argument::Emit(Executable &executable) const

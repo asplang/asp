@@ -13,6 +13,16 @@ Expression::Expression(const SourceElement &sourceElement) :
 {
 }
 
+void Expression::Enclose()
+{
+    enclosed = true;
+}
+
+bool Expression::IsEnclosed() const
+{
+    return enclosed;
+}
+
 void Expression::Parent(const Statement *statement)
 {
     parentStatement = statement;
@@ -116,6 +126,43 @@ UnaryExpression::~UnaryExpression()
 void UnaryExpression::Parent(const Statement *statement)
 {
     expression->Parent(statement);
+}
+
+TargetExpression::TargetExpression()
+{
+}
+
+TargetExpression::TargetExpression(const Token &token) :
+    Expression(token)
+{
+    if (token.type == TOKEN_NAME)
+        name = token.s;
+}
+
+TargetExpression::~TargetExpression()
+{
+    for (auto iter = targetExpressions.begin();
+         iter != targetExpressions.end(); iter++)
+        delete *iter;
+}
+
+bool TargetExpression::IsTuple() const
+{
+    return name.empty();
+}
+
+void TargetExpression::Add(TargetExpression *targetExpression)
+{
+    if (IsEnclosed())
+        throw string("Internal error: Cannot add to a enclosed target tuple");
+    if (targetExpressions.empty())
+        (SourceElement &)*this = *targetExpression;
+    targetExpressions.push_back(targetExpression);
+}
+
+void TargetExpression::Parent(const Statement *statement)
+{
+    parentStatement = statement;
 }
 
 Argument::Argument
@@ -301,7 +348,8 @@ void DictionaryExpression::Parent(const Statement *statement)
     }
 }
 
-SetExpression::SetExpression()
+SetExpression::SetExpression(const Token &token) :
+    Expression(token)
 {
 }
 
@@ -316,11 +364,6 @@ void SetExpression::Add(Expression *expression)
     if (expressions.empty())
         (SourceElement &)*this = *expression;
     expressions.push_back(expression);
-}
-
-bool SetExpression::Empty() const
-{
-    return expressions.empty();
 }
 
 void SetExpression::Parent(const Statement *statement)
@@ -349,9 +392,21 @@ void ListExpression::Add(Expression *expression)
     expressions.push_back(expression);
 }
 
-bool ListExpression::Empty() const
+bool ListExpression::IsEmpty() const
 {
     return expressions.empty();
+}
+
+Expression *ListExpression::PopFront()
+{
+    if (expressions.empty())
+        return 0;
+    else
+    {
+        auto result = expressions.front();
+        expressions.pop_front();
+        return result;
+    }
 }
 
 void ListExpression::Parent(const Statement *statement)

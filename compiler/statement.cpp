@@ -400,15 +400,15 @@ WhileStatement::~WhileStatement()
 }
 
 ForStatement::ForStatement
-    (VariableList *variableList, Expression *iterableExpression,
+    (TargetExpression *targetExpression, Expression *iterableExpression,
      Block *trueBlock, Block *falseBlock) :
-    LoopStatement(*variableList),
-    variableList(variableList),
+    LoopStatement(*targetExpression),
+    targetExpression(targetExpression),
     iterableExpression(iterableExpression),
     trueBlock(trueBlock),
     falseBlock(falseBlock)
 {
-    variableList->Parent(this);
+    targetExpression->Parent(this);
     iterableExpression->Parent(this);
     trueBlock->Parent(this);
     if (falseBlock)
@@ -417,7 +417,7 @@ ForStatement::ForStatement
 
 ForStatement::~ForStatement()
 {
-    delete variableList;
+    delete targetExpression;
     delete iterableExpression;
     delete trueBlock;
     delete falseBlock;

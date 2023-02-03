@@ -22,6 +22,9 @@ class Expression : public NonTerminal
 
     public:
 
+        void Enclose();
+        bool IsEnclosed() const;
+
         virtual void Parent(const Statement *);
         const Statement *Parent() const;
 
@@ -36,7 +39,8 @@ class Expression : public NonTerminal
 
     private:
 
-        const Statement *parentStatement;
+        bool enclosed = false;
+        const Statement *parentStatement = 0;
 };
 
 class ConditionalExpression : public Expression
@@ -116,6 +120,28 @@ class UnaryExpression : public Expression
 
         int operatorTokenType;
         Expression *expression;
+};
+
+class TargetExpression : public Expression
+{
+    public:
+
+        TargetExpression();
+        TargetExpression(const Token &nameToken);
+        ~TargetExpression();
+
+        bool IsTuple() const;
+        void Add(TargetExpression *);
+
+        void Parent(const Statement *);
+
+        virtual void Emit(Executable &, EmitType) const;
+
+    private:
+
+        const Statement *parentStatement = 0;
+        std::string name;
+        std::list<TargetExpression *> targetExpressions;
 };
 
 class Argument : public NonTerminal
@@ -282,11 +308,10 @@ class SetExpression : public Expression
 {
     public:
 
-        SetExpression();
+        SetExpression(const Token &);
         ~SetExpression();
 
         void Add(Expression *);
-        bool Empty() const;
 
         virtual void Parent(const Statement *);
 
@@ -305,19 +330,10 @@ class ListExpression : public Expression
         ~ListExpression();
 
         void Add(Expression *);
-        bool Empty() const;
+        Expression *PopFront();
+        bool IsEmpty() const;
 
         virtual void Parent(const Statement *);
-
-        typedef std::list<Expression *>::const_iterator ConstExpressionIterator;
-        ConstExpressionIterator ExpressionsBegin() const
-        {
-            return expressions.begin();
-        }
-        ConstExpressionIterator ExpressionsEnd() const
-        {
-            return expressions.end();
-        }
 
         virtual void Emit(Executable &, EmitType) const;
 
@@ -334,8 +350,6 @@ class TupleExpression : public Expression
         ~TupleExpression();
 
         void Add(Expression *);
-        Expression *Remove();
-        bool Empty() const;
 
         virtual void Parent(const Statement *);
 
