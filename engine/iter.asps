@@ -1,0 +1,14 @@
+#
+# Asp application function specifications - iterators.
+#
+
+# Iterator creation function.
+# The iterator is positioned on the first item, if applicable.
+def iter(iterable) = AspLib_iter
+
+# Iterator advance.
+# Returns the referenced value, advancing the iterator in the process.
+def next(iterator, end = None) = AspLib_next
+
+# Note: Use conversion to bool to test an iterator. A value of False
+# indicates an iterator at its end.

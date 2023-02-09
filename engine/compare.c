@@ -236,30 +236,29 @@ AspRunResult AspCompare
 
                         /* Save state and defer element comparison to the
                            next iteration. */
-                        AspDataEntry *leftEntryStackEntry = AspPushNoUse
+                        AspDataEntry *entriesStackEntry = AspPushNoUse
                             (engine, mutableLeftEntry);
-                        AspDataEntry *leftNextStackEntry = AspPushNoUse
+                        AspDataEntry *nextsStackEntry = AspPushNoUse
                             (engine, leftNext);
-                        AspDataEntry *leftValueStackEntry = AspPushNoUse
+                        AspDataEntry *valuesStackEntry = AspPushNoUse
                             (engine, leftResult.value);
-                        if (leftEntryStackEntry == 0 ||
-                            leftNextStackEntry == 0 ||
-                            leftValueStackEntry == 0)
+                        if (entriesStackEntry == 0 ||
+                            nextsStackEntry == 0 ||
+                            valuesStackEntry == 0)
                             return AspRunResult_OutOfDataMemory;
                         AspDataSetStackEntryHasValue2
-                            (leftEntryStackEntry, true);
+                            (entriesStackEntry, true);
                         AspDataSetStackEntryValue2Index
-                            (leftEntryStackEntry,
+                            (entriesStackEntry,
                              AspIndex(engine, mutableRightEntry));
                         AspDataSetStackEntryHasValue2
-                            (leftNextStackEntry, true);
+                            (nextsStackEntry, true);
                         AspDataSetStackEntryValue2Index
-                            (leftNextStackEntry,
-                             AspIndex(engine, rightNext));
+                            (nextsStackEntry, AspIndex(engine, rightNext));
                         AspDataSetStackEntryHasValue2
-                            (leftValueStackEntry, true);
+                            (valuesStackEntry, true);
                         AspDataSetStackEntryValue2Index
-                            (leftValueStackEntry,
+                            (valuesStackEntry,
                              AspIndex(engine, rightResult.value));
 
                         break;
@@ -288,26 +287,25 @@ AspRunResult AspCompare
 
                         /* Save state and defer member comparison to the
                            next iteration. */
-                        AspDataEntry *leftEntryStackEntry = AspPushNoUse
+                        AspDataEntry *entriesStackEntry = AspPushNoUse
                             (engine, mutableLeftEntry);
-                        AspDataEntry *leftNextStackEntry = AspPushNoUse
+                        AspDataEntry *nextsStackEntry = AspPushNoUse
                             (engine, leftNext);
                         AspDataEntry *leftKeyStackEntry = AspPushNoUse
                             (engine, leftResult.key);
-                        if (leftEntryStackEntry == 0 ||
-                            leftNextStackEntry == 0 ||
+                        if (entriesStackEntry == 0 ||
+                            nextsStackEntry == 0 ||
                             leftKeyStackEntry == 0)
                             return AspRunResult_OutOfDataMemory;
                         AspDataSetStackEntryHasValue2
-                            (leftEntryStackEntry, true);
+                            (entriesStackEntry, true);
                         AspDataSetStackEntryValue2Index
-                            (leftEntryStackEntry,
+                            (entriesStackEntry,
                              AspIndex(engine, mutableRightEntry));
                         AspDataSetStackEntryHasValue2
-                            (leftNextStackEntry, true);
+                            (nextsStackEntry, true);
                         AspDataSetStackEntryValue2Index
-                            (leftNextStackEntry,
-                             AspIndex(engine, rightNext));
+                            (nextsStackEntry, AspIndex(engine, rightNext));
                         AspDataSetStackEntryHasValue2
                             (leftKeyStackEntry, true);
                         AspDataSetStackEntryValue2Index
@@ -315,14 +313,14 @@ AspRunResult AspCompare
                              AspIndex(engine, rightResult.key));
                         if (type == DataType_Dictionary)
                         {
-                            AspDataEntry *leftValueStackEntry = AspPushNoUse
+                            AspDataEntry *valuesStackEntry = AspPushNoUse
                                 (engine, leftResult.value);
-                            if (leftValueStackEntry == 0)
+                            if (valuesStackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
                             AspDataSetStackEntryHasValue2
-                                (leftValueStackEntry, true);
+                                (valuesStackEntry, true);
                             AspDataSetStackEntryValue2Index
-                                (leftValueStackEntry,
+                                (valuesStackEntry,
                                  AspIndex(engine, rightResult.value));
                         }
 

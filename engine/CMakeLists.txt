@@ -54,12 +54,14 @@ if(BUILD_FOR_TARGET)
         stack.c
         sequence.c
         tree.c
+        iterator.c
         assign.c
         compare.c
         operation.c
         function.c
         arguments.c
         lib-type.c
+        lib-iter.c
         lib-math.c
         $<$<CONFIG:Debug>:debug.c>
         )
@@ -128,11 +130,12 @@ if(BUILD_FOR_HOST)
 
     install(FILES
         type.asps
+        iter.asps
         math.asps
         DESTINATION include/asps/${ABI_VERSION}
         )
 
-    foreach(file type.asps math.asps)
+    foreach(file type.asps iter.asps math.asps)
         install(CODE "execute_process(
             COMMAND ${CMAKE_COMMAND} -E create_symlink
                 \"${ABI_VERSION}/${file}\"

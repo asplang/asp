@@ -273,6 +273,10 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetWord2((eptr), (value)))
 #define AspDataGetStackEntryValue2Index(eptr) \
     (AspDataGetWord2((eptr)))
+#define AspDataSetStackEntryFlag(eptr, value) \
+    (AspDataSetBit1((eptr), (unsigned)(value)))
+#define AspDataGetStackEntryFlag(eptr) \
+    ((bool)(AspDataGetBit1((eptr))))
 
 /* Frame entry field access. */
 #define AspDataSetFrameReturnAddress(eptr, value) \

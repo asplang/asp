@@ -6,10 +6,10 @@
 #include "data.h"
 #include "stack.h"
 #include "opcode.h"
-#include "data.h"
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
+#include "iterator.h"
 #include "assign.h"
 #include "function.h"
 #include "operation.h"
@@ -1055,76 +1055,16 @@ static AspRunResult Step(AspEngine *engine)
             if (!AspIsObject(iterable))
                 return AspRunResult_UnexpectedType;
 
-            /* Create an iterator entry. */
-            AspDataEntry *iterator = AspAllocEntry
-                (engine, DataType_Iterator);
-            if (iterator == 0)
-                return AspRunResult_OutOfDataMemory;
-            AspDataSetIteratorIterableIndex
-                (iterator, AspIndex(engine, iterable));
-
-            /* Set iterator specifics based on iterable. */
-            AspDataEntry *member = 0;
-            switch (AspDataGetType(iterable))
-            {
-                default:
-                    return AspRunResult_UnexpectedType;
-
-                case DataType_Range:
-                {
-                    /* Determine a start value. */
-                    int32_t startValue, endValue, stepValue;
-                    AspGetRange
-                        (engine, iterable,
-                         &startValue, &endValue, &stepValue);
-                    bool atEnd = AspIsValueAtRangeEnd
-                        (startValue, endValue, stepValue);
-
-                    /* Create an integer set to the start value. */
-                    if (!atEnd)
-                    {
-                        AspDataEntry *value = AspAllocEntry
-                            (engine, DataType_Integer);
-                        if (value == 0)
-                            return AspRunResult_OutOfDataMemory;
-                        AspDataSetInteger(value, startValue);
-                        AspDataSetIteratorMemberNeedsCleanup(iterator, true);
-                        member = value;
-                    }
-
-                    break;
-                }
-
-                case DataType_String:
-                case DataType_Tuple:
-                case DataType_List:
-                {
-                    AspSequenceResult startResult = AspSequenceNext
-                        (engine, iterable, 0);
-                    if (startResult.result != AspRunResult_OK)
-                        return startResult.result;
-                    member = startResult.element;
-
-                    break;
-                }
-
-                case DataType_Set:
-                case DataType_Dictionary:
-                {
-                    AspTreeResult startResult = AspTreeNext
-                        (engine, iterable, 0, true);
-                    if (startResult.result != AspRunResult_OK)
-                        return startResult.result;
-                    member = startResult.node;
-
-                    break;
-                }
-            }
-            AspDataSetIteratorMemberIndex(iterator, AspIndex(engine, member));
+            /* Create an appropriate iterator. */
+            AspIteratorResult iteratorResult = AspIteratorCreate
+                (engine, iterable);
+            if (iteratorResult.result != AspRunResult_OK)
+                return iteratorResult.result;
 
             /* Replace the top stack entry with the iterator. */
             AspDataSetStackEntryValueIndex
-                (engine->stackTop, AspIndex(engine, iterator));
+                (engine->stackTop, AspIndex(engine, iteratorResult.value));
+            AspUnref(engine, iterable);
 
             break;
         }
@@ -1168,105 +1108,11 @@ static AspRunResult Step(AspEngine *engine)
             if (AspDataGetType(iterator) != DataType_Iterator)
                 return AspRunResult_UnexpectedType;
 
-            /* Gain access to the underlying iterable. */
-            AspDataEntry *iterable = AspValueEntry
-                (engine, AspDataGetIteratorIterableIndex(iterator));
-
-            /* Check if the iterator is already at its end. */
-            AspDataEntry *member = AspEntry
-                (engine, AspDataGetIteratorMemberIndex(iterator));
-            if (member == 0)
-                break;
-
-            /* Advance the iterator. */
-            switch (AspDataGetType(iterable))
-            {
-                default:
-                    return AspRunResult_UnexpectedType;
-
-                case DataType_Range:
-                {
-                    int32_t endValue, stepValue;
-
-                    if (AspDataGetType(member) != DataType_Integer)
-                        return AspRunResult_UnexpectedType;
-
-                    AspGetRange(engine, iterable, 0, &endValue, &stepValue);
-                    int32_t newValue = AspDataGetInteger(member) + stepValue;
-                    bool atEnd = AspIsValueAtRangeEnd
-                        (newValue, endValue, stepValue);
-                    if (atEnd)
-                    {
-                        AspUnref(engine, member);
-                        AspDataSetIteratorMemberNeedsCleanup(iterator, false);
-                        member = 0;
-                    }
-                    else
-                        AspDataSetInteger(member, newValue);
-
-                    break;
-                }
-
-                case DataType_String:
-                {
-                    AspDataEntry *element = AspEntry
-                        (engine, AspDataGetIteratorMemberIndex(iterator));
-                    if (AspDataGetType(element) != DataType_Element)
-                        return AspRunResult_UnexpectedType;
-                    AspDataEntry *fragment = AspEntry
-                        (engine, AspDataGetElementValueIndex(element));
-                    if (AspDataGetType(fragment) != DataType_StringFragment)
-                        return AspRunResult_UnexpectedType;
-                    uint8_t fragmentSize =
-                        AspDataGetStringFragmentSize(fragment);
-
-                    uint8_t stringIndex =
-                        AspDataGetIteratorStringIndex(iterator);
-                    if (stringIndex + 1 < fragmentSize)
-                    {
-                        AspDataSetIteratorStringIndex
-                            (iterator, stringIndex + 1);
-                        break;
-                    }
-
-                    AspDataSetIteratorStringIndex(iterator, 0);
-
-                    /* Fall through... */
-                }
-
-                case DataType_Tuple:
-                case DataType_List:
-                {
-                    if (AspDataGetType(member) != DataType_Element)
-                        return AspRunResult_UnexpectedType;
-                    AspSequenceResult nextResult = AspSequenceNext
-                        (engine, iterable, member);
-                    if (nextResult.result != AspRunResult_OK)
-                        return nextResult.result;
-                    member = nextResult.element;
-
-                    break;
-                }
-
-                case DataType_Set:
-                case DataType_Dictionary:
-                {
-                    uint8_t memberType = AspDataGetType(member);
-                    if (memberType != DataType_SetNode &&
-                        memberType != DataType_DictionaryNode)
-                        return AspRunResult_UnexpectedType;
-                    AspTreeResult nextResult = AspTreeNext
-                        (engine, iterable, member, true);
-                    if (nextResult.result != AspRunResult_OK)
-                        return nextResult.result;
-                    member = nextResult.node;
-
-                    break;
-                }
-            }
-
-            /* Update the iterator on the top of the stack. */
-            AspDataSetIteratorMemberIndex(iterator, AspIndex(engine, member));
+            /* Advance the iterator on the top of the stack. */
+            AspRunResult iteratorResult = AspIteratorNext
+                (engine, iterator);
+            if (iteratorResult != AspRunResult_OK)
+                return iteratorResult;
 
             break;
         }
@@ -1284,109 +1130,16 @@ static AspRunResult Step(AspEngine *engine)
             if (AspDataGetType(iterator) != DataType_Iterator)
                 return AspRunResult_UnexpectedType;
 
-            /* Gain access to the underlying iterable and current member. */
-            AspDataEntry *iterable = AspValueEntry
-                (engine, AspDataGetIteratorIterableIndex(iterator));
-            AspDataEntry *member = AspValueEntry
-                (engine, AspDataGetIteratorMemberIndex(iterator));
-            if (member == 0)
-                return AspRunResult_IteratorAtEnd;
-
-            /* Dereference the iterator. */
-            AspDataEntry *value = 0;
-            bool newValue = false;
-            switch (AspDataGetType(iterable))
-            {
-                default:
-                    return AspRunResult_UnexpectedType;
-
-                case DataType_Range:
-                {
-                    if (AspDataGetType(member) != DataType_Integer)
-                        return AspRunResult_UnexpectedType;
-                    value = member;
-                    break;
-                }
-
-                case DataType_String:
-                {
-                    AspDataEntry *fragment = AspValueEntry
-                        (engine, AspDataGetElementValueIndex(member));
-                    if (AspDataGetType(fragment) != DataType_StringFragment)
-                        return AspRunResult_UnexpectedType;
-                    uint8_t stringIndex =
-                        AspDataGetIteratorStringIndex(iterator);
-                    const uint8_t *stringData =
-                        AspDataGetStringFragmentData(fragment);
-                    uint8_t c = stringData[stringIndex];
-
-                    AspDataEntry *resultString = AspAllocEntry
-                        (engine, DataType_String);
-                    if (resultString == 0)
-                        return AspRunResult_OutOfDataMemory;
-
-                    AspDataEntry *newFragment =
-                        AspAllocEntry(engine, DataType_StringFragment);
-                    if (newFragment == 0)
-                        return AspRunResult_OutOfDataMemory;
-                    AspDataSetStringFragment(newFragment, &c , 1);
-
-                    AspSequenceResult appendResult = AspSequenceAppend
-                        (engine, resultString, newFragment);
-                    if (appendResult.result != AspRunResult_OK)
-                        return appendResult.result;
-
-                    value = resultString;
-                    newValue = true;
-
-                    break;
-                }
-
-                case DataType_Tuple:
-                case DataType_List:
-                    value = AspValueEntry
-                        (engine, AspDataGetElementValueIndex(member));
-                    break;
-
-                case DataType_Set:
-                    value = AspValueEntry
-                        (engine, AspDataGetTreeNodeKeyIndex(member));
-                    break;
-
-                case DataType_Dictionary:
-                {
-                    AspDataEntry *key = AspValueEntry
-                        (engine, AspDataGetTreeNodeKeyIndex(member));
-                    AspDataEntry *entryValue = AspValueEntry
-                        (engine, AspDataGetTreeNodeValueIndex(member));
-
-                    AspDataEntry *tuple =
-                        AspAllocEntry(engine, DataType_Tuple);
-                    if (tuple == 0)
-                        return AspRunResult_OutOfDataMemory;
-
-                    AspSequenceResult keyAppendResult = AspSequenceAppend
-                        (engine, tuple, key);
-                    if (keyAppendResult.result != AspRunResult_OK)
-                        return keyAppendResult.result;
-                    AspSequenceResult valueAppendResult = AspSequenceAppend
-                        (engine, tuple, entryValue);
-                    if (valueAppendResult.result != AspRunResult_OK)
-                        return valueAppendResult.result;
-
-                    value = tuple;
-                    newValue = true;
-
-                    break;
-                }
-            }
+            AspIteratorResult iteratorResult = AspIteratorDereference
+                (engine, iterator);
+            if (iteratorResult.result != AspRunResult_OK)
+                return iteratorResult.result;
 
             /* Push the dereferenced value onto the stack. */
-            AspDataEntry *stackEntry = AspPush(engine, value);
+            AspDataEntry *stackEntry = AspPush(engine, iteratorResult.value);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
-            if (newValue)
-                AspUnref(engine, value);
+            AspUnref(engine, iteratorResult.value);
 
             break;
         }

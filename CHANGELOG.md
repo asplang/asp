@@ -13,7 +13,10 @@ Version 0.7.1.0 (compiler 0.7.1.0, engine 0.7.3.0):
     - Tuples may now be used as keys (for sets and dictionaries).
   - Implemented substring search for the 'in' operator with string operands.
   - Added erase functions to programmer API.
+  - Added direct access to iterators for scripts and in programmer API.
+  - Finished implementation of AspToString API function.
   - Made some minor changes to type conversions involving floating-point values.
+  - Obsoleted the AspTypeString function. Use AspToString instead.
 - Compiler:
   - Fixed a bug that disallowed the comment character (#) inside strings.
   - Added allowing of a comment following the line continuation character (\\).

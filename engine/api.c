@@ -4,14 +4,18 @@
 
 #include "asp.h"
 #include "range.h"
+#include "stack.h"
 #include "sequence.h"
 #include "tree.h"
+#include "iterator.h"
 #include "symbols.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <limits.h>
 
+static const char *TypeString(DataType);
 static AspDataEntry *NewObject(AspEngine *, DataType);
 
 void AspEngineVersion(uint8_t version[4])
@@ -316,97 +320,419 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
         return entry;
     }
 
-    char buffer[100];
-    if (AspIsNone(entry))
-        strcpy(buffer, "None");
-    else if (AspIsEllipsis(entry))
-        strcpy(buffer, "...");
-    else if (AspIsBoolean(entry))
-        strcpy(buffer, AspIsTrue(engine, entry) ? "True" : "False");
-    else if (AspIsInteger(entry))
-    {
-        int32_t i;
-        AspIntegerValue(entry, &i);
-        sprintf(buffer, "%d", i);
-    }
-    else if (AspIsFloat(entry))
-    {
-        double f;
-        AspFloatValue(entry, &f);
-        int count = sprintf(buffer, "%g", f);
-        if (strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
-            strcat(buffer, ".0");
-    }
-    else if (AspIsRange(entry))
-    {
-        int count = 0;
-        int32_t start, end, step;
-        AspRangeValues(engine, entry, &start, &end, &step);
-        if (start != 0)
-            count += sprintf(buffer + count, "%d", start);
-        count += sprintf(buffer + count, "..");
-        bool unbounded =
-            step < 0 && end == INT32_MIN ||
-            step > 0 && end == INT32_MAX;
-        if (!unbounded)
-            count += sprintf(buffer + count, "%d", end);
-        if (step != 1)
-            count += sprintf(buffer + count, ":%d", step);
-    }
-    else if (AspIsType(entry))
-    {
-        const char *typeString = AspTypeString(entry);
-        strcpy(buffer, typeString == 0 ? "?" : typeString);
-    }
-    else
-    {
-        /* TODO: Add support for remaining types. */
-        strcpy(buffer, "<unsupported type>");
-    }
-
-    return AspNewString(engine, buffer, strlen(buffer));
-}
-
-const char *AspTypeString(const AspDataEntry *typeEntry)
-{
-    if (typeEntry == 0 || AspDataGetType(typeEntry) != DataType_Type)
+    AspDataEntry *result = NewObject(engine, DataType_String);
+    if (result == 0)
         return 0;
 
-    switch (AspDataGetTypeValue(typeEntry))
+    /* Avoid recursion by using the engine's stack. */
+    AspDataEntry *startStackTop = engine->stackTop;
+    AspDataEntry *next = 0;
+    bool flag = false;
+    while (true)
     {
-        case DataType_None:
-            return "<type None>";
-        case DataType_Ellipsis:
-            return "<type ...>";
-        case DataType_Boolean:
-            return "<type bool>";
-        case DataType_Integer:
-            return "<type int>";
-        case DataType_Float:
-            return "<type float>";
-        case DataType_Range:
-            return "<type range>";
-        case DataType_String:
-            return "<type str>";
-        case DataType_Tuple:
-            return "<type tuple>";
-        case DataType_List:
-            return "<type list>";
-        case DataType_Set:
-            return "<type set>";
-        case DataType_Dictionary:
-            return "<type dict>";
-        case DataType_Iterator:
-            return "<type iter>";
-        case DataType_Function:
-            return "<type func>";
-        case DataType_Module:
-            return "<type mod>";
-        case DataType_Type:
-            return "<type type>";
+        char buffer[100];
+        char type = (DataType)AspDataGetType(entry);
+        switch (type)
+        {
+            default:
+                strcpy(buffer, "?");
+
+            case DataType_None:
+                strcpy(buffer, "None");
+                break;
+
+            case DataType_Ellipsis:
+                strcpy(buffer, "...");
+                break;
+
+            case DataType_Boolean:
+                strcpy(buffer, AspIsTrue(engine, entry) ? "True" : "False");
+                break;
+
+            case DataType_Integer:
+            {
+                int32_t i;
+                AspIntegerValue(entry, &i);
+                sprintf(buffer, "%d", i);
+                break;
+            }
+
+            case DataType_Float:
+            {
+                double f;
+                AspFloatValue(entry, &f);
+                int count = sprintf(buffer, "%g", f);
+                if (strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
+                    strcat(buffer, ".0");
+                break;
+            }
+
+            case DataType_Range:
+            {
+                int count = 0;
+                int32_t start, end, step;
+                AspRangeValues(engine, entry, &start, &end, &step);
+                if (start != 0)
+                    count += sprintf(buffer + count, "%d", start);
+                count += sprintf(buffer + count, "..");
+                bool unbounded =
+                    step < 0 && end == INT32_MIN ||
+                    step > 0 && end == INT32_MAX;
+                if (!unbounded)
+                    count += sprintf(buffer + count, "%d", end);
+                if (step != 1)
+                    count += sprintf(buffer + count, ":%d", step);
+                break;
+            }
+
+            case DataType_String:
+            {
+                /* Instead of using the intermediate buffer, append directly
+                   to the resulting string. */
+                *buffer = '\0';
+
+                /* Wrap all but a top-level string with quotes. */
+                if (startStackTop != engine->stackTop)
+                {
+                    AspRunResult appendResult = AspStringAppendBuffer
+                        (engine, result, "'", 1);
+                    if (appendResult != AspRunResult_OK)
+                    {
+                        AspUnref(engine, result);
+                        result = 0;
+                        break;
+                    }
+                }
+
+                /* Append the string. */
+                for (AspSequenceResult nextResult =
+                     AspSequenceNext(engine, entry, 0);
+                     nextResult.element != 0;
+                     nextResult = AspSequenceNext
+                        (engine, entry, nextResult.element))
+                {
+                    AspDataEntry *fragment = nextResult.value;
+                    uint8_t fragmentSize =
+                        AspDataGetStringFragmentSize(fragment);
+                    char *fragmentData =
+                        AspDataGetStringFragmentData(fragment);
+
+                    /* Treat top-level and contained strings differenty. */
+                    if (startStackTop == engine->stackTop)
+                    {
+                        /* Print top-level string as is. */
+                        AspRunResult appendResult = AspStringAppendBuffer
+                            (engine, result, fragmentData, fragmentSize);
+                        if (appendResult != AspRunResult_OK)
+                        {
+                            AspUnref(engine, result);
+                            result = 0;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        /* Encode strings contained within other structures. */
+                        for (uint8_t i = 0; i < fragmentSize; i++)
+                        {
+                            AspRunResult appendResult = AspRunResult_OK;
+                            char c = fragmentData[i];
+                            if (isprint(c))
+                            {
+                                appendResult = AspStringAppendBuffer
+                                    (engine, result, &c, 1);
+                            }
+                            else
+                            {
+                                char encoded[5] = "\\";
+                                char code = 0;
+                                switch (c)
+                                {
+                                    case '\a':
+                                        code = 'a';
+                                        break;
+                                    case '\b':
+                                        code = 'b';
+                                        break;
+                                    case '\f':
+                                        code = 'f';
+                                        break;
+                                    case '\n':
+                                        code = 'n';
+                                        break;
+                                    case '\r':
+                                        code = 'r';
+                                        break;
+                                    case '\t':
+                                        code = 't';
+                                        break;
+                                    case '\v':
+                                        code = 'v';
+                                        break;
+                                    case '\\':
+                                        code = '\\';
+                                        break;
+                                    case '\'':
+                                        code = '\'';
+                                        break;
+                                }
+                                if (code != 0)
+                                {
+                                    encoded[1] = code;
+                                    encoded[2] = '\0';
+                                }
+                                else
+                                {
+                                    uint8_t uc = *(uint8_t *)&c;
+                                    sprintf(encoded + 1, "x%02x", uc);
+                                }
+                                appendResult = AspStringAppendBuffer
+                                    (engine, result, encoded, strlen(encoded));
+                            }
+                            if (appendResult != AspRunResult_OK)
+                            {
+                                AspUnref(engine, result);
+                                result = 0;
+                                break;
+                            }
+                        }
+                    }
+                    if (result == 0)
+                        break;
+                }
+                if (result == 0)
+                    break;
+
+                /* Close the quote if applicable. */
+                if (startStackTop != engine->stackTop)
+                {
+                    AspRunResult appendResult = AspStringAppendBuffer
+                        (engine, result, "'", 1);
+                    if (appendResult != AspRunResult_OK)
+                    {
+                        AspUnref(engine, result);
+                        result = 0;
+                        break;
+                    }
+                }
+
+                break;
+            }
+
+            case DataType_Tuple:
+            case DataType_List:
+            {
+                /* Append starting punctuation if applicable. */
+                *buffer = '\0';
+                bool start = next == 0;
+                if (start)
+                    strcpy(buffer, type == DataType_Tuple ? "(" : "[");
+
+                /* Examine the next element of the sequence. */
+                AspSequenceResult nextResult = AspSequenceNext
+                    (engine, entry, next);
+                next = nextResult.element;
+
+                /* Append any applicable punctuation. */
+                if (next == 0)
+                {
+                    if (type == DataType_Tuple && flag)
+                        strcpy(buffer, ",");
+                    strcat(buffer, type == DataType_Tuple ? ")" : "]");
+                    break;
+                }
+                else if (!start)
+                    strcpy(buffer, ", ");
+
+                /* Save state and defer the element to the next iteration. */
+                AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
+                AspDataEntry *valueStackEntry = AspPushNoUse
+                    (engine, nextResult.value);
+                if (entryStackEntry == 0 || valueStackEntry == 0)
+                {
+                    AspUnref(engine, result);
+                    result = 0;
+                    break;
+                }
+                AspDataSetStackEntryHasValue2(entryStackEntry, true);
+                AspDataSetStackEntryValue2Index
+                    (entryStackEntry, AspIndex(engine, next));
+                AspDataSetStackEntryFlag(entryStackEntry, start);
+
+                break;
+            }
+
+            case DataType_Set:
+            case DataType_Dictionary:
+            {
+                /* Append starting punctuation if applicable. */
+                *buffer = '\0';
+                bool start = next == 0 && !flag;
+                if (start)
+                    strcpy(buffer, "{");
+
+                AspDataEntry *value = 0;
+                if (flag)
+                {
+                   value = AspValueEntry
+                       (engine, AspDataGetTreeNodeValueIndex(next));
+                   strcpy(buffer, ": ");
+                }
+                else
+                {
+                    /* Examine the next element of the sequence. */
+                    AspTreeResult nextResult = AspTreeNext
+                        (engine, entry, next, true);
+                    next = nextResult.node;
+                    value = nextResult.key;
+
+                    /* Append any applicable punctuation. */
+                    if (next == 0)
+                    {
+                        if (start && type == DataType_Dictionary)
+                            strcat(buffer, ":");
+                        strcat(buffer, "}");
+                        break;
+                    }
+                    else if (!start)
+                        strcpy(buffer, ", ");
+                }
+
+                /* Save state and defer the key or value to the next iteration
+                   as appropriate. */
+                AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
+                AspDataEntry *valueStackEntry = AspPushNoUse(engine, value);
+                if (entryStackEntry == 0 || valueStackEntry == 0)
+                {
+                    AspUnref(engine, result);
+                    result = 0;
+                    break;
+                }
+                AspDataSetStackEntryHasValue2(entryStackEntry, true);
+                AspDataSetStackEntryValue2Index
+                    (entryStackEntry, AspIndex(engine, next));
+                AspDataSetStackEntryFlag
+                    (entryStackEntry,
+                     type == DataType_Dictionary && !flag);
+
+                break;
+            }
+
+            case DataType_Iterator:
+            {
+                uint32_t iterableIndex =
+                    AspDataGetIteratorIterableIndex(entry);
+                AspDataEntry *iterable = AspValueEntry
+                    (engine, iterableIndex);
+                strcpy(buffer, "<iter:");
+                strcat(buffer, TypeString(AspDataGetType(iterable)));
+                uint32_t memberIndex =
+                    AspDataGetIteratorMemberIndex(entry);
+                if (memberIndex == 0)
+                    strcat(buffer, " @end");
+                strcat(buffer, ">");
+                break;
+            }
+
+            case DataType_Function:
+            {
+                strcpy(buffer, "<func:");
+                if (AspDataGetFunctionIsApp(entry))
+                    sprintf
+                        (buffer + strlen(buffer), "app:%d",
+                         AspDataGetFunctionSymbol(entry));
+                else
+                    sprintf
+                        (buffer + strlen(buffer), "@%7.7X",
+                         AspDataGetFunctionCodeAddress(entry));
+                strcat(buffer, ">");
+                break;
+            }
+
+            case DataType_Module:
+                sprintf
+                    (buffer, "<mod:@%7.7X>",
+                     AspDataGetModuleCodeAddress(entry));
+                break;
+
+            case DataType_Type:
+            {
+                strcpy(buffer, "<type ");
+                strcat(buffer, TypeString(AspDataGetTypeValue(entry)));
+                strcat(buffer, ">");
+                break;
+            }
+        }
+
+        /* Check for error. */
+        if (result == 0 || engine->runResult != AspRunResult_OK)
+            break;
+
+        AspRunResult appendResult = AspStringAppendBuffer
+           (engine, result, buffer, strlen(buffer));
+        if (appendResult != AspRunResult_OK)
+        {
+            AspUnref(engine, result);
+            result = 0;
+            break;
+        }
+
+        /* Check if there's more to do. */
+        if (engine->stackTop == startStackTop)
+            break;
+
+        /* Fetch the next item from the stack. */
+        entry = AspTopValue(engine);
+        next = AspTopValue2(engine);
+        flag = AspDataGetStackEntryFlag(engine->stackTop);
+        AspPopNoErase(engine);
     }
 
-    return "<type ?>";
+    /* Unwind the working stack if necessary. */
+    if (engine->runResult == AspRunResult_OK)
+        while (engine->stackTop != startStackTop)
+            AspPopNoErase(engine);
+
+    return result;
+}
+
+static const char *TypeString(DataType type)
+{
+    switch (type)
+    {
+        case DataType_None:
+            return "None";
+        case DataType_Ellipsis:
+            return "...";
+        case DataType_Boolean:
+            return "bool";
+        case DataType_Integer:
+            return "int";
+        case DataType_Float:
+            return "float";
+        case DataType_Range:
+            return "range";
+        case DataType_String:
+            return "str";
+        case DataType_Tuple:
+            return "tuple";
+        case DataType_List:
+            return "list";
+        case DataType_Set:
+            return "set";
+        case DataType_Dictionary:
+            return "dict";
+        case DataType_Iterator:
+            return "iter";
+        case DataType_Function:
+            return "func";
+        case DataType_Module:
+            return "mod";
+        case DataType_Type:
+            return "type";
+    }
+
+    return "?";
 }
 
 unsigned AspCount(const AspDataEntry *entry)
@@ -482,6 +808,15 @@ AspDataEntry *AspFind
     if (result.result != AspRunResult_OK)
         return 0;
     return AspIsSet(tree) ? result.key : result.value;
+}
+
+AspDataEntry *AspNext(AspEngine *engine, AspDataEntry *iterator)
+{
+    AspIteratorResult result = AspIteratorDereference(engine, iterator);
+    if (result.result != AspRunResult_OK)
+        return 0;
+    AspIteratorNext(engine, iterator);
+    return result.value;
 }
 
 AspDataEntry *AspNewNone(AspEngine *engine)
@@ -562,6 +897,12 @@ AspDataEntry *AspNewSet(AspEngine *engine)
 AspDataEntry *AspNewDictionary(AspEngine *engine)
 {
     return NewObject(engine, DataType_Dictionary);
+}
+
+AspDataEntry *AspNewIterator(AspEngine *engine, AspDataEntry *iterable)
+{
+    AspIteratorResult result = AspIteratorCreate(engine, iterable);
+    return result.result != AspRunResult_OK ? 0 : result.value;
 }
 
 AspDataEntry *AspNewType(AspEngine *engine, const AspDataEntry *object)

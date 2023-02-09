@@ -124,12 +124,12 @@ bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);
 AspDataEntry *AspToString(AspEngine *, AspDataEntry *);
-const char *AspTypeString(const AspDataEntry *type);
 unsigned AspCount(const AspDataEntry *);
 AspDataEntry *AspElement(AspEngine *, AspDataEntry *sequence, int index);
 char AspStringElement(AspEngine *, const AspDataEntry *str, int index);
 AspDataEntry *AspFind
     (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
+AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
 AspDataEntry *AspNewNone(AspEngine *);
 AspDataEntry *AspNewEllipsis(AspEngine *);
 AspDataEntry *AspNewBoolean(AspEngine *, bool);
@@ -140,6 +140,7 @@ AspDataEntry *AspNewTuple(AspEngine *);
 AspDataEntry *AspNewList(AspEngine *);
 AspDataEntry *AspNewSet(AspEngine *);
 AspDataEntry *AspNewDictionary(AspEngine *);
+AspDataEntry *AspNewIterator(AspEngine *, AspDataEntry *iterable);
 AspDataEntry *AspNewType(AspEngine *, const AspDataEntry *);
 bool AspTupleAppend
     (AspEngine *, AspDataEntry *tuple, AspDataEntry *value, bool take);
