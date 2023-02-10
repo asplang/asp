@@ -199,6 +199,8 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetIteratorIterableIndex(entry),
                 AspDataGetIteratorMemberIndex(entry),
                 AspDataGetIteratorStringIndex(entry));
+            if (AspDataGetIteratorMemberNeedsCleanup(entry))
+                fputs(" nc", fp);
             break;
         case DataType_Function:
             if (AspDataGetFunctionIsApp(entry))
@@ -231,6 +233,8 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             if (AspDataGetStackEntryHasValue2(entry))
                 fprintf(fp, " val2=0x%7.7X",
                     AspDataGetStackEntryValue2Index(entry));
+            if (AspDataGetStackEntryFlag(entry))
+                fputs(" fl", fp);
             break;
         case DataType_Frame:
             fprintf(fp, " ra=0x%7.7X mod=0x%7.7X locns=0x%7.7X",
@@ -317,5 +321,5 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fprintf(fp, " next=0x%7.7X", AspDataGetFreeNext(entry));
             break;
     }
-    puts("");
+    fputc('\n', fp);
 }
