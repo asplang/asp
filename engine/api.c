@@ -927,10 +927,10 @@ static AspDataEntry *NewObject(AspEngine *engine, DataType type)
 bool AspTupleAppend
     (AspEngine *engine, AspDataEntry *tuple, AspDataEntry *value, bool take)
 {
-    /* Ensure the container is a tuple. Note that this is for building
-       new tuples, not modifying existing ones. */
+    /* Ensure the container is a tuple that is not referenced anywhere else. */
+    AspAssert(engine, AspDataGetType(tuple) == DataType_Tuple);
     AspRunResult assertResult = AspAssert
-        (engine, AspDataGetType(tuple) == DataType_Tuple);
+        (engine, AspDataGetUseCount(tuple) == 1);
     if (assertResult != AspRunResult_OK)
         return false;
 
