@@ -11,20 +11,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
-add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/app.y
-    DEPENDS ${PROJECT_SOURCE_DIR}/app.y
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${PROJECT_SOURCE_DIR}/app.y ${PROJECT_BINARY_DIR}
-    )
+string(
+    COMPARE EQUAL "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}"
+    built_in_place)
+if(NOT built_in_place)
+    add_custom_command(
+        OUTPUT "${PROJECT_BINARY_DIR}/app.y"
+        DEPENDS "${PROJECT_SOURCE_DIR}/app.y"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${PROJECT_SOURCE_DIR}/app.y" "${PROJECT_BINARY_DIR}"
+        )
+endif()
 
 add_custom_command(
     OUTPUT
-        ${PROJECT_BINARY_DIR}/app.c
-        ${PROJECT_BINARY_DIR}/app.h
-        ${PROJECT_BINARY_DIR}/app.out
-    DEPENDS lemon ${PROJECT_BINARY_DIR}/app.y
-    COMMAND lemon ${PROJECT_BINARY_DIR}/app.y
+        "${PROJECT_BINARY_DIR}/app.c"
+        "${PROJECT_BINARY_DIR}/app.h"
+        "${PROJECT_BINARY_DIR}/app.out"
+    DEPENDS lemon "${PROJECT_BINARY_DIR}/app.y"
+    COMMAND lemon "${PROJECT_BINARY_DIR}/app.y"
     )
 
 add_executable(aspg

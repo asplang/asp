@@ -22,20 +22,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
-add_custom_command(
-    OUTPUT ${PROJECT_BINARY_DIR}/asp.y
-    DEPENDS ${PROJECT_SOURCE_DIR}/asp.y
-    COMMAND ${CMAKE_COMMAND} -E copy
-        ${PROJECT_SOURCE_DIR}/asp.y ${PROJECT_BINARY_DIR}
-    )
+string(
+    COMPARE EQUAL "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}"
+    built_in_place)
+if(NOT built_in_place)
+    add_custom_command(
+        OUTPUT "${PROJECT_BINARY_DIR}/asp.y"
+        DEPENDS "${PROJECT_SOURCE_DIR}/asp.y"
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${PROJECT_SOURCE_DIR}/asp.y" "${PROJECT_BINARY_DIR}"
+        )
+endif()
 
 add_custom_command(
     OUTPUT
-        ${PROJECT_BINARY_DIR}/asp.c
-        ${PROJECT_BINARY_DIR}/asp.h
-        ${PROJECT_BINARY_DIR}/asp.out
-    DEPENDS lemon ${PROJECT_BINARY_DIR}/asp.y
-    COMMAND lemon ${PROJECT_BINARY_DIR}/asp.y
+        "${PROJECT_BINARY_DIR}/asp.c"
+        "${PROJECT_BINARY_DIR}/asp.h"
+        "${PROJECT_BINARY_DIR}/asp.out"
+    DEPENDS lemon "${PROJECT_BINARY_DIR}/asp.y"
+    COMMAND lemon "${PROJECT_BINARY_DIR}/asp.y"
     )
 
 add_executable(aspc

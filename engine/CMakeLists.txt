@@ -28,13 +28,13 @@ math(EXPR VERSION_VALUE
 add_custom_command(
     OUTPUT asp-ver.h
     COMMAND ${CMAKE_COMMAND} -E echo "/* Asp engine version. */"
-        > ${PROJECT_BINARY_DIR}/asp-ver.h
+        > "${PROJECT_BINARY_DIR}/asp-ver.h"
     COMMAND ${CMAKE_COMMAND} -E echo "\\#ifndef ASP_VERSION"
-        >> ${PROJECT_BINARY_DIR}/asp-ver.h
+        >> "${PROJECT_BINARY_DIR}/asp-ver.h"
     COMMAND ${CMAKE_COMMAND} -E echo "\\#define ASP_VERSION ${VERSION_VALUE}"
-        >> ${PROJECT_BINARY_DIR}/asp-ver.h
+        >> "${PROJECT_BINARY_DIR}/asp-ver.h"
     COMMAND ${CMAKE_COMMAND} -E echo "\\#endif"
-        >> ${PROJECT_BINARY_DIR}/asp-ver.h
+        >> "${PROJECT_BINARY_DIR}/asp-ver.h"
     )
 
 if(BUILD_FOR_TARGET)
@@ -108,14 +108,14 @@ if(BUILD_FOR_HOST)
 
     if(NOT BUILD_FOR_TARGET)
         add_custom_target(asp_ver_h ALL
-            DEPENDS ${PROJECT_BINARY_DIR}/asp-ver.h
+            DEPENDS "${PROJECT_BINARY_DIR}/asp-ver.h"
             )
     endif()
 
     install(FILES
         asp.h
         asp-priv.h
-        ${PROJECT_BINARY_DIR}/asp-ver.h
+        "${PROJECT_BINARY_DIR}/asp-ver.h"
         DESTINATION include/asp-${ABI_VERSION}
         )
 
