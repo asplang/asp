@@ -48,13 +48,13 @@ Token *Lexer::Next()
             token = ProcessString();
         else if (c == '.')
         {
-            if (isdigit(Peek(1)))
-                token = ProcessNumber();
-            else if (Peek(1) == '.' && Peek(2) == '.')
+            if (Peek(1) == '.' && Peek(2) == '.')
             {
                 Get(); Get(); Get();
                 token = new Token(sourceLocation, TOKEN_ELLIPSIS);
             }
+            else
+                token = ProcessNumber();
         }
         else if (c == '-' &&
                  (isdigit(Peek(1)) || Peek(1) == '.' && isdigit(Peek(2))))

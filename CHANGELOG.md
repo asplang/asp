@@ -7,6 +7,11 @@ chronological order.
 Changes
 -------
 
+Next version:
+- Application specification generator:
+  - Fixed a bug that caused the generator to hang when a lone period was
+    encountered.
+
 Version 0.7.1.0 (compiler 0.7.1.0, engine 0.7.3.0):
 - Engine:
   - Finished comparison logic to include sequences.
