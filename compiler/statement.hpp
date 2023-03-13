@@ -237,8 +237,6 @@ class VariableList : public NonTerminal
             return names.end();
         }
 
-        void Emit(Executable &) const;
-
     private:
 
         const Statement *parentStatement = 0;

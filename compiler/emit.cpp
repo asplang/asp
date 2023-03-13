@@ -210,22 +210,6 @@ void ImportStatement::Emit(Executable &executable) const
     }
 }
 
-void VariableList::Emit(Executable &executable) const
-{
-    executable.Insert(new PushTupleInstruction("Push a new tuple"));
-    for (auto iter = names.begin(); iter != names.end(); iter++)
-    {
-        auto &name = *iter;
-        auto symbol = executable.Symbol(name);
-        ostringstream oss;
-        oss
-            << "Load address of variable " << name
-            << " (" << symbol << ')';
-        executable.Insert(new LoadInstruction(symbol, true, oss.str()));
-        executable.Insert(new BuildInstruction("Add address to tuple"));
-    }
-}
-
 void GlobalStatement::Emit(Executable &executable) const
 {
     bool isLocal = ParentDef() != 0;
