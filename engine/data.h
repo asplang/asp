@@ -110,6 +110,10 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspBitSet(&(eptr)->u1, (AspWordBitSize) + 2, (value)))
 #define AspDataGetBit2(eptr) \
     (AspBitGet((eptr)->u1, (AspWordBitSize) + 2))
+#define AspDataSetBit3(eptr, value) \
+    (AspBitSet(&(eptr)->u1, (AspWordBitSize) + 3, (value)))
+#define AspDataGetBit3(eptr) \
+    (AspBitGet((eptr)->u1, (AspWordBitSize) + 3))
 
 /* Common field access. */
 #define AspDataSetType(eptr, ty) \
@@ -377,6 +381,10 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetBit2((eptr), (unsigned)(value)))
 #define AspDataGetNamespaceNodeIsLocal(eptr) \
     ((bool)(AspDataGetBit2((eptr))))
+#define AspDataSetNamespaceNodeIsNotLocal(eptr, value) \
+    (AspDataSetBit3((eptr), (unsigned)(value)))
+#define AspDataGetNamespaceNodeIsNotLocal(eptr) \
+    ((bool)(AspDataGetBit3((eptr))))
 
 /* TreeLinksNode entry field access. */
 #define AspDataSetTreeLinksNodeLeftIndex(eptr, value) \

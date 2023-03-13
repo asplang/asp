@@ -8,6 +8,9 @@ Changes
 -------
 
 Next version:
+- Engine:
+  - Ensured that global overrides for variables that does not existant locally
+    do not leave a vestigial local variable when the global override is removed.
 - Application specification generator:
   - Fixed a bug that caused the generator to hang when a lone period was
     encountered.

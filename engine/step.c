@@ -827,7 +827,7 @@ static AspRunResult Step(AspEngine *engine)
                         return AspRunResult_KeyNotFound;
 
                     /* Erase the member. */
-                    bool eraseResult = AspTreeEraseNode
+                    AspRunResult eraseResult = AspTreeEraseNode
                         (engine, container, findResult.node, true, true);
                     if (eraseResult != AspRunResult_OK)
                         return eraseResult;
@@ -855,7 +855,7 @@ static AspRunResult Step(AspEngine *engine)
                         return AspRunResult_KeyNotFound;
 
                     /* Erase the member. */
-                    bool eraseResult = AspTreeEraseNode
+                    AspRunResult eraseResult = AspTreeEraseNode
                         (engine, ns, findResult.node, true, true);
                     if (eraseResult != AspRunResult_OK)
                         return eraseResult;
@@ -917,8 +917,7 @@ static AspRunResult Step(AspEngine *engine)
                 node = findResult.node;
             }
 
-            /* Ensure the variable was found. Note that we do not allow
-               variables in the system namespace to be deleted. */
+            /* Ensure the variable was found. */
             if (node == 0)
                 return AspRunResult_NameNotFound;
 
@@ -976,14 +975,15 @@ static AspRunResult Step(AspEngine *engine)
             }
             else
             {
-                /* Create a local variable as a reference to the global
-                   namespace. */
+                /* Create a temporary local variable as a reference to the
+                   global namespace. */
                 AspTreeResult insertResult = AspTreeTryInsertBySymbol
                     (engine, engine->localNamespace,
                      variableSymbol, engine->noneSingleton);
                 if (insertResult.result != AspRunResult_OK)
                     return insertResult.result;
                 node = insertResult.node;
+                AspDataSetNamespaceNodeIsNotLocal(node, true);
             }
 
             /* Mark the variable with a global override. */
@@ -1036,8 +1036,17 @@ static AspRunResult Step(AspEngine *engine)
             if (!AspDataGetNamespaceNodeIsGlobal(node))
                 return AspRunResult_Redundant;
 
-            /* Revert the variable's global override. */
-            AspDataSetNamespaceNodeIsGlobal(node, false);
+            /* Revert the variable's global override, removing the local
+               variable if it didn't exist prior to the global override. */
+            if (AspDataGetNamespaceNodeIsNotLocal(node))
+            {
+                AspRunResult eraseResult = AspTreeEraseNode
+                    (engine, engine->localNamespace, node, true, true);
+                if (eraseResult != AspRunResult_OK)
+                    return eraseResult;
+            }
+            else
+                AspDataSetNamespaceNodeIsGlobal(node, false);
 
             break;
         }
