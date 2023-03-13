@@ -31,7 +31,7 @@ static AspOperationResult PerformFormatBinaryOperation
 static AspOperationResult PerformEqualityOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
-static AspOperationResult PerformComparisonOperation
+static AspOperationResult PerformRelationalOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
 static AspOperationResult PerformMembershipOperation
@@ -285,7 +285,7 @@ AspOperationResult AspPerformBinaryOperation
         case OpCode_LE:
         case OpCode_GT:
         case OpCode_GE:
-            result = PerformComparisonOperation
+            result = PerformRelationalOperation
                 (engine, opCode, left, right);
             break;
 
@@ -762,7 +762,7 @@ static AspOperationResult PerformEqualityOperation
     return result;
 }
 
-static AspOperationResult PerformComparisonOperation
+static AspOperationResult PerformRelationalOperation
     (AspEngine *engine, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right)
 {

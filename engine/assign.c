@@ -94,9 +94,10 @@ AspRunResult AspAssignSequence
                 AspDataEntry *stackEntry = AspPush(engine, newValueElement);
                 if (stackEntry == 0)
                     return AspRunResult_OutOfDataMemory;
-                stackEntry = AspPush(engine, addressElement);
-                if (stackEntry == 0)
-                    return AspRunResult_OutOfDataMemory;
+                AspRef(engine, addressElement);
+                AspDataSetStackEntryHasValue2(stackEntry, true);
+                AspDataSetStackEntryValue2Index
+                    (stackEntry, AspIndex(engine, addressElement));
             }
             else
             {
@@ -119,11 +120,10 @@ AspRunResult AspAssignSequence
             engine->runResult != AspRunResult_OK)
             break;
 
-        address = AspTopValue(engine);
-        if (address == 0)
-            return AspRunResult_StackUnderflow;
-        AspRef(engine, address);
-        AspPop(engine);
+        address = AspTopValue2(engine);
+        assertResult = AspAssert(engine, address != 0);
+        if (assertResult != AspRunResult_OK)
+            return assertResult;
         newValue = AspTopValue(engine);
         if (newValue == 0)
             return AspRunResult_StackUnderflow;
