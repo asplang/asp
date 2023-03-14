@@ -293,7 +293,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetTreeNodeValueIndex(entry),
                 AspDataGetTreeNodeIsBlack(entry) ? 'B' : 'R',
                 AspDataGetNamespaceNodeIsGlobal(entry),
-                AspDataGetNamespaceNodeIsLocal(entry));
+                !AspDataGetNamespaceNodeIsNotLocal(entry));
             break;
         case DataType_TreeLinksNode:
             fprintf(fp, " l=0x%7.7X r=0x%7.7X",

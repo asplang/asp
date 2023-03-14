@@ -377,14 +377,10 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetBit1((eptr), (unsigned)(value)))
 #define AspDataGetNamespaceNodeIsGlobal(eptr) \
     ((bool)(AspDataGetBit1((eptr))))
-#define AspDataSetNamespaceNodeIsLocal(eptr, value) \
-    (AspDataSetBit2((eptr), (unsigned)(value)))
-#define AspDataGetNamespaceNodeIsLocal(eptr) \
-    ((bool)(AspDataGetBit2((eptr))))
 #define AspDataSetNamespaceNodeIsNotLocal(eptr, value) \
-    (AspDataSetBit3((eptr), (unsigned)(value)))
+    (AspDataSetBit2((eptr), (unsigned)(value)))
 #define AspDataGetNamespaceNodeIsNotLocal(eptr) \
-    ((bool)(AspDataGetBit3((eptr))))
+    ((bool)(AspDataGetBit2((eptr))))
 
 /* TreeLinksNode entry field access. */
 #define AspDataSetTreeLinksNodeLeftIndex(eptr, value) \

@@ -642,15 +642,8 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *node = insertResult.node;
 
             /* Set the scope usage for the newly created variables. */
-            if (insertResult.inserted)
-            {
-                if (engine->localNamespace != engine->globalNamespace)
-                    AspDataSetNamespaceNodeIsLocal(node, true);
-                else
-                    AspDataSetNamespaceNodeIsGlobal(node, true);
-            }
-            else if (AspDataGetNamespaceNodeIsGlobal(node) &&
-                     engine->localNamespace != engine->globalNamespace)
+            if (AspDataGetNamespaceNodeIsGlobal(node) &&
+                engine->localNamespace != engine->globalNamespace)
             {
                 /* Use global scope because of global override. */
                 insertResult = AspTreeTryInsertBySymbol
