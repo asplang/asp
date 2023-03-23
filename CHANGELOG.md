@@ -7,9 +7,9 @@ chronological order.
 Changes
 -------
 
-Next version:
+Version 0.7.1.1 (compiler 0.7.1.0, engine 0.7.3.1):
 - Engine:
-  - Ensured that global overrides for variables that does not existant locally
+  - Ensured that global overrides for variables that do not exist locally
     do not leave a vestigial local variable when the global override is removed.
 - Application specification generator:
   - Fixed a bug that caused the generator to hang when a lone period was
