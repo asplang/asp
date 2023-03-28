@@ -14,8 +14,9 @@ static bool IsSpecial(int);
 
 bool Lexer::keywordsInitialized = true;
 
-Lexer::Lexer(istream &is) :
-    is(is)
+Lexer::Lexer(istream &is, const string &fileName) :
+    is(is),
+    caret(fileName, 1, 1)
 {
 }
 

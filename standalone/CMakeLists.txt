@@ -35,6 +35,7 @@ add_executable(asps
 
 target_link_libraries(asps
     aspe
+    aspd
     )
 
 target_compile_definitions(asps PRIVATE

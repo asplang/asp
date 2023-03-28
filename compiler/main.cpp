@@ -202,6 +202,19 @@ static int main1(int argc, char **argv)
         return 2;
     }
 
+    // Open output source info file.
+    static string sourceInfoSuffix = ".aspd";
+    string sourceInfoFileName = baseName + sourceInfoSuffix;
+    ofstream sourceInfoStream(sourceInfoFileName, ios::binary);
+    if (!sourceInfoStream)
+    {
+        cerr
+            << "Error creating " << sourceInfoFileName
+            << ": " << strerror(errno) << endl;
+        Usage();
+        return 2;
+    }
+
     // Predefine symbols for main module and application functions.
     SymbolTable symbolTable;
     Executable executable(symbolTable);
@@ -270,7 +283,7 @@ static int main1(int argc, char **argv)
             errorDetected = true;
             break;
         }
-        Lexer lexer(*moduleStream);
+        Lexer lexer(*moduleStream, moduleFileName);
 
         #ifdef ASP_COMPILER_DEBUG
         cout << "Parsing module " << moduleFileName << "..." << endl;
@@ -286,7 +299,7 @@ static int main1(int argc, char **argv)
             if (token->type == -1)
             {
                 cerr
-                    << moduleFileName << ": "
+                    << token->sourceLocation.fileName << ':'
                     << token->sourceLocation.line << ':'
                     << token->sourceLocation.column
                     << ": Bad token encountered: '"
@@ -342,6 +355,16 @@ static int main1(int argc, char **argv)
     {
         cerr
             << "Error writing " << listingFileName
+            << ": " << strerror(errno) << endl;
+    }
+
+    // Write the source info file.
+    executable.WriteSourceInfo(sourceInfoStream);
+    sourceInfoStream.close();
+    if (!sourceInfoStream)
+    {
+        cerr
+            << "Error writing " << sourceInfoFileName
             << ": " << strerror(errno) << endl;
     }
 

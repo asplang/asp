@@ -5,6 +5,8 @@
 #ifndef GRAMMAR_HPP
 #define GRAMMAR_HPP
 
+#include <string>
+
 struct SourceLocation
 {
     SourceLocation() :
@@ -12,11 +14,15 @@ struct SourceLocation
     {
     }
 
-    SourceLocation(unsigned line, unsigned column) :
+    SourceLocation
+        (const std::string &fileName,
+         unsigned line, unsigned column) :
+        fileName(fileName),
         line(line), column(column)
     {
     }
 
+    std::string fileName;
     unsigned line, column;
 };
 
@@ -29,6 +35,11 @@ struct SourceElement
     explicit SourceElement(const SourceLocation &sourceLocation) :
         sourceLocation(sourceLocation)
     {
+    }
+
+    bool HasSourceLocation() const
+    {
+        return sourceLocation.line != 0;
     }
 
     SourceLocation sourceLocation;

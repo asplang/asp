@@ -219,6 +219,7 @@ void ArgumentList::Parent(const Statement *statement)
 
 CallExpression::CallExpression
     (Expression *functionExpression, ArgumentList *argumentList) :
+    Expression((SourceElement &)*functionExpression),
     functionExpression(functionExpression),
     argumentList(argumentList)
 {
@@ -238,6 +239,7 @@ void CallExpression::Parent(const Statement *statement)
 
 ElementExpression::ElementExpression
     (Expression *sequenceExpression, Expression *indexExpression) :
+    Expression((SourceElement &)*indexExpression),
     sequenceExpression(sequenceExpression),
     indexExpression(indexExpression)
 {
@@ -257,7 +259,7 @@ void ElementExpression::Parent(const Statement *statement)
 
 MemberExpression::MemberExpression
     (Expression *expression, const Token &nameToken) :
-    Expression((SourceElement &)*expression),
+    Expression(nameToken),
     expression(expression),
     name(nameToken.s)
 {
@@ -373,6 +375,11 @@ void SetExpression::Parent(const Statement *statement)
         auto expression = *iter;
         expression->Parent(statement);
     }
+}
+
+ListExpression::ListExpression(const Token &token) :
+    Expression(token)
+{
 }
 
 ListExpression::ListExpression()

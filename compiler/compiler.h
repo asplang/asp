@@ -179,9 +179,6 @@ class Compiler
         (MakeCallExpression, Expression *,
          Expression *, ArgumentList *);
     DECLARE_METHOD
-        (MakeSlicingExpression, Expression *,
-         Expression *, RangeExpression *);
-    DECLARE_METHOD
         (MakeElementExpression, Expression *,
          Expression *, Expression *);
     DECLARE_METHOD

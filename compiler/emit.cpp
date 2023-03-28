@@ -23,7 +23,9 @@ void Block::Emit(Executable &executable) const
 void ExpressionStatement::Emit(Executable &executable) const
 {
     expression->Emit(executable);
-    executable.Insert(new PopInstruction("Pop unused value"));
+    executable.Insert
+        (new PopInstruction("Pop unused value"),
+         sourceLocation);
 }
 
 void AssignmentStatement::Emit(Executable &executable) const
@@ -72,14 +74,19 @@ void AssignmentStatement::Emit1(Executable &executable, bool top) const
         ostringstream oss;
         oss
             << "Perform binary operation 0x"
-            << hex << setfill('0') << setw(2)
-            << static_cast<unsigned>(iter->second);
-        executable.Insert(new BinaryInstruction(iter->second, oss.str()));
+            << hex << uppercase << setfill('0')
+            << setw(2) << static_cast<unsigned>(iter->second);
+        executable.Insert
+            (new BinaryInstruction(iter->second, oss.str()),
+             sourceLocation);
     }
 
     targetExpression->Emit(executable, Expression::EmitType::Address);
-    executable.Insert(new SetInstruction(top,
-        top ? "Assign with pop" : "Assign, leave value on stack"));
+    executable.Insert
+        (new SetInstruction
+            (top,
+             top ? "Assign with pop" : "Assign, leave value on stack"),
+         sourceLocation);
 }
 
 void InsertionStatement::Emit(Executable &executable) const
@@ -99,8 +106,11 @@ void InsertionStatement::Emit1(Executable &executable, bool top) const
     else
         itemExpression->Emit(executable);
 
-    executable.Insert(new InsertInstruction(top,
-        top ? "Insert with pop" : "Insert, leave container on stack"));
+    executable.Insert
+        (new InsertInstruction
+            (top,
+             top ? "Insert with pop" : "Insert, leave container on stack"),
+         sourceLocation);
 }
 
 void BreakStatement::Emit(Executable &executable) const
@@ -109,8 +119,10 @@ void BreakStatement::Emit(Executable &executable) const
     if (loopStatement == 0)
         throw string("break outside loop");
 
-    executable.Insert(new JumpInstruction
-        (loopStatement->EndLocation(), "Jump out of loop"));
+    executable.Insert
+        (new JumpInstruction
+            (loopStatement->EndLocation(), "Jump out of loop"),
+         sourceLocation);
 }
 
 void ContinueStatement::Emit(Executable &executable) const
@@ -119,8 +131,10 @@ void ContinueStatement::Emit(Executable &executable) const
     if (loopStatement == 0)
         throw string("continue outside loop");
 
-    executable.Insert(new JumpInstruction
-        (loopStatement->ContinueLocation(), "Jump to loop iteration"));
+    executable.Insert
+        (new JumpInstruction
+            (loopStatement->ContinueLocation(), "Jump to loop iteration"),
+         sourceLocation);
 }
 
 void PassStatement::Emit(Executable &executable) const
@@ -139,11 +153,10 @@ void ImportStatement::Emit(Executable &executable) const
 
         {
             ostringstream oss;
-            oss
-                << "Load module " << moduleName
-                << " (" << moduleSymbol << ')';
-            executable.Insert(new LoadModuleInstruction
-                (moduleSymbol, oss.str()));
+            oss << "Load module " << moduleName;
+            executable.Insert
+                (new LoadModuleInstruction(moduleSymbol, oss.str()),
+                 sourceLocation);
         }
 
         if (memberNameList == 0)
@@ -153,21 +166,19 @@ void ImportStatement::Emit(Executable &executable) const
 
             {
                 ostringstream oss;
-                oss
-                    << "Push module " << moduleName
-                    << " (" << moduleSymbol << ')';
-                executable.Insert(new PushModuleInstruction
-                    (moduleSymbol, oss.str()));
+                oss << "Push module " << moduleName;
+                executable.Insert
+                    (new PushModuleInstruction(moduleSymbol, oss.str()),
+                     sourceLocation);
             }
             {
                 ostringstream oss;
-                oss
-                    << "Push address of variable " << asName
-                    << " (" << asNameSymbol << ')';
-                executable.Insert(new LoadInstruction
-                    (asNameSymbol, true, oss.str()));
+                oss << "Push address of variable " << asName;
+                executable.Insert
+                    (new LoadInstruction(asNameSymbol, true, oss.str()),
+                     sourceLocation);
             }
-            executable.Insert(new SetInstruction(true));
+            executable.Insert(new SetInstruction(true), sourceLocation);
         }
         else
         {
@@ -182,29 +193,26 @@ void ImportStatement::Emit(Executable &executable) const
 
                 {
                     ostringstream oss;
-                    oss
-                        << "Push module " << moduleName
-                        << " (" << moduleSymbol << ')';
-                    executable.Insert(new PushModuleInstruction
-                        (moduleSymbol, oss.str()));
+                    oss << "Push module " << moduleName;
+                    executable.Insert
+                        (new PushModuleInstruction(moduleSymbol, oss.str()),
+                         sourceLocation);
                 }
                 {
                     ostringstream oss;
-                    oss
-                        << "Look up member variable " << name
-                        << " (" << nameSymbol << ')';
-                    executable.Insert(new MemberInstruction
-                        (nameSymbol, false, oss.str()));
+                    oss << "Look up member variable " << name;
+                    executable.Insert
+                        (new MemberInstruction(nameSymbol, false, oss.str()),
+                         sourceLocation);
                 }
                 {
                     ostringstream oss;
-                    oss
-                        << "Load address of variable " << asName
-                        << " (" << asNameSymbol << ')';
-                    executable.Insert(new LoadInstruction
-                        (asNameSymbol, true, oss.str()));
+                    oss << "Load address of variable " << asName;
+                    executable.Insert
+                        (new LoadInstruction(asNameSymbol, true, oss.str()),
+                         sourceLocation);
                 }
-                executable.Insert(new SetInstruction(true));
+                executable.Insert(new SetInstruction(true), sourceLocation);
             }
         }
     }
@@ -223,10 +231,10 @@ void GlobalStatement::Emit(Executable &executable) const
         auto symbol = executable.Symbol(name);
 
         ostringstream oss;
-        oss
-            << "Enable global override for variable " << name
-            << " (" << symbol << ')';
-        executable.Insert(new GlobalInstruction(symbol, false, oss.str()));
+        oss << "Enable global override for variable " << name;
+        executable.Insert
+            (new GlobalInstruction(symbol, false, oss.str()),
+             sourceLocation);
     }
 }
 
@@ -243,10 +251,10 @@ void LocalStatement::Emit(Executable &executable) const
         auto symbol = executable.Symbol(name);
 
         ostringstream oss;
-        oss
-            << "Disable global override for variable " << name
-            << " (" << symbol << ')';
-        executable.Insert(new GlobalInstruction(symbol, true, oss.str()));
+        oss << "Disable global override for variable " << name;
+        executable.Insert
+            (new GlobalInstruction(symbol, true, oss.str()),
+             sourceLocation);
     }
 }
 
@@ -273,12 +281,16 @@ void DelStatement::Emit1(Executable &executable, Expression *expression) const
     else if (elementExpression != 0)
     {
         elementExpression->Emit(executable, Expression::EmitType::Delete);
-        executable.Insert(new EraseInstruction("Erase element"));
+        executable.Insert
+            (new EraseInstruction("Erase element"),
+             sourceLocation);
     }
     else if (memberExpression != 0)
     {
         memberExpression->Emit(executable, Expression::EmitType::Delete);
-        executable.Insert(new EraseInstruction("Erase member"));
+        executable.Insert
+            (new EraseInstruction("Erase member"),
+             sourceLocation);
     }
     else if (variableExpression != 0)
     {
@@ -289,10 +301,10 @@ void DelStatement::Emit1(Executable &executable, Expression *expression) const
         auto symbol = executable.Symbol(name);
 
         ostringstream oss;
-        oss
-            << "Delete variable " << name
-            << " (" << symbol << ')';
-        executable.Insert(new DeleteInstruction(symbol, oss.str()));
+        oss << "Delete variable " << name;
+        executable.Insert
+            (new DeleteInstruction(symbol, oss.str()),
+             sourceLocation);
     }
     else
         throw string("Invalid type for del");
@@ -311,13 +323,13 @@ void ReturnStatement::Emit(Executable &executable) const
     {
         // Use None as the return value.
         Expression *noneExpression = new ConstantExpression
-            (Token((SourceLocation &)*this, TOKEN_NONE));
+            (Token(sourceLocation, TOKEN_NONE));
         noneExpression->Parent(this);
         noneExpression->Emit(executable);
         delete noneExpression;
     }
 
-    executable.Insert(new ReturnInstruction);
+    executable.Insert(new ReturnInstruction, sourceLocation);
 }
 
 void AssertStatement::Emit(Executable &executable) const
@@ -325,16 +337,21 @@ void AssertStatement::Emit(Executable &executable) const
     auto *constantExpression = dynamic_cast<const ConstantExpression *>
         (expression);
     if (constantExpression != 0 && !constantExpression->IsTrue())
-        executable.Insert(new AbortInstruction);
+    {
+        executable.Insert(new AbortInstruction, sourceLocation);
+    }
     else
     {
         expression->Emit(executable);
-        auto endLocation = executable.Insert(new NullInstruction);
+        auto endLocation = executable.Insert
+            (new NullInstruction, sourceLocation);
 
         executable.PushLocation(endLocation);
-        executable.Insert(new ConditionalJumpInstruction
-            (true, endLocation, "Jump if true to end"));
-        executable.Insert(new AbortInstruction);
+        executable.Insert
+            (new ConditionalJumpInstruction
+                (true, endLocation, "Jump if true to end"),
+             sourceLocation);
+        executable.Insert(new AbortInstruction, sourceLocation);
         executable.PopLocation();
     }
 }
@@ -343,16 +360,21 @@ void IfStatement::Emit(Executable &executable) const
 {
     conditionExpression->Emit(executable);
 
-    auto elseLocation = executable.Insert(new NullInstruction);
-    auto endLocation = executable.Insert(new NullInstruction);
+    auto elseLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+    auto endLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
 
     executable.PushLocation(elseLocation);
-    executable.Insert(new ConditionalJumpInstruction
-        (false, elseLocation, "Jump if false to else"));
+    executable.Insert
+        (new ConditionalJumpInstruction
+            (false, elseLocation, "Jump if false to else"),
+         sourceLocation);
     trueBlock->Emit(executable);
     if (falseBlock != 0 || elsePart != 0)
-        executable.Insert(new JumpInstruction
-            (endLocation, "Jump to end"));
+        executable.Insert
+            (new JumpInstruction(endLocation, "Jump to end"),
+             sourceLocation);
     executable.PopLocation();
 
     executable.PushLocation(endLocation);
@@ -373,9 +395,9 @@ void WhileStatement::Emit(Executable &executable) const
         auto loopedExpression = new VariableExpression
             ((SourceElement &)*this, loopedVariableSymbol);
         auto falseExpression = new ConstantExpression
-            (Token((SourceLocation &)*this, TOKEN_FALSE));
+            (Token(sourceLocation, TOKEN_FALSE));
         AssignmentStatement initStatement
-            (Token((SourceLocation &)*this, TOKEN_ASSIGN),
+            (Token(sourceLocation, TOKEN_ASSIGN),
              loopedExpression, falseExpression);
         loopedExpression->Parent(&initStatement);
         falseExpression->Parent(&initStatement);
@@ -383,23 +405,28 @@ void WhileStatement::Emit(Executable &executable) const
         initStatement.Emit(executable);
     }
 
-    continueLocation = executable.Insert(new NullInstruction);
+    continueLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
     conditionExpression->Emit(executable);
 
-    auto elseLocation = executable.Insert(new NullInstruction);
-    endLocation = executable.Insert(new NullInstruction);
+    auto elseLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+    endLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
 
     executable.PushLocation(elseLocation);
-    executable.Insert(new ConditionalJumpInstruction
-        (false, elseLocation, "Jump if false to else"));
+    executable.Insert
+        (new ConditionalJumpInstruction
+            (false, elseLocation, "Jump if false to else"),
+         sourceLocation);
     if (falseBlock != 0)
     {
         auto loopedExpression = new VariableExpression
             ((SourceElement &)*this, loopedVariableSymbol);
         auto trueExpression = new ConstantExpression
-            (Token((SourceLocation &)*this, TOKEN_TRUE));
+            (Token(sourceLocation, TOKEN_TRUE));
         AssignmentStatement signalStatement
-            (Token((SourceLocation &)*this, TOKEN_ASSIGN),
+            (Token(sourceLocation, TOKEN_ASSIGN),
              loopedExpression, trueExpression);
         loopedExpression->Parent(&signalStatement);
         trueExpression->Parent(&signalStatement);
@@ -407,8 +434,9 @@ void WhileStatement::Emit(Executable &executable) const
         signalStatement.Emit(executable);
     }
     trueBlock->Emit(executable);
-    executable.Insert(new JumpInstruction
-        (continueLocation, "Jump to continue"));
+    executable.Insert
+        (new JumpInstruction(continueLocation, "Jump to continue"),
+         sourceLocation);
     executable.PopLocation();
 
     if (falseBlock != 0)
@@ -428,8 +456,10 @@ void WhileStatement::Emit(Executable &executable) const
             throw;
         }
         delete loopedExpression;
-        executable.Insert(new ConditionalJumpInstruction
-            (true, endLocation, "Jump if true to end"));
+        executable.Insert
+            (new ConditionalJumpInstruction
+                (true, endLocation, "Jump if true to end"),
+             sourceLocation);
         falseBlock->Emit(executable);
         executable.PopLocation();
     }
@@ -445,9 +475,9 @@ void ForStatement::Emit(Executable &executable) const
         auto loopedExpression = new VariableExpression
             ((SourceElement &)*this, loopedVariableSymbol);
         auto falseExpression = new ConstantExpression
-            (Token((SourceLocation &)*this, TOKEN_FALSE));
+            (Token(sourceLocation, TOKEN_FALSE));
         AssignmentStatement initStatement
-            (Token((SourceLocation &)*this, TOKEN_ASSIGN),
+            (Token(sourceLocation, TOKEN_ASSIGN),
              loopedExpression, falseExpression);
         loopedExpression->Parent(&initStatement);
         falseExpression->Parent(&initStatement);
@@ -456,44 +486,50 @@ void ForStatement::Emit(Executable &executable) const
     }
 
     iterableExpression->Emit(executable);
-    executable.Insert(new StartIteratorInstruction);
+    executable.Insert(new StartIteratorInstruction, sourceLocation);
 
-    auto testLocation = executable.Insert(new NullInstruction);
-    continueLocation = executable.Insert(new NullInstruction);
-    auto elseLocation = executable.Insert(new NullInstruction);
-    endLocation = executable.Insert(new NullInstruction);
+    auto testLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+    continueLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+    auto elseLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+    endLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
 
     executable.PushLocation(continueLocation);
-    executable.Insert(new TestIteratorInstruction);
-    executable.Insert(new ConditionalJumpInstruction
-        (false, elseLocation, "Jump if false to else"));
+    executable.Insert(new TestIteratorInstruction, sourceLocation);
+    executable.Insert
+        (new ConditionalJumpInstruction
+            (false, elseLocation, "Jump if false to else"),
+         sourceLocation);
     if (falseBlock != 0)
     {
         auto loopedExpression = new VariableExpression
             ((SourceElement &)*this, loopedVariableSymbol);
         auto trueExpression = new ConstantExpression
-            (Token((SourceLocation &)*this, TOKEN_TRUE));
+            (Token(sourceLocation, TOKEN_TRUE));
         AssignmentStatement signalStatement
-            (Token((SourceLocation &)*this, TOKEN_ASSIGN),
+            (Token(sourceLocation, TOKEN_ASSIGN),
              loopedExpression, trueExpression);
         loopedExpression->Parent(&signalStatement);
         trueExpression->Parent(&signalStatement);
         signalStatement.Parent(Parent());
         signalStatement.Emit(executable);
     }
-    executable.Insert(new DereferenceIteratorInstruction
-        ("Dereference iterator"));
+    executable.Insert(new DereferenceIteratorInstruction, sourceLocation);
     targetExpression->Emit
         (executable, Expression::EmitType::Address);
 
-    executable.Insert(new SetInstruction(true));
+    executable.Insert(new SetInstruction(true), sourceLocation);
     trueBlock->Emit(executable);
     executable.PopLocation();
 
     executable.PushLocation(elseLocation);
-    executable.Insert(new AdvanceIteratorInstruction);
-    executable.Insert(new JumpInstruction
-        (testLocation, "Jump to test"));
+    executable.Insert(new AdvanceIteratorInstruction, sourceLocation);
+    executable.Insert
+        (new JumpInstruction(testLocation, "Jump to test"),
+         sourceLocation);
     executable.PopLocation();
 
     executable.PushLocation(endLocation);
@@ -514,14 +550,16 @@ void ForStatement::Emit(Executable &executable) const
             throw;
         }
         delete loopedExpression;
-        executable.Insert(new ConditionalJumpInstruction
-            (true, endLocation, "Jump if true to end"));
+        executable.Insert
+            (new ConditionalJumpInstruction
+                (true, endLocation, "Jump if true to end"),
+             sourceLocation);
         falseBlock->Emit(executable);
         executable.PopLocation();
     }
     executable.PopLocation();
 
-    executable.Insert(new PopInstruction);
+    executable.Insert(new PopInstruction, sourceLocation);
 }
 
 void Parameter::Emit(Executable &executable) const
@@ -533,37 +571,42 @@ void Parameter::Emit(Executable &executable) const
     oss << "Make";
     if (isGroup)
         oss << " group";
-    oss
-        << " parameter " << name
-        << " (" << symbol << ')';
+    oss << " parameter " << name;
     if (defaultExpression != 0)
         oss << " with default";
-    executable.Insert(new MakeParameterInstruction
-        (symbol, defaultExpression != 0, isGroup, oss.str()));
+    executable.Insert
+        (new MakeParameterInstruction
+            (symbol, defaultExpression != 0, isGroup, oss.str()),
+         sourceLocation);
 }
 
 void ParameterList::Emit(Executable &executable) const
 {
-    executable.Insert(new PushParameterListInstruction
-        ("Push empty parameter list"));
+    executable.Insert
+        (new PushParameterListInstruction("Push empty parameter list"),
+         sourceLocation);
     for (auto iter = parameters.begin();
          iter != parameters.end(); iter++)
     {
         auto parameter = *iter;
         parameter->Emit(executable);
-        executable.Insert(new BuildInstruction
-            ("Add parameter to parameter list"));
+        executable.Insert
+            (new BuildInstruction("Add parameter to parameter list"),
+             sourceLocation);
     }
 }
 
 void DefStatement::Emit(Executable &executable) const
 {
-    auto entryLocation = executable.Insert(new NullInstruction);
-    auto defineLocation = executable.Insert(new NullInstruction);
+    auto entryLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+    auto defineLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
 
     executable.PushLocation(entryLocation);
-    executable.Insert(new JumpInstruction
-        (defineLocation, "Jump around code"));
+    executable.Insert
+        (new JumpInstruction(defineLocation, "Jump around code"),
+         sourceLocation);
     executable.PopLocation();
 
     executable.PushLocation(defineLocation);
@@ -576,9 +619,10 @@ void DefStatement::Emit(Executable &executable) const
             (block->FinalStatement());
         if (finalReturnStatement == 0)
         {
-            executable.Insert(new PushNoneInstruction
-                ("Push default return value)"));
-            executable.Insert(new ReturnInstruction);
+            executable.Insert
+                (new PushNoneInstruction("Push default return value)"),
+                 sourceLocation);
+            executable.Insert(new ReturnInstruction, sourceLocation);
         }
     }
     catch (...)
@@ -589,17 +633,18 @@ void DefStatement::Emit(Executable &executable) const
     executable.PopLocation();
 
     parameterList->Emit(executable);
-    executable.Insert(new PushCodeAddressInstruction
-        (entryLocation, "Push code address"));
-    executable.Insert(new MakeFunctionInstruction);
+    executable.Insert
+        (new PushCodeAddressInstruction(entryLocation, "Push code address"),
+         sourceLocation);
+    executable.Insert(new MakeFunctionInstruction, sourceLocation);
 
     auto variableExpression = new VariableExpression
-        (Token((SourceLocation &)*this, TOKEN_NAME, name));
+        (Token(sourceLocation, TOKEN_NAME, name));
     variableExpression->Parent(this);
     variableExpression->Emit
         (executable, Expression::EmitType::Address);
     delete variableExpression;
-    executable.Insert(new SetInstruction(true));
+    executable.Insert(new SetInstruction(true), sourceLocation);
 }
 
 void ConditionalExpression::Emit
@@ -612,14 +657,20 @@ void ConditionalExpression::Emit
 
     conditionExpression->Emit(executable);
 
-    auto falseLocation = executable.Insert(new NullInstruction);
-    auto endLocation = executable.Insert(new NullInstruction);
+    auto falseLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+    auto endLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
 
     executable.PushLocation(falseLocation);
-    executable.Insert(new ConditionalJumpInstruction
-        (false, falseLocation, "Jump if false to false expression"));
+    executable.Insert
+        (new ConditionalJumpInstruction
+            (false, falseLocation, "Jump if false to false expression"),
+         sourceLocation);
     trueExpression->Emit(executable);
-    executable.Insert(new JumpInstruction(endLocation, "Jump to end"));
+    executable.Insert
+        (new JumpInstruction(endLocation, "Jump to end"),
+         sourceLocation);
     executable.PopLocation();
 
     executable.PushLocation(endLocation);
@@ -640,7 +691,8 @@ void ShortCircuitLogicalExpression::Emit
     leftExpression->Emit(executable);
     expressionIter++;
 
-    auto endLocation = executable.Insert(new NullInstruction);
+    auto endLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
 
     static map<int, uint8_t> opCodes =
     {
@@ -659,16 +711,17 @@ void ShortCircuitLogicalExpression::Emit
     ostringstream oss;
     oss
         << "Perform short-circuit logical operation 0x"
-        << hex << setfill('0') << setw(2)
-        << static_cast<unsigned>(iter->second);
+        << hex << uppercase << setfill('0')
+        << setw(2) << static_cast<unsigned>(iter->second);
 
     executable.PushLocation(endLocation);
     for (; expressionIter != expressions.end(); expressionIter++)
     {
         auto expression = *expressionIter;
 
-        executable.Insert(new LogicalInstruction
-            (iter->second, endLocation, oss.str()));
+        executable.Insert
+            (new LogicalInstruction(iter->second, endLocation, oss.str()),
+             sourceLocation);
         expression->Emit(executable);
     }
     executable.PopLocation();
@@ -722,9 +775,11 @@ void BinaryExpression::Emit
     ostringstream oss;
     oss
         << "Perform binary operation 0x"
-        << hex << setfill('0') << setw(2)
-        << static_cast<unsigned>(iter->second);
-    executable.Insert(new BinaryInstruction(iter->second, oss.str()));
+        << hex << uppercase << setfill('0')
+        << setw(2) << static_cast<unsigned>(iter->second);
+    executable.Insert
+        (new BinaryInstruction(iter->second, oss.str()),
+         sourceLocation);
 }
 
 void UnaryExpression::Emit
@@ -756,9 +811,11 @@ void UnaryExpression::Emit
     ostringstream oss;
     oss
         << "Perform unary operation 0x"
-        << hex << setfill('0') << setw(2)
-        << static_cast<unsigned>(iter->second);
-    executable.Insert(new UnaryInstruction(iter->second, oss.str()));
+        << hex << uppercase << setfill('0')
+        << setw(2) << static_cast<unsigned>(iter->second);
+    executable.Insert
+        (new UnaryInstruction(iter->second, oss.str()),
+         sourceLocation);
 }
 
 void TargetExpression::Emit
@@ -774,22 +831,25 @@ void TargetExpression::Emit
 
         auto symbol = executable.Symbol(name);
         ostringstream oss;
-        oss
-            << "Push address of variable " << name << " (" << symbol << ')';
-        executable.Insert(new LoadInstruction
-            (symbol, true, oss.str()));
+        oss << "Push address of variable " << name;
+        executable.Insert
+            (new LoadInstruction(symbol, true, oss.str()),
+             sourceLocation);
     }
     else
     {
-        executable.Insert(new PushTupleInstruction
-            ("Create empty tuple"));
+        executable.Insert
+            (new PushTupleInstruction("Create empty tuple"),
+             sourceLocation);
 
         for (auto iter = targetExpressions.begin();
              iter != targetExpressions.end(); iter++)
         {
             auto targetExpression = *iter;
             targetExpression->Emit(executable, emitType);
-            executable.Insert(new BuildInstruction("Add item to tuple"));
+            executable.Insert
+                (new BuildInstruction("Add item to tuple"),
+                 sourceLocation);
         }
     }
 }
@@ -801,29 +861,33 @@ void Argument::Emit(Executable &executable) const
     {
         auto symbol = executable.Symbol(name);
         ostringstream oss;
-        oss
-            << "Make argument with name " << name
-            << " (" << symbol << ')';
-        executable.Insert(new MakeArgumentInstruction(symbol, oss.str()));
+        oss << "Make argument with name " << name;
+        executable.Insert
+            (new MakeArgumentInstruction(symbol, oss.str()),
+             sourceLocation);
     }
     else
     {
         ostringstream oss;
         oss << "Make " << (isGroup ? "group" : "positional") << " argument";
-        executable.Insert(new MakeArgumentInstruction(isGroup, oss.str()));
+        executable.Insert
+            (new MakeArgumentInstruction(isGroup, oss.str()),
+             sourceLocation);
     }
 }
 
 void ArgumentList::Emit(Executable &executable) const
 {
-    executable.Insert(new PushArgumentListInstruction
-        ("Push empty argument list"));
+    executable.Insert
+        (new PushArgumentListInstruction("Push empty argument list"),
+         sourceLocation);
     for (auto iter = arguments.begin(); iter != arguments.end(); iter++)
     {
         auto argument = *iter;
         argument->Emit(executable);
-        executable.Insert(new BuildInstruction
-            ("Add argument to argument list"));
+        executable.Insert
+            (new BuildInstruction("Add argument to argument list"),
+             sourceLocation);
     }
 }
 
@@ -837,7 +901,7 @@ void CallExpression::Emit
 
     argumentList->Emit(executable);
     functionExpression->Emit(executable);
-    executable.Insert(new CallInstruction);
+    executable.Insert(new CallInstruction, sourceLocation);
 }
 
 void ElementExpression::Emit
@@ -853,8 +917,9 @@ void ElementExpression::Emit
     oss
         << "Get " << (emitType == EmitType::Address ? "address" : "value")
         << " of element";
-    executable.Insert(new IndexInstruction
-        (emitType == EmitType::Address, oss.str()));
+    executable.Insert
+        (new IndexInstruction(emitType == EmitType::Address, oss.str()),
+         sourceLocation);
 }
 
 void MemberExpression::Emit
@@ -866,8 +931,10 @@ void MemberExpression::Emit
     if (emitType == EmitType::Delete)
     {
         ostringstream oss;
-        oss << "Push symbol of variable " << name << " (" << symbol << ')';
-        executable.Insert(new PushIntegerInstruction(symbol, oss.str()));
+        oss << "Push symbol of variable " << name;
+        executable.Insert
+            (new PushIntegerInstruction(symbol, oss.str()),
+             sourceLocation);
         return;
     }
 
@@ -875,8 +942,10 @@ void MemberExpression::Emit
     oss
         << "Lookup " << (emitType == EmitType::Address ? "address" : "value")
         << " of member";
-    executable.Insert(new MemberInstruction
-        (symbol, emitType == EmitType::Address, oss.str()));
+    executable.Insert
+        (new MemberInstruction
+            (symbol, emitType == EmitType::Address, oss.str()),
+         sourceLocation);
 }
 
 void VariableExpression::Emit
@@ -890,16 +959,18 @@ void VariableExpression::Emit
     ostringstream oss;
     oss
         << "Push " << (emitType == EmitType::Address ? "address" : "value")
-        << " of variable " << name << " (" << symbol << ')';
-    executable.Insert(new LoadInstruction
-        (symbol, emitType == EmitType::Address, oss.str()));
+        << " of variable " << name;
+    executable.Insert
+        (new LoadInstruction
+            (symbol, emitType == EmitType::Address, oss.str()),
+         sourceLocation);
 }
 
 void KeyValuePair::Emit(Executable &executable) const
 {
     valueExpression->Emit(executable);
     keyExpression->Emit(executable);
-    executable.Insert(new MakeKeyValuePairInstruction);
+    executable.Insert(new MakeKeyValuePairInstruction, sourceLocation);
 }
 
 void DictionaryExpression::Emit
@@ -910,13 +981,16 @@ void DictionaryExpression::Emit
     else if (emitType == EmitType::Delete)
         throw string("Cannot delete dictionary expression");
 
-    executable.Insert(new PushDictionaryInstruction
-        ("Create empty dictionary"));
+    executable.Insert
+        (new PushDictionaryInstruction("Create empty dictionary"),
+         sourceLocation);
     for (auto iter = entries.begin(); iter != entries.end(); iter++)
     {
         auto entry = *iter;
         entry->Emit(executable);
-        executable.Insert(new BuildInstruction("Add entry to dictionary"));
+        executable.Insert
+            (new BuildInstruction("Add entry to dictionary"),
+             sourceLocation);
     }
 }
 
@@ -928,13 +1002,16 @@ void SetExpression::Emit
     else if (emitType == EmitType::Delete)
         throw string("Cannot delete set expression");
 
-    executable.Insert(new PushSetInstruction
-        ("Create empty set"));
+    executable.Insert
+        (new PushSetInstruction("Create empty set"),
+         sourceLocation);
     for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
     {
         auto expression = *iter;
         expression->Emit(executable);
-        executable.Insert(new BuildInstruction("Add item to set"));
+        executable.Insert
+            (new BuildInstruction("Add item to set"),
+             sourceLocation);
     }
 }
 
@@ -944,13 +1021,16 @@ void ListExpression::Emit
     if (emitType == EmitType::Delete)
         throw string("Cannot delete list expression");
 
-    executable.Insert(new PushListInstruction
-        ("Create empty list"));
+    executable.Insert
+        (new PushListInstruction("Create empty list"),
+         sourceLocation);
     for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
     {
         auto expression = *iter;
         expression->Emit(executable, emitType);
-        executable.Insert(new BuildInstruction("Add item to list"));
+        executable.Insert
+            (new BuildInstruction("Add item to list"),
+             sourceLocation);
     }
 }
 
@@ -960,13 +1040,16 @@ void TupleExpression::Emit
     if (emitType == EmitType::Delete)
         throw string("Cannot delete tuple expression");
 
-    executable.Insert(new PushTupleInstruction
-        ("Create empty tuple"));
+    executable.Insert
+        (new PushTupleInstruction("Create empty tuple"),
+         sourceLocation);
     for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
     {
         auto expression = *iter;
         expression->Emit(executable, emitType);
-        executable.Insert(new BuildInstruction("Add item to tuple"));
+        executable.Insert
+            (new BuildInstruction("Add item to tuple"),
+             sourceLocation);
     }
 }
 
@@ -999,9 +1082,11 @@ void RangeExpression::Emit
         << (startExpression ? "S" : "") << ".."
         << (endExpression ? "E" : "") << ':'
         << (stepExpression ? "T" : "");
-    executable.Insert(new MakeRangeInstruction
-        (startExpression != 0, endExpression != 0, stepExpression != 0,
-         oss.str()));
+    executable.Insert
+        (new MakeRangeInstruction
+            (startExpression != 0, endExpression != 0, stepExpression != 0,
+             oss.str()),
+         sourceLocation);
 }
 
 void ConstantExpression::Emit
@@ -1015,22 +1100,22 @@ void ConstantExpression::Emit
     switch (type)
     {
         case Type::None:
-            executable.Insert(new PushNoneInstruction);
+            executable.Insert(new PushNoneInstruction, sourceLocation);
             break;
         case Type::Ellipsis:
-            executable.Insert(new PushEllipsisInstruction);
+            executable.Insert(new PushEllipsisInstruction, sourceLocation);
             break;
         case Type::Boolean:
-            executable.Insert(new PushBooleanInstruction(b));
+            executable.Insert(new PushBooleanInstruction(b), sourceLocation);
             break;
         case Type::Integer:
-            executable.Insert(new PushIntegerInstruction(i));
+            executable.Insert(new PushIntegerInstruction(i), sourceLocation);
             break;
         case Type::Float:
-            executable.Insert(new PushFloatInstruction(f));
+            executable.Insert(new PushFloatInstruction(f), sourceLocation);
             break;
         case Type::String:
-            executable.Insert(new PushStringInstruction(s));
+            executable.Insert(new PushStringInstruction(s), sourceLocation);
             break;
     }
 }

@@ -6,6 +6,7 @@
 #define EXECUTABLE_HPP
 
 #include "symbol.hpp"
+#include "grammar.hpp"
 #include <iostream>
 #include <map>
 #include <stack>
@@ -19,6 +20,14 @@ class Instruction;
 
 class Executable
 {
+    protected:
+
+        struct InstructionInfo
+        {
+            Instruction *instruction;
+            SourceLocation sourceLocation;
+        };
+
     public:
 
         // Constructor, destructor.
@@ -28,19 +37,15 @@ class Executable
         // Check value method.
         void SetCheckValue(std::uint32_t);
 
-        // Current module methods.
-        void CurrentModule(const std::string &);
-        std::pair<std::string, std::int32_t> CurrentModule() const;
-
         // Symbol methods.
         std::int32_t Symbol(const std::string &name) const;
         std::int32_t TemporarySymbol() const;
 
         // Location type definition.
-        typedef std::list<Instruction *>::iterator Location;
+        typedef std::list<InstructionInfo>::iterator Location;
 
         // Instruction insertion methods.
-        Location Insert(Instruction *);
+        Location Insert(Instruction *, const SourceLocation &);
         void PushLocation(const Location &);
         void PopLocation();
         Location CurrentLocation() const;
@@ -55,7 +60,7 @@ class Executable
         // Output methods.
         void Write(std::ostream &) const;
         void WriteListing(std::ostream &) const;
-        void WriteDebugInfo(std::ostream &) const;
+        void WriteSourceInfo(std::ostream &) const;
 
     protected:
 
@@ -68,8 +73,7 @@ class Executable
         // Data.
         std::uint32_t checkValue = 0;
         SymbolTable &symbolTable;
-        std::string currentModuleName;
-        std::list<Instruction *> instructions;
+        std::list<InstructionInfo> instructions;
         Location currentLocation = instructions.end();
         std::stack<Location> locationStack;
         std::map<unsigned, std::pair<Location, unsigned> > moduleLocations;

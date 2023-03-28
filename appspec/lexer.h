@@ -21,7 +21,7 @@ class Lexer
     public:
 
         // Constructor.
-        explicit Lexer(std::istream &);
+        explicit Lexer(std::istream &, const std::string &fileName);
 
         // Next token method.
         Token *Next();
@@ -57,7 +57,7 @@ class Lexer
         std::istream &is;
         std::deque<int> prefetch;
         std::deque<int> readahead;
-        SourceLocation sourceLocation, caret = {1, 1};
+        SourceLocation sourceLocation, caret;
 };
 
 } // extern "C"

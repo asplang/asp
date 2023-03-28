@@ -74,7 +74,7 @@ unsigned Instruction::Size() const
 
 void Instruction::Write(ostream &os) const
 {
-    os.write(reinterpret_cast<const char *>(&opCode), 1);
+    os.put(*reinterpret_cast<const char *>(&opCode));
     WriteOperands(os);
     if (targetLocationDefined)
         WriteField(os, targetOffset, 4);
@@ -84,7 +84,9 @@ void Instruction::Print(ostream &os) const
 {
     auto oldFlags = os.flags();
     auto oldFill = os.fill();
-    os << "0x" << hex << setfill('0') << setw(7) << offset << ": ";
+    os
+        << "0x" << hex << uppercase << setfill('0')
+        << setw(7) << offset << ": ";
     os.flags(oldFlags);
     os.fill(oldFill);
 
@@ -94,7 +96,9 @@ void Instruction::Print(ostream &os) const
     {
         oldFlags = os.flags();
         oldFill = os.fill();
-        os << " 0x" << hex << setfill('0') << setw(7) << targetOffset;
+        os
+            << " 0x" << hex << uppercase << setfill('0')
+            << setw(7) << targetOffset;
         os.flags(oldFlags);
         os.fill(oldFill);
     }
@@ -132,7 +136,7 @@ void Instruction::WriteField(ostream &os, uint64_t value, unsigned size)
 {
     unsigned i = size;
     while (i--)
-        os << Byte(value, i);
+        os.put(Byte(value, i));
 }
 
 uint8_t Instruction::OpCode() const

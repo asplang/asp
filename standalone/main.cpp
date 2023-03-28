@@ -3,6 +3,7 @@
 //
 
 #include "asp.h"
+#include "asp-info.h"
 #include "standalone.h"
 #include <iostream>
 #include <iomanip>
@@ -90,15 +91,12 @@ int main(int argc, char **argv)
         return fopen(fileName, "rb");
     };
     FILE *fp = openExecutable(executableFileName.c_str());
+    static const string executableSuffix = ".aspe";
     if (fp == 0)
     {
         // Try appending the appropriate suffix if the specified file did not
         // exist.
-        static const string suffix = ".aspe";
-        size_t suffixPos = executableFileName.size() - suffix.size();
-        if (executableFileName.size() < suffix.size() ||
-            executableFileName.substr(suffixPos) != suffix)
-        executableFileName += suffix;
+        executableFileName += executableSuffix;
         fp = openExecutable(executableFileName.c_str());
     }
     if (fp == 0)
@@ -123,8 +121,9 @@ int main(int argc, char **argv)
     if (initializeResult != AspRunResult_OK)
     {
         cerr
-            << "Error 0x" << hex << initializeResult
-            << " initializing Asp engine" << endl;
+            << "Initialize error 0x" << hex << uppercase << setfill('0')
+            << setw(2) << initializeResult << ": "
+            << AspRunResultToString((int)initializeResult) << endl;
         return 2;
     }
 
@@ -138,17 +137,20 @@ int main(int argc, char **argv)
         if (addResult != AspAddCodeResult_OK)
         {
             cerr
-                << "Error 0x" << hex << addResult
-                << " loading code" << endl;
+                << "Load error 0x" << hex << uppercase << setfill('0')
+                << setw(2) << addResult << ": "
+                << AspAddCodeResultToString((int)addResult) << endl;
             return 2;
         }
     }
+    fclose(fp);
     AspAddCodeResult sealResult = AspSeal(&engine);
     if (sealResult != AspAddCodeResult_OK)
     {
         cerr
-            << "Error 0x" << hex << sealResult
-            << " sealing code" << endl;
+            << "Seal error 0x" << hex << uppercase << setfill('0')
+            << setw(2) << sealResult << ": "
+            << AspAddCodeResultToString((int)sealResult) << endl;
         return 2;
     }
 
@@ -181,8 +183,9 @@ int main(int argc, char **argv)
     if (argumentResult != AspRunResult_OK)
     {
         cerr
-            << "Error 0x" << hex << argumentResult
-            << " setting arguments" << endl;
+            << "Arguments error 0x" << hex << uppercase << setfill('0')
+            << setw(2) << argumentResult << ": "
+            << AspRunResultToString((int)argumentResult) << endl;
         return 2;
     }
 
@@ -201,10 +204,40 @@ int main(int argc, char **argv)
         auto oldFlags = cerr.flags();
         auto oldFill = cerr.fill();
         cerr
-            << "Run error 0x" << hex << setfill('0')
-            << setw(2) << runResult << endl;
+            << "Run error 0x" << hex << uppercase << setfill('0')
+            << setw(2) << runResult << ": "
+            << AspRunResultToString((int)runResult) << endl;
         cerr.flags(oldFlags);
         cerr.fill(oldFill);
+
+        // Report the program counter.
+        auto programCounter = AspProgramCounter(&engine);
+        cerr
+            << "Program counter: 0x" << hex << uppercase << setfill('0')
+            << setw(7) << programCounter;
+        cerr.flags(oldFlags);
+        cerr.fill(oldFill);
+
+        // Attempt to translate the program counter into a source location
+        // using the associated source info file.
+        size_t suffixPos =
+            executableFileName.size() - executableSuffix.size();
+        static const string sourceInfoSuffix = ".aspd";
+        string sourceInfoFileName =
+            executableFileName.substr(0, suffixPos) + sourceInfoSuffix;
+        AspSourceInfo *sourceInfo = AspLoadSourceInfoFromFile
+            (sourceInfoFileName.c_str());
+        if (sourceInfo != 0)
+        {
+            AspSourceLocation sourceLocation = AspGetSourceLocation
+                (sourceInfo, programCounter);
+            if (sourceLocation.fileName != 0)
+                cerr
+                    << "; " << sourceLocation.fileName << ':'
+                    << sourceLocation.line << ':' << sourceLocation.column;
+            AspUnloadSourceInfo(sourceInfo);
+        }
+        cerr << endl;
     }
 
     // Dump data area in debug mode.

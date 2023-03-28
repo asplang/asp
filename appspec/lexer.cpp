@@ -10,8 +10,9 @@ using namespace std;
 
 bool Lexer::keywordsInitialized = false;
 
-Lexer::Lexer(istream &is) :
-    is(is)
+Lexer::Lexer(istream &is, const string &fileName) :
+    is(is),
+    caret(fileName, 1, 1)
 {
     // Add keywords specific to the application specification language.
     if (!keywordsInitialized)

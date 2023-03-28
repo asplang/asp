@@ -30,7 +30,7 @@ static void WriteStringEscapedHexByte(ostream &os, uint8_t value)
     auto oldFlags = os.flags();
     auto oldFill = os.fill();
 
-    os << hex << setprecision(2) << setfill('0');
+    os << hex << uppercase << setprecision(2) << setfill('0');
     if (value == 0)
         os << "\\0";
     else
@@ -305,7 +305,7 @@ void Generator::WriteApplicationCode(ostream &os)
 
         os
             << ",\n    " << specByteCount
-            << hex << setprecision(4) << setfill('0')
+            << hex << uppercase << setprecision(4) << setfill('0')
             << ", 0x" << setw(4) << CheckValue() << dec
             << ", AspDispatch_" << baseFileName << "\n"
                "};\n";

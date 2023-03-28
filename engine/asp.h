@@ -36,7 +36,7 @@ typedef enum
     AspRunResult_InitializationError = 0x02,
     AspRunResult_InvalidState = 0x03,
     AspRunResult_InvalidInstruction = 0x04,
-    AspRunResult_InvalidEnd= 0x05,
+    AspRunResult_InvalidEnd = 0x05,
     AspRunResult_BeyondEndOfCode = 0x06,
     AspRunResult_StackUnderflow = 0x07,
     AspRunResult_InvalidContext = 0x0A,

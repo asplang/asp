@@ -7,6 +7,16 @@ chronological order.
 Changes
 -------
 
+Version 0.7.1.2 (compiler 0.7.1.1, engine 0.7.3.1):
+- Compiler:
+  - Added generation of the source info file (.aspd).
+- Info library (new):
+  - Added a library for translating error codes into text and translating
+    a script's program counter into source location to be used in error
+    reporting and tracing applications.
+- Standalone application:
+  - Added error code and program counter translation via the new info library.
+
 Version 0.7.1.1 (compiler 0.7.1.0, engine 0.7.3.1):
 - Engine:
   - Ensured that global overrides for variables that do not exist locally

@@ -240,9 +240,8 @@ bool Generator::CheckReservedNameError(const string &name)
 
 void Generator::ReportError(const string &error)
 {
-    if (!currentSourceFileName.empty())
-        errorStream << currentSourceFileName << ": ";
     errorStream
+        << currentSourceLocation.fileName << ':'
         << currentSourceLocation.line << ':'
         << currentSourceLocation.column << ": Error: "
         << error << endl;

@@ -5,8 +5,12 @@
 #include "executable.hpp"
 #include "instruction.hpp"
 #include <iomanip>
+#include <map>
 
 using namespace std;
+
+static void WriteItem(ostream &, const string &);
+static void WriteItem(ostream &, uint32_t);
 
 static uint32_t MaxCodeSize = 0x10000000;
 
@@ -18,24 +22,12 @@ Executable::Executable(SymbolTable &symbolTable) :
 Executable::~Executable()
 {
     for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
-        delete *iter;
+        delete iter->instruction;
 }
 
 void Executable::SetCheckValue(uint32_t checkValue)
 {
     this->checkValue = checkValue;
-}
-
-void Executable::CurrentModule(const string &moduleName)
-{
-    currentModuleName = moduleName;
-}
-
-pair<string, int32_t> Executable::CurrentModule() const
-{
-    return make_pair
-        (currentModuleName,
-         symbolTable.Symbol(currentModuleName));
 }
 
 int32_t Executable::Symbol(const string &name) const
@@ -48,9 +40,12 @@ int32_t Executable::TemporarySymbol() const
     return symbolTable.Symbol();
 }
 
-Executable::Location Executable::Insert(Instruction *instruction)
+Executable::Location Executable::Insert
+    (Instruction *instruction, const SourceLocation &sourceLocation)
 {
-    return instructions.insert(currentLocation, instruction);
+    return instructions.insert
+        (currentLocation,
+         InstructionInfo{instruction, sourceLocation});
 }
 
 void Executable::PushLocation(const Location &location)
@@ -90,7 +85,8 @@ void Executable::Finalize()
     for (auto instructionIter = instructions.begin();
          instructionIter != instructions.end(); instructionIter++)
     {
-        auto instruction = *instructionIter;
+        auto instruction = instructionIter->instruction;
+
         instruction->Offset(offset);
 
         // Update module location if applicable.
@@ -109,12 +105,13 @@ void Executable::Finalize()
         throw string("Code too large");
 
     // Fix up target locations.
-    for (auto instructionIter = instructions.begin();
-         instructionIter != instructions.end(); instructionIter++)
+    for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
     {
-        auto instruction = *instructionIter;
+        auto instruction = iter->instruction;
+
         if (!instruction->Fixed())
-            instruction->Fix((*instruction->TargetLocation())->Offset());
+            instruction->Fix
+                (instruction->TargetLocation()->instruction->Offset());
     }
 }
 
@@ -130,16 +127,12 @@ void Executable::Write(ostream &os) const
     os.put(ASP_COMPILER_VERSION_TWEAK);
 
     // Write header check value.
-    {
-        unsigned i = 4;
-        while (i--)
-            os << static_cast<char>((checkValue >> (i << 3)) & 0xFF);
-    }
+    WriteItem(os, checkValue);
 
     // Write all the instructions.
     for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
     {
-        auto instruction = *iter;
+        auto instruction = iter->instruction;
 
         // Ensure any required fixing has been applied to the instruction.
         if (!instruction->Fixed())
@@ -152,9 +145,11 @@ void Executable::Write(ostream &os) const
 void Executable::WriteListing(ostream &os) const
 {
     os << "Instruction listing:\n";
+    SourceLocation previousSourceLocation;
     for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
     {
-        auto instruction = *iter;
+        auto instruction = iter->instruction;
+        auto sourceLocation = iter->sourceLocation;
 
         // Ensure any required fixing has been applied to the instruction.
         if (!instruction->Fixed())
@@ -163,6 +158,21 @@ void Executable::WriteListing(ostream &os) const
         // Skip null instructions.
         if (instruction->Size() == 0)
             continue;
+
+        // Print the source line if it has changed.
+        if (sourceLocation.line != previousSourceLocation.line ||
+            sourceLocation.fileName != previousSourceLocation.fileName)
+        {
+            if (sourceLocation.line == 0 && iter != instructions.begin())
+                os << "(No source)";
+            else
+                os
+                    << "From " << sourceLocation.fileName << ':'
+                    << sourceLocation.line;
+            os << ":\n";
+
+            previousSourceLocation = sourceLocation;
+        }
 
         // Print a listing line for the instruction.
         instruction->Print(os);
@@ -181,16 +191,103 @@ void Executable::WriteListing(ostream &os) const
     os << "\nEnd" << endl;
 }
 
-void Executable::WriteDebugInfo(ostream &os) const
+void Executable::WriteSourceInfo(ostream &os) const
 {
-    for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
+    // Write header signature.
+    os.write("AspD", 4);
+
+    // Write header version information.
+    os.put(ASP_COMPILER_VERSION_MAJOR);
+    os.put(ASP_COMPILER_VERSION_MINOR);
+    os.put(ASP_COMPILER_VERSION_PATCH);
+    os.put(ASP_COMPILER_VERSION_TWEAK);
+
+    // Write and keep track of all source file names.
+    map<string, size_t> sourceFileNameIndices;
+    for (auto instructionIter = instructions.begin();
+         instructionIter != instructions.end(); instructionIter++)
     {
-        auto instruction = *iter;
+        auto instruction = instructionIter->instruction;
+        auto sourceLocation = instructionIter->sourceLocation;
 
         // Ensure any required fixing has been applied to the instruction.
         if (!instruction->Fixed())
-            throw string("Attempt to write debug info for unfixed instruction");
+            throw string
+                ("Attempt to write source info for unfixed instruction");
 
-        // TODO: Implement.
+        const auto &fileName = sourceLocation.fileName;
+        if (fileName.empty())
+            continue;
+        auto sourceFileNameIndexIter = sourceFileNameIndices.find(fileName);
+        if (sourceFileNameIndexIter == sourceFileNameIndices.end())
+        {
+            WriteItem(os, fileName);
+            auto sourceFileNameIndex = sourceFileNameIndices.size();
+            sourceFileNameIndices[fileName] = sourceFileNameIndex;
+        }
+    }
+
+    // Terminate the source file names list.
+    os.put('\0');
+
+    // Write code addresses and their associated source locations.
+    SourceLocation previousSourceLocation;
+    for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
+    {
+        auto instruction = iter->instruction;
+        auto sourceLocation = iter->sourceLocation;
+
+        // Skip null instructions.
+        if (instruction->Size() == 0)
+            continue;
+
+        // Write source location only when it changes.
+        if (iter == instructions.begin() ||
+            sourceLocation.line != previousSourceLocation.line ||
+            sourceLocation.column != previousSourceLocation.column ||
+            sourceLocation.fileName != previousSourceLocation.fileName)
+        {
+            // Determine the source file name index.
+            uint32_t sourceFileNameIndex = 0;
+            auto sourceFileNameIndexIter = sourceFileNameIndices.find
+                (sourceLocation.fileName);
+            if (sourceFileNameIndexIter != sourceFileNameIndices.end())
+                sourceFileNameIndex = sourceFileNameIndexIter->second;
+
+            // Write the source location info record.
+            WriteItem(os, instruction->Offset());
+            WriteItem(os, sourceFileNameIndex);
+            WriteItem(os, static_cast<uint32_t>(sourceLocation.line));
+            WriteItem(os, static_cast<uint32_t>(sourceLocation.column));
+
+            previousSourceLocation = sourceLocation;
+        }
+    }
+
+    // Write a final source location info record for out of bounds offsets.
+    uint32_t finalOffset = 0;
+    if (!instructions.empty())
+    {
+        auto finalInstruction = instructions.back().instruction;
+        finalOffset = finalInstruction->Offset() + finalInstruction->Size();
+    }
+    WriteItem(os, finalOffset);
+    WriteItem(os, 0xFFFFFFFF);
+    WriteItem(os, 0);
+    WriteItem(os, 0);
+}
+
+static void WriteItem(ostream &os, const string &s)
+{
+    os.write(s.data(), s.size());
+    os.put('\0');
+}
+
+static void WriteItem(ostream &os, uint32_t value)
+{
+    for (unsigned i = 0; i < 4; i++)
+    {
+        uint8_t c = static_cast<uint8_t>((value >> ((3 - i) << 3)) & 0xFF);
+        os.put(*reinterpret_cast<const char *>(&c));
     }
 }

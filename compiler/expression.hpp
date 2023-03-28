@@ -326,6 +326,7 @@ class ListExpression : public Expression
 {
     public:
 
+        ListExpression(const Token &);
         ListExpression();
         ~ListExpression();
 

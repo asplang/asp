@@ -425,6 +425,7 @@ ForStatement::~ForStatement()
 
 Parameter::Parameter
     (const Token &nameToken, Expression *defaultExpression, bool isGroup) :
+    NonTerminal(nameToken),
     name(nameToken.s),
     defaultExpression(defaultExpression),
     isGroup(isGroup)

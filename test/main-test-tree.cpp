@@ -38,7 +38,7 @@ int main(int argc, char **argv)
         auto oldFlags = cerr.flags();
         auto oldFill = cerr.fill();
         cerr
-            << "Error 0x" << hex << setfill('0')
+            << "Error 0x" << hex << uppercase << setfill('0')
             << setw(2) << initializeResult
             << " initializing Asp engine" << endl;
         cerr.flags(oldFlags);
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
                 auto oldFlags = cerr.flags();
                 auto oldFill = cerr.fill();
                 cerr
-                    << "Insert result = 0x" << hex << setfill('0')
+                    << "Insert result = 0x" << hex << uppercase << setfill('0')
                     << setw(2) << insertResult.result << endl;
                 cerr.flags(oldFlags);
                 cerr.fill(oldFill);
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
                 auto oldFlags = cerr.flags();
                 auto oldFill = cerr.fill();
                 cerr
-                    << "Erase result = 0x" << hex << setfill('0')
+                    << "Erase result = 0x" << hex << uppercase << setfill('0')
                     << setw(2) << eraseResult << endl;
                 cerr.flags(oldFlags);
                 cerr.fill(oldFill);

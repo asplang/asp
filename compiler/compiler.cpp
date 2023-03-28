@@ -16,6 +16,7 @@
 using namespace std;
 
 static const string ModuleSuffix = ".asp";
+static const SourceLocation NoSourceLocation;
 
 Compiler::Compiler
     (ostream &errorStream,
@@ -23,7 +24,7 @@ Compiler::Compiler
     errorStream(errorStream),
     symbolTable(symbolTable),
     executable(executable),
-    topLocation(executable.Insert(new NullInstruction))
+    topLocation(executable.Insert(new NullInstruction, NoSourceLocation))
 {
 }
 
@@ -137,7 +138,6 @@ string Compiler::NextModuleFileName()
         currentModuleName = moduleNamesToImport.front();
         currentModuleSymbol = symbolTable.Symbol(currentModuleName);
         moduleNamesToImport.pop_front();
-        executable.CurrentModule(currentModuleName);
         moduleFileName = currentModuleName + ModuleSuffix;
     }
     return moduleFileName;
@@ -152,9 +152,13 @@ void Compiler::Finalize()
 {
     // Invoke the top-level module.
     executable.PushLocation(topLocation);
-    executable.Insert(new LoadModuleInstruction
-        (symbolTable.Symbol(topModuleName), "Load top-level module"));
-    executable.Insert(new EndInstruction("End script"));
+    executable.Insert
+        (new LoadModuleInstruction
+            (symbolTable.Symbol(topModuleName), "Load top-level module"),
+         NoSourceLocation);
+    executable.Insert
+        (new EndInstruction("End script"),
+         NoSourceLocation);
     executable.PopLocation();
 
     executable.Finalize();
@@ -227,22 +231,29 @@ DEFINE_ACTION(MakeModule, NonTerminal *, Block *, module)
 {
     try
     {
-        auto moduleLocation = executable.Insert(new NullInstruction);
+        auto moduleLocation = executable.Insert
+            (new NullInstruction, NoSourceLocation);
         executable.MarkModuleLocation(currentModuleName, moduleLocation);
 
         executable.PushLocation(topLocation);
         {
             ostringstream oss;
-            oss
-                << "Add address of module " << currentModuleName
-                << " (" << currentModuleSymbol << ')';
-            executable.Insert(new AddModuleInstruction
-                (currentModuleSymbol, moduleLocation, oss.str()));
+            oss << "Add address of module " << currentModuleName;
+            executable.Insert
+                (new AddModuleInstruction
+                    (currentModuleSymbol, moduleLocation, oss.str()),
+                 NoSourceLocation);
         }
         executable.PopLocation();
 
         module->Emit(executable);
-        executable.Insert(new ExitModuleInstruction("Exit module"));
+
+        const SourceElement *finalSourceElement = module->FinalStatement();
+        if (finalSourceElement == 0)
+            finalSourceElement = module;
+        executable.Insert
+            (new ExitModuleInstruction("Exit module"),
+             finalSourceElement->sourceLocation);
     }
     catch (const string &e)
     {
@@ -491,6 +502,9 @@ DEFINE_ACTION
     (MakeDefStatement, Statement *,
      Token *, nameToken, ParameterList *, parameterList, Block *, block)
 {
+    if (!parameterList->HasSourceLocation())
+        (SourceElement &)*parameterList = *nameToken;
+
     // Ensure defaulted parameters follow positional ones.
     bool groupSeen = false, defaultSeen = false;
     unsigned position = 1;
@@ -687,6 +701,9 @@ DEFINE_ACTION
     (MakeCallExpression, Expression *,
      Expression *, functionExpression, ArgumentList *, argumentList)
 {
+    if (!argumentList->HasSourceLocation())
+        (SourceElement &)*argumentList = *functionExpression;
+
     // Ensure named arguments follow positional ones.
     bool positionalArgumentAllowed = true;
     unsigned position = 1;
@@ -708,13 +725,6 @@ DEFINE_ACTION
     }
 
     return new CallExpression(functionExpression, argumentList);
-}
-
-DEFINE_ACTION
-    (MakeSlicingExpression, Expression *,
-     Expression *, sequenceExpression, RangeExpression *, sliceExpression)
-{
-    return new ElementExpression(sequenceExpression, sliceExpression);
 }
 
 DEFINE_ACTION
@@ -1036,11 +1046,14 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeEmptyList, ListExpression *, Token *, token)
 {
-    auto result = new ListExpression;
     if (token != 0)
-        (SourceElement &)*result = *token;
-    delete token;
-    return result;
+    {
+        auto result = new ListExpression(*token);
+        delete token;
+        return result;
+    }
+    else
+        return new ListExpression;
 }
 
 DEFINE_ACTION
@@ -1104,7 +1117,7 @@ DEFINE_UTIL(ReportError, void, const char *, error)
 void Compiler::ReportError(const string &error)
 {
     errorStream
-        << currentModuleName << ".asp: "
+        << currentSourceLocation.fileName << ':'
         << currentSourceLocation.line << ':'
         << currentSourceLocation.column << ": Error: "
         << error << endl;

@@ -158,7 +158,7 @@ static int main1(int argc, char **argv)
     activeSourceFiles.emplace_back(ActiveSourceFile
     {
         sourceFileName, sourceStream, SourceLocation(),
-        new Lexer(*sourceStream),
+        new Lexer(*sourceStream, sourceFileName),
         ParseAlloc(malloc, &generator)
     });
 
@@ -173,7 +173,7 @@ static int main1(int argc, char **argv)
         if (token->type == -1)
         {
             cerr
-                << activeSourceFile.sourceFileName << ": "
+                << token->sourceLocation.fileName << ':'
                 << token->sourceLocation.line << ':'
                 << token->sourceLocation.column
                 << ": Bad token encountered: '"
@@ -249,7 +249,7 @@ static int main1(int argc, char **argv)
                 if (newSourceStream == 0)
                 {
                     cerr
-                        << activeSourceFile.sourceFileName << ": "
+                        << token->sourceLocation.fileName << ':'
                         << token->sourceLocation.line << ':'
                         << token->sourceLocation.column
                         << ": Error opening " << includeFileName
@@ -265,7 +265,7 @@ static int main1(int argc, char **argv)
                     if (newSourceFileName == lexer.sourceFileName)
                     {
                         cerr
-                            << activeSourceFile.sourceFileName << ": "
+                            << token->sourceLocation.fileName << ':'
                             << token->sourceLocation.line << ':'
                             << token->sourceLocation.column
                             << ": Include cycle detected: "
@@ -279,7 +279,7 @@ static int main1(int argc, char **argv)
                 activeSourceFiles.emplace_back(ActiveSourceFile
                 {
                     newSourceFileName, newSourceStream, oldSourceLocation,
-                    new Lexer(*newSourceStream),
+                    new Lexer(*newSourceStream, newSourceFileName),
                     ParseAlloc(malloc, &generator)
                 });
             }
