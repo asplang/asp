@@ -10,10 +10,12 @@ Changes
 Version 0.7.1.2 (compiler 0.7.1.1, engine 0.7.3.1):
 - Compiler:
   - Added generation of the source info file (.aspd).
-- Info library (new):
+  - Added -v option to print version information and exit.
+- Info library and utility (new):
   - Added a library for translating error codes into text and translating
     a script's program counter into source location to be used in error
     reporting and tracing applications.
+  - Added a utility for performing the functions of the above library.
 - Standalone application:
   - Added error code and program counter translation via the new info library.
 

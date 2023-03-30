@@ -69,6 +69,7 @@ if(BUILD_FOR_HOST)
     add_subdirectory(compiler)
     add_subdirectory(appspec)
     add_subdirectory(info)
+    add_subdirectory(util)
 endif()
 
 if(BUILD_FOR_HOST AND BUILD_FOR_TARGET)

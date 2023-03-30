@@ -25,6 +25,10 @@ void ParseTrace(FILE *, const char *prefix);
 
 using namespace std;
 
+#ifndef COMMAND_OPTION_PREFIX
+#define COMMAND_OPTION_PREFIX "-"
+#endif
+
 static void Usage()
 {
     cerr
@@ -32,6 +36,7 @@ static void Usage()
         << " or    aspc script [spec]\n"
         << "Options:\n"
         << "-s  Silent. Don't output usual compiler information.\n"
+        << "-v  Print version information and exit.\n"
         << "Arguments:\n"
         << "spec    = Application specification file *.aspec.\n"
         << "          If omitted, the value of the ASP_SPEC_FILE environment\n"
@@ -59,7 +64,7 @@ int main(int argc, char **argv)
 static int main1(int argc, char **argv)
 {
     // Process command line options.
-    bool silent = false;
+    bool silent = false, reportVersion = false;
     auto optionPrefixSize = strlen(COMMAND_OPTION_PREFIX);
     for (; argc >= 2; argc--, argv++)
     {
@@ -76,11 +81,26 @@ static int main1(int argc, char **argv)
         }
         else if (option == "s")
             silent = true;
+        else if (option == "v")
+            reportVersion = true;
         else
         {
             cerr << "Invalid option: " << arg1 << endl;
             return 1;
         }
+    }
+
+    // Report version information and exit if requested.
+    if (reportVersion)
+    {
+        cout
+            << "Asp compiler version "
+            << ASP_COMPILER_VERSION_MAJOR << '.'
+            << ASP_COMPILER_VERSION_MINOR << '.'
+            << ASP_COMPILER_VERSION_PATCH << '.'
+            << ASP_COMPILER_VERSION_TWEAK
+            << endl;
+        return 0;
     }
 
     // Obtain input file names.
