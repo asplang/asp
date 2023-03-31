@@ -1052,7 +1052,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Access the iterable on top of the stack. */
             AspDataEntry *iterable = AspTopValue(engine);
-            if (index == 0)
+            if (iterable == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(iterable))
                 return AspRunResult_UnexpectedType;
@@ -2200,7 +2200,7 @@ static AspRunResult Step(AspEngine *engine)
                             {
                                 uint32_t count = AspDataGetSequenceCount
                                     (container);
-                                if (indexValue >= count ||
+                                if (indexValue >= (int32_t)count ||
                                     indexValue < -(int32_t)count)
                                     return AspRunResult_ValueOutOfRange;
                             }
