@@ -15,7 +15,7 @@ static unsigned long ScanSourceFileNames
     (const AspSourceInfo *, unsigned index, bool init);
 static uint32_t LoadValue(const uint8_t *p);
 
-static const size_t SourceInfoHeaderSize = 8;
+#define SourceInfoHeaderSize 8
 static const size_t SourceInfoRecordSize = 4 * 4;
 static const unsigned SourceInfo_ProgramCounterOffset = 0 * 4;
 static const unsigned SourceInfo_SourceIndexOffset = 1 * 4;
