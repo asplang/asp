@@ -154,6 +154,8 @@ AspRunResult AspLoadArguments
             (engine, AspDataGetArgumentValueIndex(argument));
         AspTreeResult insertResult = AspTreeTryInsertBySymbol
             (engine, ns, argumentSymbol, value);
+        if (insertResult.result != AspRunResult_OK)
+            return insertResult.result;
     }
 
     /* Assign defaults values to remaining parameters. */
@@ -200,6 +202,8 @@ AspRunResult AspLoadArguments
                 (engine, AspDataGetParameterDefaultIndex(parameter));
             AspTreeResult insertResult = AspTreeTryInsertBySymbol
                 (engine, ns, parameterSymbol, value);
+            if (insertResult.result != AspRunResult_OK)
+                return insertResult.result;
         }
     }
 

@@ -630,7 +630,6 @@ static AspDataEntry *FindNode
         return 0;
 
     AspDataEntry *node = AspEntry(engine, AspDataGetTreeRootIndex(tree));
-    int compare;
     while (node != 0)
     {
         int comparison;

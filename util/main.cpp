@@ -116,7 +116,7 @@ int main(int argc, char **argv)
             {
                 value = stoi(optionArgument, &scannedSize, 0);
             }
-            catch (const logic_error &ex)
+            catch (const logic_error &)
             {
                 scannedSize = 0;
             }
