@@ -15,6 +15,19 @@
 #include <cstring>
 #include <cstdlib>
 
+#if !defined ASP_COMPILER_VERSION_MAJOR || \
+    !defined ASP_COMPILER_VERSION_MINOR || \
+    !defined ASP_COMPILER_VERSION_PATCH || \
+    !defined ASP_COMPILER_VERSION_TWEAK
+#error ASP_COMPILER_VERSION_* macros undefined
+#endif
+#ifndef COMMAND_OPTION_PREFIX
+#error COMMAND_OPTION_PREFIX macro undefined
+#endif
+#ifndef FILE_NAME_SEPARATOR
+#error FILE_NAME_SEPARATOR macro undefined
+#endif
+
 // Lemon parser.
 extern "C" {
 void *ParseAlloc(void *(*malloc)(size_t), Compiler *);
@@ -25,23 +38,25 @@ void ParseTrace(FILE *, const char *prefix);
 
 using namespace std;
 
-#ifndef COMMAND_OPTION_PREFIX
-#define COMMAND_OPTION_PREFIX "-"
-#endif
-
 static void Usage()
 {
     cerr
-        << "Usage: aspc [spec] script\n"
-        << " or    aspc script [spec]\n"
+        << "Usage:      aspc [SPEC] SCRIPT\n"
+        << " or         aspc SCRIPT [SPEC]\n"
+        << "\n"
+        << "Compile the Asp script source file SCRIPT (*.asp)."
+        << " The application specification\n"
+        << "file (*.aspec) may be given as SPEC."
+        << " If omitted, the value of the ASP_SPEC_FILE\n"
+        << "environment variable is used,"
+        << " or the app.aspec file in the local directory,\n"
+        << "if that is not defined.\n"
+        << "\n"
         << "Options:\n"
-        << "-s  Silent. Don't output usual compiler information.\n"
-        << "-v  Print version information and exit.\n"
-        << "Arguments:\n"
-        << "spec    = Application specification file *.aspec.\n"
-        << "          If omitted, the value of the ASP_SPEC_FILE environment\n"
-        << "          variable is used, or app.aspec if that is not defined.\n"
-        << "script  = Script file *.asp.\n";
+        << COMMAND_OPTION_PREFIX
+        << "s          Silent. Don't output usual compiler information.\n"
+        << COMMAND_OPTION_PREFIX
+        << "v          Print version information and exit.\n";
 }
 
 static int main1(int argc, char **argv);

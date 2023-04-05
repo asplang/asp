@@ -15,6 +15,13 @@
 #include <ctype.h>
 #include <limits.h>
 
+#if !defined ASP_ENGINE_VERSION_MAJOR || \
+    !defined ASP_ENGINE_VERSION_MINOR || \
+    !defined ASP_ENGINE_VERSION_PATCH || \
+    !defined ASP_ENGINE_VERSION_TWEAK
+#error ASP_ENGINE_VERSION_* macros undefined
+#endif
+
 static const char *TypeString(DataType);
 static AspDataEntry *NewObject(AspEngine *, DataType);
 

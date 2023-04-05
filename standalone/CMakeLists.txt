@@ -22,9 +22,11 @@ add_custom_command(
         ../engine/type.asps
         ../engine/iter.asps
         ../engine/math.asps
-    COMMAND ${CMAKE_COMMAND} -E env
+    COMMAND
+        ${CMAKE_COMMAND} -E env
         "ASP_SPEC_INCLUDE=${PATH_NAME_SEPARATOR}${aspe_SOURCE_DIR}"
-        "${aspg_BINARY_DIR}/aspg" "${PROJECT_SOURCE_DIR}/standalone.asps"
+        "$<TARGET_FILE:aspg>"
+        "${PROJECT_SOURCE_DIR}/standalone.asps"
     )
 
 add_executable(asps
@@ -39,7 +41,7 @@ target_link_libraries(asps
     )
 
 target_compile_definitions(asps PRIVATE
-    COMMAND_OPTION_PREFIX="${COMMAND_OPTION_PREFIX}"
+    COMMAND_OPTION_PREFIX=${C_COMMAND_OPTION_PREFIX}
     )
 
 target_include_directories(asps PRIVATE

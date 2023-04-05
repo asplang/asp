@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspc
-    VERSION 0.7.1.1
+    VERSION 0.7.1.2
     )
 
 set(ABI_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
@@ -22,25 +22,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
-string(
-    COMPARE EQUAL "${PROJECT_BINARY_DIR}" "${PROJECT_SOURCE_DIR}"
-    built_in_place)
-if(NOT built_in_place)
-    add_custom_command(
-        OUTPUT "${PROJECT_BINARY_DIR}/asp.y"
-        DEPENDS "${PROJECT_SOURCE_DIR}/asp.y"
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${PROJECT_SOURCE_DIR}/asp.y" "${PROJECT_BINARY_DIR}"
-        )
-endif()
-
 add_custom_command(
     OUTPUT
         "${PROJECT_BINARY_DIR}/asp.c"
         "${PROJECT_BINARY_DIR}/asp.h"
         "${PROJECT_BINARY_DIR}/asp.out"
-    DEPENDS lemon "${PROJECT_BINARY_DIR}/asp.y"
-    COMMAND lemon "${PROJECT_BINARY_DIR}/asp.y"
+    DEPENDS lemon asp.y
+    COMMAND
+        lemon "-d${PROJECT_BINARY_DIR}"
+        "-T${lemon_SOURCE_DIR}/lempar.c"
+        "${PROJECT_SOURCE_DIR}/asp.y"
     )
 
 add_executable(aspc
@@ -65,9 +56,9 @@ target_compile_definitions(aspc PRIVATE
     ASP_COMPILER_VERSION_MINOR=${PROJECT_VERSION_MINOR}
     ASP_COMPILER_VERSION_PATCH=${PROJECT_VERSION_PATCH}
     ASP_COMPILER_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
-    PATH_NAME_SEPARATOR='${PATH_NAME_SEPARATOR}'
-    FILE_NAME_SEPARATOR='${FILE_NAME_SEPARATOR}'
-    COMMAND_OPTION_PREFIX="${COMMAND_OPTION_PREFIX}"
+    PATH_NAME_SEPARATOR=${C_PATH_NAME_SEPARATOR}
+    FILE_NAME_SEPARATOR=${C_FILE_NAME_SEPARATOR}
+    COMMAND_OPTION_PREFIX=${C_COMMAND_OPTION_PREFIX}
     )
 
 target_include_directories(aspc PRIVATE

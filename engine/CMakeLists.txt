@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspe
-    VERSION 0.7.3.1
+    VERSION 0.7.3.2
     LANGUAGES C
     )
 
@@ -27,14 +27,19 @@ math(EXPR VERSION_VALUE
 
 add_custom_command(
     OUTPUT asp-ver.h
+    VERBATIM
     COMMAND ${CMAKE_COMMAND} -E echo "/* Asp engine version. */"
         > "${PROJECT_BINARY_DIR}/asp-ver.h"
-    COMMAND ${CMAKE_COMMAND} -E echo "\\#ifndef ASP_VERSION"
+    COMMAND ${CMAKE_COMMAND} -E echo "#ifndef ASP_VERSION"
         >> "${PROJECT_BINARY_DIR}/asp-ver.h"
-    COMMAND ${CMAKE_COMMAND} -E echo "\\#define ASP_VERSION ${VERSION_VALUE}"
+    COMMAND ${CMAKE_COMMAND} -E echo "#define ASP_VERSION ${VERSION_VALUE}"
         >> "${PROJECT_BINARY_DIR}/asp-ver.h"
-    COMMAND ${CMAKE_COMMAND} -E echo "\\#endif"
+    COMMAND ${CMAKE_COMMAND} -E echo "#endif"
         >> "${PROJECT_BINARY_DIR}/asp-ver.h"
+    )
+
+add_custom_target(asp-ver ALL
+    DEPENDS "${PROJECT_BINARY_DIR}/asp-ver.h"
     )
 
 if(BUILD_FOR_TARGET)
@@ -69,7 +74,7 @@ if(BUILD_FOR_TARGET)
     set_property(TARGET aspe
         PROPERTY VERSION ${ABI_VERSION})
 
-    target_compile_definitions(aspe PUBLIC
+    target_compile_definitions(aspe PRIVATE
         $<$<CONFIG:Debug>:ASP_DEBUG>
         $<$<BOOL:${BUILD_TEST_TARGETS}>:ASP_TEST>
         ASP_ENGINE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
@@ -79,8 +84,8 @@ if(BUILD_FOR_TARGET)
         )
 
     target_include_directories(aspe PUBLIC
-        "${CMAKE_CURRENT_BINARY_DIR}"
-        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${PROJECT_BINARY_DIR}"
+        "${PROJECT_SOURCE_DIR}"
         )
 
 

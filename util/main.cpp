@@ -11,22 +11,30 @@
 using namespace std;
 
 #ifndef COMMAND_OPTION_PREFIX
-#define COMMAND_OPTION_PREFIX "-"
+#error COMMAND_OPTION_PREFIX macro undefined
 #endif
 
 static void Usage()
 {
     cerr
-        << "Usage: aspinfo {options}... [file]\n"
+        << "Usage:      aspinfo {OPTION}... [INFO]\n"
+        << "\n"
+        << "Print the requested error information."
+        << " Some options require INFO, the Asp\n"
+        << "source info file (*.aspd). The suffix may be omitted."
+        << " The INFO argument may be\n"
+        << "omitted if neither " << COMMAND_OPTION_PREFIX << "l nor "
+        << COMMAND_OPTION_PREFIX "p is used.\n"
+        << "\n"
         << "Options:\n"
-        << "-a code     Translate the add code result to descriptive text.\n"
-        << "-e code     Translate the run result to descriptive text.\n"
-        << "-l          List all source files.\n"
-        << "-p pc       Translate program counter source location.\n"
-        << "Arguments:\n"
-        << "file      = Source info file (*.aspd). The suffix may be omitted\n"
-        << "            The file argument may be omitted if neither -l nor -p\n"
-        << "            is used.\n";
+        << COMMAND_OPTION_PREFIX
+        << "a code     Translate the add code result to descriptive text.\n"
+        << COMMAND_OPTION_PREFIX
+        << "e code     Translate the run result to descriptive text.\n"
+        << COMMAND_OPTION_PREFIX
+        << "l          List all source files.\n"
+        << COMMAND_OPTION_PREFIX
+        << "p pc       Translate program counter source location.\n";
 }
 
 int main(int argc, char **argv)

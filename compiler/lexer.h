@@ -12,7 +12,7 @@
 #include <deque>
 #include <map>
 #include <string>
-#include <cstdint>
+#include <cstdlib>
 
 extern "C" {
 
@@ -61,7 +61,7 @@ class Lexer
         std::deque<int> readahead;
         SourceLocation sourceLocation, caret;
         bool checkIndent = true, expectIndent = false, continueLine = false;
-        std::deque<unsigned> indents;
+        std::deque<std::size_t> indents;
         std::string currIndent, prevIndent;
         std::deque<Token *> pendingTokens;
 };

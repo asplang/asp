@@ -25,6 +25,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,11 +62,11 @@ void crc_init_spec
 crc_spec crc_make_spec
     (uint8_t width, crc_arg poly,
      crc_arg init, bool refin, bool refout, crc_arg xorout);
-crc_arg crc_calc(const crc_spec *, const void *buffer, unsigned size);
+crc_arg crc_calc(const crc_spec *, const void *buffer, size_t size);
 void crc_start(const crc_spec *, crc_session *session);
 void crc_add
     (const crc_spec *, crc_session *,
-     const void *buffer, unsigned size);
+     const void *buffer, size_t size);
 crc_arg crc_finish(const crc_spec *, crc_session *);
 
 #ifdef __cplusplus

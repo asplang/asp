@@ -252,7 +252,8 @@ void Executable::WriteSourceInfo(ostream &os) const
             auto sourceFileNameIndexIter = sourceFileNameIndices.find
                 (sourceLocation.fileName);
             if (sourceFileNameIndexIter != sourceFileNameIndices.end())
-                sourceFileNameIndex = sourceFileNameIndexIter->second;
+                sourceFileNameIndex = static_cast<uint32_t>
+                    (sourceFileNameIndexIter->second);
 
             // Write the source location info record.
             WriteItem(os, instruction->Offset());

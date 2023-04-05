@@ -20,6 +20,11 @@
 #include <ctype.h>
 #endif
 
+#if !defined ASP_ENGINE_VERSION_MAJOR || \
+    !defined ASP_ENGINE_VERSION_MINOR
+#error ASP_ENGINE_VERSION_* macros undefined
+#endif
+
 static AspRunResult ResetData(AspEngine *);
 static AspRunResult InitializeAppDefinitions(AspEngine *);
 static AspRunResult LoadValue
@@ -58,12 +63,12 @@ void AspCodeVersion
     memcpy(version, engine->version, sizeof engine->version);
 }
 
-uint32_t AspMaxCodeSize(const AspEngine *engine)
+size_t AspMaxCodeSize(const AspEngine *engine)
 {
     return engine->maxCodeSize;
 }
 
-uint32_t AspMaxDataSize(const AspEngine *engine)
+size_t AspMaxDataSize(const AspEngine *engine)
 {
     return engine->dataEndIndex;
 }
@@ -481,12 +486,12 @@ bool AspIsRunning(const AspEngine *engine)
     return engine->state == AspEngineState_Running;
 }
 
-uint32_t AspProgramCounter(const AspEngine *engine)
+size_t AspProgramCounter(const AspEngine *engine)
 {
-    return (uint32_t)(engine->pc - engine->code);
+    return (size_t)(engine->pc - engine->code);
 }
 
-uint32_t AspLowFreeCount(const AspEngine *engine)
+size_t AspLowFreeCount(const AspEngine *engine)
 {
     return engine->lowFreeCount;
 }

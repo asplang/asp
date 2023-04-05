@@ -59,7 +59,7 @@ AspRunResult AspStep(AspEngine *engine)
 static AspRunResult Step(AspEngine *engine)
 {
     #ifdef ASP_DEBUG
-    printf("@0x%7.7X: ", AspProgramCounter(engine));
+    printf("@0x%7.7X: ", (uint32_t)AspProgramCounter(engine));
     #endif
 
     if (engine->pc >= engine->code + engine->codeEndIndex)
@@ -1318,7 +1318,7 @@ static AspRunResult Step(AspEngine *engine)
                 if (frame == 0)
                     return AspRunResult_OutOfDataMemory;
                 AspDataSetFrameReturnAddress
-                    (frame, AspProgramCounter(engine));
+                    (frame, (uint32_t)AspProgramCounter(engine));
                 AspRef(engine, engine->module);
                 AspDataSetFrameModuleIndex
                     (frame, AspIndex(engine, engine->module));
@@ -1565,7 +1565,7 @@ static AspRunResult Step(AspEngine *engine)
             if (frame == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetFrameReturnAddress
-                (frame, AspProgramCounter(engine));
+                (frame, (uint32_t)AspProgramCounter(engine));
             AspRef(engine, engine->module);
             AspDataSetFrameModuleIndex
                 (frame, AspIndex(engine, engine->module));

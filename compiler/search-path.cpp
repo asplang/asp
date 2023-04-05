@@ -5,7 +5,7 @@
 #include "search-path.hpp"
 
 #ifndef PATH_NAME_SEPARATOR
-#define PATH_NAME_SEPARATOR ':'
+#error PATH_NAME_SEPARATOR macro undefined
 #endif
 
 using namespace std;

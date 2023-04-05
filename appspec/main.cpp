@@ -17,6 +17,10 @@
 #include <cstdlib>
 #include <cctype>
 
+#ifndef FILE_NAME_SEPARATOR
+#error FILE_NAME_SEPARATOR macro undefined
+#endif
+
 // Lemon parser.
 extern "C" {
 void *ParseAlloc(void *(*malloc)(size_t), Generator *);
@@ -78,9 +82,16 @@ static int main1(int argc, char **argv)
         return 1;
     }
 
+    // Prepare to handle the slash as the universal file name separator in
+    // addition to the one specified for the platform.
+    string fileNameSeparators;
+    fileNameSeparators += FILE_NAME_SEPARATOR;
+    if (FILE_NAME_SEPARATOR != '/')
+        fileNameSeparators += '/';
+
     // Split the source file name into its constituent parts.
     auto sourceDirectorySeparatorPos = sourceFileName.find_last_of
-        (FILE_NAME_SEPARATOR);
+        (fileNameSeparators);
     size_t baseNamePos = sourceDirectorySeparatorPos == string::npos ?
         0 : sourceDirectorySeparatorPos + 1;
     auto baseName = sourceFileName.substr
@@ -215,7 +226,7 @@ static int main1(int argc, char **argv)
             {
                 // Determine search path for locating included file.
                 auto sourceDirectorySeparatorPos =
-                    oldSourceFileName.find_last_of(FILE_NAME_SEPARATOR);
+                    oldSourceFileName.find_last_of(fileNameSeparators);
                 auto localDirectoryName = oldSourceFileName.substr
                     (0,
                      sourceDirectorySeparatorPos == string::npos ?
@@ -232,9 +243,14 @@ static int main1(int argc, char **argv)
                     auto directory = *iter;
 
                     // Determine path name of source file.
-                    if (!directory.empty() &&
-                        directory.back() != FILE_NAME_SEPARATOR)
-                        directory += FILE_NAME_SEPARATOR;
+                    if (!directory.empty())
+                    {
+                        auto separatorIter =
+                            string(fileNameSeparators).find_first_of
+                                (directory.back());
+                        if (separatorIter == string::npos)
+                            directory += FILE_NAME_SEPARATOR;
+                    }
                     newSourceFileName = directory + includeFileName;
 
                     // Attempt opening the source file.

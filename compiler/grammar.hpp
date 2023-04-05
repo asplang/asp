@@ -7,42 +7,46 @@
 
 #include <string>
 
-struct SourceLocation
+class SourceLocation
 {
-    SourceLocation() :
-        line(0), column(0)
-    {
-    }
+    public:
 
-    SourceLocation
-        (const std::string &fileName,
-         unsigned line, unsigned column) :
-        fileName(fileName),
-        line(line), column(column)
-    {
-    }
+        SourceLocation() :
+            line(0), column(0)
+        {
+        }
 
-    std::string fileName;
-    unsigned line, column;
+        SourceLocation
+            (const std::string &fileName,
+             unsigned line, unsigned column) :
+            fileName(fileName),
+            line(line), column(column)
+        {
+        }
+
+        std::string fileName;
+        unsigned line, column;
 };
 
-struct SourceElement
+class SourceElement
 {
-    SourceElement()
-    {
-    }
+    public:
 
-    explicit SourceElement(const SourceLocation &sourceLocation) :
-        sourceLocation(sourceLocation)
-    {
-    }
+        SourceElement()
+        {
+        }
 
-    bool HasSourceLocation() const
-    {
-        return sourceLocation.line != 0;
-    }
+        explicit SourceElement(const SourceLocation &sourceLocation) :
+            sourceLocation(sourceLocation)
+        {
+        }
 
-    SourceLocation sourceLocation;
+        bool HasSourceLocation() const
+        {
+            return sourceLocation.line != 0;
+        }
+
+        SourceLocation sourceLocation;
 };
 
 class NonTerminal : public SourceElement

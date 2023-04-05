@@ -78,8 +78,8 @@ AspRunResult AspInitialize
      void *data, size_t dataSize,
      const AspAppSpec *, void *context);
 void AspCodeVersion(const AspEngine *, uint8_t version[4]);
-uint32_t AspMaxCodeSize(const AspEngine *);
-uint32_t AspMaxDataSize(const AspEngine *);
+size_t AspMaxCodeSize(const AspEngine *);
+size_t AspMaxDataSize(const AspEngine *);
 AspAddCodeResult AspAddCode
     (AspEngine *, const void *code, size_t codeSize);
 AspAddCodeResult AspSeal(AspEngine *);
@@ -91,8 +91,8 @@ AspRunResult AspSetArgumentsString(AspEngine *, const char *);
 AspRunResult AspRestart(AspEngine *);
 AspRunResult AspStep(AspEngine *);
 bool AspIsRunning(const AspEngine *);
-uint32_t AspProgramCounter(const AspEngine *);
-uint32_t AspLowFreeCount(const AspEngine *);
+size_t AspProgramCounter(const AspEngine *);
+size_t AspLowFreeCount(const AspEngine *);
 #ifdef ASP_DEBUG
 void AspDump(const AspEngine *, FILE *);
 #endif

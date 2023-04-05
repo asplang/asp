@@ -12,11 +12,11 @@
 #include <cstdio>
 #include <cstdlib>
 
-using namespace std;
-
 #ifndef COMMAND_OPTION_PREFIX
-#define COMMAND_OPTION_PREFIX "-"
+#error COMMAND_OPTION_PREFIX macro undefined
 #endif
+
+using namespace std;
 
 static const size_t DEFAULT_CODE_BYTE_COUNT = 4096;
 static const size_t DEFAULT_DATA_ENTRY_COUNT = 2048;
@@ -24,16 +24,25 @@ static const size_t DEFAULT_DATA_ENTRY_COUNT = 2048;
 static void Usage()
 {
     cerr
-        << "Usage: asps [options] script [args]\n"
+        << "Usage:      asps [OPTION]... SCRIPT [ARG]...\n"
+        << "\n"
+        << "Run the Asp script executable SCRIPT (*.aspe)."
+        << " The suffix may be omitted.\n"
+        << "If one or more ARG are given,"
+        << " they are passed as arguments to the script.\n"
+        << "\n"
         << "Options:\n"
-        << "-v      Verbose. Output version and statistical information.\n"
-        << "-c n    Code size, in bytes."
+        << COMMAND_OPTION_PREFIX
+        << "h          Print usage information.\n"
+        << COMMAND_OPTION_PREFIX
+        << "v          Verbose. Output version and statistical information.\n"
+        << COMMAND_OPTION_PREFIX
+        << "c n        Code size, in bytes."
         << " Default is " << DEFAULT_CODE_BYTE_COUNT << ".\n"
-        << "-d n    Data entry count, where each entry is 16 bytes."
-        << " Default is " << DEFAULT_DATA_ENTRY_COUNT << ".\n"
-        << "Arguments:\n"
-        << "script  = Script executable (*.aspe). The suffix may be omitted.\n"
-        << "args    = Arguments passed to the script.\n";
+        << COMMAND_OPTION_PREFIX
+        << "d n        Data entry count, where each entry is "
+        << AspDataEntrySize() << " bytes."
+        << " Default is " << DEFAULT_DATA_ENTRY_COUNT << ".\n";
 }
 
 int main(int argc, char **argv)
@@ -73,6 +82,7 @@ int main(int argc, char **argv)
         else
         {
             cerr << "Invalid option: " << arg1 << endl;
+            Usage();
             return 1;
         }
     }
@@ -80,7 +90,8 @@ int main(int argc, char **argv)
     // Obtain executable file name.
     if (argc < 2)
     {
-        cerr << "Specify program" << endl;
+        cerr << "No program specified" << endl;
+        Usage();
         return 1;
     }
 

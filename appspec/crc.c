@@ -96,7 +96,7 @@ crc_spec crc_make_spec
     return spec;
 }
 
-crc_arg crc_calc(const crc_spec *spec, const void *buffer, unsigned size)
+crc_arg crc_calc(const crc_spec *spec, const void *buffer, size_t size)
 {
     crc_session session;
     crc_start(spec, &session);
@@ -111,7 +111,7 @@ void crc_start(const crc_spec *spec, crc_session *session)
 
 void crc_add
     (const crc_spec *spec, crc_session *session,
-     const void *buffer, unsigned size)
+     const void *buffer, size_t size)
 {
     const uint8_t *bp = (const uint8_t *)buffer;
 

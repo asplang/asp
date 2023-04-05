@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,12 +69,12 @@ typedef struct AspEngine
 
     /* Code space. */
     uint8_t *code, *pc;
-    uint32_t maxCodeSize, codeEndIndex;
+    size_t maxCodeSize, codeEndIndex;
 
     /* Data space. */
     AspDataEntry *data;
-    uint32_t dataEndIndex;
-    uint32_t freeCount, lowFreeCount;
+    size_t dataEndIndex;
+    size_t freeCount, lowFreeCount;
     uint32_t freeListIndex;
 
     /* Singletons for commonly used values. */

@@ -17,9 +17,14 @@ add_library(aspd
     source.c
     )
 
+add_dependencies(aspd
+    asp-ver
+    )
+
 target_include_directories(aspd PUBLIC
     ../engine
-    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${aspe_BINARY_DIR}"
+    "${PROJECT_SOURCE_DIR}"
     )
 
 install(FILES

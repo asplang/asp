@@ -417,7 +417,6 @@ Token *Lexer::ProcessName()
     }
 
     // Extract keywords.
-    int type;
     auto iter = keywords.find(lex);
     return
         iter != keywords.end() ?
@@ -431,7 +430,8 @@ int Lexer::Peek(unsigned n)
         return prefetch[n];
 
     int c = EOF;
-    for (n -= prefetch.size(), n++; !is.eof() && n > 0; n--)
+    for (n -= static_cast<unsigned>(prefetch.size()), n++;
+         !is.eof() && n > 0; n--)
     {
         c = Read();
         prefetch.push_back(c);

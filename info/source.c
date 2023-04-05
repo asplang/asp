@@ -178,16 +178,16 @@ static unsigned long ScanSourceFileNames
 }
 
 AspSourceLocation AspGetSourceLocation
-    (const AspSourceInfo *info, uint32_t pc)
+    (const AspSourceInfo *info, size_t pc)
 {
     /* Locate the applicable source info record. */
     const uint8_t *p = info->sourceInfos, *pp = p;
-    uint32_t infoProgramCounter = 0;
+    size_t infoProgramCounter = 0;
     bool found = false;
     for (; p < (const uint8_t *)info->data + info->size;
          p += SourceInfoRecordSize)
     {
-        infoProgramCounter = LoadValue
+        infoProgramCounter = (size_t)LoadValue
             (p + SourceInfo_ProgramCounterOffset);
         if (infoProgramCounter >= pc)
         {

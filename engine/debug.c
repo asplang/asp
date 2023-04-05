@@ -19,12 +19,14 @@ void AspDump(const AspEngine *engine, FILE *fp)
 
     fprintf
         (fp, "Program counter: 0x%7.7X\n",
-         AspProgramCounter(engine));
+         (uint32_t)AspProgramCounter(engine));
 
     fprintf
         (fp, "Free count: %d; next free entry: 0x%7.7X\n",
-         engine->freeCount, engine->freeListIndex);
-    fprintf(fp, "Free count low water mark: %d\n", engine->lowFreeCount);
+         (uint32_t)engine->freeCount, (uint32_t)engine->freeListIndex);
+    fprintf
+        (fp, "Free count low water mark: %d\n",
+         (uint32_t)engine->lowFreeCount);
 
     fprintf(fp, "Stack: ");
     if (engine->stackTop == 0)
@@ -89,7 +91,7 @@ static void DumpData(const AspEngine *engine, FILE *fp)
         if (freeRangeStart != engine->dataEndIndex - 1)
             fprintf(fp, "0x%7.7X...", freeRangeStart);
         fprintf(fp, "0x%7.7X: t=0x%2.2X(free)\n",
-            engine->dataEndIndex - 1, DataType_Free);
+            (uint32_t)engine->dataEndIndex - 1, DataType_Free);
     }
 }
 

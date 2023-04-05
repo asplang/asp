@@ -7,6 +7,11 @@ chronological order.
 Changes
 -------
 
+Version 0.7.1.3 (compiler 0.7.1.2, engine 0.7.3.2):
+- Added ability to build under Windows.
+- Reformatted help information displayed by the compiler, the standalone
+  application, and the info utility.
+
 Version 0.7.1.2 (compiler 0.7.1.1, engine 0.7.3.1):
 - Compiler:
   - Added generation of the source info file (.aspd).
