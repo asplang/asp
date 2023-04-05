@@ -6,7 +6,7 @@ Build instructions
 
 1.  Asp is built using CMake. Issue the following commands to build the
     compiler, engine library, and standalone application for the host
-    environment.
+    environment for Linux systems.
 
     ```
     $ mkdir build
@@ -17,23 +17,44 @@ Build instructions
     $ make
     ```
 
-2. The binaries may be installed using the following command after the build
-   is complete.
+    For Windows systems, instead of using make, issue the following command
+    to build the release configuration. This step is not required if
+    installing; see the next step.
+
+    ```
+    C:> msbuild asp.sln /property:Configuration=Release
+    ```
+
+2.  The binaries may be installed on a Linux system using the following command
+    after the build is complete.
 
     ```
     $ sudo make install
     ```
 
-    This installs the following files (PREFIX is e.g., /usr or /usr/local):
+    For Windows systems, use the following command instead. It performs a full
+    build, followed by the installation. Typically, the command must be
+    issued from a command prompt with administrator priveleges.
+
+    ```
+    C:> msbuild INSTALL.vcxproj
+    ```
+
+    The following files are installed. PREFIX is e.g., /usr or /usr/local on
+    Linux systems, "C:/Program Files (x86)/asp" on Windows systems. The version
+    of ABI is designated by X.Y.
 
     - ${PREFIX}/bin/aspc - Asp compiler.
     - ${PREFIX}/bin/aspg - Asp application specification file generator.
     - ${PREFIX}/bin/asps - Standalone application.
-    - ${PREFIX}/etc/asp/standalone.aspec - Standalone application specification.
+    - ${PREFIX}/bin/aspinfo - Asp info utility.
+    - ${PREFIX}/etc/asp/standalone.aspec - Standalone application spec.
     - ${PREFIX}/lib/libaspe.so - Asp engine library (shared build).
     - ${PREFIX}/lib/libaspe.a - Asp engine library (static build).
-    - ${PREFIX}/include/asp.h (+ others) - Headers for application development.
-    - ${PREFIX}/include/asps/*.asps - Application specification include files.
+    - ${PREFIX}/lib/libaspd.so - Asp info library (shared build).
+    - ${PREFIX}/lib/libaspd.a - Asp info library (static build).
+    - ${PREFIX}/include/asp-X.Y/asp*.h - Headers for application development.
+    - ${PREFIX}/include/asps/X.Y/*.asps - Application spec include files.
 
 Using the standalone application
 --------------------------------
