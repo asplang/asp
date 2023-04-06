@@ -18,7 +18,8 @@ Build instructions
     ```
 
     For Windows systems, instead of using make, issue the following command
-    to build the release configuration. This step is not required if
+    to build the release configuration. Alternatively, the build can be
+    performed from within the Visual Studio IDE. This step is not required if
     installing; see the next step.
 
     ```
@@ -32,12 +33,13 @@ Build instructions
     $ sudo make install
     ```
 
-    For Windows systems, use the following command instead. It performs a full
-    build, followed by the installation. Typically, the command must be
-    issued from a command prompt with administrator priveleges.
+    For Windows systems, use the following command instead. Alternatively,
+    as above, the install build may be performed from within the Visual Studio
+    IDE. In either case, the build must typically be issued from a process with
+    administrator priveleges.
 
     ```
-    C:> msbuild INSTALL.vcxproj
+    C:> msbuild INSTALL.vcxproj /property:Configuration=Release
     ```
 
     The following files are installed. PREFIX is e.g., /usr or /usr/local on
@@ -70,6 +72,8 @@ Alternatively, you can specify it on the compile command line, or copy the
 file to the local directory and rename it to app.aspec.
 
 Now you can compile your script and run it under the standalone application.
+For Windows, you will need to have the appropriate bin directory in the PATH
+environment variable.
 
 ```
 $ aspc my_script.asp
