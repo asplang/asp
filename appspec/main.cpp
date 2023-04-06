@@ -260,7 +260,7 @@ static int main1(int argc, char **argv)
                         newSourceStream = sourceStream;
                         break;
                     }
-                    delete newSourceStream;
+                    delete sourceStream;
                 }
                 if (newSourceStream == 0)
                 {
