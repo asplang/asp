@@ -3,6 +3,7 @@
 //
 
 #include "asp.h"
+#include "standalone.h"
 #include <stdio.h>
 
 static AspRunResult asp_print1(AspEngine *, AspDataEntry *);

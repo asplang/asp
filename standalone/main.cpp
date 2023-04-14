@@ -5,6 +5,7 @@
 #include "asp.h"
 #include "asp-info.h"
 #include "standalone.h"
+#include "context.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -121,6 +122,7 @@ int main(int argc, char **argv)
     size_t dataByteSize = dataEntryCount * dataEntrySize;
 
     // Initialize the Asp engine.
+    StandaloneAspContext context;
     AspEngine engine;
     char *code = (char *)malloc(codeByteCount);
     char *data = (char *)malloc(dataByteSize);
@@ -128,7 +130,7 @@ int main(int argc, char **argv)
         (&engine,
          code, codeByteCount,
          data, dataByteSize,
-         &AspAppSpec_standalone, 0);
+         &AspAppSpec_standalone, &context);
     if (initializeResult != AspRunResult_OK)
     {
         cerr
