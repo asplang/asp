@@ -7,6 +7,13 @@ chronological order.
 Changes
 -------
 
+Version 0.7.1.4 (compiler 0.7.1.2, engine 0.7.3.3):
+- Engine:
+  - Added codec script library routines for encoding/decoding numeric data
+    to/from binary representations for use in applications that require this
+    functionality. Note that these routines are not available in the standalone
+    application.
+
 Version 0.7.1.3 (compiler 0.7.1.2, engine 0.7.3.2):
 - Added ability to build under Windows.
 - Reformatted help information displayed by the compiler, the standalone

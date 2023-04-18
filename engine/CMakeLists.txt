@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspe
-    VERSION 0.7.3.2
+    VERSION 0.7.3.3
     LANGUAGES C
     )
 
@@ -68,6 +68,7 @@ if(BUILD_FOR_TARGET)
         lib-type.c
         lib-iter.c
         lib-math.c
+        lib-codec.c
         $<$<CONFIG:Debug>:debug.c>
         )
 
@@ -137,10 +138,11 @@ if(BUILD_FOR_HOST)
         type.asps
         iter.asps
         math.asps
+        codec.asps
         DESTINATION include/asps/${ABI_VERSION}
         )
 
-    foreach(file type.asps iter.asps math.asps)
+    foreach(file type.asps iter.asps math.asps codec.asps)
         install(CODE "execute_process(
             COMMAND ${CMAKE_COMMAND} -E create_symlink
                 \"${ABI_VERSION}/${file}\"
