@@ -191,6 +191,10 @@ void ImportStatement::Emit(Executable &executable) const
                 auto asName = memberName->AsName();
                 auto asNameSymbol = executable.Symbol(asName);
 
+                if (name == "*")
+                    throw string
+                        ("Wildcard form of from...import not permitted");
+
                 {
                     ostringstream oss;
                     oss << "Push module " << moduleName;

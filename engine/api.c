@@ -455,6 +455,9 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
                                 char code = 0;
                                 switch (c)
                                 {
+                                    case '\0':
+                                        code = '0';
+                                        break;
                                     case '\a':
                                         code = 'a';
                                         break;
