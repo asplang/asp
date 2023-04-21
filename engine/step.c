@@ -1910,7 +1910,10 @@ static AspRunResult Step(AspEngine *engine)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(start) != DataType_Integer)
                     return AspRunResult_UnexpectedType;
-                AspRef(engine, start);
+                if (AspDataGetInteger(start) == 0)
+                    hasStart = false;
+                else
+                    AspRef(engine, start);
                 AspPop(engine);
             }
             if (hasEnd)
@@ -1930,7 +1933,10 @@ static AspRunResult Step(AspEngine *engine)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(step) != DataType_Integer)
                     return AspRunResult_UnexpectedType;
-                AspRef(engine, step);
+                if (AspDataGetInteger(step) == 1)
+                    hasStep = false;
+                else
+                    AspRef(engine, step);
                 AspPop(engine);
             }
 

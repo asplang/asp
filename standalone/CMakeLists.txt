@@ -42,6 +42,7 @@ target_link_libraries(asps
     )
 
 target_compile_definitions(asps PRIVATE
+    $<$<CONFIG:Debug>:ASP_DEBUG>
     COMMAND_OPTION_PREFIX=${C_COMMAND_OPTION_PREFIX}
     )
 

@@ -13,6 +13,8 @@ Version 0.7.1.5 (compiler 0.7.1.3, engine 0.7.3.4):
 - Engine:
   - Changed the way null characters in strings are rendered in conversions
     to string. Was '\x00', is now '\0'.
+  - Made MKR* instructions more memory efficient when explicit default values
+    are encountered.
 
 Version 0.7.1.4 (compiler 0.7.1.2, engine 0.7.3.3):
 - Engine:
