@@ -12,6 +12,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <climits>
 
 #ifndef COMMAND_OPTION_PREFIX
 #error COMMAND_OPTION_PREFIX macro undefined
@@ -43,7 +44,14 @@ static void Usage()
         << COMMAND_OPTION_PREFIX
         << "d n        Data entry count, where each entry is "
         << AspDataEntrySize() << " bytes."
-        << " Default is " << DEFAULT_DATA_ENTRY_COUNT << ".\n";
+        << " Default is " << DEFAULT_DATA_ENTRY_COUNT << ".\n"
+        #ifdef ASP_DEBUG
+        << COMMAND_OPTION_PREFIX
+        << "n n        Number of instructions to execute before exiting."
+        << " Useful for\n"
+        << "            debugging. Available only in debug builds.\n"
+        #endif
+        ;
 }
 
 int main(int argc, char **argv)
@@ -52,6 +60,7 @@ int main(int argc, char **argv)
     bool verbose = false;
     size_t codeByteCount = DEFAULT_CODE_BYTE_COUNT;
     size_t dataEntryCount = DEFAULT_DATA_ENTRY_COUNT;
+    unsigned stepCountLimit = UINT_MAX;
     auto optionPrefixSize = strlen(COMMAND_OPTION_PREFIX);
     for (; argc >= 2; argc--, argv++)
     {
@@ -70,14 +79,22 @@ int main(int argc, char **argv)
         {
             string value = (++argv)[1];
             argc--;
-            codeByteCount = atoi(value.c_str());
+            codeByteCount = static_cast<size_t>(atoi(value.c_str()));
         }
         else if (option == "d")
         {
             string value = (++argv)[1];
             argc--;
-            dataEntryCount = atoi(value.c_str());
+            dataEntryCount = static_cast<size_t>(atoi(value.c_str()));
         }
+        #ifdef ASP_DEBUG
+        else if (option == "n")
+        {
+            string value = (++argv)[1];
+            argc--;
+            stepCountLimit = static_cast<unsigned>(atoi(value.c_str()));
+        }
+        #endif
         else if (option == "v")
             verbose = true;
         else
@@ -203,16 +220,40 @@ int main(int argc, char **argv)
     }
 
     // Run the code.
-    AspRunResult runResult;
-    while (true)
+    AspRunResult runResult = AspRunResult_OK;
+    unsigned stepCount = 0;
+    #ifdef ASP_DEBUG
+    if (stepCountLimit == UINT_MAX)
+        cout << "Executing instructions indefinitely..." << endl;
+    else
+        cout << "Executing " << stepCountLimit << " instructions..." << endl;
+    #endif
+    for (;
+         runResult == AspRunResult_OK &&
+         (stepCountLimit == UINT_MAX || stepCount < stepCountLimit);
+         stepCount++)
     {
         runResult = AspStep(&engine);
-        if (runResult != AspRunResult_OK)
-            break;
     }
 
+    // Dump data area in debug mode.
+    #ifdef ASP_DEBUG
+    cout << "---\nDump:" << endl;
+    AspDump(&engine, stdout);
+    #endif
+
+    #ifdef ASP_DEBUG
+    cout << "---\nExecuted " << stepCount << " instructions" << endl;
+    if (stepCountLimit != UINT_MAX && stepCount != stepCountLimit)
+        cout
+            << "WARNING: Did not execute specified number of instructions ("
+            << stepCountLimit << ')' << endl;
+    #endif
+
     // Check completion status of the run.
+    #ifndef ASP_DEBUG
     if (runResult != AspRunResult_Complete)
+    #endif
     {
         auto oldFlags = cerr.flags();
         auto oldFill = cerr.fill();
@@ -252,12 +293,6 @@ int main(int argc, char **argv)
         }
         cerr << endl;
     }
-
-    // Dump data area in debug mode.
-    #ifdef ASP_DEBUG
-    cout << "Dump:" << endl;
-    AspDump(&engine, stdout);
-    #endif
 
     // Report low free count.
     if (verbose)
