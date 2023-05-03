@@ -374,6 +374,8 @@ static AspRunResult Step(AspEngine *engine)
 
             AspDataEntry *codeAddressEntry = AspAllocEntry
                 (engine, DataType_CodeAddress);
+            if (codeAddressEntry == 0)
+                return AspRunResult_OutOfDataMemory;
             AspDataSetCodeAddress(codeAddressEntry, codeAddressOperand);
             AspDataEntry *stackEntry = AspPush(engine, codeAddressEntry);
             if (stackEntry == 0)
@@ -1299,7 +1301,11 @@ static AspRunResult Step(AspEngine *engine)
                     AspDataEntry *returnValue = engine->appFunctionReturnValue;
                     engine->appFunctionReturnValue = 0;
                     if (returnValue == 0)
+                    {
                         returnValue = AspAllocEntry(engine, DataType_None);
+                        if (returnValue == 0)
+                            return AspRunResult_OutOfDataMemory;
+                    }
                     AspDataEntry *stackEntry = AspPush(engine, returnValue);
                     if (stackEntry == 0)
                         return AspRunResult_OutOfDataMemory;
@@ -2251,6 +2257,8 @@ static AspRunResult Step(AspEngine *engine)
                                characters. */
                             AspDataEntry *result = AspAllocEntry
                                 (engine, containerType);
+                            if (result == 0)
+                                return AspRunResult_OutOfDataMemory;
 
                             /* Perform the slice. */
                             AspSequenceResult (*Navigate)
@@ -2361,6 +2369,8 @@ static AspRunResult Step(AspEngine *engine)
                                elements. */
                             AspDataEntry *result = AspAllocEntry
                                 (engine, containerType);
+                            if (result == 0)
+                                return AspRunResult_OutOfDataMemory;
 
                             /* Perform the slice. */
                             AspSequenceResult (*Navigate)

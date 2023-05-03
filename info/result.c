@@ -58,6 +58,10 @@ const char *AspRunResultToString(int result)
             return "Unexpected type";
         case AspRunResult_SequenceMismatch:
             return "Sequence mismatch";
+        case AspRunResult_StringFormattingError:
+            return "String formatting error";
+        case AspRunResult_InvalidFormatString:
+            return "Invalid format string";
         case AspRunResult_NameNotFound:
             return "Name not found";
         case AspRunResult_KeyNotFound:

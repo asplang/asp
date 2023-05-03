@@ -10,8 +10,11 @@
 #include "sequence.h"
 #include "compare.h"
 #include "tree.h"
+#include <stdio.h>
 #include <math.h>
 #include <stdint.h>
+#include <string.h>
+#include <limits.h>
 
 static AspOperationResult PerformBitwiseBinaryOperation
     (AspEngine *, uint8_t opCode,
@@ -248,7 +251,7 @@ AspOperationResult AspPerformBinaryOperation
                     rightType == DataType_Tuple)
                 {
                     result = PerformFormatBinaryOperation
-                        (engine, opCode, right, left);
+                        (engine, opCode, left, right);
                     break;
                 }
             }
@@ -715,11 +718,363 @@ static AspOperationResult PerformArithmeticBinaryOperation
 
 static AspOperationResult PerformFormatBinaryOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     AspDataEntry *format, AspDataEntry *tuple)
 {
-    /* TODO: Implement, either here or in AspLib_format, where it could be
-       overridden. */
-    AspOperationResult result = {AspRunResult_NotImplemented, 0};
+    AspOperationResult result = {AspRunResult_OK, 0};
+
+    result.value = AspAllocEntry(engine, DataType_String);
+    if (result.value == 0)
+    {
+        result.result = AspRunResult_OutOfDataMemory;
+        return result;
+    }
+
+    /* Scan format string and convert fields. */
+    AspSequenceResult nextValueResult = {AspRunResult_OK, 0, 0};
+    char formatBuffer[31], *fp = 0, formattedValueBuffer[61];
+    for (AspSequenceResult nextResult = AspSequenceNext(engine, format, 0);
+         nextResult.element != 0;
+         nextResult = AspSequenceNext(engine, format, nextResult.element))
+    {
+        AspDataEntry *fragment = nextResult.value;
+        uint8_t fragmentSize =
+            AspDataGetStringFragmentSize(fragment);
+        char *fragmentData =
+            AspDataGetStringFragmentData(fragment);
+
+        for (uint8_t fragmentIndex = 0;
+             fragmentIndex < fragmentSize;
+             fragmentIndex++)
+        {
+            char c = fragmentData[fragmentIndex];
+            if (fp == 0)
+            {
+                /* Process non-format character. */
+                if (c == '%')
+                {
+                    /* Switch to processing format characters. */
+                    fp = formatBuffer;
+                    *fp++ = '%';
+                }
+                else
+                {
+                    /* Copy the non-format character to the result. */
+                    AspRunResult appendResult = AspStringAppendBuffer
+                        (engine, result.value, &c, 1);
+                    if (appendResult != AspRunResult_OK)
+                    {
+                        result.result = appendResult;
+                        return result;
+                    }
+                }
+            }
+            else
+            {
+                /* Process format character. */
+                if (c == '%')
+                {
+                    if (fp != formatBuffer + 1)
+                    {
+                        result.result = AspRunResult_InvalidFormatString;
+                        return result;
+                    }
+
+                    /* Copy the percent sign character to the result. */
+                    AspRunResult appendResult = AspStringAppendBuffer
+                        (engine, result.value, &c, 1);
+                    if (appendResult != AspRunResult_OK)
+                    {
+                        result.result = appendResult;
+                        return result;
+                    }
+                }
+                else
+                {
+                    /* Continue to build format string for next value. */
+                    if (fp >= formatBuffer + sizeof formatBuffer - 1)
+                    {
+                        result.result = AspRunResult_InvalidFormatString;
+                        return result;
+                    }
+                    *fp++ = c;
+
+                    /* Disallow variable width specifiers in the format. */
+                    if (c == '*')
+                    {
+                        result.result = AspRunResult_InvalidFormatString;
+                        return result;
+                    }
+
+                    /* Check for a conversion type character, which ends the
+                       format string. */
+                    bool
+                        isInteger = false, isFloat = false,
+                        isCharacter = false, isString = false;
+                    if (c != 0 && strchr("diouxX", c) != 0)
+                        isInteger = true;
+                    else if (c != 0 && strchr("eEfFgG", c) != 0)
+                        isFloat = true;
+                    else if (c == 'c')
+                        isCharacter = true;
+                    else if (c == 's')
+                        isString = true;
+                    else
+                        continue;
+
+                    /* Prepare to format the next value. */
+                    *fp = '\0';
+
+                    /* Fetch the next value from the tuple. */
+                    nextValueResult = AspSequenceNext
+                        (engine, tuple, nextValueResult.element);
+                    if (nextValueResult.result != AspRunResult_OK)
+                    {
+                        result.result = nextValueResult.result;
+                        return result;
+                    }
+                    if (nextValueResult.element == 0)
+                    {
+                        result.result = AspRunResult_StringFormattingError;
+                        return result;
+                    }
+
+                    /* Convert the next value to an appropriate type and
+                       format it. */
+                    AspDataEntry *nextValue = nextValueResult.value;
+                    if (isString)
+                    {
+                        /* Validate the format string. */
+                        int resultSize = snprintf(0, 0, formatBuffer, "");
+                        if (resultSize < 0)
+                        {
+                            result.result = AspRunResult_StringFormattingError;
+                            return result;
+                        }
+
+                        /* Extract width and precision fields from the format
+                           string. */
+                        bool leftJustify = strchr(formatBuffer, '-') != 0;
+                        unsigned long width = 0, precision = ULONG_MAX;
+                        const char *p = strpbrk(formatBuffer, "0123456789");
+                        if (p != 0)
+                        {
+                            char *endp;
+                            unsigned long n = strtoul(p, &endp, 10);
+                            if (p != formatBuffer && *(p - 1) == '.')
+                                precision = n;
+                            else
+                            {
+                                width = n;
+                                if (*endp == '.')
+                                precision = strtoul(endp + 1, 0, 10);
+                            }
+                        }
+
+                        AspDataEntry *str = AspToString(engine, nextValue);
+                        if (str == 0)
+                        {
+                            result.result = AspRunResult_OutOfDataMemory;
+                            return result;
+                        }
+
+                        /* Determine number of bytes of the string to print. */
+                        unsigned long sourceSize = AspCount(str);
+                        if (precision < sourceSize)
+                            sourceSize = precision;
+
+                        /* Determine the number of bytes to print. */
+                        unsigned fieldSize = sourceSize;
+                        if (width > fieldSize)
+                            fieldSize = width;
+
+                        /* Determine amount of padding. */
+                        unsigned long paddingSize = 0;
+                        if (fieldSize > sourceSize)
+                            paddingSize = fieldSize - sourceSize;
+
+                        /* Add left padding if applicable. */
+                        static char space = ' ';
+                        if (!leftJustify)
+                        {
+                            for (unsigned long i = 0; i < paddingSize; i++)
+                            {
+                                result.result = AspStringAppendBuffer
+                                    (engine, result.value, &space, 1);
+                                if (result.result != AspRunResult_OK)
+                                    return result;
+                            }
+                        }
+
+                        /* Append the applicable portion of the string value
+                           to the result. */
+                        unsigned long remainingSize = sourceSize;
+                        for (AspSequenceResult strNextResult = AspSequenceNext
+                                (engine, str, 0);
+                             remainingSize > 0 && strNextResult.element != 0;
+                             strNextResult = AspSequenceNext
+                                (engine, str, strNextResult.element))
+                        {
+                            AspDataEntry *fragment = strNextResult.value;
+                            uint8_t fragmentSize =
+                                AspDataGetStringFragmentSize(fragment);
+                            char *fragmentData =
+                                AspDataGetStringFragmentData(fragment);
+
+                            if (fragmentSize > remainingSize)
+                                fragmentSize = (uint8_t)remainingSize;
+
+                            result.result = AspStringAppendBuffer
+                                (engine, result.value,
+                                 fragmentData, fragmentSize);
+                            if (result.result != AspRunResult_OK)
+                                return result;
+
+                            remainingSize -= fragmentSize;
+                        }
+
+                        /* Add right padding if applicable. */
+                        if (leftJustify)
+                        {
+                            for (unsigned long i = 0; i < paddingSize; i++)
+                            {
+                                result.result = AspStringAppendBuffer
+                                    (engine, result.value, &space, 1);
+                                if (result.result != AspRunResult_OK)
+                                    return result;
+                            }
+                        }
+
+                        AspUnref(engine, str);
+                    }
+                    else
+                    {
+                        /* Format the non-string value. */
+                        int formattedSize = 0;
+                        if (isFloat)
+                        {
+                            double value;
+                            if (!AspFloatValue(nextValue, &value))
+                            {
+                                result.result =
+                                    AspRunResult_StringFormattingError;
+                                return result;
+                            }
+
+                            formattedSize = snprintf
+                                (formattedValueBuffer,
+                                 sizeof formattedValueBuffer,
+                                 formatBuffer, value);
+                            if (formattedSize < 0 ||
+                                formattedSize >= sizeof formattedValueBuffer)
+                            {
+                                result.result =
+                                    AspRunResult_StringFormattingError;
+                                return result;
+                            }
+                        }
+                        else
+                        {
+                            int value;
+                            if (isInteger)
+                            {
+                                int32_t i32;
+                                if (!AspIntegerValue(nextValue, &i32))
+                                {
+                                    result.result =
+                                        AspRunResult_StringFormattingError;
+                                    return result;
+                                }
+                                value = (int)i32;
+                            }
+                            else if (isCharacter)
+                            {
+                                if (AspIsInteger(nextValue))
+                                {
+                                    int32_t i32;
+                                    AspIntegerValue(nextValue, &i32);
+                                    if (i32 < 0 || i32 > 0xFF)
+                                    {
+                                        result.result =
+                                            AspRunResult_ValueOutOfRange;
+                                        return result;
+                                    }
+                                    value = (int)i32;
+                                }
+                                else if (AspIsString(nextValue))
+                                {
+                                    if (AspCount(nextValue) != 1)
+                                    {
+                                        result.result =
+                                            AspRunResult_ValueOutOfRange;
+                                        return result;
+                                    }
+                                    char c;
+                                    AspStringValue
+                                        (engine, nextValue, 0, &c, 0, 1);
+                                    value = c;
+                                }
+                                else
+                                {
+                                    result.result =
+                                        AspRunResult_StringFormattingError;
+                                    return result;
+                                }
+                            }
+                            else
+                            {
+                                result.result = AspRunResult_InternalError;
+                                return result;
+                            }
+
+                            formattedSize = snprintf
+                                (formattedValueBuffer,
+                                 sizeof formattedValueBuffer,
+                                 formatBuffer, value);
+                            if (formattedSize < 0 ||
+                                formattedSize >= sizeof formattedValueBuffer)
+                            {
+                                result.result =
+                                    AspRunResult_StringFormattingError;
+                                return result;
+                            }
+                        }
+
+                        /* Append the formatted value to the result. */
+                        result.result = AspStringAppendBuffer
+                            (engine, result.value,
+                             formattedValueBuffer, formattedSize);
+                        if (result.result != AspRunResult_OK)
+                            return result;
+                    }
+                }
+
+                /* Switch back to processing non-format characters. */
+                fp = 0;
+            }
+        }
+    }
+
+    /* Ensure the format was well formed. */
+    if (fp != 0)
+    {
+        result.result = AspRunResult_InvalidFormatString;
+        return result;
+    }
+
+    /* Ensure all the values in the tuple were used. */
+    nextValueResult = AspSequenceNext
+        (engine, tuple, nextValueResult.element);
+    if (nextValueResult.result != AspRunResult_OK)
+    {
+        result.result = nextValueResult.result;
+        return result;
+    }
+    if (nextValueResult.element != 0)
+    {
+        result.result = AspRunResult_StringFormattingError;
+        return result;
+    }
+
     return result;
 }
 

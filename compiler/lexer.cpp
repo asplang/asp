@@ -154,13 +154,13 @@ Token *Lexer::ProcessSpecial()
     {
         lex += static_cast<char>(Get());
     }
-    else if (strchr(dbl, c) != 0 && c2 == c)
+    else if (c != 0 && strchr(dbl, c) != 0 && c2 == c)
     {
         lex += static_cast<char>(Get());
         if (strchr(eq3, c) != 0 && Peek() == '=')
             lex += static_cast<char>(Get());
     }
-    else if (strchr(eq2, c) != 0 && c2 == '=')
+    else if (c != 0 && strchr(eq2, c) != 0 && c2 == '=')
     {
         lex += static_cast<char>(Get());
     }
@@ -322,5 +322,5 @@ void Lexer::CheckIndent()
 static bool IsSpecial(int c)
 {
     static const char chars[] = "!\"%&'()*+,-./:<=>[]^`{|}~";
-    return c <= 0xFF && strchr(chars, c) != 0;
+    return c > 0 && c <= 0xFF && strchr(chars, c) != 0;
 }
