@@ -16,6 +16,14 @@ Version 0.7.1.5 (compiler 0.7.1.3, engine 0.7.3.4):
   - Made MKR* instructions more memory efficient when explicit default values
     are encountered.
   - Implemented the string formatting operator (str % tuple).
+  - Made some library script functions more like Python:
+    - Added an optional base parameter to the int function. The default base
+      for string conversions is 10.
+    - Added an optional base parameter to the log function. The default base
+      is e, yielding the natural logarithm.
+- Standalone application:
+  - Added optional sep and end parameters to the print function to make it
+    more like Python.
 
 Version 0.7.1.4 (compiler 0.7.1.2, engine 0.7.3.3):
 - Engine:
