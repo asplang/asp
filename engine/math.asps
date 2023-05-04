@@ -24,7 +24,7 @@ def hypot(x, y) = AspLib_hypot
 
 # Exponential and logarithmic functions.
 def exp(x) = AspLib_exp
-def log(x) = AspLib_log
+def log(x, base = None) = AspLib_log
 def log10(x) = AspLib_log10
 
 # Rounding functions.

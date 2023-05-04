@@ -10,6 +10,6 @@ def len(object) = AspLib_len
 
 # Type conversion functions.
 def bool(x = False) = AspLib_bool
-def int(x = 0) = AspLib_int
+def int(x = 0, base = None) = AspLib_int
 def float(x = 0.0) = AspLib_float
 def str(x = '') = AspLib_str

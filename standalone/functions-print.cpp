@@ -8,22 +8,25 @@
 
 static AspRunResult asp_print1(AspEngine *, AspDataEntry *);
 
-/* print(*values)
- * Print value to standard output.
- * Separate individual items with a space.
- *
- * TODO: Add spacing parameter to support separators other than space.
+/* print(*values, sep, end)
+ * Print values to standard output.
+ * Separate individual items with the sep value and finish with the end value.
  */
 extern "C" AspRunResult asp_print
     (AspEngine *engine,
      AspDataEntry *values, /* group */
+     AspDataEntry *sep, AspDataEntry *end,
      AspDataEntry **returnValue)
 {
     unsigned argCount = AspCount(values);
     for (unsigned i = 0; i < argCount; i++)
     {
         if (i != 0)
-            putchar(' ');
+        {
+            AspRunResult result = asp_print1(engine, sep);
+            if (result != AspRunResult_OK)
+                return result;
+        }
 
         AspDataEntry *value = AspElement(engine, values, i);
         AspRunResult result = asp_print1(engine, value);
@@ -31,7 +34,10 @@ extern "C" AspRunResult asp_print
             return result;
     }
 
-    puts("");
+    AspRunResult result = asp_print1(engine, end);
+    if (result != AspRunResult_OK)
+        return result;
+
     return AspRunResult_OK;
 }
 

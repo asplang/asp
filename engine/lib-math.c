@@ -5,6 +5,7 @@
 #include "asp.h"
 #include <math.h>
 
+static double logn(double, double);
 static AspRunResult generic_function_1
     (AspEngine *engine,
      double (*function)(double),
@@ -183,16 +184,22 @@ AspRunResult AspLib_exp
 }
 
 /* log(x)
- * Return the natural (base e) logarithm of x.
- *
- * TODO: Add base parameter to support arbitrary bases.
+ * Return the logarithm of x to the given base.
+ * The default base is e, yielding the natural logarithm.
  */
 AspRunResult AspLib_log
     (AspEngine *engine,
-     AspDataEntry *x,
+     AspDataEntry *x, AspDataEntry *base,
      AspDataEntry **returnValue)
 {
-    return generic_function_1(engine, log, x, returnValue);
+    return AspIsNone(base) ?
+        generic_function_1(engine, log, x, returnValue) :
+        generic_function_2(engine, logn, x, base, returnValue);
+}
+
+static double logn(double x, double base)
+{
+    return log(x) / log(base);
 }
 
 /* log10(x)

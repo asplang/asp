@@ -7,7 +7,7 @@ include iter
 include math
 
 # General purpose print.
-def print(*values) = asp_print
+def print(*values, sep = ' ', end = '\n') = asp_print
 
 # Sleep.
 def sleep(s) = asp_sleep

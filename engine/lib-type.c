@@ -5,6 +5,12 @@
 #include "asp.h"
 #include "data.h"
 #include <stdio.h>
+#include <math.h>
+#include <errno.h>
+#include <ctype.h>
+
+static AspRunResult ExtractWord
+    (AspEngine *, AspDataEntry *str, char *, size_t *);
 
 /* type(object)
  * Return type of argument.
@@ -61,18 +67,17 @@ AspRunResult AspLib_bool
     return AspRunResult_OK;
 }
 
-/* int(x)
+/* int(x, base)
  * Convert a number or string to an integer.
  * Floats are truncated towards zero. Out of range floats are converted to
- * either INT_MIN or INT_MAX according to the sign.
- * Strings are treated in the normal C way.
- *
- * TODO: Add base parameter for string version, supporting base 0 for usual
- * string interpretation.
+ * either INT32_MIN or INT32_MAX according to the sign.
+ * Strings are treated in the normal C way, as per strtol.
+ * If base is given, x must be a string.
+ * For string conversions, the default base is 10.
  */
 AspRunResult AspLib_int
     (AspEngine *engine,
-     AspDataEntry *x,
+     AspDataEntry *x, AspDataEntry *base,
      AspDataEntry **returnValue)
 {
     if (AspIsInteger(x))
@@ -82,6 +87,9 @@ AspRunResult AspLib_int
         return AspRunResult_OK;
     }
 
+    if (!AspIsNone(base) && !AspIsString(x))
+        return AspRunResult_UnexpectedType;
+
     int32_t intValue;
     if (AspIsNumeric(x))
     {
@@ -89,15 +97,31 @@ AspRunResult AspLib_int
     }
     else if (AspIsString(x))
     {
-        size_t size;
+        int32_t baseValue = 10;
+        if (!AspIsNone(base))
+        {
+            if (!AspIsIntegral(base))
+                return AspRunResult_UnexpectedType;
+            AspIntegerValue(base, &baseValue);
+            if (baseValue != 0 && (baseValue < 2 || baseValue > 36))
+                return AspRunResult_ValueOutOfRange;
+        }
+
+        /* Extract the word to convert. */
         char buffer[12];
-        AspStringValue(engine, x, &size, buffer, 0, sizeof buffer);
-        if (size > 11)
+        size_t size = sizeof buffer;
+        AspRunResult extractResult = ExtractWord(engine, x, buffer, &size);
+        if (extractResult != AspRunResult_OK)
+            return extractResult;
+
+        /* Convert the word to an integer value. */
+        char *endp;
+        errno = 0;
+        long longValue = strtol(buffer, &endp, (int)baseValue);
+        if (*endp != '\0' || errno != 0 ||
+            longValue < INT32_MIN || longValue > INT32_MAX)
             return AspRunResult_ValueOutOfRange;
-        char c;
-        int count = sscanf(buffer, "%d%c", &intValue, &c);
-        if (count != 1)
-            return AspRunResult_ValueOutOfRange;
+        intValue = (int32_t)longValue;
     }
     else
         return AspRunResult_UnexpectedType;
@@ -131,14 +155,18 @@ AspRunResult AspLib_float
     }
     else if (AspIsString(x))
     {
-        size_t size;
+        /* Extract the word to convert. */
         char buffer[25];
-        AspStringValue(engine, x, &size, buffer, 0, sizeof buffer);
-        if (size > 24)
-            return AspRunResult_ValueOutOfRange;
-        char c;
-        int count = sscanf(buffer, "%lf%c", &floatValue, &c);
-        if (count != 1)
+        size_t size = sizeof buffer;
+        AspRunResult extractResult = ExtractWord(engine, x, buffer, &size);
+        if (extractResult != AspRunResult_OK)
+            return extractResult;
+
+        /* Convert the word to a floating-point value. */
+        char *endp;
+        errno = 0;
+        floatValue = strtod(buffer, &endp);
+        if (*endp != '\0' || errno != 0)
             return AspRunResult_ValueOutOfRange;
     }
     else
@@ -163,5 +191,32 @@ AspRunResult AspLib_str
     if (entry == 0)
         return AspRunResult_OutOfDataMemory;
     *returnValue = entry;
+    return AspRunResult_OK;
+}
+
+static AspRunResult ExtractWord
+    (AspEngine *engine, AspDataEntry *str,
+     char *buffer, size_t *bufferSize)
+{
+    size_t maxBufferSize = *bufferSize;
+    *bufferSize = 0;
+    bool end = false;
+    for (int index = 0; index < (int)AspCount(str); index++)
+    {
+        char c = AspStringElement(engine, str, index);
+        if (isspace(c))
+        {
+            if (*bufferSize != 0)
+                end = true;
+        }
+        else
+        {
+            if (end || *bufferSize >= maxBufferSize - 1)
+                return AspRunResult_ValueOutOfRange;
+            buffer[(*bufferSize)++] = c;
+        }
+    }
+    buffer[*bufferSize] = '\0';
+
     return AspRunResult_OK;
 }
