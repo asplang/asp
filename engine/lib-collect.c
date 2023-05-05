@@ -40,13 +40,6 @@ AspRunResult AspLib_list
      AspDataEntry *iterable,
      AspDataEntry **returnValue)
 {
-    if (AspIsList(iterable))
-    {
-        AspRef(engine, iterable);
-        *returnValue = iterable;
-        return AspRunResult_OK;
-    }
-
     *returnValue = AspNewList(engine);
     if (*returnValue == 0)
         return AspRunResult_OutOfDataMemory;
