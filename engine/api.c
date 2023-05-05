@@ -362,7 +362,7 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
             {
                 int32_t i;
                 AspIntegerValue(entry, &i);
-                sprintf(buffer, "%d", i);
+                snprintf(buffer, sizeof buffer, "%d", i);
                 break;
             }
 
@@ -370,7 +370,7 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
             {
                 double f;
                 AspFloatValue(entry, &f);
-                int count = sprintf(buffer, "%g", f);
+                int count = snprintf(buffer, sizeof buffer, "%g", f);
                 if (strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
                     strcat(buffer, ".0");
                 break;
@@ -382,15 +382,22 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
                 int32_t start, end, step;
                 AspRangeValues(engine, entry, &start, &end, &step);
                 if (start != 0)
-                    count += sprintf(buffer + count, "%d", start);
-                count += sprintf(buffer + count, "..");
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count,
+                         "%d", start);
+                count += snprintf
+                    (buffer + count, sizeof buffer - count, "..");
                 bool unbounded =
                     step < 0 && end == INT32_MIN ||
                     step > 0 && end == INT32_MAX;
                 if (!unbounded)
-                    count += sprintf(buffer + count, "%d", end);
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count,
+                         "%d", end);
                 if (step != 1)
-                    count += sprintf(buffer + count, ":%d", step);
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count,
+                         ":%d", step);
                 break;
             }
 
@@ -496,7 +503,9 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
                                 else
                                 {
                                     uint8_t uc = *(uint8_t *)&c;
-                                    sprintf(encoded + 1, "x%02x", uc);
+                                    snprintf
+                                        (encoded + 1, sizeof encoded - 1,
+                                         "x%02x", uc);
                                 }
                                 appendResult = AspStringAppendBuffer
                                     (engine, result, encoded, strlen(encoded));
@@ -648,22 +657,29 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
 
             case DataType_Function:
             {
-                strcpy(buffer, "<func:");
+                int count = 0;
+                count += snprintf
+                    (buffer + count, sizeof buffer - count,
+                     "<func:");
                 if (AspDataGetFunctionIsApp(entry))
-                    sprintf
-                        (buffer + strlen(buffer), "app:%d",
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count,
+                         "app:%d",
                          AspDataGetFunctionSymbol(entry));
                 else
-                    sprintf
-                        (buffer + strlen(buffer), "@%7.7X",
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count,
+                         "@%7.7X",
                          AspDataGetFunctionCodeAddress(entry));
-                strcat(buffer, ">");
+                count += snprintf
+                    (buffer + count, sizeof buffer - count,
+                     ">");
                 break;
             }
 
             case DataType_Module:
-                sprintf
-                    (buffer, "<mod:@%7.7X>",
+                snprintf
+                    (buffer, sizeof buffer, "<mod:@%7.7X>",
                      AspDataGetModuleCodeAddress(entry));
                 break;
 
