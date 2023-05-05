@@ -137,13 +137,14 @@ if(BUILD_FOR_HOST)
 
     install(FILES
         type.asps
+        collect.asps
         iter.asps
         math.asps
         codec.asps
         DESTINATION include/asps/${ABI_VERSION}
         )
 
-    foreach(file type.asps iter.asps math.asps codec.asps)
+    foreach(file type.asps collect.asps iter.asps math.asps codec.asps)
         install(CODE "execute_process(
             COMMAND ${CMAKE_COMMAND} -E create_symlink
                 \"${ABI_VERSION}/${file}\"
