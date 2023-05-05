@@ -3,5 +3,5 @@
 #
 
 # Sequence conversion functions.
-def tuple(iterable) = AspLib_tuple
-def list(iterable) = AspLib_list
+def tuple(iterable = None) = AspLib_tuple
+def list(iterable = None) = AspLib_list

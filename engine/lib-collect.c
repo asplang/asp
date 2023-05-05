@@ -149,7 +149,7 @@ static AspRunResult FillSequence
             }
         }
     }
-    else
+    else if (!AspIsNone(iterable))
         return AspRunResult_UnexpectedType;
 
     return AspRunResult_OK;
