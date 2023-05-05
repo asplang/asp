@@ -23,6 +23,8 @@
 #endif
 
 static const char *TypeString(DataType);
+static AspDataEntry *NewRange
+    (AspEngine *, int32_t start, int32_t *end, int32_t step);
 static AspDataEntry *NewObject(AspEngine *, DataType);
 
 void AspEngineVersion(uint8_t version[4])
@@ -868,6 +870,73 @@ AspDataEntry *AspNewFloat(AspEngine *engine, double value)
     AspDataEntry *entry = NewObject(engine, DataType_Float);
     if (entry != 0)
         AspDataSetFloat(entry, value);
+    return entry;
+}
+
+AspDataEntry *AspNewRange
+    (AspEngine *engine,
+     int32_t startValue, int32_t endValue, int32_t stepValue)
+{
+    return NewRange(engine, startValue, &endValue, stepValue);
+}
+
+AspDataEntry *AspNewUnboundedRange
+    (AspEngine *engine,
+     int32_t startValue, int32_t stepValue)
+{
+    return NewRange(engine, startValue, 0, stepValue);
+}
+
+static AspDataEntry *NewRange
+    (AspEngine *engine,
+     int32_t startValue, int32_t *endValue, int32_t stepValue)
+{
+    AspDataEntry *entry = NewObject(engine, DataType_Range);
+    if (entry != 0)
+    {
+        bool error = false;
+        AspDataEntry *start = 0, *end = 0, *step = 0;
+        if (!error && startValue != 0)
+        {
+            start = AspNewInteger(engine, startValue);
+            if (start == 0)
+                error = true;
+        }
+        if (!error && endValue != 0)
+        {
+            end = AspNewInteger(engine, *endValue);
+            if (end == 0)
+                error = true;
+        }
+        if (!error && stepValue != 1)
+        {
+            step = AspNewInteger(engine, stepValue);
+            if (step == 0)
+                error = true;
+        }
+        if (error)
+        {
+            AspUnref(engine, entry);
+            entry = 0;
+        }
+
+        if (start != 0)
+        {
+            AspDataSetRangeHasStart(entry, true);
+            AspDataSetRangeStartIndex(entry, AspIndex(engine, start));
+        }
+        if (end != 0)
+        {
+            AspDataSetRangeHasEnd(entry, true);
+            AspDataSetRangeEndIndex(entry, AspIndex(engine, end));
+        }
+        if (step != 0)
+        {
+            AspDataSetRangeHasStep(entry, true);
+            AspDataSetRangeStepIndex(entry, AspIndex(engine, step));
+        }
+    }
+
     return entry;
 }
 

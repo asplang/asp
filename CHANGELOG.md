@@ -23,6 +23,7 @@ Version 0.7.1.5 (compiler 0.7.1.3, engine 0.7.3.4):
       is e, yielding the natural logarithm.
   - Added tuple and list script functions. Note that conversion from
     dictionaries is different than Python.
+  - Added API functions for creating ranges.
 - Standalone application:
   - Added optional sep and end parameters to the print function to make it
     more like Python.
