@@ -20,6 +20,7 @@ add_custom_command(
         aspg
         "${PROJECT_SOURCE_DIR}/standalone.asps"
         ../engine/type.asps
+        ../engine/collect.asps
         ../engine/iter.asps
         ../engine/math.asps
     COMMAND
