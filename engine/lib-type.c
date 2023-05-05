@@ -4,10 +4,9 @@
 
 #include "asp.h"
 #include "data.h"
-#include <stdio.h>
-#include <math.h>
 #include <errno.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 static AspRunResult ExtractWord
     (AspEngine *, AspDataEntry *str, char *, size_t *);

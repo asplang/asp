@@ -3,6 +3,7 @@
 #
 
 include type
+include collect
 include iter
 include math
 

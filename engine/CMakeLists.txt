@@ -66,6 +66,7 @@ if(BUILD_FOR_TARGET)
         function.c
         arguments.c
         lib-type.c
+        lib-collect.c
         lib-iter.c
         lib-math.c
         lib-codec.c

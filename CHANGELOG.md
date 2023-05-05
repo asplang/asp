@@ -21,6 +21,8 @@ Version 0.7.1.5 (compiler 0.7.1.3, engine 0.7.3.4):
       for string conversions is 10.
     - Added an optional base parameter to the log function. The default base
       is e, yielding the natural logarithm.
+  - Added tuple and list script functions. Note that conversion from
+    dictionaries is different than Python.
 - Standalone application:
   - Added optional sep and end parameters to the print function to make it
     more like Python.
