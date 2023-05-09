@@ -816,7 +816,7 @@ static AspOperationResult PerformFormatBinaryOperation
                         isFloat = true;
                     else if (c == 'c')
                         isCharacter = true;
-                    else if (c == 's')
+                    else if (c != 0 && strchr("rsa", c) != 0)
                         isString = true;
                     else
                         continue;
@@ -870,7 +870,9 @@ static AspOperationResult PerformFormatBinaryOperation
                             }
                         }
 
-                        AspDataEntry *str = AspToString(engine, nextValue);
+                        AspDataEntry *str = c == 's' ?
+                            AspToString(engine, nextValue) :
+                            AspToRepr(engine, nextValue);
                         if (str == 0)
                         {
                             result.result = AspRunResult_OutOfDataMemory;

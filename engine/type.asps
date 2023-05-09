@@ -13,3 +13,4 @@ def bool(x = False) = AspLib_bool
 def int(x = 0, base = None) = AspLib_int
 def float(x = 0.0) = AspLib_float
 def str(x = '') = AspLib_str
+def repr(x) = AspLib_repr

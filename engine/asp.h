@@ -126,6 +126,7 @@ bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);
 AspDataEntry *AspToString(AspEngine *, AspDataEntry *);
+AspDataEntry *AspToRepr(AspEngine *, const AspDataEntry *);
 unsigned AspCount(const AspDataEntry *);
 AspDataEntry *AspElement(AspEngine *, AspDataEntry *sequence, int index);
 char AspStringElement(AspEngine *, const AspDataEntry *str, int index);

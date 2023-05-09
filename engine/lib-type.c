@@ -193,6 +193,21 @@ AspRunResult AspLib_str
     return AspRunResult_OK;
 }
 
+/* repr(x)
+ * Return the canonical string representation of x.
+ */
+AspRunResult AspLib_repr
+    (AspEngine *engine,
+     AspDataEntry *object,
+     AspDataEntry **returnValue)
+{
+    AspDataEntry *entry = AspToRepr(engine, object);
+    if (entry == 0)
+        return AspRunResult_OutOfDataMemory;
+    *returnValue = entry;
+    return AspRunResult_OK;
+}
+
 static AspRunResult ExtractWord
     (AspEngine *engine, AspDataEntry *str,
      char *buffer, size_t *bufferSize)

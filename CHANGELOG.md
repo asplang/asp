@@ -7,6 +7,14 @@ chronological order.
 Changes
 -------
 
+Version 0.7.1.6 (compiler 0.7.1.3, engine 0.7.3.5):
+- Engine:
+  - Added conversion of objects to canonical string representation.
+    - Added the AspToRepr function to the programmer API.
+    - Added the repr script library function.
+    - Added support for 'r' and 'a' conversion types for the string formatting
+      operator (str % tuple).
+
 Version 0.7.1.5 (compiler 0.7.1.3, engine 0.7.3.4):
 - Compiler:
   - Added an error for the wildcard form of the from...import statement.

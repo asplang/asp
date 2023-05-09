@@ -22,6 +22,8 @@
 #error ASP_ENGINE_VERSION_* macros undefined
 #endif
 
+static AspDataEntry *ToString
+    (AspEngine *, const AspDataEntry *entry, bool repr);
 static const char *TypeString(DataType);
 static AspDataEntry *NewRange
     (AspEngine *, int32_t start, int32_t *end, int32_t step);
@@ -270,9 +272,9 @@ bool AspStringValue
     (AspEngine *engine, const AspDataEntry *const_entry,
      size_t *size, char *buffer, size_t index, size_t bufferSize)
 {
-    AspDataEntry *entry = (AspDataEntry *)const_entry;
-    if (!AspIsString(entry))
+    if (!AspIsString(const_entry))
         return false;
+    AspDataEntry *entry = (AspDataEntry *)const_entry;
 
     size_t localSize = (size_t)AspDataGetSequenceCount(entry);
     if (size != 0)
@@ -329,11 +331,23 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
         return entry;
     }
 
+    return ToString(engine, entry, false);
+}
+
+AspDataEntry *AspToRepr(AspEngine *engine, const AspDataEntry *entry)
+{
+    return ToString(engine, entry, true);
+}
+
+static AspDataEntry *ToString
+    (AspEngine *engine, const AspDataEntry *const_entry, bool repr)
+{
     AspDataEntry *result = NewObject(engine, DataType_String);
     if (result == 0)
         return 0;
 
     /* Avoid recursion by using the engine's stack. */
+    AspDataEntry *entry = (AspDataEntry *)const_entry;
     AspDataEntry *startStackTop = engine->stackTop;
     AspDataEntry *next = 0;
     bool flag = false;
@@ -407,8 +421,8 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
                    to the resulting string. */
                 *buffer = '\0';
 
-                /* Wrap all but a top-level string with quotes. */
-                if (startStackTop != engine->stackTop)
+                /* Wrap the string with quotes if applicable. */
+                if (repr || startStackTop != engine->stackTop)
                 {
                     AspRunResult appendResult = AspStringAppendBuffer
                         (engine, result, "'", 1);
@@ -433,10 +447,10 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
                     char *fragmentData =
                         AspDataGetStringFragmentData(fragment);
 
-                    /* Treat top-level and contained strings differenty. */
-                    if (startStackTop == engine->stackTop)
+                    /* Decide how to treat strings. */
+                    if (!repr && startStackTop == engine->stackTop)
                     {
-                        /* Print top-level string as is. */
+                        /* Copy the string as-is. */
                         AspRunResult appendResult = AspStringAppendBuffer
                             (engine, result, fragmentData, fragmentSize);
                         if (appendResult != AspRunResult_OK)
@@ -448,7 +462,9 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
                     }
                     else
                     {
-                        /* Encode strings contained within other structures. */
+                        /* Encode the string in canonical representation if
+                           requested or if it is contained within another
+                           structure. */
                         for (uint8_t i = 0; i < fragmentSize; i++)
                         {
                             AspRunResult appendResult = AspRunResult_OK;
@@ -525,7 +541,7 @@ AspDataEntry *AspToString(AspEngine *engine, AspDataEntry *entry)
                     break;
 
                 /* Close the quote if applicable. */
-                if (startStackTop != engine->stackTop)
+                if (repr || startStackTop != engine->stackTop)
                 {
                     AspRunResult appendResult = AspStringAppendBuffer
                         (engine, result, "'", 1);
