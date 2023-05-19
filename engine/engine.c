@@ -313,7 +313,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
        0 - main module name
        1 - args */
     unsigned specIndex = 0;
-    uint8_t *spec = (uint8_t *)engine->appSpec->spec;
+    const uint8_t *spec = (const uint8_t *)engine->appSpec->spec;
     for (int32_t symbol = AspScriptSymbolBase; ; symbol++)
     {
         if (specIndex >= engine->appSpec->specSize)
@@ -413,7 +413,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
 static AspRunResult LoadValue
     (AspEngine *engine, unsigned *specIndex, AspDataEntry **valueEntry)
 {
-    uint8_t *spec = (uint8_t *)engine->appSpec->spec;
+    const uint8_t *spec = (const uint8_t *)engine->appSpec->spec;
     uint32_t valueType = spec[(*specIndex)++];
     switch (valueType)
     {
