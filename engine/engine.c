@@ -313,12 +313,13 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
        0 - main module name
        1 - args */
     unsigned specIndex = 0;
+    uint8_t *spec = (uint8_t *)engine->appSpec->spec;
     for (int32_t symbol = AspScriptSymbolBase; ; symbol++)
     {
         if (specIndex >= engine->appSpec->specSize)
             break;
 
-        uint8_t prefix = engine->appSpec->spec[specIndex++];
+        uint8_t prefix = spec[specIndex++];
         if (prefix == Prefix_Variable)
         {
             AspDataEntry *value = 0;
@@ -349,7 +350,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                 for (unsigned i = 0; i < 4; i++)
                 {
                     parameterSpec <<= 8;
-                    parameterSpec |= engine->appSpec->spec[specIndex++];
+                    parameterSpec |= spec[specIndex++];
                 }
                 uint32_t parameterSymbol = parameterSpec & ParameterSpecMask;
                 bool hasDefault =
@@ -412,7 +413,8 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
 static AspRunResult LoadValue
     (AspEngine *engine, unsigned *specIndex, AspDataEntry **valueEntry)
 {
-    uint32_t valueType = engine->appSpec->spec[(*specIndex)++];
+    uint8_t *spec = (uint8_t *)engine->appSpec->spec;
+    uint32_t valueType = spec[(*specIndex)++];
     switch (valueType)
     {
         default:
@@ -428,7 +430,7 @@ static AspRunResult LoadValue
 
         case AppSpecValueType_Boolean:
         {
-            uint8_t value = engine->appSpec->spec[(*specIndex)++];
+            uint8_t value = spec[(*specIndex)++];
             *valueEntry = AspNewBoolean(engine, value != 0);
             break;
         }
@@ -439,7 +441,7 @@ static AspRunResult LoadValue
             for (unsigned i = 0; i < 4; i++)
             {
                 uValue <<= 8;
-                uValue |= engine->appSpec->spec[(*specIndex)++];
+                uValue |= spec[(*specIndex)++];
             }
             int32_t value = *(int32_t *)&uValue;
             *valueEntry = AspNewInteger(engine, value);
@@ -454,7 +456,7 @@ static AspRunResult LoadValue
             uint8_t data[sizeof(double)];
             for (unsigned i = 0; i < sizeof(double); i++)
                 data[be ? i : sizeof(double) - 1 - i] =
-                    engine->appSpec->spec[(*specIndex)++];
+                    spec[(*specIndex)++];
             double value = *(double *)data;
             *valueEntry = AspNewFloat(engine, value);
             break;
@@ -466,11 +468,10 @@ static AspRunResult LoadValue
             for (unsigned i = 0; i < 4; i++)
             {
                 valueSize <<= 8;
-                valueSize |= engine->appSpec->spec[(*specIndex)++];
+                valueSize |= spec[(*specIndex)++];
             }
             *valueEntry = AspNewString
-                (engine,
-                 engine->appSpec->spec + *specIndex, valueSize);
+                (engine, spec + *specIndex, valueSize);
             *specIndex += valueSize;
             break;
         }
