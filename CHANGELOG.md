@@ -7,6 +7,10 @@ chronological order.
 Changes
 -------
 
+Version 0.7.1.7 (compiler 0.7.1.3, engine 0.7.3.6):
+- Engine:
+  - Added AspIsReady and AspIsRunnable functions to the programmer API.
+
 Version 0.7.1.6 (compiler 0.7.1.3, engine 0.7.3.5):
 - Engine:
   - Added conversion of objects to canonical string representation.

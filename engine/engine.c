@@ -482,9 +482,21 @@ static AspRunResult LoadValue
         AspRunResult_OutOfDataMemory : AspRunResult_OK;
 }
 
+bool AspIsReady(const AspEngine *engine)
+{
+    return engine->state == AspEngineState_Ready;
+}
+
 bool AspIsRunning(const AspEngine *engine)
 {
     return engine->state == AspEngineState_Running;
+}
+
+bool AspIsRunnable(const AspEngine *engine)
+{
+    return
+        engine->state == AspEngineState_Ready ||
+        engine->state == AspEngineState_Running;
 }
 
 size_t AspProgramCounter(const AspEngine *engine)

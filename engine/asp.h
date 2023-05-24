@@ -92,7 +92,9 @@ AspRunResult AspSetArgumentsString(AspEngine *, const char *);
 /* Execution control. */
 AspRunResult AspRestart(AspEngine *);
 AspRunResult AspStep(AspEngine *);
+bool AspIsReady(const AspEngine *);
 bool AspIsRunning(const AspEngine *);
+bool AspIsRunnable(const AspEngine *);
 size_t AspProgramCounter(const AspEngine *);
 size_t AspLowFreeCount(const AspEngine *);
 #ifdef ASP_DEBUG
