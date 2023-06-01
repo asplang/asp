@@ -829,6 +829,7 @@ char AspStringElement
             return 0;
     }
 
+    /* Locate the character within the applicable fragment. */
     AspSequenceResult nextResult = AspSequenceNext(engine, str, 0);
     for (; nextResult.element != 0;
          nextResult = AspSequenceNext(engine, str, nextResult.element))
@@ -836,7 +837,10 @@ char AspStringElement
         AspDataEntry *fragment = nextResult.value;
         uint8_t fragmentSize = AspDataGetStringFragmentSize(fragment);
         if (index >= fragmentSize)
+        {
+            index -= fragmentSize;
             continue;
+        }
 
         const uint8_t *stringData = AspDataGetStringFragmentData(fragment);
         return (char)stringData[index];
