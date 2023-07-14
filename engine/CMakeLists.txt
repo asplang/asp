@@ -25,18 +25,8 @@ math(EXPR VERSION_VALUE
      ${PROJECT_VERSION_TWEAK}"
     )
 
-add_custom_command(
-    OUTPUT asp-ver.h
-    VERBATIM
-    COMMAND ${CMAKE_COMMAND} -E echo "/* Asp engine version. */"
-        > "${PROJECT_BINARY_DIR}/asp-ver.h"
-    COMMAND ${CMAKE_COMMAND} -E echo "#ifndef ASP_VERSION"
-        >> "${PROJECT_BINARY_DIR}/asp-ver.h"
-    COMMAND ${CMAKE_COMMAND} -E echo "#define ASP_VERSION ${VERSION_VALUE}"
-        >> "${PROJECT_BINARY_DIR}/asp-ver.h"
-    COMMAND ${CMAKE_COMMAND} -E echo "#endif"
-        >> "${PROJECT_BINARY_DIR}/asp-ver.h"
-    )
+# The template file references the VERSION_VALUE variable.
+configure_file(asp-ver-template.h asp-ver.h)
 
 add_custom_target(asp-ver ALL
     DEPENDS "${PROJECT_BINARY_DIR}/asp-ver.h"

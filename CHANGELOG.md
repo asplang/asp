@@ -13,6 +13,9 @@ Version 0.7.1.8 (compiler 0.7.1.3, engine 0.7.3.7):
   - Fixed a bug with assignment to list slices. Assignment to tuple slices was
     unaffected.
   - Fixed a bug with sequence assignment with a list as the target.
+- Build:
+  - Fixed an issue with the version header file generation that caused
+    problems with parallel make.
 
 Version 0.7.1.7 (compiler 0.7.1.3, engine 0.7.3.6):
 - Engine:
