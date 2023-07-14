@@ -57,6 +57,57 @@ void AspGetRange
     }
 }
 
+/* Prepares for slice operations by limiting the components to valid indices
+   for the given sequence size and making all components agree in sign. */
+void AspGetSliceRange
+    (AspEngine *engine, const AspDataEntry *entry, int32_t sequenceCount,
+     int32_t *startValue, int32_t *endValue, int32_t *stepValue)
+{
+    AspGetRange
+        (engine, entry,
+         startValue, endValue, stepValue);
+
+    /* Ensure the start and end are within range. */
+    if (*startValue < 0)
+    {
+        if (*startValue < -sequenceCount)
+            *startValue = -1 - sequenceCount;
+    }
+    else
+    {
+        if (*startValue >= sequenceCount)
+            *startValue = sequenceCount;
+    }
+    if (*endValue < 0)
+    {
+        if (*endValue < -1 - sequenceCount)
+            *endValue = -1 - sequenceCount;
+    }
+    else
+    {
+        if (*endValue > sequenceCount)
+            *endValue = sequenceCount;
+    }
+
+    /* Adjust the start and end values to agree with the sign of the step. */
+    if (*startValue < 0 != *stepValue < 0)
+    {
+        *startValue =
+            *startValue < -sequenceCount ? *startValue = 0 :
+            *startValue >= sequenceCount ? *startValue = -1 :
+            *startValue < 0 ?
+                *startValue + sequenceCount : *startValue - sequenceCount;
+    }
+    if (*endValue < 0 != *stepValue < 0)
+    {
+        *endValue =
+            *endValue < -sequenceCount ? *endValue = 0 :
+            *endValue >= sequenceCount ? *endValue = -1 :
+            *endValue < 0 ?
+                *endValue + sequenceCount : *endValue - sequenceCount;
+    }
+}
+
 bool AspIsValueAtRangeEnd
     (int32_t testValue, int32_t endValue, int32_t stepValue)
 {

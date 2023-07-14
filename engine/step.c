@@ -691,10 +691,8 @@ static AspRunResult Step(AspEngine *engine)
                 AspAssignSimple(engine, address, newValue);
             if (assignResult != AspRunResult_OK)
                 return assignResult;
-
             if (opCode == OpCode_SETP)
                 AspPop(engine);
-
             break;
         }
 
@@ -746,9 +744,11 @@ static AspRunResult Step(AspEngine *engine)
 
                         case DataType_Range:
                         {
+                            int32_t count = (int32_t)
+                                AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
-                            AspGetRange
-                                (engine, index,
+                            AspGetSliceRange
+                                (engine, index, count,
                                  &startValue, &endValue, &stepValue);
 
                             /* Erase the elements selected by the slice. */
@@ -757,7 +757,7 @@ static AspRunResult Step(AspEngine *engine)
                                 stepValue < 0 ?
                                 AspSequencePrevious : AspSequenceNext;
                             int32_t i = stepValue < 0 ? -1 : 0;
-                            int32_t increment= stepValue < 0 ? -1 : +1;
+                            int32_t increment = stepValue < 0 ? -1 : +1;
                             int32_t select = stepValue < 0 ?
                                 startValue + 1 : startValue;
                             AspDataEntry *selectedElement = 0;
@@ -2186,6 +2186,7 @@ static AspRunResult Step(AspEngine *engine)
             AspRef(engine, container);
             AspPop(engine);
             DataType containerType = AspDataGetType(container);
+
             switch (containerType)
             {
                 default:
@@ -2210,10 +2211,10 @@ static AspRunResult Step(AspEngine *engine)
                                 (engine, container, indexValue);
                             if (c == 0)
                             {
-                                uint32_t count = AspDataGetSequenceCount
-                                    (container);
-                                if (indexValue >= (int32_t)count ||
-                                    indexValue < -(int32_t)count)
+                                int32_t count = (int32_t)
+                                    AspDataGetSequenceCount(container);
+                                if (indexValue >= count ||
+                                    indexValue < -count)
                                     return AspRunResult_ValueOutOfRange;
                             }
 
@@ -2248,9 +2249,11 @@ static AspRunResult Step(AspEngine *engine)
 
                         case DataType_Range:
                         {
+                            int32_t count = (int32_t)
+                                AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
-                            AspGetRange
-                                (engine, index,
+                            AspGetSliceRange
+                                (engine, index, count,
                                  &startValue, &endValue, &stepValue);
 
                             /* Create a new string to receive the sliced
@@ -2266,7 +2269,7 @@ static AspRunResult Step(AspEngine *engine)
                                 stepValue < 0 ?
                                 AspSequencePrevious : AspSequenceNext;
                             int32_t i = stepValue < 0 ? -1 : 0;
-                            int32_t increment= stepValue < 0 ? -1 : +1;
+                            int32_t increment = stepValue < 0 ? -1 : +1;
                             int32_t select = stepValue < 0 ?
                                 startValue + 1 : startValue;
                             for (AspSequenceResult nextResult =
@@ -2314,6 +2317,7 @@ static AspRunResult Step(AspEngine *engine)
                             AspDataEntry *stackEntry = AspPush(engine, result);
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
+                            AspUnref(engine, result);
 
                             break;
                         }
@@ -2360,9 +2364,11 @@ static AspRunResult Step(AspEngine *engine)
 
                         case DataType_Range:
                         {
+                            int32_t count = (int32_t)
+                                AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
-                            AspGetRange
-                                (engine, index,
+                            AspGetSliceRange
+                                (engine, index, count,
                                  &startValue, &endValue, &stepValue);
 
                             /* Create a new container to receive the sliced
@@ -2378,7 +2384,7 @@ static AspRunResult Step(AspEngine *engine)
                                 stepValue < 0 ?
                                 AspSequencePrevious : AspSequenceNext;
                             int32_t i = stepValue < 0 ? -1 : 0;
-                            int32_t increment= stepValue < 0 ? -1 : +1;
+                            int32_t increment = stepValue < 0 ? -1 : +1;
                             int32_t select = stepValue < 0 ?
                                 startValue + 1 : startValue;
                             for (AspSequenceResult nextResult =
@@ -2407,6 +2413,7 @@ static AspRunResult Step(AspEngine *engine)
                             AspDataEntry *stackEntry = AspPush(engine, result);
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
+                            AspUnref(engine, result);
 
                             break;
                         }
