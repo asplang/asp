@@ -7,6 +7,11 @@ chronological order.
 Changes
 -------
 
+Version 0.7.1.8 (compiler 0.7.1.3, engine 0.7.3.7):
+- Engine:
+  - Fixed a bug with assignment to list slices. Assignment to tuple slices was
+    unaffected.
+
 Version 0.7.1.7 (compiler 0.7.1.3, engine 0.7.3.6):
 - Engine:
   - Added AspIsReady and AspIsRunnable functions to the programmer API.

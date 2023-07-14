@@ -68,11 +68,11 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     AspSequenceEraseElement
                         (engine, entry, nextResult.element, eraseValue);
 
-                    /* Make sure not to free addresses (i.e., namespace nodes,
-                       dictionary nodes, and sequence elements) within address
-                       tuples. */
+                    /* Make sure not to free addresses (i.e., elements)
+                       within address sequences. */
                     if (!eraseValue &&
-                        (t != DataType_Tuple || AspIsObject(nextResult.value)))
+                        ((t != DataType_Tuple && t != DataType_List) ||
+                         AspIsObject(nextResult.value)))
                         AspPushNoUse(engine, nextResult.value);
                 }
             }

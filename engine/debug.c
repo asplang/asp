@@ -260,7 +260,10 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 char c = s[i];
                 if (c == '\'')
                     fputc('\\', fp);
-                fputc(isprint(c) ? c : '.', fp);
+                if (isprint(c))
+                    fputc(c, fp);
+                else
+                    fprintf(fp, "\\x%02x", c);
             }
             fputc('\'', fp);
             break;
