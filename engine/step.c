@@ -2026,13 +2026,25 @@ static AspRunResult Step(AspEngine *engine)
                     break;
 
                 case DataType_List:
-                    if (itemType != DataType_KeyValuePair &&
-                        !AspIsObject(item))
-                        return AspRunResult_UnexpectedType;
-                    if (itemType != DataType_KeyValuePair)
+                    if (opCode == OpCode_BLD)
+                    {
+                        if (!AspIsObject(item) &&
+                            itemType != DataType_DictionaryNode &&
+                            itemType != DataType_NamespaceNode &&
+                            itemType != DataType_Element)
+                            return AspRunResult_UnexpectedType;
                         break;
+                    }
+                    else
+                    {
+                        if (itemType != DataType_KeyValuePair &&
+                            !AspIsObject(item))
+                            return AspRunResult_UnexpectedType;
+                        if (itemType != DataType_KeyValuePair)
+                            break;
 
-                    /* Fall through... */
+                        /* Fall through... */
+                    }
 
                 case DataType_Dictionary:
                     if (itemType != DataType_KeyValuePair)

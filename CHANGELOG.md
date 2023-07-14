@@ -12,6 +12,7 @@ Version 0.7.1.8 (compiler 0.7.1.3, engine 0.7.3.7):
   - Fixed slicing issues with slice components of mixed sign.
   - Fixed a bug with assignment to list slices. Assignment to tuple slices was
     unaffected.
+  - Fixed a bug with sequence assignment with a list as the target.
 
 Version 0.7.1.7 (compiler 0.7.1.3, engine 0.7.3.6):
 - Engine:
