@@ -64,6 +64,11 @@ statement(result) ::= STATEMENT_END.
     result = 0;
 }
 
+statement(result) ::= LIB STATEMENT_END.
+{
+    result = ACTION(DeclareAsLibrary, 0);
+}
+
 statement(result) ::= INCLUDE NAME(includeName) STATEMENT_END.
 {
     result = ACTION(IncludeHeader, includeName);

@@ -2,6 +2,8 @@
 # Asp application function specifications - collections.
 #
 
+lib
+
 # Sequence conversion functions.
 def tuple(iterable = None) = AspLib_tuple
 def list(iterable = None) = AspLib_list

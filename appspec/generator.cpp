@@ -34,10 +34,19 @@ unsigned Generator::ErrorCount() const
 }
 
 void Generator::CurrentSource
-    (const string &sourceFileName, const SourceLocation &sourceLocation)
+    (const string &sourceFileName,
+     bool newFile, bool isLibrary,
+     const SourceLocation &sourceLocation)
 {
+    this->newFile = newFile;
+    this->isLibrary = isLibrary;
     currentSourceFileName = sourceFileName;
     currentSourceLocation = sourceLocation;
+}
+
+bool Generator::IsLibrary() const
+{
+    return isLibrary;
 }
 
 const string &Generator::CurrentSourceFileName() const
@@ -100,8 +109,24 @@ SourceLocation Generator::CurrentSourceLocation() const
         (t1 p1, t2 p2, t3 p3)
 
 DEFINE_ACTION
+    (DeclareAsLibrary, NonTerminal *, int, _)
+{
+    // Allow library declaration only as the first statement.
+    if (!newFile)
+    {
+        ReportError("lib must be the first statement");
+        return 0;
+    }
+
+    isLibrary = true;
+    return 0;
+}
+
+DEFINE_ACTION
     (IncludeHeader, NonTerminal *, Token *, includeNameToken)
 {
+    newFile = false;
+
     currentSourceFileName = includeNameToken->s + ".asps";
     currentSourceLocation = includeNameToken->sourceLocation;
 
@@ -114,6 +139,8 @@ DEFINE_ACTION
     (MakeAssignment, NonTerminal *,
      Token *, nameToken, Literal *, value)
 {
+    newFile = false;
+
     if (CheckReservedNameError(nameToken->s))
         return 0;
 
@@ -143,6 +170,8 @@ DEFINE_ACTION
      Token *, nameToken, ParameterList *, parameterList,
      Token *, internalNameToken)
 {
+    newFile = false;
+
     if (CheckReservedNameError(nameToken->s))
         return 0;
 
@@ -159,7 +188,8 @@ DEFINE_ACTION
     definitions.emplace
         (nameToken->s,
          new FunctionDefinition
-            (*nameToken, *internalNameToken, parameterList));
+            (*nameToken, isLibrary,
+             *internalNameToken, parameterList));
     checkValueComputed = false;
 
     currentSourceLocation = nameToken->sourceLocation;

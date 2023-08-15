@@ -114,9 +114,9 @@ typedef struct
 } AspParameterResult;
 
 /* Functions used by auto-generated application function support code. */
-AspDataEntry *AspParameterValue
+ASP_API AspDataEntry *AspParameterValue
     (AspEngine *, AspDataEntry *ns, int32_t symbol);
-AspParameterResult AspGroupParameterValue
+ASP_API AspParameterResult AspGroupParameterValue
     (AspEngine *, AspDataEntry *ns, int32_t symbol);
 
 #ifdef __cplusplus

@@ -8,7 +8,7 @@
 /* iter(iterable)
  * Return an iterator for a given iterable.
  */
-AspRunResult AspLib_iter
+ASP_LIB_API AspRunResult AspLib_iter
     (AspEngine *engine,
      AspDataEntry *iterable,
      AspDataEntry **returnValue)
@@ -23,7 +23,7 @@ AspRunResult AspLib_iter
  * Return the next item from the iterator, returning the given end value
    if the iterator has reached its end.
  */
-AspRunResult AspLib_next
+ASP_LIB_API AspRunResult AspLib_next
     (AspEngine *engine,
      AspDataEntry *iterator, AspDataEntry *end,
      AspDataEntry **returnValue)

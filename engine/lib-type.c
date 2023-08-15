@@ -14,7 +14,7 @@ static AspRunResult ExtractWord
 /* type(object)
  * Return type of argument.
  */
-AspRunResult AspLib_type
+ASP_LIB_API AspRunResult AspLib_type
     (AspEngine *engine,
      AspDataEntry *object,
      AspDataEntry **returnValue)
@@ -30,7 +30,7 @@ AspRunResult AspLib_type
 /* len(object)
  * Return length of object. Return 1 if object is not a container.
  */
-AspRunResult AspLib_len
+ASP_LIB_API AspRunResult AspLib_len
     (AspEngine *engine,
      AspDataEntry *object,
      AspDataEntry **returnValue)
@@ -47,7 +47,7 @@ AspRunResult AspLib_len
 /* bool(x)
  * Return True if the argument is true, False otherwise.
  */
-AspRunResult AspLib_bool
+ASP_LIB_API AspRunResult AspLib_bool
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -74,7 +74,7 @@ AspRunResult AspLib_bool
  * If base is given, x must be a string.
  * For string conversions, the default base is 10.
  */
-AspRunResult AspLib_int
+ASP_LIB_API AspRunResult AspLib_int
     (AspEngine *engine,
      AspDataEntry *x, AspDataEntry *base,
      AspDataEntry **returnValue)
@@ -135,7 +135,7 @@ AspRunResult AspLib_int
 /* float(x)
  * Convert a number or string to a float.
  */
-AspRunResult AspLib_float
+ASP_LIB_API AspRunResult AspLib_float
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -181,7 +181,7 @@ AspRunResult AspLib_float
 /* str(x)
  * Return a string representation of x.
  */
-AspRunResult AspLib_str
+ASP_LIB_API AspRunResult AspLib_str
     (AspEngine *engine,
      AspDataEntry *object,
      AspDataEntry **returnValue)
@@ -196,7 +196,7 @@ AspRunResult AspLib_str
 /* repr(x)
  * Return the canonical string representation of x.
  */
-AspRunResult AspLib_repr
+ASP_LIB_API AspRunResult AspLib_repr
     (AspEngine *engine,
      AspDataEntry *object,
      AspDataEntry **returnValue)

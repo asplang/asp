@@ -13,7 +13,7 @@ static AspRunResult FillSequence
 /* tuple(x)
  * Convert the iterable to a tuple.
  */
-AspRunResult AspLib_tuple
+ASP_LIB_API AspRunResult AspLib_tuple
     (AspEngine *engine,
      AspDataEntry *iterable,
      AspDataEntry **returnValue)
@@ -35,7 +35,7 @@ AspRunResult AspLib_tuple
 /* list(x)
  * Convert the iterable to a list.
  */
-AspRunResult AspLib_list
+ASP_LIB_API AspRunResult AspLib_list
     (AspEngine *engine,
      AspDataEntry *iterable,
      AspDataEntry **returnValue)

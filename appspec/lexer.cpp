@@ -19,6 +19,7 @@ Lexer::Lexer(istream &is, const string &fileName) :
     {
         keywordsInitialized = true;
         keywords.emplace("include", TOKEN_INCLUDE);
+        keywords.emplace("lib", TOKEN_LIB);
     }
 }
 

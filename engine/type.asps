@@ -2,6 +2,8 @@
 # Asp application function specifications - type.
 #
 
+lib
+
 # Object type function.
 def type(object) = AspLib_type
 

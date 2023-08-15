@@ -20,7 +20,7 @@ static AspRunResult generic_function_2
 /* sin(x)
  * Return the sine of x radians.
  */
-AspRunResult AspLib_sin
+ASP_LIB_API AspRunResult AspLib_sin
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -31,7 +31,7 @@ AspRunResult AspLib_sin
 /* cos(x)
  * Return the cosine of x radians.
  */
-AspRunResult AspLib_cos
+ASP_LIB_API AspRunResult AspLib_cos
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -42,7 +42,7 @@ AspRunResult AspLib_cos
 /* tan(x)
  * Return the tangent of x radians.
  */
-AspRunResult AspLib_tan
+ASP_LIB_API AspRunResult AspLib_tan
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -53,7 +53,7 @@ AspRunResult AspLib_tan
 /* asin(x)
  * Return the arc sine, in radians, of x.
  */
-AspRunResult AspLib_asin
+ASP_LIB_API AspRunResult AspLib_asin
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -64,7 +64,7 @@ AspRunResult AspLib_asin
 /* acos(x)
  * Return the arc cosine, in radians, of x.
  */
-AspRunResult AspLib_acos
+ASP_LIB_API AspRunResult AspLib_acos
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -75,7 +75,7 @@ AspRunResult AspLib_acos
 /* atan(x)
  * Return the arc tangent, in radians, of x.
  */
-AspRunResult AspLib_atan
+ASP_LIB_API AspRunResult AspLib_atan
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -86,7 +86,7 @@ AspRunResult AspLib_atan
 /* atan2(y, x)
  * Return the arc tangent, in radians, of y/x.
  */
-AspRunResult AspLib_atan2
+ASP_LIB_API AspRunResult AspLib_atan2
     (AspEngine *engine,
      AspDataEntry *y, AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -97,7 +97,7 @@ AspRunResult AspLib_atan2
 /* sinh(x)
  * Return the hyperbolic sine of x.
  */
-AspRunResult AspLib_sinh
+ASP_LIB_API AspRunResult AspLib_sinh
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -108,7 +108,7 @@ AspRunResult AspLib_sinh
 /* cosh(x)
  * Return the hyperbolic cosine of x.
  */
-AspRunResult AspLib_cosh
+ASP_LIB_API AspRunResult AspLib_cosh
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -119,7 +119,7 @@ AspRunResult AspLib_cosh
 /* tanh(x)
  * Return the hyperbolic tangent of x.
  */
-AspRunResult AspLib_tanh
+ASP_LIB_API AspRunResult AspLib_tanh
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -130,7 +130,7 @@ AspRunResult AspLib_tanh
 /* asinh(x)
  * Return the inverse hyperbolic sine of x.
  */
-AspRunResult AspLib_asinh
+ASP_LIB_API AspRunResult AspLib_asinh
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -141,7 +141,7 @@ AspRunResult AspLib_asinh
 /* acosh(x)
  * Return the inverse hyperbolic cosine of x.
  */
-AspRunResult AspLib_acosh
+ASP_LIB_API AspRunResult AspLib_acosh
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -152,7 +152,7 @@ AspRunResult AspLib_acosh
 /* atanh(x)
  * Return the inverse hyperbolic tangent of x.
  */
-AspRunResult AspLib_atanh
+ASP_LIB_API AspRunResult AspLib_atanh
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -164,7 +164,7 @@ AspRunResult AspLib_atanh
  * Return the Euclidean distance, sqrt(x*x + y*y).
  * This is the hypotenuse of a right-angled triangle whose legs are x and y.
  */
-AspRunResult AspLib_hypot
+ASP_LIB_API AspRunResult AspLib_hypot
     (AspEngine *engine,
      AspDataEntry *x, AspDataEntry *y,
      AspDataEntry **returnValue)
@@ -175,7 +175,7 @@ AspRunResult AspLib_hypot
 /* exp(x)
  * Return e raised to the power of x.
  */
-AspRunResult AspLib_exp
+ASP_LIB_API AspRunResult AspLib_exp
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -187,7 +187,7 @@ AspRunResult AspLib_exp
  * Return the logarithm of x to the given base.
  * The default base is e, yielding the natural logarithm.
  */
-AspRunResult AspLib_log
+ASP_LIB_API AspRunResult AspLib_log
     (AspEngine *engine,
      AspDataEntry *x, AspDataEntry *base,
      AspDataEntry **returnValue)
@@ -205,7 +205,7 @@ static double logn(double x, double base)
 /* log10(x)
  * Return the base 10 logarithm of x.
  */
-AspRunResult AspLib_log10
+ASP_LIB_API AspRunResult AspLib_log10
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -217,7 +217,7 @@ AspRunResult AspLib_log10
  * Return the ceiling of x as a float.
  * This is the smallest integral value >= x.
  */
-AspRunResult AspLib_ceil
+ASP_LIB_API AspRunResult AspLib_ceil
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -229,7 +229,7 @@ AspRunResult AspLib_ceil
  * Return the floor of x as a float.
  * This is the largest integral value <= x.
  */
-AspRunResult AspLib_floor
+ASP_LIB_API AspRunResult AspLib_floor
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -241,7 +241,7 @@ AspRunResult AspLib_floor
  * Return the integral value that is nearest to x, with halfway cases rounded
  * away from zero.
  */
-AspRunResult AspLib_round
+ASP_LIB_API AspRunResult AspLib_round
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)
@@ -252,7 +252,7 @@ AspRunResult AspLib_round
 /* abs(x)
  * Return the absolute value of x.
  */
-AspRunResult AspLib_abs
+ASP_LIB_API AspRunResult AspLib_abs
     (AspEngine *engine,
      AspDataEntry *x,
      AspDataEntry **returnValue)

@@ -98,14 +98,17 @@ struct FunctionDefinition : public NonTerminal
     public:
 
         FunctionDefinition
-            (const Token &name,
-             const Token &internalName,
-             ParameterList *);
+            (const Token &name, bool isLibraryInterface,
+             const Token &internalName, ParameterList *);
         ~FunctionDefinition();
 
         const std::string &Name() const
         {
             return name;
+        }
+        bool IsLibraryInterface() const
+        {
+            return isLibraryInterface;
         }
         const std::string &InternalName() const
         {
@@ -119,6 +122,7 @@ struct FunctionDefinition : public NonTerminal
     private:
 
         std::string name;
+        bool isLibraryInterface;
         std::string internalName;
         ParameterList *parameterList;
 };

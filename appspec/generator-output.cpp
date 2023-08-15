@@ -107,7 +107,7 @@ void Generator::WriteApplicationHeader(ostream &os)
         << "/*** AUTO-GENERATED; DO NOT EDIT ***/\n\n"
            "#ifndef ASP_APP_" << baseFileName << "_DEF_H\n"
            "#define ASP_APP_" << baseFileName << "_DEF_H\n\n"
-           "#include \"asp.h\"\n\n"
+           "#include <asp.h>\n\n"
            "#ifdef __cplusplus\n"
            "extern \"C\" {\n"
            "#endif\n\n"
@@ -121,8 +121,11 @@ void Generator::WriteApplicationHeader(ostream &os)
         if (functionDefinition == 0)
             continue;
 
+        os << '\n';
+        if (functionDefinition->IsLibraryInterface())
+            os << "ASP_LIB_API ";
         os
-            << "\nAspRunResult " << functionDefinition->InternalName() << "\n"
+            << "AspRunResult " << functionDefinition->InternalName() << "\n"
                "    (AspEngine *,";
 
         auto &parameters = functionDefinition->Parameters();

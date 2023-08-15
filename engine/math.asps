@@ -2,6 +2,8 @@
 # Asp application function specifications - math.
 #
 
+lib
+
 # Trigonometric functions.
 def sin(x) = AspLib_sin
 def cos(x) = AspLib_cos

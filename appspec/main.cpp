@@ -35,6 +35,7 @@ struct ActiveSourceFile
 {
     string sourceFileName;
     ifstream *sourceStream;
+    bool isLibrary;
     SourceLocation oldSourceLocation;
     Lexer *lexer;
     void *parser;
@@ -168,7 +169,8 @@ static int main1(int argc, char **argv)
     deque<ActiveSourceFile> activeSourceFiles;
     activeSourceFiles.emplace_back(ActiveSourceFile
     {
-        sourceFileName, sourceStream, SourceLocation(),
+        sourceFileName, sourceStream,
+        false, SourceLocation(),
         new Lexer(*sourceStream, sourceFileName),
         ParseAlloc(malloc, &generator)
     });
@@ -212,13 +214,20 @@ static int main1(int argc, char **argv)
             activeSourceFiles.pop_back();
             if (activeSourceFiles.empty())
                 break;
+            auto &activeSourceFile = activeSourceFiles.back();
 
             // Update source file name in generator for error reporting.
             generator.CurrentSource
-                (activeSourceFiles.back().sourceFileName, oldSourceLocation);
+                (activeSourceFile.sourceFileName,
+                 false, activeSourceFile.isLibrary,
+                 oldSourceLocation);
         }
         else
         {
+            // Check for library declaration.
+            if (generator.IsLibrary())
+                activeSourceFile.isLibrary = true;
+
             // Check for included source file.
             string includeFileName = generator.CurrentSourceFileName();
             auto oldSourceFileName = activeSourceFile.sourceFileName;
@@ -294,7 +303,8 @@ static int main1(int argc, char **argv)
                 generator.CurrentSource(newSourceFileName);
                 activeSourceFiles.emplace_back(ActiveSourceFile
                 {
-                    newSourceFileName, newSourceStream, oldSourceLocation,
+                    newSourceFileName, newSourceStream,
+                    false, oldSourceLocation,
                     new Lexer(*newSourceStream, newSourceFileName),
                     ParseAlloc(malloc, &generator)
                 });

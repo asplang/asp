@@ -57,7 +57,9 @@ class Generator
         // Source file methods.
         void CurrentSource
             (const std::string &fileName,
+             bool newFile = true, bool isLibrary = false,
              const SourceLocation & = SourceLocation());
+        bool IsLibrary() const;
         const std::string &CurrentSourceFileName() const;
         SourceLocation CurrentSourceLocation() const;
 
@@ -69,6 +71,8 @@ class Generator
 #endif
 
     /* Statements. */
+    DECLARE_METHOD
+        (DeclareAsLibrary, NonTerminal *, int);
     DECLARE_METHOD
         (IncludeHeader, NonTerminal *, Token *);
     DECLARE_METHOD
@@ -122,6 +126,7 @@ class Generator
         std::string baseFileName;
 
         // Source file data.
+        bool newFile = true, isLibrary = false;
         std::string currentSourceFileName;
 
         // Spec data.

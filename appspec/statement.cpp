@@ -52,10 +52,11 @@ ParameterList::~ParameterList()
 }
 
 FunctionDefinition::FunctionDefinition
-    (const Token &nameToken, const Token &internalNameToken,
-     ParameterList *parameterList) :
+    (const Token &nameToken, bool isLibraryInterface,
+     const Token &internalNameToken, ParameterList *parameterList) :
     NonTerminal(nameToken),
     name(nameToken.s),
+    isLibraryInterface(isLibraryInterface),
     internalName(internalNameToken.s),
     parameterList(parameterList)
 {

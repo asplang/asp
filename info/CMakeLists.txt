@@ -21,6 +21,17 @@ add_dependencies(aspd
     asp-ver
     )
 
+if(BUILD_SHARED_LIBS)
+    set_property(TARGET aspd
+        PROPERTY C_VISIBILITY_PRESET hidden)
+endif()
+
+target_compile_definitions(aspd
+    PRIVATE
+        $<$<BOOL:${BUILD_SHARED_LIBS}>:USING_SHARED_LIBS>
+        ASP_EXPORT_API
+    )
+
 target_include_directories(aspd PUBLIC
     ../engine
     "${aspe_BINARY_DIR}"
@@ -32,6 +43,4 @@ install(FILES
     DESTINATION include
     )
 
-install(TARGETS aspd
-    DESTINATION lib
-    )
+install(TARGETS aspd)

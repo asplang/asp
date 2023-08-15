@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.10)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspe
-    VERSION 0.7.3.7
+    VERSION 0.7.4.0
     LANGUAGES C
     )
 
@@ -59,12 +59,15 @@ if(BUILD_FOR_TARGET)
         lib-collect.c
         lib-iter.c
         lib-math.c
-        lib-codec.c
         $<$<CONFIG:Debug>:debug.c>
         )
 
     set_property(TARGET aspe
         PROPERTY VERSION ${ABI_VERSION})
+    if(BUILD_SHARED_LIBS)
+        set_property(TARGET aspe
+            PROPERTY C_VISIBILITY_PRESET hidden)
+    endif()
 
     target_compile_definitions(aspe PRIVATE
         $<$<CONFIG:Debug>:ASP_DEBUG>
@@ -73,6 +76,8 @@ if(BUILD_FOR_TARGET)
         ASP_ENGINE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
         ASP_ENGINE_VERSION_PATCH=${PROJECT_VERSION_PATCH}
         ASP_ENGINE_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
+        $<$<BOOL:${BUILD_SHARED_LIBS}>:USING_SHARED_LIBS>
+        ASP_EXPORT_API ASP_EXPORT_LIB_API
         )
 
     target_include_directories(aspe PUBLIC
@@ -80,23 +85,30 @@ if(BUILD_FOR_TARGET)
         "${PROJECT_SOURCE_DIR}"
         )
 
+    if(WIN32)
 
-    install(TARGETS aspe
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib/asp-${ABI_VERSION}
-        )
+        install(TARGETS aspe)
 
-    # Note: Normally a generator expression would be used to express the
-    # library's file name in the CODE text. This is supported in CMake 3.14,
-    # but since only version 3.10 is required, we must hard-code the library
-    # file name instead.
-    if(NOT BUILD_SHARED_LIBS)
-        install(CODE "execute_process(
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                \"asp-${ABI_VERSION}/libaspe.a\"
-                \"${CMAKE_INSTALL_PREFIX}/lib/libaspe.a\"
-                )"
+    else()
+
+        install(TARGETS aspe
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib/asp-${ABI_VERSION}
             )
+
+        # Note: Normally a generator expression would be used to express the
+        # library's file name in the CODE text. This is supported in CMake 3.14,
+        # but since only version 3.10 is required, we must hard-code the library
+        # file name instead.
+        if(NOT BUILD_SHARED_LIBS)
+            install(CODE "execute_process(
+                COMMAND ${CMAKE_COMMAND} -E create_symlink
+                    \"asp-${ABI_VERSION}/libaspe.a\"
+                    \"${CMAKE_INSTALL_PREFIX}/lib/libaspe.a\"
+                    )"
+                )
+        endif()
+
     endif()
 
 endif()
@@ -109,38 +121,54 @@ if(BUILD_FOR_HOST)
             )
     endif()
 
-    install(FILES
+    set(HEADER_FILES
         asp.h
+        asp-api.h
         asp-priv.h
         "${PROJECT_BINARY_DIR}/asp-ver.h"
-        DESTINATION include/asp-${ABI_VERSION}
         )
-
-    foreach(file asp.h asp-priv.h asp-ver.h)
-        install(CODE "execute_process(
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                \"asp-${ABI_VERSION}/${file}\"
-                \"${CMAKE_INSTALL_PREFIX}/include/${file}\"
-                )"
-            )
-    endforeach()
-
-    install(FILES
+    set(ASPS_FILES
         type.asps
         collect.asps
         iter.asps
         math.asps
-        codec.asps
-        DESTINATION include/asps/${ABI_VERSION}
         )
 
-    foreach(file type.asps collect.asps iter.asps math.asps codec.asps)
-        install(CODE "execute_process(
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-                \"${ABI_VERSION}/${file}\"
-                \"${CMAKE_INSTALL_PREFIX}/include/asps/${file}\"
-                )"
+    if(WIN32)
+
+        install(FILES ${HEADER_FILES} TYPE INCLUDE)
+        install(FILES ${ASPS_FILES}
+            DESTINATION include/asps)
+
+    else()
+
+        install(FILES ${HEADER_FILES}
+            DESTINATION include/asp-${ABI_VERSION}
             )
-    endforeach()
+
+        foreach(path ${HEADER_FILES})
+            get_filename_component(file ${path} NAME)
+            install(CODE "execute_process(
+                COMMAND ${CMAKE_COMMAND} -E create_symlink
+                    \"asp-${ABI_VERSION}/${file}\"
+                    \"${CMAKE_INSTALL_PREFIX}/include/${file}\"
+                    )"
+                )
+        endforeach()
+
+        install(FILES ${ASPS_FILES}
+            DESTINATION include/asps/${ABI_VERSION}
+            )
+
+        foreach(file ${ASPS_FILES})
+            install(CODE "execute_process(
+                COMMAND ${CMAKE_COMMAND} -E create_symlink
+                    \"${ABI_VERSION}/${file}\"
+                    \"${CMAKE_INSTALL_PREFIX}/include/asps/${file}\"
+                    )"
+            )
+        endforeach()
+
+    endif()
 
 endif()

@@ -2,6 +2,8 @@
 # Asp application function specifications - iterators.
 #
 
+lib
+
 # Iterator creation function.
 # The iterator is positioned on the first item, if applicable.
 def iter(iterable) = AspLib_iter

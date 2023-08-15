@@ -5,6 +5,7 @@
 #ifndef ASP_080177a8_14ce_11ed_b65f_7328ac4c64a3_H
 #define ASP_080177a8_14ce_11ed_b65f_7328ac4c64a3_H
 
+#include <asp-api.h>
 #include <asp-ver.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -72,110 +73,113 @@ extern "C" {
 #endif
 
 /* Initialization. */
-size_t AspDataEntrySize(void);
-void AspEngineVersion(uint8_t version[4]);
-AspRunResult AspInitialize
+ASP_API size_t AspDataEntrySize(void);
+ASP_API void AspEngineVersion(uint8_t version[4]);
+ASP_API AspRunResult AspInitialize
     (AspEngine *,
      void *code, size_t codeSize,
      void *data, size_t dataSize,
      const AspAppSpec *, void *context);
-void AspCodeVersion(const AspEngine *, uint8_t version[4]);
-size_t AspMaxCodeSize(const AspEngine *);
-size_t AspMaxDataSize(const AspEngine *);
-AspAddCodeResult AspAddCode
+ASP_API void AspCodeVersion(const AspEngine *, uint8_t version[4]);
+ASP_API size_t AspMaxCodeSize(const AspEngine *);
+ASP_API size_t AspMaxDataSize(const AspEngine *);
+ASP_API AspAddCodeResult AspAddCode
     (AspEngine *, const void *code, size_t codeSize);
-AspAddCodeResult AspSeal(AspEngine *);
-AspRunResult AspReset(AspEngine *);
-AspRunResult AspSetArguments(AspEngine *, const char * const *);
-AspRunResult AspSetArgumentsString(AspEngine *, const char *);
+ASP_API AspAddCodeResult AspSeal(AspEngine *);
+ASP_API AspRunResult AspReset(AspEngine *);
+ASP_API AspRunResult AspSetArguments(AspEngine *, const char * const *);
+ASP_API AspRunResult AspSetArgumentsString(AspEngine *, const char *);
 
 /* Execution control. */
-AspRunResult AspRestart(AspEngine *);
-AspRunResult AspStep(AspEngine *);
-bool AspIsReady(const AspEngine *);
-bool AspIsRunning(const AspEngine *);
-bool AspIsRunnable(const AspEngine *);
-size_t AspProgramCounter(const AspEngine *);
-size_t AspLowFreeCount(const AspEngine *);
+ASP_API AspRunResult AspRestart(AspEngine *);
+ASP_API AspRunResult AspStep(AspEngine *);
+ASP_API bool AspIsReady(const AspEngine *);
+ASP_API bool AspIsRunning(const AspEngine *);
+ASP_API bool AspIsRunnable(const AspEngine *);
+ASP_API size_t AspProgramCounter(const AspEngine *);
+ASP_API size_t AspLowFreeCount(const AspEngine *);
 #ifdef ASP_DEBUG
-void AspDump(const AspEngine *, FILE *);
+ASP_API void AspDump(const AspEngine *, FILE *);
 #endif
 
 /* API for use by application functions. */
-bool AspIsNone(const AspDataEntry *);
-bool AspIsEllipsis(const AspDataEntry *);
-bool AspIsBoolean(const AspDataEntry *);
-bool AspIsInteger(const AspDataEntry *);
-bool AspIsFloat(const AspDataEntry *);
-bool AspIsIntegral(const AspDataEntry *);
-bool AspIsNumber(const AspDataEntry *);
-bool AspIsNumeric(const AspDataEntry *);
-bool AspIsRange(const AspDataEntry *);
-bool AspIsString(const AspDataEntry *);
-bool AspIsTuple(const AspDataEntry *);
-bool AspIsList(const AspDataEntry *);
-bool AspIsSequence(const AspDataEntry *);
-bool AspIsSet(const AspDataEntry *);
-bool AspIsDictionary(const AspDataEntry *);
-bool AspIsType(const AspDataEntry *);
-bool AspIsTrue(AspEngine *, const AspDataEntry *);
-bool AspIntegerValue(const AspDataEntry *, int32_t *);
-bool AspFloatValue(const AspDataEntry *, double *);
-bool AspRangeValues
+ASP_API bool AspIsNone(const AspDataEntry *);
+ASP_API bool AspIsEllipsis(const AspDataEntry *);
+ASP_API bool AspIsBoolean(const AspDataEntry *);
+ASP_API bool AspIsInteger(const AspDataEntry *);
+ASP_API bool AspIsFloat(const AspDataEntry *);
+ASP_API bool AspIsIntegral(const AspDataEntry *);
+ASP_API bool AspIsNumber(const AspDataEntry *);
+ASP_API bool AspIsNumeric(const AspDataEntry *);
+ASP_API bool AspIsRange(const AspDataEntry *);
+ASP_API bool AspIsString(const AspDataEntry *);
+ASP_API bool AspIsTuple(const AspDataEntry *);
+ASP_API bool AspIsList(const AspDataEntry *);
+ASP_API bool AspIsSequence(const AspDataEntry *);
+ASP_API bool AspIsSet(const AspDataEntry *);
+ASP_API bool AspIsDictionary(const AspDataEntry *);
+ASP_API bool AspIsType(const AspDataEntry *);
+ASP_API bool AspIsTrue(AspEngine *, const AspDataEntry *);
+ASP_API bool AspIntegerValue(const AspDataEntry *, int32_t *);
+ASP_API bool AspFloatValue(const AspDataEntry *, double *);
+ASP_API bool AspRangeValues
     (AspEngine *, const AspDataEntry *,
      int32_t *start, int32_t *end, int32_t *step);
-bool AspStringValue
+ASP_API bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);
-AspDataEntry *AspToString(AspEngine *, AspDataEntry *);
-AspDataEntry *AspToRepr(AspEngine *, const AspDataEntry *);
-unsigned AspCount(const AspDataEntry *);
-AspDataEntry *AspElement(AspEngine *, AspDataEntry *sequence, int index);
-char AspStringElement(AspEngine *, const AspDataEntry *str, int index);
-AspDataEntry *AspFind
+ASP_API AspDataEntry *AspToString(AspEngine *, AspDataEntry *);
+ASP_API AspDataEntry *AspToRepr(AspEngine *, const AspDataEntry *);
+ASP_API unsigned AspCount(const AspDataEntry *);
+ASP_API AspDataEntry *AspElement
+    (AspEngine *, AspDataEntry *sequence, int index);
+ASP_API char AspStringElement
+    (AspEngine *, const AspDataEntry *str, int index);
+ASP_API AspDataEntry *AspFind
     (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
-AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
-AspDataEntry *AspNewNone(AspEngine *);
-AspDataEntry *AspNewEllipsis(AspEngine *);
-AspDataEntry *AspNewBoolean(AspEngine *, bool);
-AspDataEntry *AspNewInteger(AspEngine *, int32_t);
-AspDataEntry *AspNewFloat(AspEngine *, double);
-AspDataEntry *AspNewRange
+ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
+ASP_API AspDataEntry *AspNewNone(AspEngine *);
+ASP_API AspDataEntry *AspNewEllipsis(AspEngine *);
+ASP_API AspDataEntry *AspNewBoolean(AspEngine *, bool);
+ASP_API AspDataEntry *AspNewInteger(AspEngine *, int32_t);
+ASP_API AspDataEntry *AspNewFloat(AspEngine *, double);
+ASP_API AspDataEntry *AspNewRange
     (AspEngine *, int32_t start, int32_t end, int32_t step);
-AspDataEntry *AspNewUnboundedRange
+ASP_API AspDataEntry *AspNewUnboundedRange
     (AspEngine *, int32_t start, int32_t step);
-AspDataEntry *AspNewString(AspEngine *, const char *buffer, size_t bufferSize);
-AspDataEntry *AspNewTuple(AspEngine *);
-AspDataEntry *AspNewList(AspEngine *);
-AspDataEntry *AspNewSet(AspEngine *);
-AspDataEntry *AspNewDictionary(AspEngine *);
-AspDataEntry *AspNewIterator(AspEngine *, AspDataEntry *iterable);
-AspDataEntry *AspNewType(AspEngine *, const AspDataEntry *);
-bool AspTupleAppend
+ASP_API AspDataEntry *AspNewString
+    (AspEngine *, const char *buffer, size_t bufferSize);
+ASP_API AspDataEntry *AspNewTuple(AspEngine *);
+ASP_API AspDataEntry *AspNewList(AspEngine *);
+ASP_API AspDataEntry *AspNewSet(AspEngine *);
+ASP_API AspDataEntry *AspNewDictionary(AspEngine *);
+ASP_API AspDataEntry *AspNewIterator(AspEngine *, AspDataEntry *iterable);
+ASP_API AspDataEntry *AspNewType(AspEngine *, const AspDataEntry *);
+ASP_API bool AspTupleAppend
     (AspEngine *, AspDataEntry *tuple, AspDataEntry *value, bool take);
-bool AspListAppend
+ASP_API bool AspListAppend
     (AspEngine *, AspDataEntry *list, AspDataEntry *value, bool take);
-bool AspListInsert
+ASP_API bool AspListInsert
     (AspEngine *, AspDataEntry *list,
      int index, AspDataEntry *value, bool take);
-bool AspListErase(AspEngine *, AspDataEntry *list, int index);
-bool AspStringAppend
+ASP_API bool AspListErase(AspEngine *, AspDataEntry *list, int index);
+ASP_API bool AspStringAppend
     (AspEngine *, AspDataEntry *str,
      const char *buffer, size_t bufferSize);
-bool AspSetInsert
+ASP_API bool AspSetInsert
     (AspEngine *, AspDataEntry *set, AspDataEntry *key, bool take);
-bool AspSetErase(AspEngine *, AspDataEntry *set, AspDataEntry *key);
-bool AspDictionaryInsert
+ASP_API bool AspSetErase(AspEngine *, AspDataEntry *set, AspDataEntry *key);
+ASP_API bool AspDictionaryInsert
     (AspEngine *, AspDataEntry *dictionary,
      AspDataEntry *key, AspDataEntry *value, bool take);
-bool AspDictionaryErase
+ASP_API bool AspDictionaryErase
     (AspEngine *, AspDataEntry *dictionary, AspDataEntry *key);
-void AspRef(AspEngine *, AspDataEntry *);
-void AspUnref(AspEngine *, AspDataEntry *);
-AspDataEntry *AspArguments(AspEngine *);
-void *AspContext(const AspEngine *);
-bool AspAgain(const AspEngine *);
-AspRunResult AspAssert(AspEngine *, bool);
+ASP_API void AspRef(AspEngine *, AspDataEntry *);
+ASP_API void AspUnref(AspEngine *, AspDataEntry *);
+ASP_API AspDataEntry *AspArguments(AspEngine *);
+ASP_API void *AspContext(const AspEngine *);
+ASP_API bool AspAgain(const AspEngine *);
+ASP_API AspRunResult AspAssert(AspEngine *, bool);
 
 #ifdef __cplusplus
 }
