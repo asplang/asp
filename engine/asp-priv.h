@@ -57,6 +57,9 @@ typedef struct AspEngine
     /* Application context. */
     void *context;
 
+    /* Floating-point format conversion routine. */
+    AspFloatConverter floatConverter;
+
     /* Engine state and status. */
     AspEngineState state;
     uint8_t headerIndex;

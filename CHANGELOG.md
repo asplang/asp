@@ -7,6 +7,12 @@ chronological order.
 Changes
 -------
 
+Version 0.7.2.1 (compiler 0.7.1.3, engine 0.7.4.1):
+- Engine:
+  - Added AspInitializeEx which accepts a routine for converting from IEEE 754
+    binary64 format to the native floating-point format for platforms that
+    implement custom floating-point formats.
+
 Version 0.7.2.0 (compiler 0.7.1.3, engine 0.7.4.0):
 - Initial public release.
 - Engine:

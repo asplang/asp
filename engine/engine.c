@@ -43,10 +43,23 @@ AspRunResult AspInitialize
      void *data, size_t dataSize,
      const AspAppSpec *appSpec, void *context)
 {
+    return AspInitializeEx
+        (engine, code, codeSize, data, dataSize,
+         appSpec, context, 0);
+}
+
+AspRunResult AspInitializeEx
+    (AspEngine *engine,
+     void *code, size_t codeSize,
+     void *data, size_t dataSize,
+     const AspAppSpec *appSpec, void *context,
+     AspFloatConverter floatConverter)
+{
     if (codeSize > MaxCodeSize)
         return AspRunResult_InitializationError;
 
     engine->context = context;
+    engine->floatConverter = floatConverter;
     engine->code = code;
     engine->maxCodeSize = codeSize;
     engine->data = data;
@@ -453,12 +466,15 @@ static AspRunResult LoadValue
             static const uint16_t word = 1;
             bool be = *(const char *)&word == 0;
 
-            uint8_t data[sizeof(double)];
-            for (unsigned i = 0; i < sizeof(double); i++)
-                data[be ? i : sizeof(double) - 1 - i] =
-                    spec[(*specIndex)++];
-            double value = *(double *)data;
+            uint8_t data[8];
+            for (unsigned i = 0; i < 8; i++)
+                data[be ? i : 7 - i] = spec[(*specIndex)++];
+
+            /* Convert IEEE 754 binary64 to the native format. */
+            double value = engine->floatConverter != 0 ?
+                engine->floatConverter(data) : *(double *)data;
             *valueEntry = AspNewFloat(engine, value);
+
             break;
         }
 

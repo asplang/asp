@@ -61,6 +61,9 @@ typedef enum
     AspRunResult_Application = 0x100,
 } AspRunResult;
 
+/* Floating-point translator type. */
+typedef double (*AspFloatConverter)(uint8_t ieee754_binary64[8]);
+
 #ifdef __cplusplus
 }
 #endif
@@ -76,10 +79,11 @@ extern "C" {
 ASP_API size_t AspDataEntrySize(void);
 ASP_API void AspEngineVersion(uint8_t version[4]);
 ASP_API AspRunResult AspInitialize
-    (AspEngine *,
-     void *code, size_t codeSize,
-     void *data, size_t dataSize,
+    (AspEngine *, void *code, size_t codeSize, void *data, size_t dataSize,
      const AspAppSpec *, void *context);
+ASP_API AspRunResult AspInitializeEx
+    (AspEngine *, void *code, size_t codeSize, void *data, size_t dataSize,
+     const AspAppSpec *, void *context, AspFloatConverter);
 ASP_API void AspCodeVersion(const AspEngine *, uint8_t version[4]);
 ASP_API size_t AspMaxCodeSize(const AspEngine *);
 ASP_API size_t AspMaxDataSize(const AspEngine *);

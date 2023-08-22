@@ -2627,14 +2627,15 @@ static AspRunResult LoadFloatOperand
     bool be = *(const char *)&word == 0;
 
     uint8_t data[8];
-    int i;
-    for (i = 0; i < 8; i++)
+    for (unsigned i = 0; i < 8; i++)
     {
         data[be ? i : 7 - i] = *engine->pc++;
         if (engine->pc > engine->code + engine->codeEndIndex)
             return AspRunResult_BeyondEndOfCode;
     }
 
-    *operand = *(double *)data;
+    /* Convert IEEE 754 binary64 to the native format. */
+    *operand = engine->floatConverter != 0 ?
+        engine->floatConverter(data) : *(double *)data;
     return AspRunResult_OK;
 }
