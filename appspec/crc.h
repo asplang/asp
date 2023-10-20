@@ -32,42 +32,42 @@ extern "C" {
 #endif
 
 #ifdef CRC_SUPPORT_64
-typedef union {uint32_t _32; uint64_t _64;} crc_value;
-typedef uint64_t crc_arg;
+typedef union {uint32_t _32; uint64_t _64;} crc_value_t;
+typedef uint64_t crc_arg_t;
 #else
-typedef uint32_t crc_value;
-typedef uint32_t crc_arg;
+typedef uint32_t crc_value_t;
+typedef uint32_t crc_arg_t;
 #endif
 
-typedef struct crc_spec_t
+typedef struct crc_spec
 {
     uint8_t width;
     uint8_t shift;
     bool refin, refout;
-    crc_value mask;
+    crc_value_t mask;
     uint8_t byte_table[0x100];
-    crc_value crc_table[0x100];
-    crc_value init, xorout;
-} crc_spec;
+    crc_value_t crc_table[0x100];
+    crc_value_t init, xorout;
+} crc_spec_t;
 
-typedef struct crc_session_t
+typedef struct crc_session
 {
-    crc_value crc;
-} crc_session;
+    crc_value_t crc;
+} crc_session_t;
 
 void crc_init_spec
-    (uint8_t width, crc_arg poly,
-     crc_arg init, bool refin, bool refout, crc_arg xorout,
-     crc_spec *);
-crc_spec crc_make_spec
-    (uint8_t width, crc_arg poly,
-     crc_arg init, bool refin, bool refout, crc_arg xorout);
-crc_arg crc_calc(const crc_spec *, const void *buffer, size_t size);
-void crc_start(const crc_spec *, crc_session *session);
+    (uint8_t width, crc_arg_t poly,
+     crc_arg_t init, bool refin, bool refout, crc_arg_t xorout,
+     crc_spec_t *);
+crc_spec_t crc_make_spec
+    (uint8_t width, crc_arg_t poly,
+     crc_arg_t init, bool refin, bool refout, crc_arg_t xorout);
+crc_arg_t crc_calc(const crc_spec_t *, const void *buffer, size_t size);
+void crc_start(const crc_spec_t *, crc_session_t *session);
 void crc_add
-    (const crc_spec *, crc_session *,
+    (const crc_spec_t *, crc_session_t *,
      const void *buffer, size_t size);
-crc_arg crc_finish(const crc_spec *, crc_session *);
+crc_arg_t crc_finish(const crc_spec_t *, crc_session_t *);
 
 #ifdef __cplusplus
 }

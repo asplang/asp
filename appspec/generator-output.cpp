@@ -15,7 +15,7 @@ static const uint32_t ParameterFlag_HasDefault = 0x10000000;
 static const uint32_t ParameterFlag_IsGroup    = 0x20000000;
 
 static void WriteValue(ostream &, unsigned *specByteCount, const Literal &);
-static void ContributeValue(crc_spec &, crc_session &, const Literal &);
+static void ContributeValue(crc_spec_t &, crc_session_t &, const Literal &);
 
 template <class T>
 static void Write(ostream &os, T value)
@@ -333,7 +333,7 @@ void Generator::ComputeCheckValue()
     // Use CRC-32/ISO-HDLC for computing a check value.
     auto spec = crc_make_spec
         (32, 0x04C11DB7, 0xFFFFFFFF, true, true, 0xFFFFFFFF);
-    crc_session session;
+    crc_session_t session;
     crc_start(&spec, &session);
 
     // Contribute each definition to the check value.
@@ -469,7 +469,7 @@ static void WriteValue
 }
 
 static void ContributeValue
-    (crc_spec &spec, crc_session &session, const Literal &literal)
+    (crc_spec_t &spec, crc_session_t &session, const Literal &literal)
 {
     auto valueType = literal.GetType();
     auto b = static_cast<uint8_t>(valueType);
