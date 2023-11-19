@@ -888,7 +888,8 @@ AspDataEntry *AspNewBoolean(AspEngine *engine, bool value)
     {
         /* Create the singleton. */
         *singleton = NewObject(engine, DataType_Boolean);
-        AspDataSetBoolean(*singleton, value);
+        if (*singleton != 0)
+            AspDataSetBoolean(*singleton, value);
     }
     return *singleton;
 }
