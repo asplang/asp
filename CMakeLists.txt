@@ -32,6 +32,20 @@ option(BUILD_TEST_TARGETS
     "Enable/disable building of tests"
     FALSE)
 
+# Debug options.
+option(ENABLE_ENGINE_DEBUG
+    "Enable/disable debug output for the engine"
+    FALSE)
+option(ENABLE_ASPS_DEBUG
+    "Enable/disable debug output for the standalone application"
+    FALSE)
+
+# Debug output for the standalone application requires debug output for the
+# engine.
+if(${ENABLE_ASPS_DEBUG})
+    set(ENABLE_ENGINE_DEBUG TRUE)
+endif()
+
 set(PATH_NAME_SEPARATOR "" CACHE STRING
     "Path name separator (leave blank for platform default)")
 if("${PATH_NAME_SEPARATOR}" STREQUAL "")
