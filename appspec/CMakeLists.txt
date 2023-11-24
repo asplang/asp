@@ -40,8 +40,10 @@ add_executable(aspg
     )
 
 target_compile_definitions(aspg PRIVATE
-    PATH_NAME_SEPARATOR=${C_PATH_NAME_SEPARATOR}
-    FILE_NAME_SEPARATOR=${C_FILE_NAME_SEPARATOR}
+    $<$<NOT:$<STREQUAL:${C_PATH_NAME_SEPARATOR},>>:
+        PATH_NAME_SEPARATOR=${C_PATH_NAME_SEPARATOR}>
+    $<$<NOT:$<STREQUAL:${C_FILE_NAME_SEPARATORS},>>:
+        FILE_NAME_SEPARATORS=${C_FILE_NAME_SEPARATORS}>
     )
 
 target_include_directories(aspg PRIVATE

@@ -17,8 +17,8 @@
 #include <cstdlib>
 #include <cctype>
 
-#ifndef FILE_NAME_SEPARATOR
-#error FILE_NAME_SEPARATOR macro undefined
+#ifndef FILE_NAME_SEPARATORS
+#error FILE_NAME_SEPARATORS macro undefined
 #endif
 
 // Lemon parser.
@@ -84,10 +84,9 @@ static int main1(int argc, char **argv)
     }
 
     // Prepare to handle the slash as the universal file name separator in
-    // addition to the one specified for the platform.
-    string fileNameSeparators;
-    fileNameSeparators += FILE_NAME_SEPARATOR;
-    if (FILE_NAME_SEPARATOR != '/')
+    // addition to the ones specified for the platform.
+    string fileNameSeparators = FILE_NAME_SEPARATORS;
+    if (strchr(FILE_NAME_SEPARATORS, '/') == nullptr)
         fileNameSeparators += '/';
 
     // Split the source file name into its constituent parts.
@@ -162,7 +161,7 @@ static int main1(int argc, char **argv)
     // Prepare to search for and process included files.
     vector<string> includePath;
     const char *includePathString = getenv("ASP_SPEC_INCLUDE");
-    if (includePathString != 0)
+    if (includePathString != nullptr)
         includePath = SearchPath(includePathString);
 
     // Prepare to process top-level source file.
@@ -245,7 +244,7 @@ static int main1(int argc, char **argv)
                     (searchPath.end(), includePath.begin(), includePath.end());
 
                 string newSourceFileName;
-                ifstream *newSourceStream = 0;
+                ifstream *newSourceStream = nullptr;
                 for (auto iter = searchPath.begin();
                      iter != searchPath.end(); iter++)
                 {
@@ -258,7 +257,7 @@ static int main1(int argc, char **argv)
                             string(fileNameSeparators).find_first_of
                                 (directory.back());
                         if (separatorIter == string::npos)
-                            directory += FILE_NAME_SEPARATOR;
+                            directory += FILE_NAME_SEPARATORS[0];
                     }
                     newSourceFileName = directory + includeFileName;
 
@@ -271,7 +270,7 @@ static int main1(int argc, char **argv)
                     }
                     delete sourceStream;
                 }
-                if (newSourceStream == 0)
+                if (newSourceStream == nullptr)
                 {
                     cerr
                         << token->sourceLocation.fileName << ':'

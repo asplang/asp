@@ -7,33 +7,52 @@
 #include <iomanip>
 #include <stdexcept>
 #include <string>
+#include <cstring>
 
 using namespace std;
 
-#ifndef COMMAND_OPTION_PREFIX
-#error COMMAND_OPTION_PREFIX macro undefined
+#ifndef COMMAND_OPTION_PREFIXES
+#error COMMAND_OPTION_PREFIXES macro undefined
 #endif
 
 static void Usage()
 {
     cerr
-        << "Usage:      aspinfo {OPTION}... [INFO]\n"
+        << "Usage:      aspinfo {OPTION}... ["
+        << COMMAND_OPTION_PREFIXES[0] << COMMAND_OPTION_PREFIXES[0]
+        << "] [INFO]\n"
         << "\n"
         << "Print the requested error information."
         << " Some options require INFO, the Asp\n"
         << "source info file (*.aspd). The suffix may be omitted."
         << " The INFO argument may be\n"
-        << "omitted if neither " << COMMAND_OPTION_PREFIX << "l nor "
-        << COMMAND_OPTION_PREFIX "p is used.\n"
+        << "omitted if neither " << COMMAND_OPTION_PREFIXES[0] << "l nor "
+        << COMMAND_OPTION_PREFIXES[0] << "p is used.\n"
         << "\n"
-        << "Options:\n"
-        << COMMAND_OPTION_PREFIX
+        << "Use " << COMMAND_OPTION_PREFIXES[0] << COMMAND_OPTION_PREFIXES[0]
+        << " before the INFO argument if it starts with an option prefix.\n"
+        << "\n"
+        << "Options";
+    if (strlen(COMMAND_OPTION_PREFIXES) > 1)
+    {
+        cerr << " (may be prefixed by";
+        for (unsigned i = 1; i < strlen(COMMAND_OPTION_PREFIXES); i++)
+        {
+            if (i != 1)
+                cerr << ',';
+            cerr << ' ' << COMMAND_OPTION_PREFIXES[i];
+        }
+        cerr << " instead of " << COMMAND_OPTION_PREFIXES[0] << ')';
+    }
+    cerr
+        << ":\n"
+        << COMMAND_OPTION_PREFIXES[0]
         << "a code     Translate the add code result to descriptive text.\n"
-        << COMMAND_OPTION_PREFIX
+        << COMMAND_OPTION_PREFIXES[0]
         << "e code     Translate the run result to descriptive text.\n"
-        << COMMAND_OPTION_PREFIX
+        << COMMAND_OPTION_PREFIXES[0]
         << "l          List all source files.\n"
-        << COMMAND_OPTION_PREFIX
+        << COMMAND_OPTION_PREFIXES[0]
         << "p pc       Translate program counter source location.\n";
 }
 
@@ -46,40 +65,42 @@ int main(int argc, char **argv)
     }
 
     // Locate the source info file name argument.
-    string optionPrefix = string(COMMAND_OPTION_PREFIX);
-    int argumentIndex = 1;
-    for (; argumentIndex < argc; argumentIndex++)
+    int argIndex = 1;
+    for (; argIndex < argc; argIndex++)
     {
-        string argument(argv[argumentIndex]);
-        if (argument.empty())
-        {
-            cerr << "Command line error at argument " << argumentIndex << endl;
-            Usage();
-            return 1;
-        }
-        if (argument.substr(0, optionPrefix.size()) != optionPrefix)
+        string arg(argv[argIndex]);
+        string prefix = arg.substr(0, 1);
+        auto prefixIndex =
+            string(COMMAND_OPTION_PREFIXES).find_first_of(prefix);
+        if (prefixIndex == string::npos)
             break;
-        string option = argument.substr(optionPrefix.size());
+        if (arg.substr(1) == string(1, COMMAND_OPTION_PREFIXES[prefixIndex]))
+        {
+            argIndex++;
+            break;
+        }
+
+        string option = arg.substr(1);
         if (option == "e" || option == "a" || option == "p")
-            argumentIndex++;
+            argIndex++;
     }
 
     // Open the source info file, if specified.
-    AspSourceInfo *sourceInfo = 0;
-    if (argumentIndex != argc)
+    AspSourceInfo *sourceInfo = nullptr;
+    if (argIndex != argc)
     {
-        if (argumentIndex + 1 != argc)
+        if (argIndex + 1 != argc)
         {
-            cerr << "Command line error at argument " << argumentIndex << endl;
+            cerr << "Command line error at argument " << argIndex << endl;
             Usage();
             return 1;
         }
-        string sourceInfoFileName = argv[argumentIndex];
+        string sourceInfoFileName = argv[argIndex];
 
         // Load the source info.
         sourceInfo = AspLoadSourceInfoFromFile
             (sourceInfoFileName.c_str());
-        if (sourceInfo == 0)
+        if (sourceInfo == nullptr)
         {
             // Try appending the appropriate suffix if the specified file did
             // not exist.
@@ -88,7 +109,7 @@ int main(int argc, char **argv)
             sourceInfo = AspLoadSourceInfoFromFile
                 (sourceInfoFileName2.c_str());
         }
-        if (sourceInfo == 0)
+        if (sourceInfo == nullptr)
         {
             cerr << "Error loading " << sourceInfoFileName << endl;
             return 1;
@@ -96,16 +117,16 @@ int main(int argc, char **argv)
     }
 
     // Process command line options.
-    for (int optionIndex = 1; optionIndex < argumentIndex; optionIndex++)
+    for (int optionIndex = 1; optionIndex < argIndex; optionIndex++)
     {
-        string argument(argv[optionIndex]);
-        string option = argument.substr(optionPrefix.size());
+        string arg(argv[optionIndex]);
+        string option = arg.substr(1);
 
-        if (sourceInfo == 0 &&
+        if (sourceInfo == nullptr &&
             (option == "l" || option == "p"))
         {
             cerr
-                << argument
+                << arg
                 << " option ignored in absence of source info file"
                 << endl;
 
@@ -132,7 +153,7 @@ int main(int argc, char **argv)
             if (scannedSize != optionArgument.size())
             {
                 cerr
-                    << "Invalid value for " << argument
+                    << "Invalid value for " << arg
                     << ": " << optionArgument << endl;
                 break;
             }
@@ -153,13 +174,13 @@ int main(int argc, char **argv)
             {
                 if (value < 0)
                 {
-                    cerr << "Invalid value for " << argument << endl;
+                    cerr << "Invalid value for " << arg << endl;
                     break;
                 }
                 uint32_t pc = static_cast<uint32_t>(value);
                 auto sourceLocation = AspGetSourceLocation(sourceInfo, pc);
                 cout << "Program counter " << value << ": ";
-                if (sourceLocation.fileName == 0)
+                if (sourceLocation.fileName == nullptr)
                 {
                     cout << "No source";
                 }
@@ -178,7 +199,7 @@ int main(int argc, char **argv)
             for (unsigned i = 0; ; i++)
             {
                 auto fileName = AspGetSourceFileName(sourceInfo, i);
-                if (fileName == 0)
+                if (fileName == nullptr)
                     break;
                 cout << setw(4) << i << ". " << fileName << endl;
             }
@@ -186,7 +207,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (sourceInfo != 0)
+    if (sourceInfo != nullptr)
         AspUnloadSourceInfo(sourceInfo);
 
     return 0;

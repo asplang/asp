@@ -14,8 +14,8 @@
 #include <cstdlib>
 #include <climits>
 
-#ifndef COMMAND_OPTION_PREFIX
-#error COMMAND_OPTION_PREFIX macro undefined
+#ifndef COMMAND_OPTION_PREFIXES
+#error COMMAND_OPTION_PREFIXES macro undefined
 #endif
 
 using namespace std;
@@ -26,27 +26,45 @@ static const size_t DEFAULT_DATA_ENTRY_COUNT = 2048;
 static void Usage()
 {
     cerr
-        << "Usage:      asps [OPTION]... SCRIPT [ARG]...\n"
+        << "Usage:      asps [OPTION]... ["
+        << COMMAND_OPTION_PREFIXES[0] << COMMAND_OPTION_PREFIXES[0]
+        << "] SCRIPT [ARG]...\n"
         << "\n"
         << "Run the Asp script executable SCRIPT (*.aspe)."
         << " The suffix may be omitted.\n"
         << "If one or more ARG are given,"
         << " they are passed as arguments to the script.\n"
         << "\n"
-        << "Options:\n"
-        << COMMAND_OPTION_PREFIX
+        << "Use " << COMMAND_OPTION_PREFIXES[0] << COMMAND_OPTION_PREFIXES[0]
+        << " before the SCRIPT argument if it starts with an option prefix.\n"
+        << "\n"
+        << "Options";
+    if (strlen(COMMAND_OPTION_PREFIXES) > 1)
+    {
+        cerr << " (may be prefixed by";
+        for (unsigned i = 1; i < strlen(COMMAND_OPTION_PREFIXES); i++)
+        {
+            if (i != 1)
+                cerr << ',';
+            cerr << ' ' << COMMAND_OPTION_PREFIXES[i];
+        }
+        cerr << " instead of " << COMMAND_OPTION_PREFIXES[0] << ')';
+    }
+    cerr
+        << ":\n"
+        << COMMAND_OPTION_PREFIXES[0]
         << "h          Print usage information.\n"
-        << COMMAND_OPTION_PREFIX
+        << COMMAND_OPTION_PREFIXES[0]
         << "v          Verbose. Output version and statistical information.\n"
-        << COMMAND_OPTION_PREFIX
+        << COMMAND_OPTION_PREFIXES[0]
         << "c n        Code size, in bytes."
         << " Default is " << DEFAULT_CODE_BYTE_COUNT << ".\n"
-        << COMMAND_OPTION_PREFIX
+        << COMMAND_OPTION_PREFIXES[0]
         << "d n        Data entry count, where each entry is "
         << AspDataEntrySize() << " bytes."
         << " Default is " << DEFAULT_DATA_ENTRY_COUNT << ".\n"
         #ifdef ASP_DEBUG
-        << COMMAND_OPTION_PREFIX
+        << COMMAND_OPTION_PREFIXES[0]
         << "n n        Number of instructions to execute before exiting."
         << " Useful for\n"
         << "            debugging. Available only in debug builds.\n"
@@ -61,14 +79,20 @@ int main(int argc, char **argv)
     size_t codeByteCount = DEFAULT_CODE_BYTE_COUNT;
     size_t dataEntryCount = DEFAULT_DATA_ENTRY_COUNT;
     unsigned stepCountLimit = UINT_MAX;
-    auto optionPrefixSize = strlen(COMMAND_OPTION_PREFIX);
     for (; argc >= 2; argc--, argv++)
     {
         string arg1 = argv[1];
-        string prefix = arg1.substr(0, optionPrefixSize);
-        if (prefix != COMMAND_OPTION_PREFIX)
+        string prefix = arg1.substr(0, 1);
+        auto prefixIndex =
+            string(COMMAND_OPTION_PREFIXES).find_first_of(prefix);
+        if (prefixIndex == string::npos)
             break;
-        string option = arg1.substr(optionPrefixSize);
+        string option = arg1.substr(1);
+        if (option == string(1, COMMAND_OPTION_PREFIXES[prefixIndex]))
+        {
+            argc--; argv++;
+            break;
+        }
 
         if (option == "?" || option == "h")
         {
@@ -121,14 +145,14 @@ int main(int argc, char **argv)
     };
     FILE *fp = openExecutable(executableFileName.c_str());
     static const string executableSuffix = ".aspe";
-    if (fp == 0)
+    if (fp == nullptr)
     {
         // Try appending the appropriate suffix if the specified file did not
         // exist.
         executableFileName += executableSuffix;
         fp = openExecutable(executableFileName.c_str());
     }
-    if (fp == 0)
+    if (fp == nullptr)
     {
         cerr << "Error opening " << executableFileName << endl;
         return 1;
@@ -281,11 +305,11 @@ int main(int argc, char **argv)
             executableFileName.substr(0, suffixPos) + sourceInfoSuffix;
         AspSourceInfo *sourceInfo = AspLoadSourceInfoFromFile
             (sourceInfoFileName.c_str());
-        if (sourceInfo != 0)
+        if (sourceInfo != nullptr)
         {
             AspSourceLocation sourceLocation = AspGetSourceLocation
                 (sourceInfo, programCounter);
-            if (sourceLocation.fileName != 0)
+            if (sourceLocation.fileName != nullptr)
                 cerr
                     << "; " << sourceLocation.fileName << ':'
                     << sourceLocation.line << ':' << sourceLocation.column;

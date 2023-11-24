@@ -44,7 +44,8 @@ target_link_libraries(asps
 
 target_compile_definitions(asps PRIVATE
     $<$<BOOL:${ENABLE_ASPS_DEBUG}>:ASP_DEBUG>
-    COMMAND_OPTION_PREFIX=${C_COMMAND_OPTION_PREFIX}
+    $<$<NOT:$<STREQUAL:${C_COMMAND_OPTION_PREFIXES},>>:
+        COMMAND_OPTION_PREFIXES=${C_COMMAND_OPTION_PREFIXES}>
     )
 
 target_include_directories(asps PRIVATE

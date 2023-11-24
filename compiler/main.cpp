@@ -21,11 +21,11 @@
     !defined ASP_COMPILER_VERSION_TWEAK
 #error ASP_COMPILER_VERSION_* macros undefined
 #endif
-#ifndef COMMAND_OPTION_PREFIX
-#error COMMAND_OPTION_PREFIX macro undefined
+#ifndef COMMAND_OPTION_PREFIXES
+#error COMMAND_OPTION_PREFIXES macro undefined
 #endif
-#ifndef FILE_NAME_SEPARATOR
-#error FILE_NAME_SEPARATOR macro undefined
+#ifndef FILE_NAME_SEPARATORS
+#error FILE_NAME_SEPARATORS macro undefined
 #endif
 
 // Lemon parser.
@@ -41,8 +41,12 @@ using namespace std;
 static void Usage()
 {
     cerr
-        << "Usage:      aspc [SPEC] SCRIPT\n"
-        << " or         aspc SCRIPT [SPEC]\n"
+        << "Usage:      aspc [OPTION]... ["
+        << COMMAND_OPTION_PREFIXES[0] << COMMAND_OPTION_PREFIXES[0]
+        << "] [SPEC] SCRIPT\n"
+        << " or         aspc [OPTION]... ["
+        << COMMAND_OPTION_PREFIXES[0] << COMMAND_OPTION_PREFIXES[0]
+        << "] SCRIPT [SPEC]\n"
         << "\n"
         << "Compile the Asp script source file SCRIPT (*.asp)."
         << " The application specification\n"
@@ -52,10 +56,34 @@ static void Usage()
         << " or the app.aspec file in the local directory,\n"
         << "if that is not defined.\n"
         << "\n"
-        << "Options:\n"
-        << COMMAND_OPTION_PREFIX
+        << "Use " << COMMAND_OPTION_PREFIXES[0] << COMMAND_OPTION_PREFIXES[0]
+        << " before the first argument if it starts with an option prefix.\n"
+        << "\n"
+        << "Options";
+    if (strlen(COMMAND_OPTION_PREFIXES) > 1)
+    {
+        cerr << " (may be prefixed by";
+        for (unsigned i = 1; i < strlen(COMMAND_OPTION_PREFIXES); i++)
+        {
+            if (i != 1)
+            {
+                if (i == strlen(COMMAND_OPTION_PREFIXES) - 1)
+                    cerr << " or";
+                else
+                    cerr << ',';
+            }
+            cerr << ' ' << COMMAND_OPTION_PREFIXES[i];
+        }
+        cerr << " instead of " << COMMAND_OPTION_PREFIXES[0] << ')';
+    }
+    cerr
+        << ":\n"
+        << COMMAND_OPTION_PREFIXES[0]
+        << "o FILE     Write output to FILE instead of basing name on input"
+        << " file name.\n"
+        << COMMAND_OPTION_PREFIXES[0]
         << "s          Silent. Don't output usual compiler information.\n"
-        << COMMAND_OPTION_PREFIX
+        << COMMAND_OPTION_PREFIXES[0]
         << "v          Print version information and exit.\n";
 }
 
@@ -80,19 +108,31 @@ static int main1(int argc, char **argv)
 {
     // Process command line options.
     bool silent = false, reportVersion = false;
-    auto optionPrefixSize = strlen(COMMAND_OPTION_PREFIX);
+    string executableFileName;
     for (; argc >= 2; argc--, argv++)
     {
         string arg1 = argv[1];
-        string prefix = arg1.substr(0, optionPrefixSize);
-        if (prefix != COMMAND_OPTION_PREFIX)
+        string prefix = arg1.substr(0, 1);
+        auto prefixIndex =
+            string(COMMAND_OPTION_PREFIXES).find_first_of(prefix);
+        if (prefixIndex == string::npos)
             break;
-        string option = arg1.substr(optionPrefixSize);
+        string option = arg1.substr(1);
+        if (option == string(1, COMMAND_OPTION_PREFIXES[prefixIndex]))
+        {
+            argc--; argv++;
+            break;
+        }
 
         if (option == "?" || option == "h")
         {
             Usage();
             return 0;
+        }
+        else if (option == "o")
+        {
+            executableFileName = (++argv)[1];
+            argc--;
         }
         else if (option == "s")
             silent = true;
@@ -134,7 +174,7 @@ static int main1(int argc, char **argv)
     };
     struct InputSpec inputs[] =
     {
-        {".aspec", &specFileName, 0},
+        {".aspec", &specFileName, nullptr},
         {".asp", &mainModuleFileName, &mainModuleSuffixPos},
     };
     for (int argi = 1; argi < argc; argi++)
@@ -175,7 +215,7 @@ static int main1(int argc, char **argv)
     if (specFileName.empty())
     {
         const char *specFileNameString = getenv("ASP_SPEC_FILE");
-        if (specFileNameString != 0)
+        if (specFileNameString != nullptr)
             specFileName = specFileNameString;
     }
     if (specFileName.empty())
@@ -191,7 +231,7 @@ static int main1(int argc, char **argv)
 
     // Split the main module file name into its constituent parts.
     auto mainModuleDirectorySeparatorPos = mainModuleFileName.find_last_of
-        (FILE_NAME_SEPARATOR);
+        (FILE_NAME_SEPARATORS);
     size_t baseNamePos = mainModuleDirectorySeparatorPos == string::npos ?
         0 : mainModuleDirectorySeparatorPos + 1;
     string mainModuleBaseFileName = mainModuleFileName.substr(baseNamePos);
@@ -213,7 +253,8 @@ static int main1(int argc, char **argv)
 
     // Open output executable.
     static string executableSuffix = ".aspe";
-    string executableFileName = baseName + executableSuffix;
+    if (executableFileName.empty())
+        executableFileName = baseName + executableSuffix;
     ofstream executableStream(executableFileName, ios::binary);
     if (!executableStream)
     {
@@ -260,7 +301,7 @@ static int main1(int argc, char **argv)
     // Prepare to search for imported module files.
     vector<string> searchPath;
     const char *includePathString = getenv("ASP_INCLUDE");
-    if (includePathString != 0)
+    if (includePathString != nullptr)
     {
         auto includePath = SearchPath(includePathString);
         searchPath.insert
@@ -278,7 +319,7 @@ static int main1(int argc, char **argv)
             break;
 
         // Open module file.
-        ifstream *moduleStream = 0;
+        ifstream *moduleStream = nullptr;
         if (moduleFileName == mainModuleBaseFileName)
         {
             // Open specified main module file.
@@ -296,8 +337,8 @@ static int main1(int argc, char **argv)
 
                 // Determine path name of module file.
                 if (!directory.empty() &&
-                    directory.back() != FILE_NAME_SEPARATOR)
-                    directory += FILE_NAME_SEPARATOR;
+                    strchr(FILE_NAME_SEPARATORS, directory.back()) == nullptr)
+                    directory += FILE_NAME_SEPARATORS[0];
                 auto modulePathName = directory + moduleFileName;
 
                 // Attempt opening the module file.
@@ -310,7 +351,7 @@ static int main1(int argc, char **argv)
                 delete stream;
             }
         }
-        if (moduleStream == 0)
+        if (moduleStream == nullptr)
         {
             cerr
                 << "Error opening " << moduleFileName

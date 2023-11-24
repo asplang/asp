@@ -20,7 +20,8 @@ target_link_libraries(aspinfo
     )
 
 target_compile_definitions(aspinfo PRIVATE
-    COMMAND_OPTION_PREFIX=${C_COMMAND_OPTION_PREFIX}
+    $<$<NOT:$<STREQUAL:${C_COMMAND_OPTION_PREFIXES},>>:
+        COMMAND_OPTION_PREFIXES=${C_COMMAND_OPTION_PREFIXES}>
     )
 
 install(TARGETS aspinfo
