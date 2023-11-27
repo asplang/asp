@@ -79,8 +79,10 @@ static void Usage()
     cerr
         << ":\n"
         << COMMAND_OPTION_PREFIXES[0]
-        << "o FILE     Write output to FILE instead of basing name on input"
-        << " file name.\n"
+        << "o FILE     Write outputs to FILE.* instead of basing file names"
+        << " on the SCRIPT\n"
+        << "            file name. If FILE ends with .aspe, its base name is"
+        << " used instead.\n"
         << COMMAND_OPTION_PREFIXES[0]
         << "s          Silent. Don't output usual compiler information.\n"
         << COMMAND_OPTION_PREFIXES[0]
@@ -108,7 +110,7 @@ static int main1(int argc, char **argv)
 {
     // Process command line options.
     bool silent = false, reportVersion = false;
-    string executableFileName;
+    string outputBaseName;
     for (; argc >= 2; argc--, argv++)
     {
         string arg1 = argv[1];
@@ -131,7 +133,7 @@ static int main1(int argc, char **argv)
         }
         else if (option == "o")
         {
-            executableFileName = (++argv)[1];
+            outputBaseName = (++argv)[1];
             argc--;
         }
         else if (option == "s")
@@ -235,8 +237,16 @@ static int main1(int argc, char **argv)
     size_t baseNamePos = mainModuleDirectorySeparatorPos == string::npos ?
         0 : mainModuleDirectorySeparatorPos + 1;
     string mainModuleBaseFileName = mainModuleFileName.substr(baseNamePos);
-    string baseName = mainModuleBaseFileName.substr
-        (0, mainModuleSuffixPos - baseNamePos);
+
+    // Determine the base name of all output files.
+    static string executableSuffix = ".aspe";
+    if (outputBaseName.size() > executableSuffix.size() &&
+        outputBaseName.substr(outputBaseName.size() - executableSuffix.size())
+        == executableSuffix)
+        outputBaseName.erase(outputBaseName.size() - executableSuffix.size());
+    string baseName = !outputBaseName.empty() ?
+        outputBaseName :
+        mainModuleBaseFileName.substr(0, mainModuleSuffixPos - baseNamePos);
 
     // Open application specification.
     ifstream specStream(specFileName, ios::binary);
@@ -252,9 +262,7 @@ static int main1(int argc, char **argv)
         cout << "Using " << specFileName << endl;
 
     // Open output executable.
-    static string executableSuffix = ".aspe";
-    if (executableFileName.empty())
-        executableFileName = baseName + executableSuffix;
+    string executableFileName = baseName + executableSuffix;
     ofstream executableStream(executableFileName, ios::binary);
     if (!executableStream)
     {
