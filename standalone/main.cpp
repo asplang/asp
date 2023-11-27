@@ -12,6 +12,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <cerrno>
 #include <climits>
 
 #ifndef COMMAND_OPTION_PREFIXES
@@ -20,7 +21,6 @@
 
 using namespace std;
 
-static const size_t DEFAULT_CODE_BYTE_COUNT = 4096;
 static const size_t DEFAULT_DATA_ENTRY_COUNT = 2048;
 
 static void Usage()
@@ -58,7 +58,10 @@ static void Usage()
         << "v          Verbose. Output version and statistical information.\n"
         << COMMAND_OPTION_PREFIXES[0]
         << "c n        Code size, in bytes."
-        << " Default is " << DEFAULT_CODE_BYTE_COUNT << ".\n"
+        << " The default behaviour is to determine the size\n"
+        << "            from the SCRIPT file."
+        << " This default behaviour may also be invoked\n"
+        << "            explicitly by specifying 0 for n.\n"
         << COMMAND_OPTION_PREFIXES[0]
         << "d n        Data entry count, where each entry is "
         << AspDataEntrySize() << " bytes."
@@ -76,7 +79,7 @@ int main(int argc, char **argv)
 {
     // Process command line options.
     bool verbose = false;
-    size_t codeByteCount = DEFAULT_CODE_BYTE_COUNT;
+    size_t codeByteCount = 0;
     size_t dataEntryCount = DEFAULT_DATA_ENTRY_COUNT;
     unsigned stepCountLimit = UINT_MAX;
     for (; argc >= 2; argc--, argv++)
@@ -165,8 +168,22 @@ int main(int argc, char **argv)
     // Initialize the Asp engine.
     StandaloneAspContext context;
     AspEngine engine;
-    char *code = (char *)malloc(codeByteCount);
+    char *code = nullptr;
+    if (codeByteCount != 0)
+    {
+        code = (char *)malloc(codeByteCount);
+        if (code == nullptr)
+        {
+            cerr << "Error allocating engine code area" << endl;
+            return 2;
+        }
+    }
     char *data = (char *)malloc(dataByteSize);
+    if (data == nullptr)
+    {
+        cerr << "Error allocating engine data area" << endl;
+        return 2;
+    }
     AspRunResult initializeResult = AspInitialize
         (&engine,
          code, codeByteCount,
@@ -181,24 +198,72 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    // Load the executable.
-    while (true)
+    // Load the executable using one of two methods.
+    char *externalCode = nullptr;
+    AspAddCodeResult sealResult = AspAddCodeResult_OK;
+    if (codeByteCount == 0)
     {
-        char c = fgetc(fp);
-        if (feof(fp))
-            break;
-        AspAddCodeResult addResult = AspAddCode(&engine, &c, 1);
-        if (addResult != AspAddCodeResult_OK)
+        // Determine the size of the executable file.
+        int seekResult = fseek(fp, 0, SEEK_END);
+        long tellResult = 0;
+        if (seekResult == 0)
+            tellResult = ftell(fp);
+        if (seekResult != 0 || tellResult < 0)
         {
             cerr
-                << "Load error 0x" << hex << uppercase << setfill('0')
-                << setw(2) << addResult << ": "
-                << AspAddCodeResultToString((int)addResult) << endl;
+                << "Error determining size of " << executableFileName << ": "
+                << strerror(errno) << endl;
             return 2;
         }
+        size_t externalCodeSize = (size_t)tellResult;
+        externalCode = (char *)malloc(externalCodeSize);
+        if (externalCode == nullptr)
+        {
+            cerr << "Error allocating memory for executable code" << endl;
+            return 2;
+        }
+        rewind(fp);
+
+        // Read the entire executable into memory.
+        int readResult = fread(externalCode, externalCodeSize, 1, fp);
+        if (readResult != 1 || feof(fp) || ferror(fp))
+        {
+            cerr
+                << "Error reading " << executableFileName << ": "
+                << strerror(errno) << endl;
+            return 2;
+        }
+
+        sealResult = AspSealCode
+            (&engine, externalCode, externalCodeSize);
+    }
+    else
+    {
+        while (true)
+        {
+            char c = fgetc(fp);
+            if (feof(fp))
+                break;
+            if (ferror(fp))
+            {
+                cerr
+                    << "Error reading " << executableFileName << ": "
+                    << strerror(errno) << endl;
+                return 2;
+            }
+            AspAddCodeResult addResult = AspAddCode(&engine, &c, 1);
+            if (addResult != AspAddCodeResult_OK)
+            {
+                cerr
+                    << "Load error 0x" << hex << uppercase << setfill('0')
+                    << setw(2) << addResult << ": "
+                    << AspAddCodeResultToString((int)addResult) << endl;
+                return 2;
+            }
+        }
+        AspAddCodeResult sealResult = AspSeal(&engine);
     }
     fclose(fp);
-    AspAddCodeResult sealResult = AspSeal(&engine);
     if (sealResult != AspAddCodeResult_OK)
     {
         cerr
@@ -327,7 +392,10 @@ int main(int argc, char **argv)
             << " (max " << AspMaxDataSize(&engine) << ')' << endl;
     }
 
-    free(code);
+    if (code != nullptr)
+        free(code);
+    if (externalCode != nullptr)
+        free(externalCode);
     free(data);
 
     return runResult == AspRunResult_Complete ? 0 : 2;

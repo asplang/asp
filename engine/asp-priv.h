@@ -71,7 +71,7 @@ typedef struct AspEngine
     uint8_t version[4]; /* major, minor, patch, tweak */
 
     /* Code space. */
-    uint8_t *code, *pc;
+    uint8_t *codeArea, *code, *pc;
     size_t maxCodeSize, codeEndIndex;
 
     /* Data space. */

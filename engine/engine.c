@@ -25,6 +25,7 @@
 #error ASP_ENGINE_VERSION_* macros undefined
 #endif
 
+static void ProcessCodeHeader(AspEngine *);
 static AspRunResult ResetData(AspEngine *);
 static AspRunResult InitializeAppDefinitions(AspEngine *);
 static AspRunResult LoadValue
@@ -60,7 +61,7 @@ AspRunResult AspInitializeEx
 
     engine->context = context;
     engine->floatConverter = floatConverter;
-    engine->code = code;
+    engine->codeArea = code;
     engine->maxCodeSize = codeSize;
     engine->data = data;
     engine->dataEndIndex = dataSize / AspDataEntrySize();
@@ -110,41 +111,10 @@ AspAddCodeResult AspAddCode
 
             if (engine->headerIndex == HeaderSize)
             {
-                /* Check the header signature. */
-                if (memcmp(engine->code, "AspE", 4) != 0)
-                {
-                    engine->state = AspEngineState_LoadError;
-                    engine->loadResult = AspAddCodeResult_InvalidFormat;
+                /* Ensure the header is valid. */
+                ProcessCodeHeader(engine);
+                if (engine->loadResult != AspAddCodeResult_OK)
                     return engine->loadResult;
-                }
-
-                /* Check the version of the executable to ensure
-                   compatibility. */
-                memcpy
-                    (engine->version, engine->code + 4,
-                     sizeof engine->version);
-                if (engine->version[0] != ASP_ENGINE_VERSION_MAJOR ||
-                    engine->version[1] != ASP_ENGINE_VERSION_MINOR)
-                {
-                    engine->state = AspEngineState_LoadError;
-                    engine->loadResult = AspAddCodeResult_InvalidVersion;
-                    return engine->loadResult;
-                }
-
-                /* Check the application specification check value. */
-                const uint8_t *checkValuePtr = engine->code + 8;
-                uint32_t checkValue = 0;
-                for (unsigned i = 0; i < 4; i++)
-                {
-                    checkValue <<= 8;
-                    checkValue |= *checkValuePtr++;
-                }
-                if (checkValue != engine->appSpec->checkValue)
-                {
-                    engine->state = AspEngineState_LoadError;
-                    engine->loadResult = AspAddCodeResult_InvalidCheckValue;
-                    return engine->loadResult;
-                }
 
                 engine->state = AspEngineState_LoadingCode;
                 break;
@@ -190,6 +160,32 @@ AspAddCodeResult AspSeal(AspEngine *engine)
     return engine->loadResult;
 }
 
+AspAddCodeResult AspSealCode
+    (AspEngine *engine, const void *code, size_t codeSize)
+{
+    if (engine->state == AspEngineState_LoadError)
+        return engine->loadResult;
+    else if (engine->state != AspEngineState_Reset)
+        return AspAddCodeResult_InvalidState;
+
+    /* Ensure the header is present and valid. */
+    if (codeSize < HeaderSize)
+    {
+        engine->state = AspEngineState_LoadError;
+        engine->loadResult = AspAddCodeResult_InvalidFormat;
+        return engine->loadResult;
+    }
+    engine->pc = engine->code = (uint8_t *)code;
+    ProcessCodeHeader(engine);
+    if (engine->loadResult != AspAddCodeResult_OK)
+        return engine->loadResult;
+
+    engine->pc = engine->code += HeaderSize;
+    engine->codeEndIndex = codeSize - HeaderSize;
+    engine->state = AspEngineState_LoadingCode;
+    return AspSeal(engine);
+}
+
 AspRunResult AspReset(AspEngine *engine)
 {
     if (engine->inApp)
@@ -201,8 +197,8 @@ AspRunResult AspReset(AspEngine *engine)
     engine->again = false;
     engine->runResult = AspRunResult_OK;
     memset(engine->version, 0, sizeof engine->version);
-    memset(engine->code, 0, engine->maxCodeSize);
-    engine->pc = engine->code;
+    memset(engine->codeArea, 0, engine->maxCodeSize);
+    engine->pc = engine->code = engine->codeArea;
     engine->codeEndIndex = 0;
     engine->appFunctionSymbol = 0;
     engine->appFunctionNamespace = 0;
@@ -231,6 +227,43 @@ AspRunResult AspRestart(AspEngine *engine)
     engine->appFunctionReturnValue = 0;
 
     return ResetData(engine);
+}
+
+static void ProcessCodeHeader(AspEngine *engine)
+{
+    /* Check the header signature. */
+    if (memcmp(engine->code, "AspE", 4) != 0)
+    {
+        engine->state = AspEngineState_LoadError;
+        engine->loadResult = AspAddCodeResult_InvalidFormat;
+        return;
+    }
+
+    /* Check the version of the executable to ensure
+       compatibility. */
+    memcpy(engine->version, engine->code + 4, sizeof engine->version);
+    if (engine->version[0] != ASP_ENGINE_VERSION_MAJOR ||
+        engine->version[1] != ASP_ENGINE_VERSION_MINOR)
+    {
+        engine->state = AspEngineState_LoadError;
+        engine->loadResult = AspAddCodeResult_InvalidVersion;
+        return;
+    }
+
+    /* Check the application specification check value. */
+    const uint8_t *checkValuePtr = engine->code + 8;
+    uint32_t checkValue = 0;
+    for (unsigned i = 0; i < 4; i++)
+    {
+        checkValue <<= 8;
+        checkValue |= *checkValuePtr++;
+    }
+    if (checkValue != engine->appSpec->checkValue)
+    {
+        engine->state = AspEngineState_LoadError;
+        engine->loadResult = AspAddCodeResult_InvalidCheckValue;
+        return;
+    }
 }
 
 static AspRunResult ResetData(AspEngine *engine)

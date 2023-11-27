@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-/* Result returned from AspAddCode and AspSeal. */
+/* Result returned from AspAddCode, AspSeal, and AspSealCode. */
 typedef enum
 {
     AspAddCodeResult_OK = 0x00,
@@ -90,6 +90,8 @@ ASP_API size_t AspMaxDataSize(const AspEngine *);
 ASP_API AspAddCodeResult AspAddCode
     (AspEngine *, const void *code, size_t codeSize);
 ASP_API AspAddCodeResult AspSeal(AspEngine *);
+ASP_API AspAddCodeResult AspSealCode
+    (AspEngine *, const void *code, size_t codeSize);
 ASP_API AspRunResult AspReset(AspEngine *);
 ASP_API AspRunResult AspSetArguments(AspEngine *, const char * const *);
 ASP_API AspRunResult AspSetArgumentsString(AspEngine *, const char *);
