@@ -14,6 +14,7 @@
 #include <string>
 #include <cstring>
 #include <cstdlib>
+#include <cerrno>
 
 #if !defined ASP_COMPILER_VERSION_MAJOR || \
     !defined ASP_COMPILER_VERSION_MINOR || \
@@ -83,6 +84,10 @@ static void Usage()
         << " on the SCRIPT\n"
         << "            file name. If FILE ends with .aspe, its base name is"
         << " used instead.\n"
+        << "            If FILE ends with " << FILE_NAME_SEPARATORS[0]
+        << ", SCRIPT.* will be written in the directory\n"
+        << "            given by FILE. In this case, the directory must"
+        << " already exist.\n"
         << COMMAND_OPTION_PREFIXES[0]
         << "s          Silent. Don't output usual compiler information.\n"
         << COMMAND_OPTION_PREFIXES[0]
@@ -244,9 +249,15 @@ static int main1(int argc, char **argv)
         outputBaseName.substr(outputBaseName.size() - executableSuffix.size())
         == executableSuffix)
         outputBaseName.erase(outputBaseName.size() - executableSuffix.size());
-    string baseName = !outputBaseName.empty() ?
-        outputBaseName :
-        mainModuleBaseFileName.substr(0, mainModuleSuffixPos - baseNamePos);
+    string baseName =
+        outputBaseName.empty() ?
+            mainModuleBaseFileName.substr
+                (0, mainModuleSuffixPos - baseNamePos) :
+        strchr(FILE_NAME_SEPARATORS, outputBaseName.back()) == nullptr ?
+            outputBaseName :
+            outputBaseName +
+            mainModuleBaseFileName.substr
+                (0, mainModuleSuffixPos - baseNamePos);
 
     // Open application specification.
     ifstream specStream(specFileName, ios::binary);
@@ -255,7 +266,6 @@ static int main1(int argc, char **argv)
         cerr
             << "Error opening " << specFileName
             << ": " << strerror(errno) << endl;
-        Usage();
         return 2;
     }
     if (!silent)
@@ -269,7 +279,6 @@ static int main1(int argc, char **argv)
         cerr
             << "Error creating " << executableFileName
             << ": " << strerror(errno) << endl;
-        Usage();
         return 2;
     }
 
@@ -282,7 +291,6 @@ static int main1(int argc, char **argv)
         cerr
             << "Error creating " << listingFileName
             << ": " << strerror(errno) << endl;
-        Usage();
         return 2;
     }
 
@@ -295,7 +303,6 @@ static int main1(int argc, char **argv)
         cerr
             << "Error creating " << sourceInfoFileName
             << ": " << strerror(errno) << endl;
-        Usage();
         return 2;
     }
 

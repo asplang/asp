@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <cstring>
+#include <cerrno>
 
 using namespace std;
 
@@ -95,23 +96,27 @@ int main(int argc, char **argv)
             Usage();
             return 1;
         }
-        string sourceInfoFileName = argv[argIndex];
+        string sourceInfoFileNameArg = argv[argIndex];
 
         // Load the source info.
+        static const string sourceInfoSuffix = ".aspd";
+        string sourceInfoFileName = sourceInfoFileNameArg;
+        if (sourceInfoFileName.size() <= sourceInfoSuffix.size() ||
+            sourceInfoFileName.substr
+                (sourceInfoFileName.size() - sourceInfoSuffix.size())
+            != sourceInfoSuffix)
+            sourceInfoFileName += sourceInfoSuffix;
+        errno = 0;
         sourceInfo = AspLoadSourceInfoFromFile
             (sourceInfoFileName.c_str());
         if (sourceInfo == nullptr)
         {
-            // Try appending the appropriate suffix if the specified file did
-            // not exist.
-            static const string sourceInfoSuffix = ".aspd";
-            string sourceInfoFileName2 = sourceInfoFileName + sourceInfoSuffix;
-            sourceInfo = AspLoadSourceInfoFromFile
-                (sourceInfoFileName2.c_str());
-        }
-        if (sourceInfo == nullptr)
-        {
-            cerr << "Error loading " << sourceInfoFileName << endl;
+            cerr << "Error loading " << sourceInfoFileName;
+            if (errno != 0)
+                cerr << ": " << strerror(errno);
+            else
+                cerr << ": Possible file corruption";
+            cerr << endl;
             return 1;
         }
     }

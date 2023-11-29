@@ -157,7 +157,9 @@ int main(int argc, char **argv)
     }
     if (fp == nullptr)
     {
-        cerr << "Error opening " << executableFileName << endl;
+        cerr
+            << "Error opening " << executableFileName
+            << ": " << strerror(errno) << endl;
         return 1;
     }
 
@@ -211,8 +213,8 @@ int main(int argc, char **argv)
         if (seekResult != 0 || tellResult < 0)
         {
             cerr
-                << "Error determining size of " << executableFileName << ": "
-                << strerror(errno) << endl;
+                << "Error determining size of " << executableFileName
+                << ": " << strerror(errno) << endl;
             return 2;
         }
         size_t externalCodeSize = (size_t)tellResult;
@@ -229,8 +231,8 @@ int main(int argc, char **argv)
         if (readResult != 1 || feof(fp) || ferror(fp))
         {
             cerr
-                << "Error reading " << executableFileName << ": "
-                << strerror(errno) << endl;
+                << "Error reading " << executableFileName
+                << ": " << strerror(errno) << endl;
             return 2;
         }
 
@@ -247,8 +249,8 @@ int main(int argc, char **argv)
             if (ferror(fp))
             {
                 cerr
-                    << "Error reading " << executableFileName << ": "
-                    << strerror(errno) << endl;
+                    << "Error reading " << executableFileName
+                    << ": " << strerror(errno) << endl;
                 return 2;
             }
             AspAddCodeResult addResult = AspAddCode(&engine, &c, 1);
