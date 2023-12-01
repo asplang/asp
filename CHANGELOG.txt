@@ -7,6 +7,28 @@ chronological order.
 Changes
 -------
 
+Version 0.7.2.2 (compiler 0.7.1.4, engine 0.7.4.2):
+- Special thanks to Lassi Hamalainen for suggesting all of these changes.
+- Compiler:
+  - Added -o option to specify the names of the output files.
+- Engine:
+  - Fixed a bug in AspNewBoolean which would crash if the singleton allocation
+    failed.
+  - Added AspSealCode to allow use of script executable code residing outside
+    the engine's normal code area.
+- Standalone application:
+  - Updated to use new AspSealCode except when the code size is specified via
+    the appropriate command line option.
+- General:
+  - Added support for file name arguments that start with an option prefix.
+    This affects aspc, aspinfo, and asps.
+  - Clarified licensing.
+- Build:
+  - Standardized path name separator, file name separators, and command line
+    option prefixes for each supported platform. These are no longer build
+    options.
+  - Decoupled debug output generation from the Debug build configuration.
+
 Version 0.7.2.1 (compiler 0.7.1.3, engine 0.7.4.1):
 - Engine:
   - Added AspInitializeEx which accepts a routine for converting from IEEE 754
