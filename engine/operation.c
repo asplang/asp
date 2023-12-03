@@ -494,6 +494,11 @@ static AspOperationResult PerformRepetitionBinaryOperation
             {
                 AspSequenceResult nextResult = AspSequenceNext
                     (engine, sequence, 0);
+                if (nextResult.element == 0) {
+                    /* If the sequence is empty, then repeating it does nothing */
+                    break;
+                }
+
                 for (; nextResult.element != 0;
                      nextResult = AspSequenceNext
                         (engine, sequence, nextResult.element))
