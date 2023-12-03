@@ -328,7 +328,9 @@ AspRunResult AspTreeEraseNode
             if ((nearNode == 0 || AspDataGetTreeNodeIsBlack(nearNode)) &&
                 (farNode == 0 || AspDataGetTreeNodeIsBlack(farNode)))
             {
-                AspDataSetTreeNodeIsBlack(siblingNode, false);
+                if (siblingNode) {
+                    AspDataSetTreeNodeIsBlack(siblingNode, false);
+                }
                 workNode = parentNode;
             }
             else
