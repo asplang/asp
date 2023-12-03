@@ -235,7 +235,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
             for (uint32_t i = 0; i < size; i++)
             {
-                if (engine->pc + i > engine->code + engine->codeEndIndex)
+                if (engine->pc + i >= engine->code + engine->codeEndIndex)
                 {
                     #ifdef ASP_DEBUG
                     puts("");
@@ -2591,10 +2591,10 @@ static AspRunResult LoadUnsignedOperand
     *operand = 0;
     for (i = 0; i < operandSize; i++)
     {
+        if (engine->pc >= engine->code + engine->codeEndIndex)
+            return AspRunResult_BeyondEndOfCode;
         *operand <<= 8;
         *operand |= *engine->pc++;
-        if (engine->pc > engine->code + engine->codeEndIndex)
-            return AspRunResult_BeyondEndOfCode;
     }
     return AspRunResult_OK;
 }
@@ -2602,6 +2602,8 @@ static AspRunResult LoadUnsignedOperand
 static AspRunResult LoadSignedOperand
     (AspEngine *engine, unsigned operandSize, int32_t *operand)
 {
+    if (engine->pc >= engine->code + engine->codeEndIndex)
+        return AspRunResult_BeyondEndOfCode;
     bool negative = operandSize != 0 && (*engine->pc & 0x80) != 0;
     uint32_t unsignedOperand = 0;
     AspRunResult loadResult = LoadUnsignedOperand
@@ -2629,9 +2631,9 @@ static AspRunResult LoadFloatOperand
     uint8_t data[8];
     for (unsigned i = 0; i < 8; i++)
     {
-        data[be ? i : 7 - i] = *engine->pc++;
-        if (engine->pc > engine->code + engine->codeEndIndex)
+        if (engine->pc >= engine->code + engine->codeEndIndex)
             return AspRunResult_BeyondEndOfCode;
+        data[be ? i : 7 - i] = *engine->pc++;
     }
 
     /* Convert IEEE 754 binary64 to the native format. */
