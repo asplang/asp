@@ -58,7 +58,7 @@ typedef enum
 } DataType;
 
 /* Data entry. */
-typedef struct AspDataEntry
+struct AspDataEntry
 {
     union
     {
@@ -76,7 +76,7 @@ typedef struct AspDataEntry
         int32_t i;
         double d;
     };
-} AspDataEntry;
+};
 
 /* Low-level field access. */
 #define AspWordBitSize 28

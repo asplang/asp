@@ -32,13 +32,13 @@ typedef AspRunResult (AspDispatchFunction)
     (AspEngine *, int32_t symbol, AspDataEntry *ns,
      AspDataEntry **returnValue);
 
-typedef struct AspAppSpec
+struct AspAppSpec
 {
     const char *spec;
     unsigned specSize;
     uint32_t checkValue;
     AspDispatchFunction *dispatch;
-} AspAppSpec;
+};
 
 typedef enum AspEngineState
 {
@@ -52,7 +52,7 @@ typedef enum AspEngineState
     AspEngineState_Ended,
 } AspEngineState;
 
-typedef struct AspEngine
+struct AspEngine
 {
     /* Application context. */
     void *context;
@@ -106,8 +106,7 @@ typedef struct AspEngine
     bool inApp;
     int32_t appFunctionSymbol;
     AspDataEntry *appFunctionNamespace, *appFunctionReturnValue;
-
-} AspEngine;
+};
 
 /* Definitions used by auto-generated application function support code. */
 typedef struct
