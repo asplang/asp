@@ -823,8 +823,14 @@ static AspOperationResult PerformFormatBinaryOperation
                         isCharacter = true;
                     else if (c != 0 && strchr("rsa", c) != 0)
                         isString = true;
-                    else
+                    else if (c != 0)
                         continue;
+                    else {
+                        /* Unterminated format specifier */
+                        result.result = AspRunResult_InvalidFormatString;
+                        return result;
+                    }
+
 
                     /* Prepare to format the next value. */
                     *fp = '\0';
