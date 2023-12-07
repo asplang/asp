@@ -319,6 +319,9 @@ AspRunResult AspTreeEraseNode
                     (engine, AspDataGetTreeNodeParentIndex(workNode));
                 siblingNode = AspEntry
                     (engine, GetChildIndex(engine, parentNode, !right));
+                result = AspAssert(engine, siblingNode != 0);
+                if (result != AspRunResult_OK)
+                    return result;
             }
 
             AspDataEntry *nearNode = AspEntry
@@ -328,9 +331,7 @@ AspRunResult AspTreeEraseNode
             if ((nearNode == 0 || AspDataGetTreeNodeIsBlack(nearNode)) &&
                 (farNode == 0 || AspDataGetTreeNodeIsBlack(farNode)))
             {
-                if (siblingNode) {
-                    AspDataSetTreeNodeIsBlack(siblingNode, false);
-                }
+                AspDataSetTreeNodeIsBlack(siblingNode, false);
                 workNode = parentNode;
             }
             else

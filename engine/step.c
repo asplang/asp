@@ -1363,9 +1363,8 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Ensure we're in the context of a function. */
-            if (engine->localNamespace == engine->globalNamespace) {
+            if (engine->localNamespace == engine->globalNamespace)
                 return AspRunResult_InvalidContext;
-            }
 
             /* Access the return value on top of the stack. */
             AspDataEntry *returnValue = AspTopValue(engine);

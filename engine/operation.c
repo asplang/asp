@@ -478,6 +478,13 @@ static AspOperationResult PerformRepetitionBinaryOperation
 
         case OpCode_MUL:
         {
+            if (AspCount(sequence) == 0)
+            {
+                AspRef(engine, sequence);
+                result.value = sequence;
+                break;
+            }
+
             result.value = AspAllocEntry(engine, sequenceType);
             if (result.value == 0)
                 break;
@@ -494,10 +501,6 @@ static AspOperationResult PerformRepetitionBinaryOperation
             {
                 AspSequenceResult nextResult = AspSequenceNext
                     (engine, sequence, 0);
-                if (nextResult.element == 0) {
-                    /* If the sequence is empty, then repeating it does nothing */
-                    break;
-                }
 
                 for (; nextResult.element != 0;
                      nextResult = AspSequenceNext
@@ -776,6 +779,11 @@ static AspOperationResult PerformFormatBinaryOperation
             else
             {
                 /* Process format character. */
+                if (c == '\0')
+                {
+                    result.result = AspRunResult_InvalidFormatString;
+                    return result;
+                }
                 if (c == '%')
                 {
                     if (fp != formatBuffer + 1)
@@ -815,21 +823,16 @@ static AspOperationResult PerformFormatBinaryOperation
                     bool
                         isInteger = false, isFloat = false,
                         isCharacter = false, isString = false;
-                    if (c != 0 && strchr("diouxX", c) != 0)
+                    if (strchr("diouxX", c) != 0)
                         isInteger = true;
-                    else if (c != 0 && strchr("eEfFgG", c) != 0)
+                    else if (strchr("eEfFgG", c) != 0)
                         isFloat = true;
                     else if (c == 'c')
                         isCharacter = true;
-                    else if (c != 0 && strchr("rsa", c) != 0)
+                    else if (strchr("rsa", c) != 0)
                         isString = true;
-                    else if (c != 0)
+                    else
                         continue;
-                    else {
-                        /* Unterminated format specifier */
-                        result.result = AspRunResult_InvalidFormatString;
-                        return result;
-                    }
 
 
                     /* Prepare to format the next value. */
