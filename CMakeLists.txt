@@ -74,5 +74,8 @@ if(BUILD_FOR_HOST AND BUILD_FOR_TARGET)
 endif()
 
 if(BUILD_TEST_TARGETS)
+    # Test modules use some internal functions which are not made public when
+    # building shared libraries. Therefore, we must enforce static libraries.
+    set(BUILD_SHARED_LIBS FALSE)
     add_subdirectory(test)
 endif()
