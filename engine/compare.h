@@ -7,6 +7,7 @@
 
 #include "asp-priv.h"
 #include "data.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +23,7 @@ typedef enum
 AspRunResult AspCompare
     (AspEngine *engine,
      const AspDataEntry *left, const AspDataEntry *right,
-     AspCompareType, int *result);
+     AspCompareType, int *result, bool *nanDetected);
 
 #ifdef __cplusplus
 }

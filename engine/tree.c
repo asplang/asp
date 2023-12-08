@@ -778,7 +778,7 @@ static AspRunResult CompareKeys
             (engine,
              AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(leftNode)),
              AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(rightNode)),
-             AspCompareType_Key, comparison);
+             AspCompareType_Key, comparison, 0);
 }
 
 static AspRunResult SetChildIndex

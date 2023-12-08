@@ -1109,7 +1109,7 @@ static AspOperationResult PerformEqualityOperation
     int comparison = 0;
     result.result = AspCompare
         (engine, left, right, AspCompareType_Equality,
-         &comparison);
+         &comparison, 0);
     if (result.result != AspRunResult_OK)
         return result;
 
@@ -1146,9 +1146,10 @@ static AspOperationResult PerformRelationalOperation
     AspOperationResult result = {AspRunResult_OK, 0};
 
     int comparison = 0;
+    bool nanDetected = false;
     result.result = AspCompare
         (engine, left, right, AspCompareType_Relational,
-         &comparison);
+         &comparison, &nanDetected);
     if (result.result != AspRunResult_OK)
         return result;
 
@@ -1160,19 +1161,19 @@ static AspOperationResult PerformRelationalOperation
             break;
 
         case OpCode_LT:
-            resultValue = comparison < 0;
+            resultValue = !nanDetected && comparison < 0;
             break;
 
         case OpCode_LE:
-            resultValue = comparison <= 0;
+            resultValue = !nanDetected && comparison <= 0;
             break;
 
         case OpCode_GT:
-            resultValue = comparison > 0;
+            resultValue = !nanDetected && comparison > 0;
             break;
 
         case OpCode_GE:
-            resultValue = comparison >= 0;
+            resultValue = !nanDetected && comparison >= 0;
             break;
     }
 
@@ -1253,7 +1254,7 @@ static AspOperationResult PerformMembershipOperation
                 int comparison;
                 result.result = AspCompare
                     (engine, left, value, AspCompareType_Equality,
-                     &comparison);
+                     &comparison, 0);
                 if (result.result != AspRunResult_OK)
                     break;
                 isIn = comparison == 0;
