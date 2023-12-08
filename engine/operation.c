@@ -478,7 +478,17 @@ static AspOperationResult PerformRepetitionBinaryOperation
 
         case OpCode_MUL:
         {
-            if (AspCount(sequence) == 0)
+            int32_t repeatCountValue = AspDataGetInteger(repeatCount);
+            if (repeatCountValue < 0)
+            {
+                result.result = AspRunResult_ValueOutOfRange;
+                break;
+            }
+
+            /* Reuse the sequence argument as the return value if possible. */
+            if ((AspCount(sequence) == 0 || repeatCountValue == 1) &&
+                (sequenceType == DataType_String ||
+                 sequenceType == DataType_Tuple))
             {
                 AspRef(engine, sequence);
                 result.value = sequence;
@@ -489,37 +499,33 @@ static AspOperationResult PerformRepetitionBinaryOperation
             if (result.value == 0)
                 break;
 
-            int32_t repeatCountValue = AspDataGetInteger(repeatCount);
-            if (repeatCountValue < 0)
-            {
-                result.result = AspRunResult_ValueOutOfRange;
-                break;
-            }
-
             AspSequenceResult appendResult = {AspRunResult_OK, 0, 0};
-            for (int32_t i = 0; i < repeatCountValue; i++)
+            if (AspCount(sequence) != 0)
             {
-                AspSequenceResult nextResult = AspSequenceNext
-                    (engine, sequence, 0);
-
-                for (; nextResult.element != 0;
-                     nextResult = AspSequenceNext
-                        (engine, sequence, nextResult.element))
+                for (int32_t i = 0; i < repeatCountValue; i++)
                 {
-                    AspDataEntry *value = nextResult.value;
+                    AspSequenceResult nextResult = AspSequenceNext
+                        (engine, sequence, 0);
 
-                    if (sequenceType == DataType_String)
-                        appendResult.result = AspStringAppendBuffer
-                            (engine, result.value,
-                             AspDataGetStringFragmentData(value),
-                             AspDataGetStringFragmentSize(value));
-                    else
-                        appendResult = AspSequenceAppend
-                            (engine, result.value, value);
-                    if (appendResult.result != AspRunResult_OK)
+                    for (; nextResult.element != 0;
+                         nextResult = AspSequenceNext
+                            (engine, sequence, nextResult.element))
                     {
-                        result.result = appendResult.result;
-                        break;
+                        AspDataEntry *value = nextResult.value;
+
+                        if (sequenceType == DataType_String)
+                            appendResult.result = AspStringAppendBuffer
+                                (engine, result.value,
+                                 AspDataGetStringFragmentData(value),
+                                 AspDataGetStringFragmentSize(value));
+                        else
+                            appendResult = AspSequenceAppend
+                                (engine, result.value, value);
+                        if (appendResult.result != AspRunResult_OK)
+                        {
+                            result.result = appendResult.result;
+                            break;
+                        }
                     }
                 }
             }
