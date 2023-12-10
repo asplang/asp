@@ -1,5 +1,8 @@
 /*
  * Asp info library definitions.
+ *
+ * Copyright (c) 2023 Canadensys Aerospace Corporation.
+ * See LICENSE.txt at https://bitbucket.org/asplang/asp for details.
  */
 
 #ifndef ASP_INFO_080177a8_14ce_11ed_b65f_7328ac4c64a3_H

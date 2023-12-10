@@ -1,5 +1,8 @@
 /*
  * API macro definitions.
+ *
+ * Copyright (c) 2023 Canadensys Aerospace Corporation.
+ * See LICENSE.txt at https://bitbucket.org/asplang/asp for details.
  */
 
 #ifndef ASP_API
