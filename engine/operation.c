@@ -522,10 +522,13 @@ static AspOperationResult PerformRepetitionBinaryOperation
                             appendResult = AspSequenceAppend
                                 (engine, result.value, value);
                         if (appendResult.result != AspRunResult_OK)
-                        {
-                            result.result = appendResult.result;
                             break;
-                        }
+                    }
+
+                    if (appendResult.result != AspRunResult_OK)
+                    {
+                        result.result = appendResult.result;
+                        break;
                     }
                 }
             }
@@ -809,6 +812,14 @@ static AspOperationResult PerformFormatBinaryOperation
                 }
                 else
                 {
+                    /* Disallow the n and p format specifiers and variable
+                       width specifiers within the format. */
+                    if (strchr("np*", c) != 0)
+                    {
+                        result.result = AspRunResult_InvalidFormatString;
+                        return result;
+                    }
+
                     /* Continue to build format string for next value. */
                     if (fp >= formatBuffer + sizeof formatBuffer - 1)
                     {
@@ -816,13 +827,6 @@ static AspOperationResult PerformFormatBinaryOperation
                         return result;
                     }
                     *fp++ = c;
-
-                    /* Disallow variable width specifiers in the format. */
-                    if (c == '*')
-                    {
-                        result.result = AspRunResult_InvalidFormatString;
-                        return result;
-                    }
 
                     /* Check for a conversion type character, which ends the
                        format string. */
@@ -839,7 +843,6 @@ static AspOperationResult PerformFormatBinaryOperation
                         isString = true;
                     else
                         continue;
-
 
                     /* Prepare to format the next value. */
                     *fp = '\0';
