@@ -482,7 +482,9 @@ static int CompareFloats
             leftValue == rightValue ? 0 :
             leftValue < rightValue ? -1 : +1;
 
-    /* Handle NaNs in key comparisons, which must yield predictable results. */
+    /* Handle NaNs in key comparisons, which must yield predictable results.
+       Note that a good optimizer will eliminate all but one of the following
+       code paths. */
     #ifdef UINT64_MAX
     if (sizeof(uint64_t) == sizeof(double))
     {
@@ -493,27 +495,28 @@ static int CompareFloats
             leftBits == rightBits ? 0 :
             leftBits < rightBits ? -1 : +1;
     }
+    else
     #endif
-
-    /* Compare as bytes. Note that a good optimizer will eliminate this code
-       if UINT64_MAX is defined and doubles are indeed 64 bits wide. */
-    static const uint16_t word = 1;
-    bool be = *(const char *)&word == 0;
-    uint8_t *leftBytes = (uint8_t *)&leftValue;
-    uint8_t *rightBytes = (uint8_t *)&rightValue;
-    if (!be)
     {
-        /* Put values into big endian order. */
-        for (unsigned i = 0; i < sizeof(double) / 2; i++)
+        /* Compare as bytes. */
+        static const uint16_t word = 1;
+        bool be = *(const char *)&word == 0;
+        uint8_t *leftBytes = (uint8_t *)&leftValue;
+        uint8_t *rightBytes = (uint8_t *)&rightValue;
+        if (!be)
         {
-            unsigned j = sizeof(double) - i - 1;
-            leftBytes[i] ^= leftBytes[j];
-            leftBytes[j] ^= leftBytes[i];
-            leftBytes[i] ^= leftBytes[j];
-            rightBytes[i] ^= rightBytes[j];
-            rightBytes[j] ^= rightBytes[i];
-            rightBytes[i] ^= rightBytes[j];
+            /* Put values into big endian order. */
+            for (unsigned i = 0; i < sizeof(double) / 2; i++)
+            {
+                unsigned j = sizeof(double) - i - 1;
+                leftBytes[i] ^= leftBytes[j];
+                leftBytes[j] ^= leftBytes[i];
+                leftBytes[i] ^= leftBytes[j];
+                rightBytes[i] ^= rightBytes[j];
+                rightBytes[j] ^= rightBytes[i];
+                rightBytes[i] ^= rightBytes[j];
+            }
         }
+        return memcmp(leftBytes, rightBytes, sizeof(double));
     }
-    return memcmp(leftBytes, rightBytes, sizeof(double));
 }
