@@ -8,7 +8,7 @@
 #include "sequence.h"
 #include "tree.h"
 #include <math.h>
-#include <stdlib.h>
+#include <string.h>
 
 static int CompareFloats(double, double, AspCompareType, bool *nanDetected);
 
@@ -62,14 +62,10 @@ AspRunResult AspCompare
                 if (leftType == DataType_Float || rightType == DataType_Float)
                 {
                     compareInts = false;
-                    if (leftType != DataType_Float)
-                        leftFloat = (double)leftInt;
-                    else
-                        leftFloat = (uint32_t)AspDataGetFloat(leftEntry);
-                    if (rightType != DataType_Float)
-                        rightFloat = (double)rightInt;
-                    else
-                        rightFloat = (uint32_t)AspDataGetFloat(rightEntry);
+                    leftFloat = leftType == DataType_Float ?
+                        AspDataGetFloat(leftEntry) : (double)leftInt;
+                    rightFloat = rightType == DataType_Float ?
+                        AspDataGetFloat(rightEntry) : (double)rightInt;
                 }
 
                 comparison = compareInts ?
@@ -421,7 +417,7 @@ AspRunResult AspCompare
         }
 
         /* Check if there's more to do. */
-        if (comparison != 0 ||
+        if (comparison != 0 || localNanDetected ||
             engine->stackTop == startStackTop ||
             engine->runResult != AspRunResult_OK)
             break;
