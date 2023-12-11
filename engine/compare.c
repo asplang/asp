@@ -471,16 +471,18 @@ static int CompareFloats
     (double leftValue, double rightValue,
      AspCompareType compareType, bool *nanDetected)
 {
-    /* Update whether a NaN has been detected, if applicable. */
-    if (!*nanDetected)
-        *nanDetected = isnan(leftValue) || isnan(rightValue);
-
     /* Perform a standard comparison when possible. Note that when NaNs are
        involved, the result will be nonintuitive, but standardized. */
-    if (compareType != AspCompareType_Key || !*nanDetected)
+    bool localNanDetected = isnan(leftValue) || isnan(rightValue);
+    if (compareType != AspCompareType_Key || !localNanDetected)
+    {
+        /* Update whether a NaN has been detected, if applicable. */
+        *nanDetected = *nanDetected && localNanDetected;
+
         return
             leftValue == rightValue ? 0 :
             leftValue < rightValue ? -1 : +1;
+    }
 
     /* Handle NaNs in key comparisons, which must yield predictable results.
        Note that a good optimizer will eliminate all but one of the following
