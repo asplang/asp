@@ -130,6 +130,25 @@ bool AspIsDictionary(const AspDataEntry *entry)
     return entry != 0 && AspDataGetType(entry) == DataType_Dictionary;
 }
 
+bool AspIsAppIntegerObject(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_AppIntegerObject;
+}
+
+bool AspIsAppPointerObject(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_AppPointerObject;
+}
+
+bool AspIsAppObject(const AspDataEntry *entry)
+{
+    uint8_t type = AspDataGetType(entry);
+    return
+        entry != 0 &&
+        type == DataType_AppIntegerObject ||
+        type == DataType_AppIntegerObject;
+}
+
 bool AspIsType(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Type;
@@ -867,6 +886,45 @@ AspDataEntry *AspNext(AspEngine *engine, AspDataEntry *iterator)
     return result.value;
 }
 
+bool AspAppObjectTypeValue(const AspDataEntry *entry, int32_t *appType)
+{
+    if (!AspIsAppObject(entry))
+        return false;
+
+    if (appType != 0)
+        *appType = AspDataGetAppObjectType(entry);
+
+    return true;
+}
+
+bool AspAppIntegerObjectValues
+    (const AspDataEntry *entry, int32_t *appType, int32_t *value)
+{
+    if (!AspIsAppIntegerObject(entry))
+        return false;
+
+    if (appType != 0)
+        *appType = AspDataGetAppObjectType(entry);
+    if (value != 0)
+        *value = AspDataGetAppObjectInteger(entry);
+
+    return true;
+}
+
+bool AspAppPointerObjectValues
+    (const AspDataEntry *entry, int32_t *appType, void **valuePointer)
+{
+    if (!AspIsAppPointerObject(entry))
+        return false;
+
+    if (appType != 0)
+        *appType = AspDataGetAppObjectType(entry);
+    if (valuePointer != 0)
+        *valuePointer = AspDataGetAppObjectValuePointer(entry);
+
+    return true;
+}
+
 AspDataEntry *AspNewNone(AspEngine *engine)
 {
     return NewObject(engine, DataType_None);
@@ -1019,6 +1077,30 @@ AspDataEntry *AspNewIterator(AspEngine *engine, AspDataEntry *iterable)
 {
     AspIteratorResult result = AspIteratorCreate(engine, iterable);
     return result.result != AspRunResult_OK ? 0 : result.value;
+}
+
+AspDataEntry *AspNewAppIntegerObject
+    (AspEngine *engine, int32_t appType, int32_t value)
+{
+    AspDataEntry *entry = NewObject(engine, DataType_AppIntegerObject);
+    if (entry != 0)
+    {
+        AspDataSetAppObjectType(entry, appType);
+        AspDataSetAppObjectInteger(entry, value);
+    }
+    return entry;
+}
+
+AspDataEntry *AspNewAppPointerObject
+    (AspEngine *engine, int32_t appType, void *valuePointer)
+{
+    AspDataEntry *entry = NewObject(engine, DataType_AppPointerObject);
+    if (entry != 0)
+    {
+        AspDataSetAppObjectType(entry, appType);
+        AspDataSetAppObjectValuePointer(entry, valuePointer);
+    }
+    return entry;
 }
 
 AspDataEntry *AspNewType(AspEngine *engine, const AspDataEntry *object)

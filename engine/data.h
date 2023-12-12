@@ -35,6 +35,8 @@ typedef enum
     DataType_Iterator = 0x0E,
     DataType_Function = 0x0F,
     DataType_Module = 0x10,
+    DataType_AppIntegerObject = 0x1A,
+    DataType_AppPointerObject = 0x1B,
     DataType_Type = 0x1F,
     DataType_ObjectMask = 0x3F,
 
@@ -71,7 +73,15 @@ typedef struct AspDataEntry
         };
         struct
         {
-            uint32_t u0, u1, u2;
+            union
+            {
+                struct
+                {
+                    uint32_t u0, u1;
+                };
+                void *p;
+            };
+            uint32_t u2;
         };
         int32_t i;
         double d;
@@ -96,6 +106,10 @@ typedef struct AspDataEntry
     (AspBitSetField(&(eptr)->u2, 0, (AspWordBitSize), (value)))
 #define AspDataGetWord2(eptr) \
     (AspBitGetField((eptr)->u2, 0, (AspWordBitSize)))
+#define AspDataSetSignedWord2(eptr, value) \
+    (AspBitSetSignedField(&(eptr)->u2, 0, (AspWordBitSize), (value)))
+#define AspDataGetSignedWord2(eptr) \
+    (AspBitGetSignedField((eptr)->u2, 0, (AspWordBitSize)))
 void AspDataSetWord3(AspDataEntry *, uint32_t value);
 uint32_t AspDataGetWord3(const AspDataEntry *);
 #define AspDataSetBit0(eptr, value) \
@@ -247,6 +261,20 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetBit0((eptr), (unsigned)(value)))
 #define AspDataGetModuleIsLoaded(eptr) \
     ((bool)(AspDataGetBit0((eptr))))
+
+/* AppIntegerObject and AppPointerObject entry field access. */
+#define AspDataSetAppObjectType(eptr, value) \
+    (AspDataSetSignedWord2((eptr), (value)))
+#define AspDataGetAppObjectType(eptr) \
+    (AspDataGetSignedWord2((eptr)))
+#define AspDataSetAppObjectInteger(eptr, value) \
+    ((eptr)->i = (value))
+#define AspDataGetAppObjectInteger(eptr) \
+    ((eptr)->i)
+#define AspDataSetAppObjectValuePointer(eptr, value) \
+    ((eptr)->p = (value))
+#define AspDataGetAppObjectValuePointer(eptr) \
+    ((eptr)->p)
 
 /* Type entry field access. */
 #define AspDataSetTypeValue(eptr, value) \

@@ -127,6 +127,9 @@ ASP_API bool AspIsList(const AspDataEntry *);
 ASP_API bool AspIsSequence(const AspDataEntry *);
 ASP_API bool AspIsSet(const AspDataEntry *);
 ASP_API bool AspIsDictionary(const AspDataEntry *);
+ASP_API bool AspIsAppIntegerObject(const AspDataEntry *);
+ASP_API bool AspIsAppPointerObject(const AspDataEntry *);
+ASP_API bool AspIsAppObject(const AspDataEntry *);
 ASP_API bool AspIsType(const AspDataEntry *);
 ASP_API bool AspIsTrue(AspEngine *, const AspDataEntry *);
 ASP_API bool AspIntegerValue(const AspDataEntry *, int32_t *);
@@ -147,6 +150,11 @@ ASP_API char AspStringElement
 ASP_API AspDataEntry *AspFind
     (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
 ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
+ASP_API bool AspAppObjectTypeValue(const AspDataEntry *, int32_t *);
+ASP_API bool AspAppIntegerObjectValues
+    (const AspDataEntry *, int32_t *appType, int32_t *value);
+ASP_API bool AspAppPointerObjectValues
+    (const AspDataEntry *, int32_t *appType, void **valuePointer);
 ASP_API AspDataEntry *AspNewNone(AspEngine *);
 ASP_API AspDataEntry *AspNewEllipsis(AspEngine *);
 ASP_API AspDataEntry *AspNewBoolean(AspEngine *, bool);
@@ -163,6 +171,10 @@ ASP_API AspDataEntry *AspNewList(AspEngine *);
 ASP_API AspDataEntry *AspNewSet(AspEngine *);
 ASP_API AspDataEntry *AspNewDictionary(AspEngine *);
 ASP_API AspDataEntry *AspNewIterator(AspEngine *, AspDataEntry *iterable);
+ASP_API AspDataEntry *AspNewAppIntegerObject
+    (AspEngine *, int32_t appType, int32_t value);
+ASP_API AspDataEntry *AspNewAppPointerObject
+    (AspEngine *, int32_t appType, void *valuePointer);
 ASP_API AspDataEntry *AspNewType(AspEngine *, const AspDataEntry *);
 ASP_API bool AspTupleAppend
     (AspEngine *, AspDataEntry *tuple, AspDataEntry *value, bool take);
