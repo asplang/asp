@@ -150,11 +150,12 @@ ASP_API char AspStringElement
 ASP_API AspDataEntry *AspFind
     (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
 ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
-ASP_API bool AspAppObjectTypeValue(const AspDataEntry *, int32_t *);
+ASP_API bool AspAppObjectTypeValue
+    (AspEngine *, const AspDataEntry *, int16_t *);
 ASP_API bool AspAppIntegerObjectValues
-    (const AspDataEntry *, int32_t *appType, int32_t *value);
+    (AspEngine *, const AspDataEntry *, int16_t *appType, int32_t *value);
 ASP_API bool AspAppPointerObjectValues
-    (const AspDataEntry *, int32_t *appType, void **valuePointer);
+    (AspEngine *, const AspDataEntry *, int16_t *appType, void **value);
 ASP_API AspDataEntry *AspNewNone(AspEngine *);
 ASP_API AspDataEntry *AspNewEllipsis(AspEngine *);
 ASP_API AspDataEntry *AspNewBoolean(AspEngine *, bool);
@@ -172,9 +173,11 @@ ASP_API AspDataEntry *AspNewSet(AspEngine *);
 ASP_API AspDataEntry *AspNewDictionary(AspEngine *);
 ASP_API AspDataEntry *AspNewIterator(AspEngine *, AspDataEntry *iterable);
 ASP_API AspDataEntry *AspNewAppIntegerObject
-    (AspEngine *, int32_t appType, int32_t value);
+    (AspEngine *, int16_t appType, int32_t value,
+     void (*destructor)(AspEngine *, int16_t appType, int32_t value));
 ASP_API AspDataEntry *AspNewAppPointerObject
-    (AspEngine *, int32_t appType, void *valuePointer);
+    (AspEngine *, int16_t appType, void *value,
+     void (*destructor)(AspEngine *, int16_t appType, void *value));
 ASP_API AspDataEntry *AspNewType(AspEngine *, const AspDataEntry *);
 ASP_API bool AspTupleAppend
     (AspEngine *, AspDataEntry *tuple, AspDataEntry *value, bool take);

@@ -681,7 +681,10 @@ static AspDataEntry *ToString
                 AspDataEntry *iterable = AspValueEntry
                     (engine, iterableIndex);
                 strcpy(buffer, "<iter:");
-                strcat(buffer, TypeString(AspDataGetType(iterable)));
+                if (iterable == 0)
+                    strcat(buffer, "?");
+                else
+                    strcat(buffer, TypeString(AspDataGetType(iterable)));
                 uint32_t memberIndex =
                     AspDataGetIteratorMemberIndex(entry);
                 if (memberIndex == 0)
@@ -717,6 +720,39 @@ static AspDataEntry *ToString
                     (buffer, sizeof buffer, "<mod:@%7.7X>",
                      AspDataGetModuleCodeAddress(entry));
                 break;
+
+            case DataType_AppIntegerObject:
+            case DataType_AppPointerObject:
+            {
+                const AspDataEntry *infoEntry = AspAppObjectInfoEntry
+                    (engine, entry);
+                snprintf
+                    (buffer, sizeof buffer, "<app-%s:%d:",
+                     type == DataType_AppIntegerObject ? "int" : "ptr",
+                     AspDataGetAppObjectType(infoEntry));
+                if (infoEntry == 0)
+                    strcat(buffer, "?");
+                else
+                {
+                    size_t
+                        len = strlen(buffer),
+                        remainingLen = sizeof buffer - len;
+                    char *bufferEnd = buffer + len;
+                    if (type == DataType_AppIntegerObject)
+                    {
+                        snprintf
+                            (bufferEnd, remainingLen, "%d>",
+                             AspDataGetAppIntegerObjectValue(infoEntry));
+                    }
+                    else
+                    {
+                        snprintf
+                            (bufferEnd, remainingLen, "%p>",
+                             AspDataGetAppPointerObjectValue(infoEntry));
+                    }
+                }
+                break;
+            }
 
             case DataType_Type:
             {
@@ -791,6 +827,10 @@ static const char *TypeString(DataType type)
             return "func";
         case DataType_Module:
             return "mod";
+        case DataType_AppIntegerObject:
+            return "app-int";
+        case DataType_AppPointerObject:
+            return "app-ptr";
         case DataType_Type:
             return "type";
     }
@@ -886,41 +926,56 @@ AspDataEntry *AspNext(AspEngine *engine, AspDataEntry *iterator)
     return result.value;
 }
 
-bool AspAppObjectTypeValue(const AspDataEntry *entry, int32_t *appType)
+bool AspAppObjectTypeValue
+    (AspEngine *engine, const AspDataEntry *entry, int16_t *appType)
 {
     if (!AspIsAppObject(entry))
         return false;
 
     if (appType != 0)
-        *appType = AspDataGetAppObjectType(entry);
+    {
+        const AspDataEntry *infoEntry = AspAppObjectInfoEntry
+            (engine, (AspDataEntry *)entry);
+        *appType = AspDataGetAppObjectType(infoEntry);
+    }
 
     return true;
 }
 
 bool AspAppIntegerObjectValues
-    (const AspDataEntry *entry, int32_t *appType, int32_t *value)
+    (AspEngine *engine, const AspDataEntry *entry,
+     int16_t *appType, int32_t *value)
 {
     if (!AspIsAppIntegerObject(entry))
         return false;
 
     if (appType != 0)
-        *appType = AspDataGetAppObjectType(entry);
+        AspAppObjectTypeValue(engine, entry, appType);
     if (value != 0)
-        *value = AspDataGetAppObjectInteger(entry);
+    {
+        const AspDataEntry *infoEntry = AspAppObjectInfoEntry
+            (engine, (AspDataEntry *)entry);
+        *value = AspDataGetAppIntegerObjectValue(infoEntry);
+    }
 
     return true;
 }
 
 bool AspAppPointerObjectValues
-    (const AspDataEntry *entry, int32_t *appType, void **valuePointer)
+    (AspEngine *engine, const AspDataEntry *entry,
+     int16_t *appType, void **value)
 {
     if (!AspIsAppPointerObject(entry))
         return false;
 
     if (appType != 0)
-        *appType = AspDataGetAppObjectType(entry);
-    if (valuePointer != 0)
-        *valuePointer = AspDataGetAppObjectValuePointer(entry);
+        AspAppObjectTypeValue(engine, entry, appType);
+    if (value != 0)
+    {
+        const AspDataEntry *infoEntry = AspAppObjectInfoEntry
+            (engine, (AspDataEntry *)entry);
+        *value = AspDataGetAppPointerObjectValue(infoEntry);
+    }
 
     return true;
 }
@@ -1080,26 +1135,59 @@ AspDataEntry *AspNewIterator(AspEngine *engine, AspDataEntry *iterable)
 }
 
 AspDataEntry *AspNewAppIntegerObject
-    (AspEngine *engine, int32_t appType, int32_t value)
+    (AspEngine *engine, int16_t appType, int32_t value,
+     void (*destructor)(AspEngine *, int16_t, int32_t))
 {
     AspDataEntry *entry = NewObject(engine, DataType_AppIntegerObject);
     if (entry != 0)
     {
-        AspDataSetAppObjectType(entry, appType);
-        AspDataSetAppObjectInteger(entry, value);
+        AspDataEntry *infoEntry = entry;
+
+        #ifdef ASP_WIDE_PTR
+        infoEntry = NewObject(engine, DataType_AppIntegerObjectInfo);
+        if (infoEntry == 0)
+        {
+            AspUnref(engine, entry);
+            return 0;
+        }
+        AspDataSetAppObjectInfoIndex
+            (entry, AspIndex(engine, infoEntry));
+        #endif
+
+        AspDataSetAppObjectType(infoEntry, appType);
+        AspDataSetAppIntegerObjectValue(infoEntry, value);
+        AspDataSetAppIntegerObjectDestructor(entry, destructor);
     }
+
     return entry;
 }
 
 AspDataEntry *AspNewAppPointerObject
-    (AspEngine *engine, int32_t appType, void *valuePointer)
+    (AspEngine *engine, int16_t appType, void *value,
+     void (*destructor)(AspEngine *, int16_t, void *))
 {
     AspDataEntry *entry = NewObject(engine, DataType_AppPointerObject);
     if (entry != 0)
     {
-        AspDataSetAppObjectType(entry, appType);
-        AspDataSetAppObjectValuePointer(entry, valuePointer);
+        AspDataEntry *infoEntry = entry;
+
+        #ifdef ASP_WIDE_PTR
+        infoEntry = NewObject
+            (engine, DataType_AppPointerObjectInfo);
+        if (infoEntry == 0)
+        {
+            AspUnref(engine, entry);
+            return 0;
+        }
+        AspDataSetAppObjectInfoIndex
+            (entry, AspIndex(engine, infoEntry));
+        #endif
+
+        AspDataSetAppObjectType(infoEntry, appType);
+        AspDataSetAppPointerObjectValue(infoEntry, value);
+        AspDataSetAppPointerObjectDestructor(entry, destructor);
     }
+
     return entry;
 }
 

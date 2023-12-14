@@ -56,8 +56,19 @@ typedef enum
     DataType_ParameterList = 0x81,
     DataType_Argument = 0x82,
     DataType_ArgumentList = 0x83,
+    DataType_AppIntegerObjectInfo = 0xAA,
+    DataType_AppPointerObjectInfo = 0xAB,
     DataType_Free = 0xFF,
 } DataType;
+
+/* Determine whether pointers are wider than 32 bits. */
+#if defined UINTPTR_MAX && defined UINT32_MAX && UINTPTR_MAX <= UINT32_MAX
+#ifdef ASP_WIDE_PTR
+#undef ASP_WIDE_PTR
+#endif
+#else
+#define ASP_WIDE_PTR
+#endif
 
 /* Data entry. */
 typedef struct AspDataEntry
@@ -80,8 +91,15 @@ typedef struct AspDataEntry
                     uint32_t u0, u1;
                 };
                 void *p;
+                void (*fi)(AspEngine *, int16_t, int32_t);
+                void (*fp)(AspEngine *, int16_t, void *);
             };
             uint32_t u2;
+            union
+            {
+                uint16_t h6;
+                int16_t ih6;
+            };
         };
         int32_t i;
         double d;
@@ -102,6 +120,10 @@ typedef struct AspDataEntry
     (AspBitSetField(&(eptr)->u1, 0, (AspWordBitSize), (value)))
 #define AspDataGetWord1(eptr) \
     (AspBitGetField((eptr)->u1, 0, (AspWordBitSize)))
+#define AspDataSetSignedWord1(eptr, value) \
+    (AspBitSetSignedField(&(eptr)->u1, 0, (AspWordBitSize), (value)))
+#define AspDataGetSignedWord1(eptr) \
+    (AspBitGetSignedField((eptr)->u1, 0, (AspWordBitSize)))
 #define AspDataSetWord2(eptr, value) \
     (AspBitSetField(&(eptr)->u2, 0, (AspWordBitSize), (value)))
 #define AspDataGetWord2(eptr) \
@@ -264,17 +286,36 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 
 /* AppIntegerObject and AppPointerObject entry field access. */
 #define AspDataSetAppObjectType(eptr, value) \
-    (AspDataSetSignedWord2((eptr), (value)))
+    ((eptr)->ih6 = (value))
 #define AspDataGetAppObjectType(eptr) \
-    (AspDataGetSignedWord2((eptr)))
-#define AspDataSetAppObjectInteger(eptr, value) \
-    ((eptr)->i = (value))
-#define AspDataGetAppObjectInteger(eptr) \
-    ((eptr)->i)
-#define AspDataSetAppObjectValuePointer(eptr, value) \
+    ((eptr)->ih6)
+#define AspDataSetAppIntegerObjectValue(eptr, value) \
+    (AspDataSetSignedWord1((eptr), (value)))
+#define AspDataGetAppIntegerObjectValue(eptr) \
+    (AspDataGetSignedWord1((eptr)))
+#ifndef ASP_WIDE_PTR
+#define AspDataSetAppPointerObjectValue(eptr, value) \
+    (*(void **)&(eptr)->u1 = (value))
+#define AspDataGetAppPointerObjectValue(eptr) \
+    ((void *)(eptr)->u1)
+#else
+#define AspDataSetAppObjectInfoIndex(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetAppObjectInfoIndex(eptr) \
+    (AspDataGetWord3((eptr)))
+#define AspDataSetAppPointerObjectValue(eptr, value) \
     ((eptr)->p = (value))
-#define AspDataGetAppObjectValuePointer(eptr) \
+#define AspDataGetAppPointerObjectValue(eptr) \
     ((eptr)->p)
+#endif
+#define AspDataSetAppIntegerObjectDestructor(eptr, value) \
+    ((eptr)->fi = (value))
+#define AspDataGetAppIntegerObjectDestructor(eptr) \
+    ((eptr)->fi)
+#define AspDataSetAppPointerObjectDestructor(eptr, value) \
+    ((eptr)->fp = (value))
+#define AspDataGetAppPointerObjectDestructor(eptr) \
+    ((eptr)->fp)
 
 /* Type entry field access. */
 #define AspDataSetTypeValue(eptr, value) \
@@ -473,6 +514,7 @@ AspDataEntry *AspAllocEntry(AspEngine *, DataType);
 AspDataEntry *AspEntry(AspEngine *, uint32_t index);
 AspDataEntry *AspValueEntry(AspEngine *, uint32_t index);
 uint32_t AspIndex(const AspEngine *, const AspDataEntry *);
+AspDataEntry *AspAppObjectInfoEntry(AspEngine *, AspDataEntry *);
 
 #ifdef __cplusplus
 }

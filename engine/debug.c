@@ -118,6 +118,8 @@ static TypeName gTypeNames[] =
     {DataType_Iterator, "iter"},
     {DataType_Function, "func"},
     {DataType_Module, "mod"},
+    {DataType_AppIntegerObject, "app-int"},
+    {DataType_AppPointerObject, "app-ptr"},
     {DataType_Type, "type"},
 
     /* Support types. */
@@ -136,6 +138,8 @@ static TypeName gTypeNames[] =
     {DataType_ParameterList, "parms"},
     {DataType_Argument, "arg"},
     {DataType_ArgumentList, "args"},
+    {DataType_AppIntegerObjectInfo, "app-ii"},
+    {DataType_AppPointerObjectInfo, "app-pi"},
     {DataType_Free, "free"},
 };
 
@@ -215,10 +219,28 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetFunctionParametersIndex(entry));
             break;
         case DataType_Module:
-            fprintf(fp, " code=0x%7.7X, ns=0x%7.7X ld=%d",
+            fprintf(fp, " code=0x%7.7X ns=0x%7.7X ld=%d",
                 AspDataGetModuleCodeAddress(entry),
                 AspDataGetModuleNamespaceIndex(entry),
                 AspDataGetModuleIsLoaded(entry));
+            break;
+        case DataType_AppIntegerObject:
+        case DataType_AppPointerObject:
+            #ifdef ASP_WIDE_PTR
+            fprintf(fp, " info=0x%7.7X",
+                AspDataGetAppObjectInfoIndex(entry));
+            #else
+            fprintf(fp, " type=%d",
+                AspDataGetAppObjectType(entry));
+            if (t == DataType_AppIntegerObject)
+                fprintf(fp, " val=%d",
+                    AspDataGetAppIntegerObjectValue(entry));
+            else
+                fprintf(fp, " ptr=%d",
+                    AspDataGetAppPointerObjectValue(entry));
+            #endif
+            fprintf(fp, " dtor=%p",
+                AspDataGetAppIntegerObjectDestructor(entry));
             break;
         case DataType_Type:
             fprintf(fp, " type=0x%2.2X",
@@ -321,6 +343,16 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fprintf(fp, " grp");
             else
                 fprintf(fp, " pos");
+            break;
+        case DataType_AppIntegerObjectInfo:
+            fprintf(fp, " type=%d val=%d",
+                AspDataGetAppObjectType(entry),
+                AspDataGetAppIntegerObjectValue(entry));
+            break;
+        case DataType_AppPointerObjectInfo:
+            fprintf(fp, " type=%d ptr=%p",
+                AspDataGetAppObjectType(entry),
+                AspDataGetAppPointerObjectValue(entry));
             break;
         case DataType_Free:
             fprintf(fp, " next=0x%7.7X", AspDataGetFreeNext(entry));
