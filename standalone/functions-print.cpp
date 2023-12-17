@@ -53,8 +53,11 @@ static AspRunResult asp_print1
     char buffer[16];
     for (size_t index = 0; index < size; index += sizeof buffer)
     {
+        size_t bufferLen = sizeof buffer;
+        if (index + sizeof buffer > size)
+            bufferLen = size - index;
         AspStringValue(engine, valueString, 0, buffer, index, sizeof buffer);
-        printf("%.*s", (int)(sizeof buffer), buffer);
+        printf("%.*s", (int)bufferLen, buffer);
     }
 
     AspUnref(engine, valueString);

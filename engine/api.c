@@ -67,8 +67,8 @@ bool AspIsIntegral(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_Boolean ||
-        type == DataType_Integer;
+        (type == DataType_Boolean ||
+         type == DataType_Integer);
 }
 
 bool AspIsNumber(const AspDataEntry *entry)
@@ -76,8 +76,8 @@ bool AspIsNumber(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_Integer ||
-        type == DataType_Float;
+        (type == DataType_Integer ||
+         type == DataType_Float);
 }
 
 bool AspIsNumeric(const AspDataEntry *entry)
@@ -85,9 +85,9 @@ bool AspIsNumeric(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_Boolean ||
-        type == DataType_Integer ||
-        type == DataType_Float;
+        (type == DataType_Boolean ||
+         type == DataType_Integer ||
+         type == DataType_Float);
 }
 
 bool AspIsRange(const AspDataEntry *entry)
@@ -116,8 +116,8 @@ bool AspIsSequence(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_Tuple ||
-        type == DataType_List;
+        (type == DataType_Tuple ||
+         type == DataType_List);
 }
 
 bool AspIsSet(const AspDataEntry *entry)
@@ -145,8 +145,8 @@ bool AspIsAppObject(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_AppIntegerObject ||
-        type == DataType_AppIntegerObject;
+        (type == DataType_AppIntegerObject ||
+         type == DataType_AppPointerObject);
 }
 
 bool AspIsType(const AspDataEntry *entry)
