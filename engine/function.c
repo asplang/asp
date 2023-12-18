@@ -69,6 +69,8 @@ AspRunResult AspLoadArguments
                 if (insertResult.result != AspRunResult_OK)
                     return insertResult.result;
                 AspUnref(engine, group);
+                if (engine->runResult != AspRunResult_OK)
+                    return engine->runResult;
             }
         }
 
@@ -179,6 +181,8 @@ AspRunResult AspLoadArguments
                 if (insertResult.result != AspRunResult_OK)
                     return insertResult.result;
                 AspUnref(engine, group);
+                if (engine->runResult != AspRunResult_OK)
+                    return engine->runResult;
             }
         }
         else

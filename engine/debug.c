@@ -253,11 +253,11 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         case DataType_StringFragment:
         {
             uint8_t count = AspDataGetStringFragmentSize(entry);
-            const char *s = AspDataGetStringFragmentData(entry);
+            const uint8_t *s = AspDataGetStringFragmentData(entry);
             fprintf(fp, " c=%d s='", count);
             for (unsigned i = 0; i < count; i++)
             {
-                char c = s[i];
+                uint8_t c = s[i];
                 if (c == '\'')
                     fputc('\\', fp);
                 if (isprint(c))

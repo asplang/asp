@@ -970,6 +970,11 @@ static AspOperationResult PerformFormatBinaryOperation
                         }
 
                         AspUnref(engine, str);
+                        if (engine->runResult != AspRunResult_OK)
+                        {
+                            result.result = engine->runResult;
+                            return result;
+                        }
                     }
                     else
                     {

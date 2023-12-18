@@ -143,6 +143,8 @@ AspRunResult AspIteratorNext
             AspGetRange(engine, iterable, 0, &endValue, &stepValue);
             int32_t newValue = AspDataGetInteger(member) + stepValue;
             AspUnref(engine, member);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
             bool atEnd = AspIsValueAtRangeEnd
                 (newValue, endValue, stepValue);
             if (atEnd)
