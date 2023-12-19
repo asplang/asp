@@ -477,7 +477,7 @@ static int CompareFloats
     if (compareType != AspCompareType_Key || !localNanDetected)
     {
         /* Update whether a NaN has been detected, if applicable. */
-        *nanDetected = *nanDetected && localNanDetected;
+        *nanDetected = *nanDetected || localNanDetected;
 
         return
             leftValue == rightValue ? 0 :
