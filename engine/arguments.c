@@ -256,6 +256,13 @@ static AspSequenceResult AppendArgument
     AspSequenceResult appendResult = AspSequenceAppend
         (engine, arguments, argument);
     if (appendResult.result == AspRunResult_OK)
+    {
         AspUnref(engine, argument);
+        if (engine->runResult != AspRunResult_OK)
+        {
+            result.result = engine->runResult;
+            return result;
+        }
+    }
     return appendResult;
 }

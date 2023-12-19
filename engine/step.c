@@ -235,7 +235,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
             for (uint32_t i = 0; i < size; i++)
             {
-                if (engine->pc + i > engine->code + engine->codeEndIndex)
+                if (engine->pc + i >= engine->code + engine->codeEndIndex)
                 {
                     #ifdef ASP_DEBUG
                     puts("");
@@ -475,6 +475,8 @@ static AspRunResult Step(AspEngine *engine)
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, operationResult.value);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
             AspUnref(engine, operand);
 
             break;
@@ -536,7 +538,11 @@ static AspRunResult Step(AspEngine *engine)
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, operationResult.value);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
             AspUnref(engine, left);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
             AspUnref(engine, right);
 
             break;
@@ -860,6 +866,8 @@ static AspRunResult Step(AspEngine *engine)
             }
 
             AspUnref(engine, index);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
             AspUnref(engine, container);
 
             break;
@@ -1253,6 +1261,8 @@ static AspRunResult Step(AspEngine *engine)
                 if (loadArgumentsResult != AspRunResult_OK)
                     return loadArgumentsResult;
                 AspUnref(engine, arguments);
+                if (engine->runResult != AspRunResult_OK)
+                    return engine->runResult;
             }
 
             /* Call the function. */
@@ -1293,6 +1303,8 @@ static AspRunResult Step(AspEngine *engine)
                 {
                     /* We're now done with the local namespace. */
                     AspUnref(engine, engine->appFunctionNamespace);
+                    if (engine->runResult != AspRunResult_OK)
+                        return engine->runResult;
                     engine->appFunctionSymbol = 0;
                     engine->appFunctionNamespace = 0;
 
@@ -1310,6 +1322,8 @@ static AspRunResult Step(AspEngine *engine)
                     if (stackEntry == 0)
                         return AspRunResult_OutOfDataMemory;
                     AspUnref(engine, returnValue);
+                    if (engine->runResult != AspRunResult_OK)
+                        return engine->runResult;
                 }
             }
             else
@@ -1362,6 +1376,10 @@ static AspRunResult Step(AspEngine *engine)
             puts("RET");
             #endif
 
+            /* Ensure we're in the context of a function. */
+            if (engine->localNamespace == engine->globalNamespace)
+                return AspRunResult_InvalidContext;
+
             /* Access the return value on top of the stack. */
             AspDataEntry *returnValue = AspTopValue(engine);
             if (returnValue == 0)
@@ -1373,6 +1391,8 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Discard the function's local namespace. */
             AspUnref(engine, engine->localNamespace);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
 
             /* Access the frame on top of the stack. */
             AspDataEntry *frame = AspTopValue(engine);
@@ -1398,11 +1418,15 @@ static AspRunResult Step(AspEngine *engine)
             /* Pop the frame off the stack. */
             AspPop(engine);
             AspUnref(engine, frame);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
 
             /* Push the return value onto the stack. There is no need to check
                for success because we just popped things off the stack. */
             AspPush(engine, returnValue);
             AspUnref(engine, returnValue);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
 
             /* Return control back to the caller. */
             engine->pc = engine->code + returnAddress;
@@ -1516,6 +1540,8 @@ static AspRunResult Step(AspEngine *engine)
             /* Pop the frame off the stack. */
             AspPop(engine);
             AspUnref(engine, frame);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
 
             /* Return control to the caller. */
             engine->pc = engine->code + returnAddress;
@@ -1803,6 +1829,8 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_BeyondEndOfCode;
             AspPop(engine);
             AspUnref(engine, codeAddressEntry);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
 
             /* Access parameter list on top of the stack. */
             AspDataEntry *parameters = AspTopValue(engine);
@@ -2098,6 +2126,8 @@ static AspRunResult Step(AspEngine *engine)
                         }
 
                         AspUnref(engine, item);
+                        if (engine->runResult != AspRunResult_OK)
+                            return engine->runResult;
 
                         break;
                     }
@@ -2161,13 +2191,19 @@ static AspRunResult Step(AspEngine *engine)
                     if (insertResult.result != AspRunResult_OK)
                         return insertResult.result;
                     AspUnref(engine, item);
+                    if (engine->runResult != AspRunResult_OK)
+                        return engine->runResult;
 
                     break;
                 }
             }
 
             if (AspIsObject(item))
+            {
                 AspUnref(engine, item);
+                if (engine->runResult != AspRunResult_OK)
+                    return engine->runResult;
+            }
 
             if (opCode == OpCode_INSP)
                 AspPop(engine);
@@ -2255,6 +2291,8 @@ static AspRunResult Step(AspEngine *engine)
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
                             AspUnref(engine, element);
+                            if (engine->runResult != AspRunResult_OK)
+                                return engine->runResult;
 
                             break;
                         }
@@ -2330,6 +2368,8 @@ static AspRunResult Step(AspEngine *engine)
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
                             AspUnref(engine, result);
+                            if (engine->runResult != AspRunResult_OK)
+                                return engine->runResult;
 
                             break;
                         }
@@ -2426,6 +2466,8 @@ static AspRunResult Step(AspEngine *engine)
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
                             AspUnref(engine, result);
+                            if (engine->runResult != AspRunResult_OK)
+                                return engine->runResult;
 
                             break;
                         }
@@ -2479,6 +2521,8 @@ static AspRunResult Step(AspEngine *engine)
             }
 
             AspUnref(engine, index);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
             AspUnref(engine, container);
 
             break;
@@ -2591,10 +2635,10 @@ static AspRunResult LoadUnsignedOperand
     *operand = 0;
     for (i = 0; i < operandSize; i++)
     {
+        if (engine->pc >= engine->code + engine->codeEndIndex)
+            return AspRunResult_BeyondEndOfCode;
         *operand <<= 8;
         *operand |= *engine->pc++;
-        if (engine->pc > engine->code + engine->codeEndIndex)
-            return AspRunResult_BeyondEndOfCode;
     }
     return AspRunResult_OK;
 }
@@ -2602,6 +2646,8 @@ static AspRunResult LoadUnsignedOperand
 static AspRunResult LoadSignedOperand
     (AspEngine *engine, unsigned operandSize, int32_t *operand)
 {
+    if (engine->pc >= engine->code + engine->codeEndIndex)
+        return AspRunResult_BeyondEndOfCode;
     bool negative = operandSize != 0 && (*engine->pc & 0x80) != 0;
     uint32_t unsignedOperand = 0;
     AspRunResult loadResult = LoadUnsignedOperand
@@ -2629,9 +2675,9 @@ static AspRunResult LoadFloatOperand
     uint8_t data[8];
     for (unsigned i = 0; i < 8; i++)
     {
-        data[be ? i : 7 - i] = *engine->pc++;
-        if (engine->pc > engine->code + engine->codeEndIndex)
+        if (engine->pc >= engine->code + engine->codeEndIndex)
             return AspRunResult_BeyondEndOfCode;
+        data[be ? i : 7 - i] = *engine->pc++;
     }
 
     /* Convert IEEE 754 binary64 to the native format. */

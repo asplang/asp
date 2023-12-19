@@ -478,10 +478,6 @@ static AspOperationResult PerformRepetitionBinaryOperation
 
         case OpCode_MUL:
         {
-            result.value = AspAllocEntry(engine, sequenceType);
-            if (result.value == 0)
-                break;
-
             int32_t repeatCountValue = AspDataGetInteger(repeatCount);
             if (repeatCountValue < 0)
             {
@@ -489,25 +485,45 @@ static AspOperationResult PerformRepetitionBinaryOperation
                 break;
             }
 
-            AspSequenceResult appendResult = {AspRunResult_OK, 0, 0};
-            for (int32_t i = 0; i < repeatCountValue; i++)
+            /* Reuse the sequence argument as the return value if possible. */
+            if ((AspCount(sequence) == 0 || repeatCountValue == 1) &&
+                (sequenceType == DataType_String ||
+                 sequenceType == DataType_Tuple))
             {
-                AspSequenceResult nextResult = AspSequenceNext
-                    (engine, sequence, 0);
-                for (; nextResult.element != 0;
-                     nextResult = AspSequenceNext
-                        (engine, sequence, nextResult.element))
-                {
-                    AspDataEntry *value = nextResult.value;
+                AspRef(engine, sequence);
+                result.value = sequence;
+                break;
+            }
 
-                    if (sequenceType == DataType_String)
-                        appendResult.result = AspStringAppendBuffer
-                            (engine, result.value,
-                             AspDataGetStringFragmentData(value),
-                             AspDataGetStringFragmentSize(value));
-                    else
-                        appendResult = AspSequenceAppend
-                            (engine, result.value, value);
+            result.value = AspAllocEntry(engine, sequenceType);
+            if (result.value == 0)
+                break;
+
+            AspSequenceResult appendResult = {AspRunResult_OK, 0, 0};
+            if (AspCount(sequence) != 0)
+            {
+                for (int32_t i = 0; i < repeatCountValue; i++)
+                {
+                    for (AspSequenceResult nextResult = AspSequenceNext
+                            (engine, sequence, 0);
+                         nextResult.element != 0;
+                         nextResult = AspSequenceNext
+                            (engine, sequence, nextResult.element))
+                    {
+                        AspDataEntry *value = nextResult.value;
+
+                        if (sequenceType == DataType_String)
+                            appendResult.result = AspStringAppendBuffer
+                                (engine, result.value,
+                                 AspDataGetStringFragmentData(value),
+                                 AspDataGetStringFragmentSize(value));
+                        else
+                            appendResult = AspSequenceAppend
+                                (engine, result.value, value);
+                        if (appendResult.result != AspRunResult_OK)
+                            break;
+                    }
+
                     if (appendResult.result != AspRunResult_OK)
                     {
                         result.result = appendResult.result;
@@ -771,6 +787,11 @@ static AspOperationResult PerformFormatBinaryOperation
             else
             {
                 /* Process format character. */
+                if (c == '\0')
+                {
+                    result.result = AspRunResult_InvalidFormatString;
+                    return result;
+                }
                 if (c == '%')
                 {
                     if (fp != formatBuffer + 1)
@@ -790,6 +811,14 @@ static AspOperationResult PerformFormatBinaryOperation
                 }
                 else
                 {
+                    /* Disallow the n and p format specifiers and variable
+                       width specifiers within the format. */
+                    if (strchr("np*", c) != 0)
+                    {
+                        result.result = AspRunResult_InvalidFormatString;
+                        return result;
+                    }
+
                     /* Continue to build format string for next value. */
                     if (fp >= formatBuffer + sizeof formatBuffer - 1)
                     {
@@ -798,25 +827,18 @@ static AspOperationResult PerformFormatBinaryOperation
                     }
                     *fp++ = c;
 
-                    /* Disallow variable width specifiers in the format. */
-                    if (c == '*')
-                    {
-                        result.result = AspRunResult_InvalidFormatString;
-                        return result;
-                    }
-
                     /* Check for a conversion type character, which ends the
                        format string. */
                     bool
                         isInteger = false, isFloat = false,
                         isCharacter = false, isString = false;
-                    if (c != 0 && strchr("diouxX", c) != 0)
+                    if (strchr("diouxX", c) != 0)
                         isInteger = true;
-                    else if (c != 0 && strchr("eEfFgG", c) != 0)
+                    else if (strchr("eEfFgG", c) != 0)
                         isFloat = true;
                     else if (c == 'c')
                         isCharacter = true;
-                    else if (c != 0 && strchr("rsa", c) != 0)
+                    else if (strchr("rsa", c) != 0)
                         isString = true;
                     else
                         continue;
@@ -947,6 +969,11 @@ static AspOperationResult PerformFormatBinaryOperation
                         }
 
                         AspUnref(engine, str);
+                        if (engine->runResult != AspRunResult_OK)
+                        {
+                            result.result = engine->runResult;
+                            return result;
+                        }
                     }
                     else
                     {
@@ -1089,7 +1116,7 @@ static AspOperationResult PerformEqualityOperation
     int comparison = 0;
     result.result = AspCompare
         (engine, left, right, AspCompareType_Equality,
-         &comparison);
+         &comparison, 0);
     if (result.result != AspRunResult_OK)
         return result;
 
@@ -1126,9 +1153,10 @@ static AspOperationResult PerformRelationalOperation
     AspOperationResult result = {AspRunResult_OK, 0};
 
     int comparison = 0;
+    bool nanDetected = false;
     result.result = AspCompare
         (engine, left, right, AspCompareType_Relational,
-         &comparison);
+         &comparison, &nanDetected);
     if (result.result != AspRunResult_OK)
         return result;
 
@@ -1140,19 +1168,19 @@ static AspOperationResult PerformRelationalOperation
             break;
 
         case OpCode_LT:
-            resultValue = comparison < 0;
+            resultValue = !nanDetected && comparison < 0;
             break;
 
         case OpCode_LE:
-            resultValue = comparison <= 0;
+            resultValue = !nanDetected && comparison <= 0;
             break;
 
         case OpCode_GT:
-            resultValue = comparison > 0;
+            resultValue = !nanDetected && comparison > 0;
             break;
 
         case OpCode_GE:
-            resultValue = comparison >= 0;
+            resultValue = !nanDetected && comparison >= 0;
             break;
     }
 
@@ -1233,7 +1261,7 @@ static AspOperationResult PerformMembershipOperation
                 int comparison;
                 result.result = AspCompare
                     (engine, left, value, AspCompareType_Equality,
-                     &comparison);
+                     &comparison, 0);
                 if (result.result != AspRunResult_OK)
                     break;
                 isIn = comparison == 0;

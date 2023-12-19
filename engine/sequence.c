@@ -167,8 +167,14 @@ bool AspSequenceEraseElement
 
     /* Unreference entries. */
     if (eraseValue)
+    {
         AspUnref(engine, value);
+        if (engine->runResult != AspRunResult_OK)
+            return false;
+    }
     AspUnref(engine, element);
+    if (engine->runResult != AspRunResult_OK)
+        return false;
 
     /* Update the sequence count. */
     AspDataSetSequenceCount

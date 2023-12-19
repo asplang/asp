@@ -89,9 +89,19 @@ AspTreeResult AspTreeInsert
 
     /* Determine whether the key already exists. */
     AspDataEntry *foundNode = FindNode(engine, tree, result.node);
+    if (engine->runResult != AspRunResult_OK)
+    {
+        result.result = engine->runResult;
+        return result;
+    }
     if (foundNode != 0)
     {
         AspUnref(engine, result.node);
+        if (engine->runResult != AspRunResult_OK)
+        {
+            result.result = engine->runResult;
+            return result;
+        }
         result.node = foundNode;
         result.key = AspValueEntry
             (engine, AspDataGetTreeNodeKeyIndex(foundNode));
@@ -101,6 +111,11 @@ AspTreeResult AspTreeInsert
         {
             AspUnref(engine, AspValueEntry
                 (engine, AspDataGetTreeNodeValueIndex(foundNode)));
+            if (engine->runResult != AspRunResult_OK)
+            {
+                result.result = engine->runResult;
+                return result;
+            }
             AspDataSetTreeNodeValueIndex(foundNode, AspIndex
                 (engine, value));
             result.value = AspValueEntry
@@ -178,6 +193,8 @@ AspRunResult AspTreeEraseNode
         return result;
 
     AspDataEntry *node = FindNode(engine, tree, keyNode);
+    if (engine->runResult != AspRunResult_OK)
+        return engine->runResult;
     if (node == 0)
         return NotFoundResult(tree);
 
@@ -272,12 +289,16 @@ AspRunResult AspTreeEraseNode
     {
         AspUnref(engine, AspValueEntry
             (engine, AspDataGetTreeNodeKeyIndex(node)));
+        if (engine->runResult != AspRunResult_OK)
+            return engine->runResult;
         AspDataSetTreeNodeKeyIndex(node, 0);
     }
     if (eraseValue && type != DataType_SetNode)
     {
         AspUnref(engine, AspValueEntry
             (engine, AspDataGetTreeNodeValueIndex(node)));
+        if (engine->runResult != AspRunResult_OK)
+            return engine->runResult;
         AspDataSetTreeNodeValueIndex(node, 0);
     }
     if (type != DataType_SetNode)
@@ -286,6 +307,8 @@ AspRunResult AspTreeEraseNode
         if (linksIndex != 0)
         {
             AspUnref(engine, AspEntry(engine, linksIndex));
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
             AspDataSetTreeNodeLinksIndex(node, 0);
         }
     }
@@ -319,6 +342,9 @@ AspRunResult AspTreeEraseNode
                     (engine, AspDataGetTreeNodeParentIndex(workNode));
                 siblingNode = AspEntry
                     (engine, GetChildIndex(engine, parentNode, !right));
+                result = AspAssert(engine, siblingNode != 0);
+                if (result != AspRunResult_OK)
+                    return result;
             }
 
             AspDataEntry *nearNode = AspEntry
@@ -379,6 +405,8 @@ AspRunResult AspTreeEraseNode
     }
 
     AspUnref(engine, node);
+    if (engine->runResult != AspRunResult_OK)
+        return engine->runResult;
     AspDataSetTreeCount(tree, AspDataGetTreeCount(tree) - 1U);
 
     return result;
@@ -426,10 +454,20 @@ AspTreeResult AspTreeFind
     }
     AspDataSetTreeNodeKeyIndex(keyNode, AspIndex(engine, key));
     result.node = FindNode(engine, tree, keyNode);
+    if (engine->runResult != AspRunResult_OK)
+    {
+        result.result = engine->runResult;
+        return result;
+    }
     if (result.node != 0 && treeType != DataType_Set)
         result.value = AspValueEntry
             (engine, AspDataGetTreeNodeValueIndex(result.node));
     AspUnref(engine, keyNode);
+    if (engine->runResult != AspRunResult_OK)
+    {
+        result.result = engine->runResult;
+        return result;
+    }
 
     return result;
 }
@@ -453,10 +491,20 @@ AspTreeResult AspFindSymbol
     }
     AspDataSetNamespaceNodeSymbol(keyNode, symbol);
     result.node = FindNode(engine, tree, keyNode);
+    if (engine->runResult != AspRunResult_OK)
+    {
+        result.result = engine->runResult;
+        return result;
+    }
     if (result.node != 0)
         result.value = AspValueEntry
             (engine, AspDataGetTreeNodeValueIndex(result.node));
     AspUnref(engine, keyNode);
+    if (engine->runResult != AspRunResult_OK)
+    {
+        result.result = engine->runResult;
+        return result;
+    }
 
     return result;
 }
@@ -636,9 +684,16 @@ static AspDataEntry *FindNode
         AspRunResult compareResult = CompareKeys
             (engine, tree, keyNode, node, &comparison);
         assertResult = AspAssert(engine, compareResult == AspRunResult_OK);
-        if (assertResult != AspRunResult_OK || comparison == 0)
+        if (assertResult != AspRunResult_OK)
+            return 0;
+        if (comparison == 0)
             break;
-        node = AspEntry(engine, GetChildIndex(engine, node, comparison > 0));
+        AspDataEntry *nextNode = AspEntry
+            (engine, GetChildIndex(engine, node, comparison > 0));
+        assertResult = AspAssert(engine, nextNode != node);
+        if (assertResult != AspRunResult_OK)
+            return 0;
+        node = nextNode;
     }
 
     return node;
@@ -775,7 +830,7 @@ static AspRunResult CompareKeys
             (engine,
              AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(leftNode)),
              AspValueEntry(engine, AspDataGetTreeNodeKeyIndex(rightNode)),
-             AspCompareType_Key, comparison);
+             AspCompareType_Key, comparison, 0);
 }
 
 static AspRunResult SetChildIndex
@@ -813,6 +868,8 @@ static AspRunResult SetChildIndex
             else
                 AspDataSetTreeLinksNodeRightIndex(linksNode, index);
             PruneLinks(engine, node);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
         }
     }
 

@@ -7,11 +7,15 @@
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
+#include <math.h>
+#include <string.h>
+
+static int CompareFloats(double, double, AspCompareType, bool *nanDetected);
 
 AspRunResult AspCompare
     (AspEngine *engine,
      const AspDataEntry *leftEntry, const AspDataEntry *rightEntry,
-     AspCompareType compareType, int *result)
+     AspCompareType compareType, int *result, bool *nanDetected)
 {
     AspAssert
         (engine, leftEntry != 0 && AspIsObject(leftEntry));
@@ -19,6 +23,7 @@ AspRunResult AspCompare
         (engine, rightEntry != 0 && AspIsObject(rightEntry));
     if (assertResult != AspRunResult_OK)
         return assertResult;
+    bool localNanDetected = false;
 
     /* Avoid recursion by using the engine's stack. */
     AspDataEntry *startStackTop = engine->stackTop;
@@ -52,26 +57,23 @@ AspRunResult AspCompare
                     rightInt = (uint32_t)AspDataGetBoolean(rightEntry);
                 else if (rightType == DataType_Integer)
                     rightInt = (uint32_t)AspDataGetInteger(rightEntry);
-                bool compareInts = false;
+                bool compareInts = true;
                 double leftFloat = 0.0, rightFloat = 0.0;
                 if (leftType == DataType_Float || rightType == DataType_Float)
                 {
                     compareInts = false;
-                    if (leftType != DataType_Float)
-                        leftFloat = (double)leftInt;
-                    else
-                        leftFloat = (uint32_t)AspDataGetFloat(leftEntry);
-                    if (rightType != DataType_Float)
-                        rightFloat = (double)rightInt;
-                    else
-                        rightFloat = (uint32_t)AspDataGetFloat(rightEntry);
+                    leftFloat = leftType == DataType_Float ?
+                        AspDataGetFloat(leftEntry) : (double)leftInt;
+                    rightFloat = rightType == DataType_Float ?
+                        AspDataGetFloat(rightEntry) : (double)rightInt;
                 }
 
                 comparison = compareInts ?
                     leftInt == rightInt ? 0 :
-                        leftInt < rightInt ? -1 : +1 :
-                    leftFloat == rightFloat ? 0 :
-                        leftFloat < rightFloat ? -1 : +1;
+                    leftInt < rightInt ? -1 : +1 :
+                    CompareFloats
+                        (leftFloat, rightFloat,
+                         compareType, &localNanDetected);
             }
             else if (compareType == AspCompareType_Equality)
                 comparison = 1;
@@ -145,8 +147,9 @@ AspRunResult AspCompare
                         double
                             leftValue = AspDataGetFloat(leftEntry),
                             rightValue = AspDataGetFloat(rightEntry);
-                        if (leftValue != rightValue)
-                            comparison = leftValue < rightValue ? -1 : 1;
+                        comparison = CompareFloats
+                            (leftValue, rightValue,
+                             compareType, &localNanDetected);
                         break;
                     }
 
@@ -399,10 +402,22 @@ AspRunResult AspCompare
                     }
                 }
             }
+            else if (type == DataType_Float)
+            {
+                /* Compare floating-point objects even if they are the same
+                   object in order to handle the special case of NaNs, which
+                   yield nonintuitive, albeit standardized, results. */
+                double
+                    leftValue = AspDataGetFloat(leftEntry),
+                    rightValue = AspDataGetFloat(rightEntry);
+                comparison = CompareFloats
+                    (leftValue, rightValue,
+                     compareType, &localNanDetected);
+            }
         }
 
         /* Check if there's more to do. */
-        if (comparison != 0 ||
+        if (comparison != 0 || localNanDetected ||
             engine->stackTop == startStackTop ||
             engine->runResult != AspRunResult_OK)
             break;
@@ -447,5 +462,63 @@ AspRunResult AspCompare
             AspPopNoErase(engine);
 
     *result = comparison;
+    if (nanDetected != 0)
+        *nanDetected = localNanDetected;
     return AspRunResult_OK;
+}
+
+static int CompareFloats
+    (double leftValue, double rightValue,
+     AspCompareType compareType, bool *nanDetected)
+{
+    /* Perform a standard comparison when possible. Note that when NaNs are
+       involved, the result will be nonintuitive, but standardized. */
+    bool localNanDetected = isnan(leftValue) || isnan(rightValue);
+    if (compareType != AspCompareType_Key || !localNanDetected)
+    {
+        /* Update whether a NaN has been detected, if applicable. */
+        *nanDetected = *nanDetected || localNanDetected;
+
+        return
+            leftValue == rightValue ? 0 :
+            leftValue < rightValue ? -1 : +1;
+    }
+
+    /* Handle NaNs in key comparisons, which must yield predictable results.
+       Note that a good optimizer will eliminate all but one of the following
+       code paths. */
+    #ifdef UINT64_MAX
+    if (sizeof(uint64_t) == sizeof(double))
+    {
+        /* Compare the bit patterns using the matching sized integer. */
+        uint64_t leftBits = *(const uint64_t *)&leftValue;
+        uint64_t rightBits = *(const uint64_t *)&rightValue;
+        return
+            leftBits == rightBits ? 0 :
+            leftBits < rightBits ? -1 : +1;
+    }
+    else
+    #endif
+    {
+        /* Compare as bytes. */
+        static const uint16_t word = 1;
+        bool be = *(const char *)&word == 0;
+        uint8_t *leftBytes = (uint8_t *)&leftValue;
+        uint8_t *rightBytes = (uint8_t *)&rightValue;
+        if (!be)
+        {
+            /* Put values into big endian order. */
+            for (unsigned i = 0; i < sizeof(double) / 2; i++)
+            {
+                unsigned j = sizeof(double) - i - 1;
+                leftBytes[i] ^= leftBytes[j];
+                leftBytes[j] ^= leftBytes[i];
+                leftBytes[i] ^= leftBytes[j];
+                rightBytes[i] ^= rightBytes[j];
+                rightBytes[j] ^= rightBytes[i];
+                rightBytes[i] ^= rightBytes[j];
+            }
+        }
+        return memcmp(leftBytes, rightBytes, sizeof(double));
+    }
 }

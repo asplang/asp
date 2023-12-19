@@ -38,7 +38,7 @@ if(BUILD_FOR_TARGET)
     set(CMAKE_C_STANDARD_REQUIRED True)
 
     add_library(aspe
-        asp-ver.h
+        "${PROJECT_BINARY_DIR}/asp-ver.h"
         engine.c
         step.c
         bits.c
