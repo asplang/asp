@@ -67,8 +67,8 @@ bool AspIsIntegral(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_Boolean ||
-        type == DataType_Integer;
+        (type == DataType_Boolean ||
+         type == DataType_Integer);
 }
 
 bool AspIsNumber(const AspDataEntry *entry)
@@ -76,8 +76,8 @@ bool AspIsNumber(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_Integer ||
-        type == DataType_Float;
+        (type == DataType_Integer ||
+         type == DataType_Float);
 }
 
 bool AspIsNumeric(const AspDataEntry *entry)
@@ -85,9 +85,9 @@ bool AspIsNumeric(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_Boolean ||
-        type == DataType_Integer ||
-        type == DataType_Float;
+        (type == DataType_Boolean ||
+         type == DataType_Integer ||
+         type == DataType_Float);
 }
 
 bool AspIsRange(const AspDataEntry *entry)
@@ -116,8 +116,8 @@ bool AspIsSequence(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        type == DataType_Tuple ||
-        type == DataType_List;
+        (type == DataType_Tuple ||
+         type == DataType_List);
 }
 
 bool AspIsSet(const AspDataEntry *entry)
@@ -128,6 +128,25 @@ bool AspIsSet(const AspDataEntry *entry)
 bool AspIsDictionary(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Dictionary;
+}
+
+bool AspIsAppIntegerObject(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_AppIntegerObject;
+}
+
+bool AspIsAppPointerObject(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_AppPointerObject;
+}
+
+bool AspIsAppObject(const AspDataEntry *entry)
+{
+    uint8_t type = AspDataGetType(entry);
+    return
+        entry != 0 &&
+        (type == DataType_AppIntegerObject ||
+         type == DataType_AppPointerObject);
 }
 
 bool AspIsType(const AspDataEntry *entry)
@@ -662,7 +681,10 @@ static AspDataEntry *ToString
                 AspDataEntry *iterable = AspValueEntry
                     (engine, iterableIndex);
                 strcpy(buffer, "<iter:");
-                strcat(buffer, TypeString(AspDataGetType(iterable)));
+                if (iterable == 0)
+                    strcat(buffer, "?");
+                else
+                    strcat(buffer, TypeString(AspDataGetType(iterable)));
                 uint32_t memberIndex =
                     AspDataGetIteratorMemberIndex(entry);
                 if (memberIndex == 0)
@@ -698,6 +720,39 @@ static AspDataEntry *ToString
                     (buffer, sizeof buffer, "<mod:@%7.7X>",
                      AspDataGetModuleCodeAddress(entry));
                 break;
+
+            case DataType_AppIntegerObject:
+            case DataType_AppPointerObject:
+            {
+                const AspDataEntry *infoEntry = AspAppObjectInfoEntry
+                    (engine, entry);
+                snprintf
+                    (buffer, sizeof buffer, "<app-%s:%d:",
+                     type == DataType_AppIntegerObject ? "int" : "ptr",
+                     AspDataGetAppObjectType(infoEntry));
+                if (infoEntry == 0)
+                    strcat(buffer, "?");
+                else
+                {
+                    size_t
+                        len = strlen(buffer),
+                        remainingLen = sizeof buffer - len;
+                    char *bufferEnd = buffer + len;
+                    if (type == DataType_AppIntegerObject)
+                    {
+                        snprintf
+                            (bufferEnd, remainingLen, "%d>",
+                             AspDataGetAppIntegerObjectValue(infoEntry));
+                    }
+                    else
+                    {
+                        snprintf
+                            (bufferEnd, remainingLen, "%p>",
+                             AspDataGetAppPointerObjectValue(infoEntry));
+                    }
+                }
+                break;
+            }
 
             case DataType_Type:
             {
@@ -772,6 +827,10 @@ static const char *TypeString(DataType type)
             return "func";
         case DataType_Module:
             return "mod";
+        case DataType_AppIntegerObject:
+            return "app-int";
+        case DataType_AppPointerObject:
+            return "app-ptr";
         case DataType_Type:
             return "type";
     }
@@ -865,6 +924,60 @@ AspDataEntry *AspNext(AspEngine *engine, AspDataEntry *iterator)
         return 0;
     AspIteratorNext(engine, iterator);
     return result.value;
+}
+
+bool AspAppObjectTypeValue
+    (AspEngine *engine, const AspDataEntry *entry, int16_t *appType)
+{
+    if (!AspIsAppObject(entry))
+        return false;
+
+    if (appType != 0)
+    {
+        const AspDataEntry *infoEntry = AspAppObjectInfoEntry
+            (engine, (AspDataEntry *)entry);
+        *appType = AspDataGetAppObjectType(infoEntry);
+    }
+
+    return true;
+}
+
+bool AspAppIntegerObjectValues
+    (AspEngine *engine, const AspDataEntry *entry,
+     int16_t *appType, int32_t *value)
+{
+    if (!AspIsAppIntegerObject(entry))
+        return false;
+
+    if (appType != 0)
+        AspAppObjectTypeValue(engine, entry, appType);
+    if (value != 0)
+    {
+        const AspDataEntry *infoEntry = AspAppObjectInfoEntry
+            (engine, (AspDataEntry *)entry);
+        *value = AspDataGetAppIntegerObjectValue(infoEntry);
+    }
+
+    return true;
+}
+
+bool AspAppPointerObjectValues
+    (AspEngine *engine, const AspDataEntry *entry,
+     int16_t *appType, void **value)
+{
+    if (!AspIsAppPointerObject(entry))
+        return false;
+
+    if (appType != 0)
+        AspAppObjectTypeValue(engine, entry, appType);
+    if (value != 0)
+    {
+        const AspDataEntry *infoEntry = AspAppObjectInfoEntry
+            (engine, (AspDataEntry *)entry);
+        *value = AspDataGetAppPointerObjectValue(infoEntry);
+    }
+
+    return true;
 }
 
 AspDataEntry *AspNewNone(AspEngine *engine)
@@ -1019,6 +1132,63 @@ AspDataEntry *AspNewIterator(AspEngine *engine, AspDataEntry *iterable)
 {
     AspIteratorResult result = AspIteratorCreate(engine, iterable);
     return result.result != AspRunResult_OK ? 0 : result.value;
+}
+
+AspDataEntry *AspNewAppIntegerObject
+    (AspEngine *engine, int16_t appType, int32_t value,
+     void (*destructor)(AspEngine *, int16_t, int32_t))
+{
+    AspDataEntry *entry = NewObject(engine, DataType_AppIntegerObject);
+    if (entry != 0)
+    {
+        AspDataEntry *infoEntry = entry;
+
+        #ifdef ASP_WIDE_PTR
+        infoEntry = NewObject(engine, DataType_AppIntegerObjectInfo);
+        if (infoEntry == 0)
+        {
+            AspUnref(engine, entry);
+            return 0;
+        }
+        AspDataSetAppObjectInfoIndex
+            (entry, AspIndex(engine, infoEntry));
+        #endif
+
+        AspDataSetAppObjectType(infoEntry, appType);
+        AspDataSetAppIntegerObjectValue(infoEntry, value);
+        AspDataSetAppIntegerObjectDestructor(entry, destructor);
+    }
+
+    return entry;
+}
+
+AspDataEntry *AspNewAppPointerObject
+    (AspEngine *engine, int16_t appType, void *value,
+     void (*destructor)(AspEngine *, int16_t, void *))
+{
+    AspDataEntry *entry = NewObject(engine, DataType_AppPointerObject);
+    if (entry != 0)
+    {
+        AspDataEntry *infoEntry = entry;
+
+        #ifdef ASP_WIDE_PTR
+        infoEntry = NewObject
+            (engine, DataType_AppPointerObjectInfo);
+        if (infoEntry == 0)
+        {
+            AspUnref(engine, entry);
+            return 0;
+        }
+        AspDataSetAppObjectInfoIndex
+            (entry, AspIndex(engine, infoEntry));
+        #endif
+
+        AspDataSetAppObjectType(infoEntry, appType);
+        AspDataSetAppPointerObjectValue(infoEntry, value);
+        AspDataSetAppPointerObjectDestructor(entry, destructor);
+    }
+
+    return entry;
 }
 
 AspDataEntry *AspNewType(AspEngine *engine, const AspDataEntry *object)

@@ -204,3 +204,14 @@ uint32_t AspIndex(const AspEngine *engine, const AspDataEntry *entry)
 {
     return entry == 0 ? 0 : (uint32_t)(entry - engine->data);
 }
+
+AspDataEntry *AspAppObjectInfoEntry(AspEngine *engine, AspDataEntry *entry)
+{
+    AspDataEntry *infoEntry = entry;
+
+    #ifdef ASP_WIDE_PTR
+    infoEntry = AspEntry(engine, AspDataGetAppObjectInfoIndex(entry));
+    #endif
+
+    return infoEntry;
+}

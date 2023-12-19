@@ -146,6 +146,36 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     (engine, AspDataGetModuleNamespaceIndex(entry));
                 AspPushNoUse(engine, ns);
             }
+            else if (t == DataType_AppIntegerObject)
+            {
+                void (*destructor)(AspEngine *, int16_t, int32_t) =
+                    AspDataGetAppIntegerObjectDestructor(entry);
+                AspDataEntry *info = AspAppObjectInfoEntry(engine, entry);
+                if (destructor != 0 && info != 0)
+                {
+                    destructor
+                        (engine,
+                         AspDataGetAppObjectType(info),
+                         AspDataGetAppIntegerObjectValue(info));
+                }
+                if (info != entry)
+                    AspUnref(engine, info);
+            }
+            else if (t == DataType_AppPointerObject)
+            {
+                void (*destructor)(AspEngine *, int16_t, void *) =
+                    AspDataGetAppPointerObjectDestructor(entry);
+                AspDataEntry *info = AspAppObjectInfoEntry(engine, entry);
+                if (destructor != 0 && info != 0)
+                {
+                    destructor
+                        (engine,
+                         AspDataGetAppObjectType(info),
+                         AspDataGetAppPointerObjectValue(info));
+                }
+                if (info != entry)
+                    AspUnref(engine, info);
+            }
             else if (t == DataType_Frame)
             {
                 AspDataEntry *module = AspValueEntry
@@ -226,6 +256,8 @@ static bool IsTerminal(AspDataEntry *entry)
         DataType_Float,
         DataType_Type,
         DataType_CodeAddress,
+        DataType_AppIntegerObject,
+        DataType_AppPointerObject,
         DataType_StringFragment,
     };
 

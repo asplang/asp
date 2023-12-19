@@ -96,6 +96,8 @@ AspRunResult AspCompare
                         type == DataType_Iterator ||
                         type == DataType_Function ||
                         type == DataType_Module ||
+                        type == DataType_AppIntegerObject ||
+                        type == DataType_AppPointerObject ||
                         type == DataType_Type)
                         return AspRunResult_UnexpectedType;
                     break;
@@ -387,6 +389,42 @@ AspRunResult AspCompare
                         comparison =
                             leftValue == rightValue ? 0 :
                             leftValue < rightValue ? -1 : 1;
+                        break;
+                    }
+
+                    case DataType_AppIntegerObject:
+                    {
+                        int16_t
+                            leftType = AspDataGetAppObjectType(leftEntry),
+                            rightType = AspDataGetAppObjectType(rightEntry);
+                        int32_t
+                            leftValue = AspDataGetAppIntegerObjectValue
+                                (leftEntry),
+                            rightValue = AspDataGetAppIntegerObjectValue
+                                (rightEntry);
+                        comparison =
+                            leftType == rightType ?
+                            leftValue == rightValue ? 0 :
+                            leftValue < rightValue ? -1 : 1 :
+                            leftType < rightType ? -1 : 1;
+                        break;
+                    }
+
+                    case DataType_AppPointerObject:
+                    {
+                        int16_t
+                            leftType = AspDataGetAppObjectType(leftEntry),
+                            rightType = AspDataGetAppObjectType(rightEntry);
+                        void
+                            *leftValue = AspDataGetAppPointerObjectValue
+                                (leftEntry),
+                            *rightValue = AspDataGetAppPointerObjectValue
+                                (rightEntry);
+                        comparison =
+                            leftType == rightType ?
+                            leftValue == rightValue ? 0 :
+                            leftValue < rightValue ? -1 : 1 :
+                            leftType < rightType ? -1 : 1;
                         break;
                     }
 
