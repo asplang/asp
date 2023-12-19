@@ -52,9 +52,9 @@ if(WIN32)
     set(C_FILE_NAME_SEPARATORS [["\\/"]])
     set(C_COMMAND_OPTION_PREFIXES [["-/"]])
 
-    if (MSVC)
+    if(MSVC)
         add_compile_options(/D_CRT_SECURE_NO_WARNINGS)
-        if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
             # Unsupported option when using clang-cl
             add_compile_options(/Zc:preprocessor)
         endif()

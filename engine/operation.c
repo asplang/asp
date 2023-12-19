@@ -504,10 +504,9 @@ static AspOperationResult PerformRepetitionBinaryOperation
             {
                 for (int32_t i = 0; i < repeatCountValue; i++)
                 {
-                    AspSequenceResult nextResult = AspSequenceNext
-                        (engine, sequence, 0);
-
-                    for (; nextResult.element != 0;
+                    for (AspSequenceResult nextResult = AspSequenceNext
+                            (engine, sequence, 0);
+                         nextResult.element != 0;
                          nextResult = AspSequenceNext
                             (engine, sequence, nextResult.element))
                     {
