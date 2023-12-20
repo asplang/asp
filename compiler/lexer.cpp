@@ -83,7 +83,7 @@ void Lexer::FetchNext()
                 checkIndent = true;
              continueLine = false;
         }
-        if (checkIndent && !isspace(c) && c != '\n')
+        if (checkIndent && !isspace(c) && c != '\n' && c != '#')
             CheckIndent();
         if (!pendingTokens.empty())
             continue;
