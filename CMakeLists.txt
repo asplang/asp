@@ -2,7 +2,7 @@
 # Asp top-level build specification.
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 
 project(asp
     # The engine ABI version (used in compatibility checking) consists of the

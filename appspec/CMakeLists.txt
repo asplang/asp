@@ -2,7 +2,7 @@
 # Asp application specification generator build specification.
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 
 project(aspg VERSION 0.1)
 

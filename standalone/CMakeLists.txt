@@ -2,7 +2,7 @@
 # Standalone Asp build specification.
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 
 project(asps VERSION 0.2)
 

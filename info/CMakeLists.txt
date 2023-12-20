@@ -2,7 +2,7 @@
 # Asp info library build specification.
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 
 project(aspd
     VERSION 0.1
@@ -43,4 +43,7 @@ install(FILES
     DESTINATION include
     )
 
-install(TARGETS aspd)
+install(TARGETS
+    aspd
+    DESTINATION lib
+    )
