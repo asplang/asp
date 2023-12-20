@@ -173,14 +173,14 @@ int main(int argc, char **argv)
     char *code = nullptr;
     if (codeByteCount != 0)
     {
-        code = (char *)malloc(codeByteCount);
+        code = new char[codeByteCount];
         if (code == nullptr)
         {
             cerr << "Error allocating engine code area" << endl;
             return 2;
         }
     }
-    char *data = (char *)malloc(dataByteSize);
+    char *data = new char[dataByteSize];
     if (data == nullptr)
     {
         cerr << "Error allocating engine data area" << endl;
@@ -218,7 +218,7 @@ int main(int argc, char **argv)
             return 2;
         }
         size_t externalCodeSize = (size_t)tellResult;
-        externalCode = (char *)malloc(externalCodeSize);
+        externalCode = new char[externalCodeSize];
         if (externalCode == nullptr)
         {
             cerr << "Error allocating memory for executable code" << endl;
@@ -394,11 +394,9 @@ int main(int argc, char **argv)
             << " (max " << AspMaxDataSize(&engine) << ')' << endl;
     }
 
-    if (code != nullptr)
-        free(code);
-    if (externalCode != nullptr)
-        free(externalCode);
-    free(data);
+    delete [] code;
+    delete [] externalCode;
+    delete [] data;
 
     return runResult == AspRunResult_Complete ? 0 : 2;
 }
