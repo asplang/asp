@@ -7,6 +7,21 @@ chronological order.
 Changes
 -------
 
+Version 0.7.3.0 (compiler 0.7.1.5, engine 0.7.5.0):
+- Compiler:
+  - Fixed an issue with misindented comments. Comments should be allowed
+    anywhere, regardless of indent level, but they were being flagged as
+    syntax errors.
+- Engine:
+  - Added support for application object types.
+  - Fixed a number of issues discovered during fuzz testing.
+  - Fixed bugs in some AspIs* functions.
+- Standalone application:
+  - Replaced use of malloc/free with new/delete.
+- Build:
+  - Relaxed the version of CMake required to 3.5 in order to support older
+    systems.
+
 Version 0.7.2.2 (compiler 0.7.1.4, engine 0.7.4.2):
 - Special thanks to Lassi Hamalainen for suggesting all of these changes.
 - Compiler:
