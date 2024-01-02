@@ -817,6 +817,11 @@ static AspOperationResult PerformFormatBinaryOperation
                         result.result = AspRunResult_InvalidFormatString;
                         return result;
                     }
+
+                    /* Ignore length specifiers */
+                    if (c == 'L' || c == 'l' || c == 'h')
+                        continue;
+
                     *fp++ = c;
 
                     /* Check for a conversion type character, which ends the
