@@ -819,7 +819,7 @@ static AspOperationResult PerformFormatBinaryOperation
                     }
 
                     /* Ignore length specifiers */
-                    if (c == 'L' || c == 'l' || c == 'h')
+                    if (strchr("hlL", c) != 0)
                         continue;
 
                     *fp++ = c;
@@ -837,8 +837,7 @@ static AspOperationResult PerformFormatBinaryOperation
                         isCharacter = true;
                     else if (strchr("rsa", c) != 0)
                         isString = true;
-                    else if ((c >= '0' && c <= '9') || c == '-' || c == '+'
-                             || c == '.' || c == ' ' || c == '#')
+                    else if ((c >= '0' && c <= '9') || strchr("-+. #", c) != 0)
                         continue;
                     else
                     {
