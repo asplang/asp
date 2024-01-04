@@ -2,7 +2,7 @@
  * Asp engine private definitions.
  * Do not use these definitions in application function implementations.
  *
- * Copyright (c) 2023 Canadensys Aerospace Corporation.
+ * Copyright (c) 2024 Canadensys Aerospace Corporation.
  * See LICENSE.txt at https://bitbucket.org/asplang/asp for details.
  */
 
