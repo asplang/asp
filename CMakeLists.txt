@@ -18,6 +18,9 @@ option(BUILD_FOR_HOST
 option(BUILD_FOR_TARGET
     "Enable/disable building for the script engine target environment"
     FALSE)
+option(INSTALL_DEV
+    "Enable/disable installation of development files (e.g., headers)"
+    FALSE)
 
 # If no build options are chosen, build them all.
 if(NOT ${BUILD_FOR_HOST} AND NOT ${BUILD_FOR_TARGET})

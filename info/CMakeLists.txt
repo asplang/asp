@@ -38,12 +38,16 @@ target_include_directories(aspd PUBLIC
     "${PROJECT_SOURCE_DIR}"
     )
 
-install(FILES
-    asp-info.h
-    DESTINATION include
-    )
-
 install(TARGETS
     aspd
     DESTINATION lib
     )
+
+if(INSTALL_DEV)
+
+    install(FILES
+        asp-info.h
+        DESTINATION include
+        )
+
+endif()

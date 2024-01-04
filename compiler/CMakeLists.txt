@@ -29,7 +29,7 @@ add_custom_command(
         "${PROJECT_BINARY_DIR}/asp.out"
     DEPENDS lemon asp.y
     COMMAND
-        lemon "-d${PROJECT_BINARY_DIR}"
+        "$<TARGET_FILE:lemon>" "-d${PROJECT_BINARY_DIR}"
         "-T${lemon_SOURCE_DIR}/lempar.c"
         "${PROJECT_SOURCE_DIR}/asp.y"
     )

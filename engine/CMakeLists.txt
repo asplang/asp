@@ -98,13 +98,13 @@ if(BUILD_FOR_TARGET)
 
         # Note: Normally a generator expression would be used to express the
         # library's file name in the CODE text. This is supported in CMake 3.14,
-        # but since only version 3.10 is required, we must hard-code the library
-        # file name instead.
+        # but to support older versions, we hard-code the library file name
+        # instead.
         if(NOT BUILD_SHARED_LIBS)
             install(CODE "execute_process(
                 COMMAND ${CMAKE_COMMAND} -E create_symlink
                     \"asp-${ABI_VERSION}/libaspe.a\"
-                    \"${CMAKE_INSTALL_PREFIX}/lib/libaspe.a\"
+                    \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libaspe.a\"
                     )"
                 )
         endif()
@@ -113,7 +113,7 @@ if(BUILD_FOR_TARGET)
 
 endif()
 
-if(BUILD_FOR_HOST)
+if(INSTALL_DEV)
 
     if(NOT BUILD_FOR_TARGET)
         add_custom_target(asp_ver_h ALL
@@ -151,7 +151,7 @@ if(BUILD_FOR_HOST)
             install(CODE "execute_process(
                 COMMAND ${CMAKE_COMMAND} -E create_symlink
                     \"asp-${ABI_VERSION}/${file}\"
-                    \"${CMAKE_INSTALL_PREFIX}/include/${file}\"
+                    \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/${file}\"
                     )"
                 )
         endforeach()
@@ -164,7 +164,7 @@ if(BUILD_FOR_HOST)
             install(CODE "execute_process(
                 COMMAND ${CMAKE_COMMAND} -E create_symlink
                     \"${ABI_VERSION}/${file}\"
-                    \"${CMAKE_INSTALL_PREFIX}/include/asps/${file}\"
+                    \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/asps/${file}\"
                     )"
             )
         endforeach()
