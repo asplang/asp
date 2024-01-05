@@ -38,17 +38,26 @@ target_include_directories(aspd PUBLIC
     "${PROJECT_SOURCE_DIR}"
     )
 
-install(TARGETS aspd
-    LIBRARY
+if(BUILD_SHARED_LIBS)
+    install(TARGETS aspd
         DESTINATION lib
         COMPONENT Runtime
-    ARCHIVE
-        DESTINATION lib
-        COMPONENT Development
-    )
+        )
+endif()
 
-install(FILES
-    asp-info.h
-    DESTINATION include
-    COMPONENT Development
-    )
+if(INSTALL_DEV)
+
+    if(NOT BUILD_SHARED_LIBS)
+        install(TARGETS aspd
+            DESTINATION lib
+            COMPONENT Development
+            )
+    endif()
+
+    install(FILES
+        asp-info.h
+        DESTINATION include
+        COMPONENT Development
+        )
+
+endif()

@@ -9,8 +9,9 @@ Changes
 
 Version 0.7.3.1 (compiler 0.7.1.5, engine 0.7.5.0):
 - Build:
-  - Added INSTALL_DEV build option to separately control installation of
-    development files (e.g., headers).
+  - Added INSTALL_DEV build option to configure installation of development
+    files (e.g., headers).
+  - Added support for CMake's install COMPONENT feature.
   - Fixed custom build commands to use the DESTDIR environment variable as
     appropriate.
 
