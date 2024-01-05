@@ -72,4 +72,5 @@ target_include_directories(aspc PRIVATE
 
 install(TARGETS aspc
     DESTINATION bin
+    COMPONENT Runtime
     )

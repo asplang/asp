@@ -55,9 +55,11 @@ target_include_directories(asps PRIVATE
 
 install(TARGETS asps
     DESTINATION bin
+    COMPONENT Runtime
     )
 
 install(FILES
     "${PROJECT_BINARY_DIR}/standalone.aspec"
     DESTINATION etc/asp
+    COMPONENT Runtime
     )

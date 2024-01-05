@@ -819,7 +819,7 @@ static AspOperationResult PerformFormatBinaryOperation
                         return result;
                     }
 
-                    /* Ignore length specifiers */
+                    /* Ignore length specifiers. */
                     if (strchr("hlL", c) != 0)
                         continue;
 
@@ -843,7 +843,7 @@ static AspOperationResult PerformFormatBinaryOperation
                     else
                     {
                         /* Disallow unsupported and potentially dangerous
-                           format specifiers */
+                           format specifiers. */
                         result.result = AspRunResult_InvalidFormatString;
                         return result;
                     }

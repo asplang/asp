@@ -87,13 +87,19 @@ if(BUILD_FOR_TARGET)
 
     if(WIN32)
 
-        install(TARGETS aspe)
+        install(TARGETS aspe
+            COMPONENT Runtime
+            )
 
     else()
 
         install(TARGETS aspe
-            LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib/asp-${ABI_VERSION}
+            LIBRARY
+                DESTINATION lib
+                COMPONENT Runtime
+            ARCHIVE
+                DESTINATION lib/asp-${ABI_VERSION}
+                COMPONENT Development
             )
 
         # Note: Normally a generator expression would be used to express the
@@ -101,11 +107,14 @@ if(BUILD_FOR_TARGET)
         # but to support older versions, we hard-code the library file name
         # instead.
         if(NOT BUILD_SHARED_LIBS)
-            install(CODE "execute_process(
-                COMMAND ${CMAKE_COMMAND} -E create_symlink
+            install(
+                CODE
+                    "execute_process(COMMAND
+                    ${CMAKE_COMMAND} -E create_symlink
                     \"asp-${ABI_VERSION}/libaspe.a\"
                     \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libaspe.a\"
                     )"
+                COMPONENT Development
                 )
         endif()
 
@@ -113,62 +122,71 @@ if(BUILD_FOR_TARGET)
 
 endif()
 
-if(INSTALL_DEV)
-
-    if(NOT BUILD_FOR_TARGET)
-        add_custom_target(asp_ver_h ALL
-            DEPENDS "${PROJECT_BINARY_DIR}/asp-ver.h"
-            )
-    endif()
-
-    set(HEADER_FILES
-        asp.h
-        asp-api.h
-        asp-priv.h
-        "${PROJECT_BINARY_DIR}/asp-ver.h"
+if(NOT BUILD_FOR_TARGET)
+    add_custom_target(asp_ver_h ALL
+        DEPENDS "${PROJECT_BINARY_DIR}/asp-ver.h"
         )
-    set(ASPS_FILES
-        type.asps
-        collect.asps
-        iter.asps
-        math.asps
+endif()
+
+set(HEADER_FILES
+    asp.h
+    asp-api.h
+    asp-priv.h
+    "${PROJECT_BINARY_DIR}/asp-ver.h"
+    )
+set(ASPS_FILES
+    type.asps
+    collect.asps
+    iter.asps
+    math.asps
+    )
+
+if(WIN32)
+
+    install(FILES ${HEADER_FILES}
+        DESTINATION include
+        COMPONENT Development
+        )
+    install(FILES ${ASPS_FILES}
+        DESTINATION include/asps
+        COMPONENT Development
         )
 
-    if(WIN32)
+else()
 
-        install(FILES ${HEADER_FILES} TYPE INCLUDE)
-        install(FILES ${ASPS_FILES}
-            DESTINATION include/asps)
+    install(FILES ${HEADER_FILES}
+        DESTINATION include/asp-${ABI_VERSION}
+        COMPONENT Development
+        )
 
-    else()
-
-        install(FILES ${HEADER_FILES}
-            DESTINATION include/asp-${ABI_VERSION}
-            )
-
-        foreach(path ${HEADER_FILES})
-            get_filename_component(file ${path} NAME)
-            install(CODE "execute_process(
+    foreach(path ${HEADER_FILES})
+        get_filename_component(file ${path} NAME)
+        install(
+            CODE
+                "execute_process(
                 COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    \"asp-${ABI_VERSION}/${file}\"
-                    \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/${file}\"
-                    )"
-                )
-        endforeach()
-
-        install(FILES ${ASPS_FILES}
-            DESTINATION include/asps/${ABI_VERSION}
+                \"asp-${ABI_VERSION}/${file}\"
+                \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/${file}\"
+                )"
+            COMPONENT Development
             )
+    endforeach()
 
-        foreach(file ${ASPS_FILES})
-            install(CODE "execute_process(
+    install(FILES ${ASPS_FILES}
+        DESTINATION include/asps/${ABI_VERSION}
+        COMPONENT Development
+        )
+
+    foreach(file ${ASPS_FILES})
+        install(
+            CODE
+                "execute_process(
                 COMMAND ${CMAKE_COMMAND} -E create_symlink
-                    \"${ABI_VERSION}/${file}\"
-                    \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/asps/${file}\"
-                    )"
+                \"${ABI_VERSION}/${file}\"
+                \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/asps/${file}\"
+                )"
+            COMPONENT Development
             )
-        endforeach()
-
-    endif()
+    endforeach()
 
 endif()
