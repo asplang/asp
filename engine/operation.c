@@ -811,20 +811,17 @@ static AspOperationResult PerformFormatBinaryOperation
                 }
                 else
                 {
-                    /* Disallow the n and p format specifiers and variable
-                       width specifiers within the format. */
-                    if (strchr("np*", c) != 0)
-                    {
-                        result.result = AspRunResult_InvalidFormatString;
-                        return result;
-                    }
-
                     /* Continue to build format string for next value. */
                     if (fp >= formatBuffer + sizeof formatBuffer - 1)
                     {
                         result.result = AspRunResult_InvalidFormatString;
                         return result;
                     }
+
+                    /* Ignore length specifiers */
+                    if (strchr("hlL", c) != 0)
+                        continue;
+
                     *fp++ = c;
 
                     /* Check for a conversion type character, which ends the
@@ -840,8 +837,15 @@ static AspOperationResult PerformFormatBinaryOperation
                         isCharacter = true;
                     else if (strchr("rsa", c) != 0)
                         isString = true;
-                    else
+                    else if ((c >= '0' && c <= '9') || strchr("-+. #", c) != 0)
                         continue;
+                    else
+                    {
+                        /* Disallow unsupported and potentially dangerous
+                           format specifiers */
+                        result.result = AspRunResult_InvalidFormatString;
+                        return result;
+                    }
 
                     /* Prepare to format the next value. */
                     *fp = '\0';
@@ -888,7 +892,7 @@ static AspOperationResult PerformFormatBinaryOperation
                             {
                                 width = n;
                                 if (*endp == '.')
-                                precision = strtoul(endp + 1, 0, 10);
+                                    precision = strtoul(endp + 1, 0, 10);
                             }
                         }
 
