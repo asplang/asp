@@ -14,6 +14,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 #include <limits.h>
 
 static AspOperationResult PerformBitwiseBinaryOperation
@@ -837,7 +838,7 @@ static AspOperationResult PerformFormatBinaryOperation
                         isCharacter = true;
                     else if (strchr("rsa", c) != 0)
                         isString = true;
-                    else if ((c >= '0' && c <= '9') || strchr("-+. #", c) != 0)
+                    else if (isdigit(c) || strchr("-+. #", c) != 0)
                         continue;
                     else
                     {
