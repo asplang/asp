@@ -106,8 +106,13 @@ struct AspDataEntry
     };
 };
 
+/* Word constants. */
+#define AspWordBitSize 28U
+#define AspWordMax ((1U << (AspWordBitSize)) - 1U)
+#define AspSignedWordMin (-(1 << (AspWordBitSize) - 1))
+#define AspSignedWordMax ((1 << (AspWordBitSize) - 1) - 1)
+
 /* Low-level field access. */
-#define AspWordBitSize 28
 #define AspDataSetWord0(eptr, value) \
     (AspBitSetField(&(eptr)->u0, 0, (AspWordBitSize), (value)))
 #define AspDataGetWord0(eptr) \

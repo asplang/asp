@@ -360,7 +360,8 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
        1 - args */
     unsigned specIndex = 0;
     const uint8_t *spec = (const uint8_t *)engine->appSpec->spec;
-    for (int32_t symbol = AspScriptSymbolBase; ; symbol++)
+    for (int32_t symbol = AspScriptSymbolBase;
+         symbol <= AspSignedWordMax; symbol++)
     {
         if (specIndex >= engine->appSpec->specSize)
             break;
@@ -398,7 +399,8 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                     parameterSpec <<= 8;
                     parameterSpec |= spec[specIndex++];
                 }
-                uint32_t parameterSymbol = parameterSpec & ParameterSpecMask;
+                uint32_t parameterSymbol =
+                    (int32_t)(parameterSpec & ParameterSpecMask);
                 bool hasDefault =
                     (parameterSpec & ParameterFlag_HasDefault) != 0;
                 bool isGroup =

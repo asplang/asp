@@ -24,6 +24,10 @@
 #endif
 
 static AspRunResult Step(AspEngine *);
+static AspRunResult LoadUnsignedWordOperand
+    (AspEngine *engine, unsigned operandSize, uint32_t *operand);
+static AspRunResult LoadSignedWordOperand
+    (AspEngine *engine, unsigned operandSize, int32_t *operand);
 static AspRunResult LoadUnsignedOperand
     (AspEngine *, unsigned operandSize, uint32_t *operand);
 static AspRunResult LoadSignedOperand
@@ -357,7 +361,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the code address from the operand. */
             uint32_t codeAddressOperand;
-            AspRunResult operandLoadResult = LoadUnsignedOperand
+            AspRunResult operandLoadResult = LoadUnsignedWordOperand
                 (engine, 4, &codeAddressOperand);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -398,7 +402,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the module's symbol from the operand. */
             int32_t moduleSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &moduleSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -562,7 +566,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the variable's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &variableSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -628,7 +632,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the variable's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &variableSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -688,7 +692,6 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *newValue = AspTopValue(engine);
             if (newValue == 0)
                 return AspRunResult_StackUnderflow;
-            uint32_t newValueIndex = AspIndex(engine, newValue);
 
             AspRunResult assignResult =
                 AspDataGetType(address) == DataType_Tuple ||
@@ -887,7 +890,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the variable's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &variableSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -947,7 +950,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the variable's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &variableSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -1009,7 +1012,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the variable's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &variableSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -1180,7 +1183,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the code address from the operand. */
             uint32_t codeAddress = 0;
-            AspRunResult operandLoadResult = LoadUnsignedOperand
+            AspRunResult operandLoadResult = LoadUnsignedWordOperand
                 (engine, 4, &codeAddress);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -1448,7 +1451,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the module's symbol from the first operand. */
             int32_t moduleSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &moduleSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -1463,7 +1466,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the module's code address from the second operand. */
             uint32_t codeAddress = 0;
-            operandLoadResult = LoadUnsignedOperand
+            operandLoadResult = LoadUnsignedWordOperand
                 (engine, 4, &codeAddress);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -1563,7 +1566,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the module's symbol from the operand. */
             int32_t moduleSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &moduleSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -1666,7 +1669,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the argument's symbol from the operand. */
             int32_t argumentSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &argumentSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -1721,7 +1724,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the parameter's symbol from the operand. */
             int32_t parameterSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &parameterSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -1763,7 +1766,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the parameter's symbol from the operand. */
             int32_t parameterSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &parameterSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -2552,7 +2555,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Fetch the member variables's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedOperand
+            AspRunResult operandLoadResult = LoadSignedWordOperand
                 (engine, operandSize, &variableSymbol);
             if (operandLoadResult != AspRunResult_OK)
             {
@@ -2624,6 +2627,28 @@ static AspRunResult Step(AspEngine *engine)
         }
     }
 
+    return AspRunResult_OK;
+}
+
+static AspRunResult LoadUnsignedWordOperand
+    (AspEngine *engine, unsigned operandSize, uint32_t *operand)
+{
+    AspRunResult result = LoadUnsignedOperand(engine, operandSize, operand);
+    if (result != AspRunResult_OK)
+        return result;
+    if (*operand > AspWordMax)
+        return AspRunResult_ValueOutOfRange;
+    return AspRunResult_OK;
+}
+
+static AspRunResult LoadSignedWordOperand
+    (AspEngine *engine, unsigned operandSize, int32_t *operand)
+{
+    AspRunResult result = LoadSignedOperand(engine, operandSize, operand);
+    if (result != AspRunResult_OK)
+        return result;
+    if (*operand < AspSignedWordMin || *operand > AspSignedWordMax)
+        return AspRunResult_ValueOutOfRange;
     return AspRunResult_OK;
 }
 
