@@ -29,7 +29,12 @@ AspRunResult AspAssignSimple
         {
             AspDataEntry *oldValue = AspValueEntry
                 (engine, AspDataGetElementValueIndex(address));
-            AspUnref(engine, oldValue);
+            if (AspIsObject(oldValue))
+            {
+                AspUnref(engine, oldValue);
+                if (engine->runResult != AspRunResult_OK)
+                    return engine->runResult;
+            }
             AspDataSetElementValueIndex(address, newValueIndex);
             break;
         }
@@ -39,7 +44,12 @@ AspRunResult AspAssignSimple
         {
             AspDataEntry *oldValue = AspValueEntry
                 (engine, AspDataGetTreeNodeValueIndex(address));
-            AspUnref(engine, oldValue);
+            if (AspIsObject(oldValue))
+            {
+                AspUnref(engine, oldValue);
+                if (engine->runResult != AspRunResult_OK)
+                    return engine->runResult;
+            }
             AspDataSetTreeNodeValueIndex(address, newValueIndex);
             break;
         }

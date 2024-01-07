@@ -147,6 +147,15 @@ bool AspSequenceEraseElement
     (AspEngine *engine, AspDataEntry *sequence, AspDataEntry *element,
      bool eraseValue)
 {
+    AspRunResult result = AspRunResult_OK;
+
+    AspAssert
+        (engine, sequence != 0 && IsSequenceType(AspDataGetType(sequence)));
+    result = AspAssert
+        (engine, element != 0 && IsElementType(AspDataGetType(element)));
+    if (result != AspRunResult_OK)
+        return false;
+
     /* Update links in adjacent elements. */
     uint32_t prevIndex = AspDataGetElementPreviousIndex(element);
     uint32_t nextIndex = AspDataGetElementNextIndex(element);
@@ -166,7 +175,8 @@ bool AspSequenceEraseElement
         AspDataGetStringFragmentSize(value) : 1U;
 
     /* Unreference entries. */
-    if (eraseValue)
+    if (eraseValue &&
+        (AspDataGetType(sequence) == DataType_String || AspIsObject(value)))
     {
         AspUnref(engine, value);
         if (engine->runResult != AspRunResult_OK)

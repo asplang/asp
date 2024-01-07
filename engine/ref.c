@@ -89,7 +89,9 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     bool eraseKey =
                         nextResult.key != 0 && IsTerminal(nextResult.key);
                     bool eraseValue =
-                        nextResult.value != 0 && IsTerminal(nextResult.value);
+                        nextResult.value != 0 &&
+                        IsTerminal(nextResult.value) &&
+                        AspIsObject(nextResult.value);
                     AspTreeEraseNode
                         (engine, entry, nextResult.node,
                          eraseKey, eraseValue);
@@ -97,7 +99,8 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     bool pushKey = nextResult.key != 0 && !eraseKey;
                     if (pushKey)
                         AspPushNoUse(engine, nextResult.key);
-                    if (nextResult.value != 0 && !eraseValue)
+                    if (nextResult.value != 0 && !eraseValue &&
+                        AspIsObject(nextResult.value))
                     {
                         if (pushKey)
                         {

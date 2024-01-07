@@ -109,12 +109,16 @@ AspTreeResult AspTreeInsert
         /* Replace the entry's value if applicable. */
         if (treeType != DataType_Set)
         {
-            AspUnref(engine, AspValueEntry
-                (engine, AspDataGetTreeNodeValueIndex(foundNode)));
-            if (engine->runResult != AspRunResult_OK)
+            AspDataEntry *oldValue = AspValueEntry
+                (engine, AspDataGetTreeNodeValueIndex(foundNode));
+            if (AspIsObject(oldValue))
             {
-                result.result = engine->runResult;
-                return result;
+                AspUnref(engine, oldValue);
+                if (engine->runResult != AspRunResult_OK)
+                {
+                    result.result = engine->runResult;
+                    return result;
+                }
             }
             AspDataSetTreeNodeValueIndex(foundNode, AspIndex
                 (engine, value));
@@ -297,10 +301,14 @@ AspRunResult AspTreeEraseNode
     }
     if (eraseValue && type != DataType_SetNode)
     {
-        AspUnref(engine, AspValueEntry
-            (engine, AspDataGetTreeNodeValueIndex(node)));
-        if (engine->runResult != AspRunResult_OK)
-            return engine->runResult;
+        AspDataEntry *value = AspValueEntry
+            (engine, AspDataGetTreeNodeValueIndex(node));
+        if (AspIsObject(value))
+        {
+            AspUnref(engine, value);
+            if (engine->runResult != AspRunResult_OK)
+                return engine->runResult;
+        }
         AspDataSetTreeNodeValueIndex(node, 0);
     }
     if (type != DataType_SetNode)
