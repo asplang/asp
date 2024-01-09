@@ -57,7 +57,8 @@ static AspRunResult asp_print1
         if (index + sizeof buffer > size)
             bufferLen = size - index;
         AspStringValue(engine, valueString, 0, buffer, index, sizeof buffer);
-        printf("%.*s", (int)bufferLen, buffer);
+        for (size_t byteIndex = 0; byteIndex < bufferLen; byteIndex++)
+            putchar(buffer[byteIndex]);
     }
 
     AspUnref(engine, valueString);
