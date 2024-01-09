@@ -1154,7 +1154,8 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *stackEntry = AspPush(engine, iteratorResult.value);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspUnref(engine, iteratorResult.value);
+            if (AspIsObject(iteratorResult.value))
+                AspUnref(engine, iteratorResult.value);
 
             break;
         }
