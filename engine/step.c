@@ -2230,11 +2230,14 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_UnexpectedType;
             AspRef(engine, index);
             AspPop(engine);
+            DataType indexType = AspDataGetType(index);
 
             /* Access the container on top of the stack. */
             AspDataEntry *container = AspTopValue(engine);
             if (container == 0)
                 return AspRunResult_StackUnderflow;
+            if (!AspIsObject(container))
+                return AspRunResult_UnexpectedType;
             AspRef(engine, container);
             AspPop(engine);
             DataType containerType = AspDataGetType(container);
@@ -2249,7 +2252,7 @@ static AspRunResult Step(AspEngine *engine)
                     if (opCode == OpCode_IDXA)
                         return AspRunResult_UnexpectedType;
 
-                    switch (AspDataGetType(index))
+                    switch (indexType)
                     {
                         default:
                             return AspRunResult_UnexpectedType;
@@ -2390,7 +2393,7 @@ static AspRunResult Step(AspEngine *engine)
 
                 case DataType_List:
                 {
-                    switch (AspDataGetType(index))
+                    switch (indexType)
                     {
                         default:
                             return AspRunResult_UnexpectedType;

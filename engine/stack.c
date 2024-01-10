@@ -45,17 +45,40 @@ AspDataEntry *AspTopValue(AspEngine *engine)
 {
     if (engine->stackTop == 0)
         return 0;
-    return AspValueEntry(engine,
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(engine->stackTop) == DataType_StackEntry);
+    if (assertResult != AspRunResult_OK)
+        return 0;
+
+    AspDataEntry *value = AspValueEntry(engine,
         AspDataGetStackEntryValueIndex(engine->stackTop));
+    assertResult = AspAssert
+        (engine, AspDataGetType(value) != DataType_Free);
+    if (assertResult != AspRunResult_OK)
+        return 0;
+
+    return value;
 }
 
 AspDataEntry *AspTopValue2(AspEngine *engine)
 {
-    if (engine->stackTop == 0 ||
-        !AspDataGetStackEntryHasValue2(engine->stackTop))
+    if (engine->stackTop == 0)
         return 0;
-    return AspValueEntry(engine,
+    AspRunResult assertResult = AspAssert
+        (engine, AspDataGetType(engine->stackTop) == DataType_StackEntry);
+    if (assertResult != AspRunResult_OK)
+        return 0;
+    if (!AspDataGetStackEntryHasValue2(engine->stackTop))
+        return 0;
+
+    AspDataEntry *value = AspValueEntry(engine,
         AspDataGetStackEntryValue2Index(engine->stackTop));
+    assertResult = AspAssert
+        (engine, AspDataGetType(engine->stackTop) != DataType_Free);
+    if (assertResult != AspRunResult_OK)
+        return 0;
+
+    return value;
 }
 
 bool AspPop(AspEngine *engine)
@@ -72,16 +95,19 @@ static bool AspPop1(AspEngine *engine, bool eraseValue)
 {
     if (engine->stackTop == 0)
         return false;
-
     AspRunResult assertResult = AspAssert
         (engine, AspDataGetType(engine->stackTop) == DataType_StackEntry);
     if (assertResult != AspRunResult_OK)
         return false;
 
-    AspDataEntry *object = AspValueEntry
+    AspDataEntry *value = AspValueEntry
         (engine, AspDataGetStackEntryValueIndex(engine->stackTop));
-    if (eraseValue && AspIsObject(object))
-        AspUnref(engine, object);
+    assertResult = AspAssert
+        (engine, AspDataGetType(value) != DataType_Free);
+    if (assertResult != AspRunResult_OK)
+        return false;
+    if (eraseValue && AspIsObject(value))
+        AspUnref(engine, value);
 
     uint32_t prevIndex = AspDataGetStackEntryPreviousIndex(engine->stackTop);
     AspUnref(engine, engine->stackTop);
