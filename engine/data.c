@@ -115,7 +115,8 @@ AspRunResult AspCheckIsImmutableObject
        the engine's stack. */
     bool isImmutable = true;
     AspDataEntry *startStackTop = engine->stackTop;
-    while (true)
+    uint32_t iterationCount = 0;
+    while (iterationCount++ < engine->cycleDetectionLimit)
     {
         for (AspSequenceResult nextResult = AspSequenceNext
                 (engine, (AspDataEntry *)entry, 0);
@@ -148,6 +149,8 @@ AspRunResult AspCheckIsImmutableObject
         entry = AspTopValue(engine);
         AspPopNoErase(engine);
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
 
     /* Unwind the working stack if necessary. */
     if (engine->runResult == AspRunResult_OK)

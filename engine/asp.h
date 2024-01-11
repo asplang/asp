@@ -43,6 +43,7 @@ typedef enum
     AspRunResult_InvalidEnd = 0x05,
     AspRunResult_BeyondEndOfCode = 0x06,
     AspRunResult_StackUnderflow = 0x07,
+    AspRunResult_CycleDetected = 0x08,
     AspRunResult_InvalidContext = 0x0A,
     AspRunResult_Redundant = 0x0B,
     AspRunResult_UnexpectedType = 0x0C,
@@ -98,6 +99,8 @@ ASP_API AspAddCodeResult AspSealCode
 ASP_API AspRunResult AspReset(AspEngine *);
 ASP_API AspRunResult AspSetArguments(AspEngine *, const char * const *);
 ASP_API AspRunResult AspSetArgumentsString(AspEngine *, const char *);
+ASP_API AspRunResult AspSetCycleDetectionLimit(AspEngine *, uint32_t);
+ASP_API uint32_t AspGetCycleDetectionLimit(AspEngine *);
 
 /* Execution control. */
 ASP_API AspRunResult AspRestart(AspEngine *);

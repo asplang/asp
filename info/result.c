@@ -50,6 +50,8 @@ const char *AspRunResultToString(int result)
             return "Beyond end of code";
         case AspRunResult_StackUnderflow:
             return "Stack underflow";
+        case AspRunResult_CycleDetected:
+            return "Cycle detected";
         case AspRunResult_InvalidContext:
             return "Invalid context";
         case AspRunResult_Redundant:

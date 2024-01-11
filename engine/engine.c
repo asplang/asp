@@ -65,6 +65,7 @@ AspRunResult AspInitializeEx
     engine->maxCodeSize = codeSize;
     engine->data = data;
     engine->dataEndIndex = dataSize / AspDataEntrySize();
+    engine->cycleDetectionLimit = (uint32_t)(engine->dataEndIndex / 2);
     engine->appSpec = appSpec;
     engine->inApp = false;
 
@@ -205,6 +206,16 @@ AspRunResult AspReset(AspEngine *engine)
     engine->appFunctionReturnValue = 0;
 
     return ResetData(engine);
+}
+
+AspRunResult AspSetCycleDetectionLimit(AspEngine *engine, uint32_t limit)
+{
+    engine->cycleDetectionLimit = limit;
+}
+
+uint32_t AspGetCycleDetectionLimit(AspEngine *engine)
+{
+    return engine->cycleDetectionLimit;
 }
 
 AspRunResult AspRestart(AspEngine *engine)

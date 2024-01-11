@@ -77,7 +77,10 @@ AspRunResult AspAssignSequence
 
     /* Avoid recursion by using the engine's stack. */
     AspDataEntry *startStackTop = engine->stackTop;
-    for (bool unrefNewValue = false; ; unrefNewValue = true)
+    uint32_t iterationCount = 0;
+    for (bool unrefNewValue = false;
+         iterationCount < engine->cycleDetectionLimit;
+         unrefNewValue = true, iterationCount++)
     {
         AspSequenceResult newValueIterResult = {AspRunResult_OK, 0, 0};
         for (AspSequenceResult addressIterResult = AspSequenceNext
@@ -140,6 +143,8 @@ AspRunResult AspAssignSequence
         AspRef(engine, newValue);
         AspPop(engine);
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
 
     return AspRunResult_OK;
 }

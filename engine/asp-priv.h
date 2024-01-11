@@ -83,6 +83,10 @@ struct AspEngine
     size_t freeCount, lowFreeCount;
     uint32_t freeListIndex;
 
+    /* Loop iteration limit for detecting potential cycles in data
+       structures. */
+    uint32_t cycleDetectionLimit;
+
     /* Singletons for commonly used values. */
     AspDataEntry *noneSingleton, *falseSingleton, *trueSingleton;
 

@@ -165,15 +165,27 @@ int main(int argc, char **argv)
 
             if (option == "a")
             {
+                auto oldFlags = cout.flags();
+                auto oldFill = cout.fill();
                 cout
-                    << "Add code error " << value << ": "
+                    << "Add code error " << value
+                    << " (0x" << hex << uppercase << setfill('0')
+                    << setw(2) << value << "): "
                     << AspRunResultToString(value) << endl;
+                cout.flags(oldFlags);
+                cout.fill(oldFill);
             }
             else if (option == "e")
             {
+                auto oldFlags = cout.flags();
+                auto oldFill = cout.fill();
                 cout
-                    << "Run error " << value << ": "
+                    << "Run error " << value
+                    << " (0x" << hex << uppercase << setfill('0')
+                    << setw(2) << value << "): "
                     << AspRunResultToString(value) << endl;
+                cout.flags(oldFlags);
+                cout.fill(oldFill);
             }
             else if (option == "p")
             {

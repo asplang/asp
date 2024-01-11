@@ -370,7 +370,8 @@ static AspDataEntry *ToString
     AspDataEntry *startStackTop = engine->stackTop;
     AspDataEntry *next = 0;
     bool flag = false;
-    while (true)
+    uint32_t iterationCount = 0;
+    while (iterationCount++ < engine->cycleDetectionLimit)
     {
         char buffer[100];
         char type = (DataType)AspDataGetType(entry);
@@ -785,6 +786,11 @@ static AspDataEntry *ToString
         next = AspTopValue2(engine);
         flag = AspDataGetStackEntryFlag(engine->stackTop);
         AspPopNoErase(engine);
+    }
+    if (iterationCount >= engine->cycleDetectionLimit)
+    {
+        engine->runResult = AspRunResult_CycleDetected;
+        return 0;
     }
 
     /* Unwind the working stack if necessary. */
