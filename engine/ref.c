@@ -246,11 +246,6 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             AspPopNoErase(engine);
         }
     }
-
-    /* Check stack integrity. This check will ensure the item on the top of
-       the stack was not freed, which can happen with bad code. */
-    AspTopValue(engine);
-    AspTopValue2(engine);
 }
 
 static bool IsTerminal(AspDataEntry *entry)
