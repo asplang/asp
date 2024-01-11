@@ -50,8 +50,8 @@ AspDataEntry *AspTopValue(AspEngine *engine)
     if (assertResult != AspRunResult_OK)
         return 0;
 
-    AspDataEntry *value = AspValueEntry(engine,
-        AspDataGetStackEntryValueIndex(engine->stackTop));
+    AspDataEntry *value = AspValueEntry
+        (engine, AspDataGetStackEntryValueIndex(engine->stackTop));
     assertResult = AspAssert
         (engine, AspDataGetType(value) != DataType_Free);
     if (assertResult != AspRunResult_OK)
@@ -71,8 +71,8 @@ AspDataEntry *AspTopValue2(AspEngine *engine)
     if (!AspDataGetStackEntryHasValue2(engine->stackTop))
         return 0;
 
-    AspDataEntry *value = AspValueEntry(engine,
-        AspDataGetStackEntryValue2Index(engine->stackTop));
+    AspDataEntry *value = AspValueEntry
+        (engine, AspDataGetStackEntryValue2Index(engine->stackTop));
     assertResult = AspAssert
         (engine, AspDataGetType(engine->stackTop) != DataType_Free);
     if (assertResult != AspRunResult_OK)
@@ -100,11 +100,8 @@ static bool AspPop1(AspEngine *engine, bool eraseValue)
     if (assertResult != AspRunResult_OK)
         return false;
 
-    AspDataEntry *value = AspValueEntry
-        (engine, AspDataGetStackEntryValueIndex(engine->stackTop));
-    assertResult = AspAssert
-        (engine, AspDataGetType(value) != DataType_Free);
-    if (assertResult != AspRunResult_OK)
+    AspDataEntry *value = AspTopValue(engine);
+    if (value == 0)
         return false;
     if (eraseValue && AspIsObject(value))
         AspUnref(engine, value);
