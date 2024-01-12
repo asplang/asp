@@ -196,7 +196,14 @@ int main(int argc, char **argv)
                 }
                 uint32_t pc = static_cast<uint32_t>(value);
                 auto sourceLocation = AspGetSourceLocation(sourceInfo, pc);
-                cout << "Program counter " << value << ": ";
+                auto oldFlags = cout.flags();
+                auto oldFill = cout.fill();
+                cout
+                    << "Program counter " << pc
+                    << " (0x" << hex << uppercase << setfill('0')
+                    << setw(7) << pc << "): ";
+                cout.flags(oldFlags);
+                cout.fill(oldFill);
                 if (sourceLocation.fileName == nullptr)
                 {
                     cout << "No source";
