@@ -211,6 +211,7 @@ AspRunResult AspReset(AspEngine *engine)
 AspRunResult AspSetCycleDetectionLimit(AspEngine *engine, uint32_t limit)
 {
     engine->cycleDetectionLimit = limit;
+    return AspRunResult_OK;
 }
 
 uint32_t AspGetCycleDetectionLimit(AspEngine *engine)
