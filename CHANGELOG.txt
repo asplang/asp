@@ -7,6 +7,18 @@ chronological order.
 Changes
 -------
 
+Version 0.7.3.2 (compiler 0.7.1.5, engine 0.7.5.1):
+- Engine:
+  - Added cycle detection logic where applicable to end script execution when
+    encountering self-referencial data structures.
+  - Fixed some issues that would only arise from incorrect code (found during
+    fuzz testing).
+- Standalone application:
+  - Fixed an issue in the print function to do with output of strings
+    containing null bytes.
+- Information utility:
+  - Added hexadecimal display of error codes alongside the decimal values.
+
 Version 0.7.3.1 (compiler 0.7.1.5, engine 0.7.5.0):
 - Build:
   - Added INSTALL_DEV build option to configure installation of development
