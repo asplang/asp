@@ -970,6 +970,23 @@ void VariableExpression::Emit
          sourceLocation);
 }
 
+void SymbolExpression::Emit
+    (Executable &executable, EmitType emitType) const
+{
+    if (emitType == EmitType::Address)
+        throw string("Cannot take address of symbol expression");
+    else if (emitType == EmitType::Delete)
+        throw string("Cannot delete symbol expression");
+
+    auto nameSymbol = executable.Symbol(name);
+
+    ostringstream oss;
+    oss << "Push symbol of variable " << name;
+    executable.Insert
+        (new PushSymbolInstruction(nameSymbol, oss.str()),
+         sourceLocation);
+}
+
 void KeyValuePair::Emit(Executable &executable) const
 {
     valueExpression->Emit(executable);

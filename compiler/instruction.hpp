@@ -152,6 +152,24 @@ class PushFloatInstruction : public Instruction
         double value;
 };
 
+class PushSymbolInstruction : public Instruction
+{
+    public:
+
+        explicit PushSymbolInstruction
+            (std::int32_t symbol, const std::string &comment = "");
+
+    protected:
+
+        virtual unsigned OperandsSize() const;
+        virtual void WriteOperands(std::ostream &) const;
+        virtual void PrintCode(std::ostream &) const;
+
+    private:
+
+        std::int32_t symbol;
+};
+
 class PushStringInstruction : public Instruction
 {
     public:

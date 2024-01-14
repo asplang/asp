@@ -181,7 +181,7 @@ Token *Lexer::ProcessSpecial()
         {"|", TOKEN_BAR},
         {".", TOKEN_PERIOD},
         {":", TOKEN_COLON},
-        {"`", TOKEN_BACK_QUOTE},
+        {"`", TOKEN_GRAVE},
         {"(", TOKEN_LEFT_PAREN},
         {")", TOKEN_RIGHT_PAREN},
         {"[", TOKEN_LEFT_BRACKET},

@@ -753,6 +753,16 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeSymbolExpression, Expression *,
+     Token *, operatorToken, Token *, nameToken)
+{
+    auto result = new SymbolExpression(*operatorToken, *nameToken);
+    delete operatorToken;
+    delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
     (MakeLiteralExpression, Expression *,
      ConstantExpression *, expression)
 {

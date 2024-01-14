@@ -187,6 +187,9 @@ class Compiler
     DECLARE_METHOD
         (MakeVariableExpression, Expression *, Token *);
     DECLARE_METHOD
+        (MakeSymbolExpression, Expression *,
+         Token *, Token *);
+    DECLARE_METHOD
         (MakeLiteralExpression, Expression *,
          ConstantExpression *);
     DECLARE_METHOD

@@ -34,12 +34,12 @@
 %right UNARY TILDE. // Unary PLUS & MINUS, bitwise NOT.
 %right POWER.
 %left PERIOD. // Member access.
+%nonassoc GRAVE. // Unary symbol operator.
 %left LEFT_PAREN LEFT_BRACKET LEFT_BRACE.
 %nonassoc NAME.
 
 // Reserved tokens.
 %token ASSERT CLASS EXCEPT EXEC FINALLY LAMBDA NONLOCAL RAISE TRY WITH YIELD.
-%token BACK_QUOTE.
 %token UNEXPECTED_INDENT MISSING_INDENT MISMATCHED_UNINDENT INCONSISTENT_WS.
 
 // Tokens used in different contexts.
@@ -875,6 +875,12 @@ expression1(result) ::= set(setExpression).
 expression1(result) ::= list(listExpression).
 {
     result = ACTION(MakeListExpression, listExpression);
+}
+
+expression1(result) ::= GRAVE(operatorToken) NAME(nameToken).
+{
+    result = ACTION
+        (MakeSymbolExpression, operatorToken, nameToken);
 }
 
 expression1(result) ::= literal(literal).

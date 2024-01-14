@@ -325,6 +325,32 @@ void PushFloatInstruction::PrintCode(ostream &os) const
     os << "PUSHD " << value;
 }
 
+PushSymbolInstruction::PushSymbolInstruction
+    (int32_t symbol, const string &comment) :
+    Instruction
+        ((OperandSize(symbol) <= 1 ? OpCode_PUSHY1 :
+          OperandSize(symbol) == 2 ? OpCode_PUSHY2 : OpCode_PUSHY4),
+         comment),
+    symbol(symbol)
+{
+}
+
+unsigned PushSymbolInstruction::OperandsSize() const
+{
+    return max(1U, OperandSize(symbol));
+}
+
+void PushSymbolInstruction::WriteOperands(ostream &os) const
+{
+    uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
+    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+}
+
+void PushSymbolInstruction::PrintCode(ostream &os) const
+{
+    os << "PUSHY " << symbol;
+}
+
 PushStringInstruction::PushStringInstruction
     (const string &s, const string &comment) :
     Instruction

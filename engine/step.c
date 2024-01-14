@@ -206,6 +206,45 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
+        case OpCode_PUSHY4:
+            operandSize += 2;
+        case OpCode_PUSHY2:
+            operandSize++;
+        case OpCode_PUSHY1:
+            operandSize++;
+        {
+            #ifdef ASP_DEBUG
+            printf("PUSHY ");
+            #endif
+
+            /* Fetch the symbol from the operand. */
+            int32_t value;
+            AspRunResult operandLoadResult = LoadSignedWordOperand
+                (engine, operandSize, &value);
+            if (operandLoadResult != AspRunResult_OK)
+            {
+                #ifdef ASP_DEBUG
+                puts("?");
+                #endif
+                return operandLoadResult;
+            }
+            #ifdef ASP_DEBUG
+            printf("%d\n", value);
+            #endif
+
+            AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Symbol);
+            if (valueEntry == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspDataSetSymbol(valueEntry, value);
+
+            AspDataEntry *stackEntry = AspPush(engine, valueEntry);
+            if (stackEntry == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspUnref(engine, valueEntry);
+
+            break;
+        }
+
         case OpCode_PUSHS4:
             operandSize += 2;
         case OpCode_PUSHS2:

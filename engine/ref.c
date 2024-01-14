@@ -257,6 +257,7 @@ static bool IsTerminal(AspDataEntry *entry)
         DataType_Boolean,
         DataType_Integer,
         DataType_Float,
+        DataType_Symbol,
         DataType_Type,
         DataType_CodeAddress,
         DataType_AppIntegerObject,

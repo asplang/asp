@@ -269,6 +269,20 @@ class VariableExpression : public Expression
         int32_t symbol;
 };
 
+class SymbolExpression : public Expression
+{
+    public:
+
+        SymbolExpression
+            (const Token &operatorToken, const Token &nameToken);
+
+        virtual void Emit(Executable &, EmitType) const;
+
+    private:
+
+        std::string name;
+};
+
 class KeyValuePair : public NonTerminal
 {
     public:

@@ -123,6 +123,7 @@ ASP_API bool AspIsFloat(const AspDataEntry *);
 ASP_API bool AspIsIntegral(const AspDataEntry *);
 ASP_API bool AspIsNumber(const AspDataEntry *);
 ASP_API bool AspIsNumeric(const AspDataEntry *);
+ASP_API bool AspIsSymbol(const AspDataEntry *);
 ASP_API bool AspIsRange(const AspDataEntry *);
 ASP_API bool AspIsString(const AspDataEntry *);
 ASP_API bool AspIsTuple(const AspDataEntry *);
@@ -137,6 +138,7 @@ ASP_API bool AspIsType(const AspDataEntry *);
 ASP_API bool AspIsTrue(AspEngine *, const AspDataEntry *);
 ASP_API bool AspIntegerValue(const AspDataEntry *, int32_t *);
 ASP_API bool AspFloatValue(const AspDataEntry *, double *);
+ASP_API bool AspSymbolValue(const AspDataEntry *, int32_t *);
 ASP_API bool AspRangeValues
     (AspEngine *, const AspDataEntry *,
      int32_t *start, int32_t *end, int32_t *step);
@@ -164,6 +166,7 @@ ASP_API AspDataEntry *AspNewEllipsis(AspEngine *);
 ASP_API AspDataEntry *AspNewBoolean(AspEngine *, bool);
 ASP_API AspDataEntry *AspNewInteger(AspEngine *, int32_t);
 ASP_API AspDataEntry *AspNewFloat(AspEngine *, double);
+ASP_API AspDataEntry *AspNewSymbol(AspEngine *, int32_t);
 ASP_API AspDataEntry *AspNewRange
     (AspEngine *, int32_t start, int32_t end, int32_t step);
 ASP_API AspDataEntry *AspNewUnboundedRange

@@ -17,6 +17,10 @@ typedef enum OpCode
     OpCode_PUSHI2 = 0x06, /* 2-byte integer */
     OpCode_PUSHI4 = 0x07, /* 4-byte integer */
     OpCode_PUSHD = 0x08, /* double-precision floating-point */
+    /* Opcode_PUSHCX = 0x09, double-precision complex, placeholder */
+    OpCode_PUSHY1 = 0x0D, /* 1-byte variable symbol */
+    OpCode_PUSHY2 = 0x0E, /* 2-byte variable symbol */
+    OpCode_PUSHY4 = 0x0F, /* 4-byte variable symbol */
     OpCode_PUSHS0 = 0x10, /* empty string */
     OpCode_PUSHS1 = 0x11, /* 1-byte length string */
     OpCode_PUSHS2 = 0x12, /* 2-byte length string */
@@ -28,9 +32,9 @@ typedef enum OpCode
     OpCode_PUSHAL = 0x18, /* argument list */
     OpCode_PUSHPL = 0x19, /* parameter list */
     OpCode_PUSHCA = 0x1C, /* 4-byte code address */
-    OpCode_PUSHM1 = 0x1D, /* 1-byte symbol */
-    OpCode_PUSHM2 = 0x1E, /* 2-byte symbol */
-    OpCode_PUSHM4 = 0x1F, /* 4-byte symbol */
+    OpCode_PUSHM1 = 0x1D, /* 1-byte module symbol */
+    OpCode_PUSHM2 = 0x1E, /* 2-byte module symbol */
+    OpCode_PUSHM4 = 0x1F, /* 4-byte module symbol */
     OpCode_POP = 0x20,
 
     /* Unary operations. */

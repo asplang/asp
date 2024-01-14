@@ -109,6 +109,7 @@ static TypeName gTypeNames[] =
     {DataType_Integer, "int"},
     {DataType_Float, "float"},
     /* {DataType_Complex, "cmplx"}, */
+    {DataType_Symbol, "sym"},
     {DataType_Range, "range"},
     {DataType_String, "str"},
     {DataType_Tuple, "tuple"},
@@ -176,6 +177,9 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
         case DataType_Float:
             fprintf(fp, " value=%g", AspDataGetFloat(entry));
+            break;
+        case DataType_Symbol:
+            fprintf(fp, " value=%d", AspDataGetSymbol(entry));
             break;
         case DataType_Range:
             fprintf(fp, " start=0x%7.7X end=0x%7.7X step=0x%7.7X",

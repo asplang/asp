@@ -299,6 +299,13 @@ string VariableExpression::Name() const
     return name;
 }
 
+SymbolExpression::SymbolExpression
+    (const Token &operatorToken, const Token &nameToken) :
+    Expression(operatorToken),
+    name(nameToken.s)
+{
+}
+
 KeyValuePair::KeyValuePair
     (Expression *keyExpression, Expression *valueExpression) :
     NonTerminal((SourceElement &)*keyExpression),

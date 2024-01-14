@@ -26,6 +26,7 @@ typedef enum
     DataType_Integer = 0x03,
     DataType_Float = 0x04,
     /* DataType_Complex = 0x05, placeholder; not supported */
+    DataType_Symbol = 0x06,
     DataType_Range = 0x07,
     DataType_String = 0x08,
     DataType_Tuple = 0x09,
@@ -183,6 +184,12 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     ((eptr)->d = (value))
 #define AspDataGetFloat(eptr) \
     ((eptr)->d)
+
+/* Symbol entry field access. */
+#define AspDataSetSymbol(eptr, value) \
+    (AspDataSetSignedWord0((eptr), (value)))
+#define AspDataGetSymbol(eptr) \
+    (AspDataGetSignedWord0((eptr)))
 
 /* Range entry field access. */
 #define AspDataSetRangeHasStart(eptr, value) \
