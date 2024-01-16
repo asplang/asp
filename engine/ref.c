@@ -26,6 +26,9 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
     AspDataEntry *startStackTop = engine->stackTop;
     while (true)
     {
+        AspRunResult assertResult = AspAssert(engine, entry != 0);
+        if (assertResult != AspRunResult_OK)
+            return;
         if (AspIsObject(entry))
             AspDataSetUseCount(entry, AspDataGetUseCount(entry) - 1U);
         if (!AspIsObject(entry) || AspDataGetUseCount(entry) == 0)
