@@ -511,20 +511,25 @@ static int CompareFloats
 {
     /* Perform a standard comparison when possible. Note that when NaNs are
        involved, the result will be nonintuitive, but standardized. */
-    bool localNanDetected = isnan(leftValue) || isnan(rightValue);
+    bool leftIsNaN = isnan(leftValue), rightIsNaN = isnan(rightValue);
+    bool localNanDetected = leftIsNaN || rightIsNaN;
     if (compareType != AspCompareType_Key || !localNanDetected)
     {
         /* Update whether a NaN has been detected, if applicable. */
         *nanDetected = *nanDetected || localNanDetected;
-
         return
             leftValue == rightValue ? 0 :
             leftValue < rightValue ? -1 : +1;
     }
 
     /* Handle NaNs in key comparisons, which must yield predictable results.
-       Note that a good optimizer will eliminate all but one of the following
-       code paths. */
+       First, place all NaNs prior to non-NaNs in the sort order. */
+    if (leftIsNaN != rightIsNaN)
+        return leftIsNaN > rightIsNaN ? -1 : +1;
+
+    /* When comparing two NaNs, perform a comparison of their binary
+       representation. Note that a good optimizer will eliminate all but one
+       of the code paths below. */
     #ifdef UINT64_MAX
     if (sizeof(uint64_t) == sizeof(double))
     {
