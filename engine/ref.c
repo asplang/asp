@@ -71,8 +71,10 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                         break;
 
                     bool eraseValue = IsTerminal(nextResult.value);
-                    AspSequenceEraseElement
+                    bool eraseSuccess = AspSequenceEraseElement
                         (engine, entry, nextResult.element, eraseValue);
+                    if (!eraseSuccess)
+                        break;
 
                     /* Make sure not to free addresses (i.e., elements)
                        within address sequences. */
@@ -95,9 +97,11 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                         nextResult.value != 0 &&
                         IsTerminal(nextResult.value) &&
                         AspIsObject(nextResult.value);
-                    AspTreeEraseNode
+                    AspRunResult eraseResult = AspTreeEraseNode
                         (engine, entry, nextResult.node,
                          eraseKey, eraseValue);
+                    if (eraseResult != AspRunResult_OK)
+                        break;
 
                     bool pushKey = nextResult.key != 0 && !eraseKey;
                     if (pushKey)
