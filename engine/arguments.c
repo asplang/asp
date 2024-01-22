@@ -234,11 +234,17 @@ static AspRunResult InitializeArguments
 static AspRunResult ClearArguments
     (AspEngine *engine, AspDataEntry *arguments)
 {
-    while (AspDataGetSequenceCount(arguments) != 0)
+    uint32_t iterationCount = 0;
+    for (;
+         iterationCount < engine->cycleDetectionLimit &&
+         AspDataGetSequenceCount(arguments) != 0;
+         iterationCount++)
     {
         if (!AspSequenceErase(engine, arguments, 0, true))
             return AspRunResult_InternalError;
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
 
     return AspRunResult_OK;
 }

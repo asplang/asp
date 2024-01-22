@@ -229,8 +229,19 @@ AspSequenceResult AspSequenceIndex
         /* Traverse the sequence to arrive at the requested element. */
         result = AspSequenceNext(engine, sequence, 0);
         int i = 0;
-        for (i = 0; i < index && result.element != 0; i++)
+        uint32_t iterationCount = 0;
+        for (i = 0;
+             iterationCount < engine->cycleDetectionLimit &&
+             i < index && result.element != 0;
+             iterationCount++, i++)
+        {
             result = AspSequenceNext(engine, sequence, result.element);
+        }
+        if (iterationCount >= engine->cycleDetectionLimit)
+        {
+            result.result = AspRunResult_CycleDetected;
+            return result;
+        }
     }
 
     return result;

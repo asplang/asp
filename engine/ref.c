@@ -24,7 +24,8 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
 
     /* Avoid recursion by using the engine's stack. */
     AspDataEntry *startStackTop = engine->stackTop;
-    while (true)
+    uint32_t iterationCount = 0;
+    for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
         AspRunResult assertResult = AspAssert(engine, entry != 0);
         if (assertResult != AspRunResult_OK)
@@ -60,8 +61,12 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                      t == DataType_ParameterList || t == DataType_ArgumentList)
             {
                 AspSequenceResult nextResult = {AspRunResult_OK, 0, 0};
-                while ((nextResult = AspSequenceNext
-                        (engine, entry, 0)).element != 0)
+                uint32_t iterationCount = 0;
+                for (;
+                     iterationCount < engine->cycleDetectionLimit &&
+                     (nextResult = AspSequenceNext
+                        (engine, entry, 0)).element != 0;
+                     iterationCount++)
                 {
                     AspRunResult assertResult = AspAssert
                         (engine,
@@ -83,13 +88,22 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                          AspIsObject(nextResult.value)))
                         AspPushNoUse(engine, nextResult.value);
                 }
+                if (iterationCount >= engine->cycleDetectionLimit)
+                {
+                    engine->runResult = AspRunResult_CycleDetected;
+                    break;
+                }
             }
             else if (t == DataType_Set || t == DataType_Dictionary ||
                      t == DataType_Namespace)
             {
                 AspTreeResult nextResult = {AspRunResult_OK, 0, 0, 0, false};
-                while ((nextResult =
-                        AspTreeNext(engine, entry, 0, true)).node != 0)
+                uint32_t iterationCount = 0;
+                for (;
+                     iterationCount < engine->cycleDetectionLimit &&
+                     (nextResult =
+                        AspTreeNext(engine, entry, 0, true)).node != 0;
+                     iterationCount++)
                 {
                     bool eraseKey =
                         nextResult.key != 0 && IsTerminal(nextResult.key);
@@ -122,6 +136,11 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                                 (engine, nextResult.value);
                         }
                     }
+                }
+                if (iterationCount >= engine->cycleDetectionLimit)
+                {
+                    engine->runResult = AspRunResult_CycleDetected;
+                    break;
                 }
             }
             else if (t == DataType_Iterator)
@@ -253,6 +272,8 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             AspPopNoErase(engine);
         }
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        engine->runResult = AspRunResult_CycleDetected;
 }
 
 static bool IsTerminal(AspDataEntry *entry)

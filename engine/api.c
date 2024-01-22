@@ -304,9 +304,12 @@ bool AspStringValue
         if (localSize > bufferSize)
             localSize = bufferSize;
 
+        uint32_t iterationCount = 0;
         for (AspSequenceResult fragmentResult =
              AspSequenceNext(engine, entry, 0);
+             iterationCount < engine->cycleDetectionLimit &&
              localSize > 0 && fragmentResult.element != 0;
+             iterationCount++,
              fragmentResult = AspSequenceNext
                 (engine, entry, fragmentResult.element))
         {
@@ -333,6 +336,11 @@ bool AspStringValue
             buffer += fetchSize;
             localSize -= fetchSize;
             bufferSize -= fetchSize;
+        }
+        if (iterationCount >= engine->cycleDetectionLimit)
+        {
+            engine->runResult = AspRunResult_CycleDetected;
+            return false;
         }
 
         if (bufferSize > 0)
@@ -371,7 +379,7 @@ static AspDataEntry *ToString
     AspDataEntry *next = 0;
     bool flag = false;
     uint32_t iterationCount = 0;
-    while (iterationCount++ < engine->cycleDetectionLimit)
+    for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
         char buffer[100];
         char type = (DataType)AspDataGetType(entry);
@@ -455,9 +463,12 @@ static AspDataEntry *ToString
                 }
 
                 /* Append the string. */
+                uint32_t iterationCount = 0;
                 for (AspSequenceResult nextResult =
                      AspSequenceNext(engine, entry, 0);
+                     iterationCount < engine->cycleDetectionLimit &&
                      nextResult.element != 0;
+                     iterationCount++,
                      nextResult = AspSequenceNext
                         (engine, entry, nextResult.element))
                 {
@@ -556,6 +567,11 @@ static AspDataEntry *ToString
                     }
                     if (result == 0)
                         break;
+                }
+                if (iterationCount >= engine->cycleDetectionLimit)
+                {
+                    engine->runResult = AspRunResult_CycleDetected;
+                    return 0;
                 }
                 if (result == 0)
                     break;
@@ -795,8 +811,21 @@ static AspDataEntry *ToString
 
     /* Unwind the working stack if necessary. */
     if (engine->runResult == AspRunResult_OK)
-        while (engine->stackTop != startStackTop)
+    {
+        uint32_t iterationCount = 0;
+        for (;
+             iterationCount < engine->cycleDetectionLimit &&
+             engine->stackTop != startStackTop;
+             iterationCount++)
+        {
             AspPopNoErase(engine);
+        }
+        if (iterationCount >= engine->cycleDetectionLimit)
+        {
+            engine->runResult = AspRunResult_CycleDetected;
+            return 0;
+        }
+    }
 
     return result;
 }
@@ -896,7 +925,11 @@ char AspStringElement
 
     /* Locate the character within the applicable fragment. */
     AspSequenceResult nextResult = AspSequenceNext(engine, str, 0);
-    for (; nextResult.element != 0;
+    uint32_t iterationCount = 0;
+    for (;
+         iterationCount < engine->cycleDetectionLimit &&
+         nextResult.element != 0;
+         iterationCount++,
          nextResult = AspSequenceNext(engine, str, nextResult.element))
     {
         AspDataEntry *fragment = nextResult.value;
@@ -909,6 +942,11 @@ char AspStringElement
 
         const uint8_t *stringData = AspDataGetStringFragmentData(fragment);
         return (char)stringData[index];
+    }
+    if (iterationCount >= engine->cycleDetectionLimit)
+    {
+        engine->runResult = AspRunResult_CycleDetected;
+        return 0;
     }
 
     return 0;

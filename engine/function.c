@@ -37,7 +37,11 @@ AspRunResult AspLoadArguments
 
     /* Assign each positional argument to its matching parameter. */
     AspSequenceResult parameterResult = {AspRunResult_OK, 0, 0};
-    for (; argumentResult.element != 0;
+    uint32_t iterationCount = 0;
+    for (;
+         iterationCount < engine->cycleDetectionLimit &&
+         argumentResult.element != 0;
+         iterationCount++,
          argumentResult = AspSequenceNext
             (engine, argumentList, argumentResult.element))
     {
@@ -91,9 +95,15 @@ AspRunResult AspLoadArguments
                 return insertResult.result;
         }
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
 
     /* Assign each named argument to its matching parameter. */
-    for (; argumentResult.element != 0;
+    iterationCount = 0;
+    for (;
+         iterationCount < engine->cycleDetectionLimit &&
+         argumentResult.element != 0;
+         iterationCount++,
          argumentResult = AspSequenceNext
             (engine, argumentList, argumentResult.element))
     {
@@ -111,7 +121,11 @@ AspRunResult AspLoadArguments
         AspSequenceResult parameterResult = AspSequenceNext
             (engine, parameterList, 0);
         bool parameterFound = false;
-        for (; parameterResult.element != 0;
+        uint32_t iterationCount = 0;
+        for (;
+             iterationCount < engine->cycleDetectionLimit &&
+             parameterResult.element != 0;
+             iterationCount++,
              parameterResult = AspSequenceNext
                 (engine, parameterList, parameterResult.element))
         {
@@ -132,6 +146,8 @@ AspRunResult AspLoadArguments
                 break;
             }
         }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
         if (!parameterFound)
         {
             #ifdef ASP_DEBUG
@@ -159,10 +175,15 @@ AspRunResult AspLoadArguments
         if (insertResult.result != AspRunResult_OK)
             return insertResult.result;
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
 
     /* Assign defaults values to remaining parameters. */
-    parameterResult = AspSequenceNext(engine, parameterList, 0);
-    for (; parameterResult.element != 0;
+    iterationCount = 0;
+    for (parameterResult = AspSequenceNext(engine, parameterList, 0);
+         iterationCount < engine->cycleDetectionLimit &&
+         parameterResult.element != 0;
+         iterationCount++,
          parameterResult = AspSequenceNext
             (engine, parameterList, parameterResult.element))
     {
@@ -210,6 +231,8 @@ AspRunResult AspLoadArguments
                 return insertResult.result;
         }
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
 
     if (AspDataGetTreeCount(ns) != AspDataGetSequenceCount(parameterList))
     {

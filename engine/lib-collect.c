@@ -68,9 +68,12 @@ static AspRunResult FillSequence
     }
     else if (AspIsString(iterable) || AspIsSequence(iterable))
     {
+        uint32_t iterationCount = 0;
         for (AspSequenceResult nextResult =
              AspSequenceNext(engine, iterable, 0);
+             iterationCount < engine->cycleDetectionLimit &&
              nextResult.element != 0;
+             iterationCount++,
              nextResult = AspSequenceNext
                 (engine, iterable, nextResult.element))
         {
@@ -103,12 +106,17 @@ static AspRunResult FillSequence
                     return appendResult.result;
             }
         }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
     }
     else if (AspIsSet(iterable) || AspIsDictionary(iterable))
     {
+        uint32_t iterationCount = 0;
         for (AspTreeResult nextResult =
              AspTreeNext(engine, iterable, 0, true);
+             iterationCount < engine->cycleDetectionLimit &&
              nextResult.node != 0;
+             iterationCount++,
              nextResult = AspTreeNext
                 (engine, iterable, nextResult.node, true))
         {
@@ -141,6 +149,8 @@ static AspRunResult FillSequence
                 AspUnref(engine, value);
             }
         }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
     }
     else if (!AspIsNone(iterable))
         return AspRunResult_UnexpectedType;

@@ -80,12 +80,15 @@ AspRunResult AspAssignSequence
     uint32_t iterationCount = 0;
     for (bool unrefNewValue = false;
          iterationCount < engine->cycleDetectionLimit;
-         unrefNewValue = true, iterationCount++)
+         iterationCount++, unrefNewValue = true)
     {
         AspSequenceResult newValueIterResult = {AspRunResult_OK, 0, 0};
+        uint32_t iterationCount = 0;
         for (AspSequenceResult addressIterResult = AspSequenceNext
                 (engine, address, 0);
+             iterationCount < engine->cycleDetectionLimit &&
              addressIterResult.element != 0;
+             iterationCount++,
              addressIterResult = AspSequenceNext
                 (engine, address, addressIterResult.element))
         {
@@ -120,6 +123,8 @@ AspRunResult AspAssignSequence
                     return assignResult;
             }
         }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
 
         /* Make sure not to unreference the top-level value, as the
            type of instruction (SET or SETP) decides how it should be

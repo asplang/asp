@@ -29,7 +29,8 @@ AspRunResult AspCompare
     AspDataEntry *startStackTop = engine->stackTop;
     int comparison = 0;
     AspDataEntry *leftNext = 0, *rightNext = 0;
-    while (true)
+    uint32_t iterationCount = 0;
+    for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
         /* Determine whether objects are of the same type. */
         uint8_t
@@ -493,11 +494,23 @@ AspRunResult AspCompare
             }
         }
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
 
     /* Unwind the working stack if necessary. */
     if (engine->runResult == AspRunResult_OK)
-        while (engine->stackTop != startStackTop)
+    {
+        uint32_t iterationCount = 0;
+        for (;
+             iterationCount < engine->cycleDetectionLimit &&
+             engine->stackTop != startStackTop;
+             iterationCount++)
+        {
             AspPopNoErase(engine);
+        }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
+    }
 
     *result = comparison;
     if (nanDetected != 0)
@@ -525,7 +538,7 @@ static int CompareFloats
     /* Handle NaNs in key comparisons, which must yield predictable results.
        First, place all NaNs prior to non-NaNs in the sort order. */
     if (leftIsNaN != rightIsNaN)
-        return leftIsNaN > rightIsNaN ? -1 : +1;
+        return leftIsNaN ? -1 : +1;
 
     /* When comparing two NaNs, perform a comparison of their binary
        representation. Note that a good optimizer will eliminate all but one

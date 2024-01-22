@@ -329,7 +329,11 @@ AspRunResult AspTreeEraseNode
         AspDataEntry *workNode = fixNode;
         AspDataEntry *rootNode = AspEntry
             (engine, AspDataGetTreeRootIndex(tree));
-        while (workNode != rootNode && AspDataGetTreeNodeIsBlack(workNode))
+        uint32_t iterationCount = 0;
+        for (;
+             iterationCount < engine->cycleDetectionLimit &&
+             workNode != rootNode && AspDataGetTreeNodeIsBlack(workNode);
+             iterationCount++)
         {
             uint32_t workIndex = AspIndex(engine, workNode);
             AspDataEntry *parentNode = AspEntry
@@ -396,6 +400,8 @@ AspRunResult AspTreeEraseNode
                 break;
             }
         }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
         if (workNode)
             AspDataSetTreeNodeIsBlack(workNode, true);
     }
@@ -552,13 +558,22 @@ AspTreeResult AspTreeNext
     {
         uint32_t parentIndex = AspDataGetTreeNodeParentIndex(node);
         result.node = AspEntry(engine, parentIndex);
-        while (result.node != 0 &&
-               AspIndex(engine, node) ==
-               GetChildIndex(engine, result.node, right))
+        uint32_t iterationCount = 0;
+        for (;
+             iterationCount < engine->cycleDetectionLimit &&
+             result.node != 0 &&
+             AspIndex(engine, node) ==
+             GetChildIndex(engine, result.node, right);
+             iterationCount++)
         {
             node = result.node;
             parentIndex = AspDataGetTreeNodeParentIndex(result.node);
             result.node = AspEntry(engine, parentIndex);
+        }
+        if (iterationCount >= engine->cycleDetectionLimit)
+        {
+            result.result = AspRunResult_CycleDetected;
+            return result;
         }
     }
 
@@ -589,7 +604,10 @@ static AspRunResult Insert
 
     AspDataEntry *parentNode = 0;
     AspDataEntry *targetNode = AspEntry(engine, AspDataGetTreeRootIndex(tree));
-    while (targetNode != 0)
+    uint32_t iterationCount = 0;
+    for (;
+         iterationCount < engine->cycleDetectionLimit && targetNode != 0;
+         iterationCount++)
     {
         parentNode = targetNode;
         int comparison;
@@ -601,6 +619,8 @@ static AspRunResult Insert
             (engine, targetNode, comparison > 0);
         targetNode = AspEntry(engine, childIndex);
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
 
     AspDataSetTreeNodeParentIndex(node, AspIndex(engine, parentNode));
     uint32_t nodeIndex = AspIndex(engine, node);
@@ -620,7 +640,11 @@ static AspRunResult Insert
         /* Rebalance the tree. */
         AspDataEntry *workNode = node;
         uint32_t workIndex = nodeIndex;
-        while (parentNode != 0 && !AspDataGetTreeNodeIsBlack(parentNode))
+        uint32_t iterationCount = 0;
+        for (;
+             iterationCount < engine->cycleDetectionLimit &&
+             parentNode != 0 && !AspDataGetTreeNodeIsBlack(parentNode);
+             iterationCount++)
         {
             uint32_t grandparentIndex = AspDataGetTreeNodeParentIndex
                 (parentNode);
@@ -669,6 +693,8 @@ static AspRunResult Insert
                     (engine, AspDataGetTreeNodeParentIndex(workNode));
             }
         }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
     }
     AspDataSetTreeNodeIsBlack
         (AspEntry(engine, AspDataGetTreeRootIndex(tree)), true);
@@ -689,7 +715,10 @@ static AspDataEntry *FindNode
         return 0;
 
     AspDataEntry *node = AspEntry(engine, AspDataGetTreeRootIndex(tree));
-    while (node != 0)
+    uint32_t iterationCount = 0;
+    for (;
+         iterationCount < engine->cycleDetectionLimit && node != 0;
+         iterationCount++)
     {
         int comparison;
         AspRunResult compareResult = CompareKeys
@@ -706,6 +735,11 @@ static AspDataEntry *FindNode
             return 0;
         node = nextNode;
     }
+    if (iterationCount >= engine->cycleDetectionLimit)
+    {
+        engine->runResult = AspRunResult_CycleDetected;
+        return 0;
+    }
 
     return node;
 }
@@ -721,8 +755,19 @@ static AspDataEntry *GetLimitNode
         return 0;
 
     uint32_t childIndex;
-    while ((childIndex = GetChildIndex(engine, node, right)) != 0)
+    uint32_t iterationCount = 0;
+    for (;
+         iterationCount < engine->cycleDetectionLimit &&
+         (childIndex = GetChildIndex(engine, node, right)) != 0;
+         iterationCount++)
+    {
         node = AspEntry(engine, childIndex);
+    }
+    if (iterationCount >= engine->cycleDetectionLimit)
+    {
+        engine->runResult = AspRunResult_CycleDetected;
+        return 0;
+    }
 
     return node;
 }

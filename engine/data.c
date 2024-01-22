@@ -116,11 +116,14 @@ AspRunResult AspCheckIsImmutableObject
     bool isImmutable = true;
     AspDataEntry *startStackTop = engine->stackTop;
     uint32_t iterationCount = 0;
-    while (iterationCount++ < engine->cycleDetectionLimit)
+    for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
+        uint32_t iterationCount = 0;
         for (AspSequenceResult nextResult = AspSequenceNext
                 (engine, (AspDataEntry *)entry, 0);
+             iterationCount < engine->cycleDetectionLimit &&
              nextResult.element != 0;
+             iterationCount++,
              nextResult = AspSequenceNext
                 (engine, (AspDataEntry *)entry, nextResult.element))
         {
@@ -137,6 +140,8 @@ AspRunResult AspCheckIsImmutableObject
                 break;
             }
         }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
         if (!isImmutable)
             break;
 
@@ -154,8 +159,18 @@ AspRunResult AspCheckIsImmutableObject
 
     /* Unwind the working stack if necessary. */
     if (engine->runResult == AspRunResult_OK)
-        while (engine->stackTop != startStackTop)
+    {
+        uint32_t iterationCount = 0;
+        for (;
+             iterationCount < engine->cycleDetectionLimit &&
+             engine->stackTop != startStackTop;
+             iterationCount++)
+        {
             AspPopNoErase(engine);
+        }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
+    }
 
     *result = isImmutable;
     return AspRunResult_OK;

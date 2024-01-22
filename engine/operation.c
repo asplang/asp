@@ -419,7 +419,11 @@ static AspOperationResult PerformConcatenationBinaryOperation
             {
                 AspSequenceResult nextResult = AspSequenceNext
                     (engine, operands[i], 0);
-                for (; nextResult.element != 0;
+                uint32_t iterationCount = 0;
+                for (;
+                     iterationCount < engine->cycleDetectionLimit &&
+                     nextResult.element != 0;
+                     iterationCount++,
                      nextResult = AspSequenceNext
                         (engine, operands[i], nextResult.element))
                 {
@@ -438,6 +442,13 @@ static AspOperationResult PerformConcatenationBinaryOperation
                         result.result = appendResult.result;
                         break;
                     }
+                }
+                if (result.result != AspRunResult_OK)
+                    break;
+                if (iterationCount >= engine->cycleDetectionLimit)
+                {
+                    result.result = AspRunResult_CycleDetected;
+                    break;
                 }
             }
 
@@ -505,9 +516,12 @@ static AspOperationResult PerformRepetitionBinaryOperation
             {
                 for (int32_t i = 0; i < repeatCountValue; i++)
                 {
+                    uint32_t iterationCount = 0;
                     for (AspSequenceResult nextResult = AspSequenceNext
                             (engine, sequence, 0);
+                         iterationCount < engine->cycleDetectionLimit &&
                          nextResult.element != 0;
+                         iterationCount++,
                          nextResult = AspSequenceNext
                             (engine, sequence, nextResult.element))
                     {
@@ -522,12 +536,16 @@ static AspOperationResult PerformRepetitionBinaryOperation
                             appendResult = AspSequenceAppend
                                 (engine, result.value, value);
                         if (appendResult.result != AspRunResult_OK)
+                        {
+                            result.result = appendResult.result;
                             break;
+                        }
                     }
-
-                    if (appendResult.result != AspRunResult_OK)
+                    if (result.result != AspRunResult_OK)
+                        break;
+                    if (iterationCount >= engine->cycleDetectionLimit)
                     {
-                        result.result = appendResult.result;
+                        result.result = AspRunResult_CycleDetected;
                         break;
                     }
                 }
@@ -749,8 +767,11 @@ static AspOperationResult PerformFormatBinaryOperation
     /* Scan format string and convert fields. */
     AspSequenceResult nextValueResult = {AspRunResult_OK, 0, 0};
     char formatBuffer[31], *fp = 0, formattedValueBuffer[61];
+    uint32_t iterationCount = 0;
     for (AspSequenceResult nextResult = AspSequenceNext(engine, format, 0);
+         iterationCount < engine->cycleDetectionLimit &&
          nextResult.element != 0;
+         iterationCount++,
          nextResult = AspSequenceNext(engine, format, nextResult.element))
     {
         AspDataEntry *fragment = nextResult.value;
@@ -937,9 +958,12 @@ static AspOperationResult PerformFormatBinaryOperation
                         /* Append the applicable portion of the string value
                            to the result. */
                         unsigned long remainingSize = sourceSize;
+                        uint32_t iterationCount = 0;
                         for (AspSequenceResult strNextResult = AspSequenceNext
                                 (engine, str, 0);
+                             iterationCount < engine->cycleDetectionLimit &&
                              remainingSize > 0 && strNextResult.element != 0;
+                             iterationCount++,
                              strNextResult = AspSequenceNext
                                 (engine, str, strNextResult.element))
                         {
@@ -959,6 +983,11 @@ static AspOperationResult PerformFormatBinaryOperation
                                 return result;
 
                             remainingSize -= fragmentSize;
+                        }
+                        if (iterationCount >= engine->cycleDetectionLimit)
+                        {
+                            result.result = AspRunResult_CycleDetected;
+                            return result;
                         }
 
                         /* Add right padding if applicable. */
@@ -1086,6 +1115,11 @@ static AspOperationResult PerformFormatBinaryOperation
                 fp = 0;
             }
         }
+    }
+    if (iterationCount >= engine->cycleDetectionLimit)
+    {
+        result.result = AspRunResult_CycleDetected;
+        return result;
     }
 
     /* Ensure the format was well formed. */
@@ -1229,9 +1263,7 @@ static AspOperationResult PerformMembershipOperation
                 isIn = false;
             else
             {
-                for (int index = 0;
-                     index <= rightCount - leftCount;
-                     index++)
+                for (int index = 0; index <= rightCount - leftCount; index++)
                 {
                     isIn = true;
                     int rightIndex = index;
@@ -1256,9 +1288,12 @@ static AspOperationResult PerformMembershipOperation
         case DataType_Tuple:
         case DataType_List:
         {
+            uint32_t iterationCount = 0;
             for (AspSequenceResult nextResult = AspSequenceNext
                     (engine, right, 0);
+                 iterationCount < engine->cycleDetectionLimit &&
                  !isIn && nextResult.element != 0;
+                 iterationCount++,
                  nextResult = AspSequenceNext
                     (engine, right, nextResult.element))
             {
@@ -1271,6 +1306,8 @@ static AspOperationResult PerformMembershipOperation
                     break;
                 isIn = comparison == 0;
             }
+            if (iterationCount >= engine->cycleDetectionLimit)
+                result.result = AspRunResult_CycleDetected;
             break;
         }
 

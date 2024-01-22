@@ -770,10 +770,13 @@ static AspRunResult Step(AspEngine *engine)
                             int32_t select = stepValue < 0 ?
                                 startValue + 1 : startValue;
                             AspDataEntry *selectedElement = 0;
+                            uint32_t iterationCount = 0;
                             for (AspSequenceResult nextResult =
                                  Navigate(engine, container, 0);
+                                 iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
                                  (stepValue < 0 ? i > endValue : i < endValue);
+                                 iterationCount++,
                                  i += increment, select -= increment,
                                  nextResult = Navigate
                                     (engine, container, nextResult.element))
@@ -800,6 +803,8 @@ static AspRunResult Step(AspEngine *engine)
                                 /* Prepare to identify the next element. */
                                 select = stepValue;
                             }
+                            if (iterationCount >= engine->cycleDetectionLimit)
+                                return AspRunResult_CycleDetected;
 
                             /* Erase the last selected element,
                                if applicable. */
@@ -2105,9 +2110,12 @@ static AspRunResult Step(AspEngine *engine)
                             return AspRunResult_UnexpectedType;
 
                         /* Add each value in the group as an argument. */
+                        uint32_t iterationCount = 0;
                         for (AspSequenceResult nextResult =
                              AspSequenceNext(engine, tuple, 0);
+                             iterationCount < engine->cycleDetectionLimit &&
                              nextResult.element != 0;
+                             iterationCount++,
                              nextResult = AspSequenceNext
                                 (engine, tuple, nextResult.element))
                         {
@@ -2128,6 +2136,8 @@ static AspRunResult Step(AspEngine *engine)
                             if (appendResult.result != AspRunResult_OK)
                                 return appendResult.result;
                         }
+                        if (iterationCount >= engine->cycleDetectionLimit)
+                            return AspRunResult_CycleDetected;
 
                         AspUnref(engine, item);
                         if (engine->runResult != AspRunResult_OK)
@@ -2329,10 +2339,13 @@ static AspRunResult Step(AspEngine *engine)
                             int32_t increment = stepValue < 0 ? -1 : +1;
                             int32_t select = stepValue < 0 ?
                                 startValue + 1 : startValue;
+                            uint32_t iterationCount = 0;
                             for (AspSequenceResult nextResult =
                                  Navigate(engine, container, 0);
+                                 iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
                                  (stepValue < 0 ? i > endValue : i < endValue);
+                                 iterationCount++,
                                  nextResult = Navigate
                                     (engine, container, nextResult.element))
                             {
@@ -2369,6 +2382,8 @@ static AspRunResult Step(AspEngine *engine)
                                     select = stepValue;
                                 }
                             }
+                            if (iterationCount >= engine->cycleDetectionLimit)
+                                return AspRunResult_CycleDetected;
 
                             /* Push the resulting sequence. */
                             AspDataEntry *stackEntry = AspPush(engine, result);
@@ -2446,10 +2461,13 @@ static AspRunResult Step(AspEngine *engine)
                             int32_t increment = stepValue < 0 ? -1 : +1;
                             int32_t select = stepValue < 0 ?
                                 startValue + 1 : startValue;
+                            uint32_t iterationCount = 0;
                             for (AspSequenceResult nextResult =
                                  Navigate(engine, container, 0);
+                                 iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
                                  (stepValue < 0 ? i > endValue : i < endValue);
+                                 iterationCount++,
                                  i += increment, select -= increment,
                                  nextResult = Navigate
                                     (engine, container, nextResult.element))
@@ -2467,6 +2485,8 @@ static AspRunResult Step(AspEngine *engine)
                                 /* Prepare to identify the next element. */
                                 select = stepValue;
                             }
+                            if (iterationCount >= engine->cycleDetectionLimit)
+                                return AspRunResult_CycleDetected;
 
                             /* Push the resulting sequence. */
                             AspDataEntry *stackEntry = AspPush(engine, result);
