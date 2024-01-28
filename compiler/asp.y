@@ -32,7 +32,7 @@
 %left PLUS MINUS.
 %left ASTERISK SLASH FLOOR_DIVIDE PERCENT. // Multiply, divide, etc.
 %right UNARY TILDE. // Unary PLUS & MINUS, bitwise NOT.
-%right POWER.
+%right DOUBLE_ASTERISK. // Power.
 %left PERIOD. // Member access.
 %nonassoc GRAVE. // Unary symbol operator.
 %left LEFT_PAREN LEFT_BRACKET LEFT_BRACE.
@@ -310,7 +310,13 @@ parameter(result) ::= NAME(nameToken).
 parameter(result) ::=
     ASTERISK NAME(nameToken).
 {
-    result = ACTION(MakeGroupParameter, nameToken);
+    result = ACTION(MakeTupleGroupParameter, nameToken);
+}
+
+parameter(result) ::=
+    DOUBLE_ASTERISK NAME(nameToken).
+{
+    result = ACTION(MakeDictionaryGroupParameter, nameToken);
 }
 
 %type block {Block *}
@@ -815,7 +821,7 @@ expression1(result) ::=
 }
 
 expression1(result) ::=
-    expression1(leftExpression) POWER(operatorToken)
+    expression1(leftExpression) DOUBLE_ASTERISK(operatorToken)
     expression1(rightExpression).
 {
     result = ACTION
@@ -937,7 +943,12 @@ argument(result) ::= expression1(valueExpression). [NAME]
 
 argument(result) ::= ASTERISK expression1(valueExpression). [NAME]
 {
-    result = ACTION(MakeGroupArgument, valueExpression);
+    result = ACTION(MakeIterableGroupArgument, valueExpression);
+}
+
+argument(result) ::= DOUBLE_ASTERISK expression1(valueExpression). [NAME]
+{
+    result = ACTION(MakeDictionaryGroupArgument, valueExpression);
 }
 
 %type range {RangeExpression *}

@@ -10,9 +10,10 @@
 
 using namespace std;
 
-static const char AppSpecVersion[1] = {'\x00'};
-static const uint32_t ParameterFlag_HasDefault = 0x10000000;
-static const uint32_t ParameterFlag_IsGroup    = 0x20000000;
+static const char AppSpecVersion[1] = {'\x01'};
+static const uint32_t ParameterFlag_HasDefault        = 0x10000000;
+static const uint32_t ParameterFlag_IsTupleGroup      = 0x20000000;
+static const uint32_t ParameterFlag_IsDictionaryGroup = 0x40000000;
 
 static void WriteValue(ostream &, unsigned *specByteCount, const Literal &);
 static void ContributeValue(crc_spec_t &, crc_session_t &, const Literal &);
@@ -141,7 +142,10 @@ void Generator::WriteApplicationHeader(ostream &os)
 
             os << "     AspDataEntry *" << parameter.Name() << ',';
             if (parameter.IsGroup())
-                os << " /* group */";
+                os
+                    << "/* "
+                    << (parameter.IsTupleGroup() ? "tuple" : "dictionary")
+                    << " group */";
             os << '\n';
         }
 
@@ -206,7 +210,9 @@ void Generator::WriteApplicationCode(ostream &os)
                 os
                     << "            AspParameterResult " << parameterName
                     << " = AspGroupParameterValue(engine, ns, "
-                    << parameterSymbol << ");\n"
+                    << parameterSymbol << ", "
+                    << (parameter.IsTupleGroup() ? "false" : "true")
+                    << ");\n"
                     << "            if (" << parameterName
                     << ".result != AspRunResult_OK)\n"
                     << "                return " << parameterName
@@ -289,8 +295,10 @@ void Generator::WriteApplicationCode(ostream &os)
                 const auto &defaultValue = parameter.DefaultValue();
                 if (defaultValue != 0)
                     word |= ParameterFlag_HasDefault;
-                if (parameter.IsGroup())
-                    word |= ParameterFlag_IsGroup;
+                if (parameter.IsTupleGroup())
+                    word |= ParameterFlag_IsTupleGroup;
+                else if (parameter.IsDictionaryGroup())
+                    word |= ParameterFlag_IsDictionaryGroup;
 
                 WriteStringEscapedHex(os, word);
                 specByteCount += sizeof word;

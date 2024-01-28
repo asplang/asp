@@ -229,7 +229,7 @@ AspDataEntry *AspParameterValue
 }
 
 AspParameterResult AspGroupParameterValue
-    (AspEngine *engine, AspDataEntry *ns, int32_t symbol)
+    (AspEngine *engine, AspDataEntry *ns, int32_t symbol, bool dictionary)
 {
     AspParameterResult result = {AspRunResult_OK, 0};
 

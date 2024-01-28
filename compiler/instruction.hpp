@@ -484,8 +484,16 @@ class MakeArgumentInstruction : public Instruction
 {
     public:
 
+        enum class Type
+        {
+            Positional,
+            Named,
+            IterableGroup,
+            DictionaryGroup,
+        };
+
         explicit MakeArgumentInstruction
-            (bool isGroup, const std::string &comment = "");
+            (Type, const std::string &comment = "");
         explicit MakeArgumentInstruction
             (std::int32_t symbol, const std::string &comment = "");
 
@@ -504,8 +512,16 @@ class MakeParameterInstruction : public Instruction
 {
     public:
 
+        enum class Type
+        {
+            Positional,
+            Defaulted,
+            TupleGroup,
+            DictionaryGroup,
+        };
+
         MakeParameterInstruction
-            (std::int32_t symbol, bool withDefault, bool isGroup,
+            (std::int32_t symbol, Type type,
              const std::string &comment = "");
 
     protected:

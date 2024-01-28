@@ -311,9 +311,44 @@ static int main1(int argc, char **argv)
         }
     }
 
+    // Define a function to close all output files.
+    auto closeAll = [&] (bool reportError = true)
+    {
+        bool writeError = false;
+        struct
+        {
+            string fileName;
+            ofstream &stream;
+        } files[] =
+        {
+            {specFileName, specStream},
+            {headerFileName, headerStream},
+            {codeFileName, codeStream},
+        };
+        for (unsigned i = 0; i < sizeof files / sizeof *files; i++)
+        {
+            files[i].stream.close();
+            if (!files[i].stream)
+            {
+                writeError = true;
+                if (reportError)
+                    cerr
+                        << "Error writing " << files[i].fileName
+                        << ": " << strerror(errno) << endl;
+            }
+        }
+        return !writeError;
+    };
+
     if (errorDetected)
     {
         cerr << "Ended in ERROR" << endl;
+
+        // Remove output files.
+        closeAll(false);
+        remove(specFileName.c_str());
+        remove(headerFileName.c_str());
+        remove(codeFileName.c_str());
         return 1;
     }
 
@@ -323,28 +358,5 @@ static int main1(int argc, char **argv)
     generator.WriteApplicationCode(codeStream);
 
     // Close all output files.
-    bool writeError = false;
-    struct
-    {
-        string fileName;
-        ofstream &stream;
-    } files[] =
-    {
-        {specFileName, specStream},
-        {headerFileName, headerStream},
-        {codeFileName, codeStream},
-    };
-    for (unsigned i = 0; i < sizeof files / sizeof *files; i++)
-    {
-        files[i].stream.close();
-        if (!files[i].stream)
-        {
-            writeError = true;
-            cerr
-                << "Error writing " << files[i].fileName
-                << ": " << strerror(errno) << endl;
-        }
-    }
-
-    return writeError ? 2 : 0;
+    return closeAll() ? 0 : 2;
 }

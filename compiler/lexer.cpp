@@ -189,7 +189,7 @@ Token *Lexer::ProcessSpecial()
         {"{", TOKEN_LEFT_BRACE},
         {"}", TOKEN_RIGHT_BRACE},
         {"~", TOKEN_TILDE},
-        {"**", TOKEN_POWER},
+        {"**", TOKEN_DOUBLE_ASTERISK},
         {"//", TOKEN_FLOOR_DIVIDE},
         {"<<", TOKEN_LEFT_SHIFT},
         {">>", TOKEN_RIGHT_SHIFT},

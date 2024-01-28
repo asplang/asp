@@ -148,28 +148,35 @@ class Argument : public NonTerminal
 {
     public:
 
+        enum class Type
+        {
+            NonGroup,
+            IterableGroup,
+            DictionaryGroup,
+        };
+
         Argument(const Token &, Expression *);
-        explicit Argument(Expression *, bool isGroup = false);
+        explicit Argument(Expression *, Type = Type::NonGroup);
         ~Argument();
 
         void Parent(const Statement *);
 
+        Type GetType() const
+        {
+            return type;
+        }
         bool HasName() const
         {
             return !name.empty();
-        }
-        bool IsGroup() const
-        {
-            return isGroup;
         }
 
         void Emit(Executable &) const;
 
     private:
 
+        Type type;
         std::string name;
         Expression *valueExpression;
-        bool isGroup;
 };
 
 class ArgumentList : public NonTerminal

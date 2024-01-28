@@ -424,14 +424,16 @@ ForStatement::~ForStatement()
 }
 
 Parameter::Parameter
-    (const Token &nameToken, Expression *defaultExpression, bool isGroup) :
+    (const Token &nameToken, Type type,
+     Expression *defaultExpression) :
     NonTerminal(nameToken),
     name(nameToken.s),
-    defaultExpression(defaultExpression),
-    isGroup(isGroup)
+    type(type),
+    defaultExpression(defaultExpression)
 {
-    if (defaultExpression != 0 && isGroup)
-        throw string("Group parameter cannot have a default");
+    if (defaultExpression != 0 &&
+        (type == Type::TupleGroup || type == Type::DictionaryGroup))
+        throw string("Group parameter cannot have a default value");
 }
 
 Parameter::~Parameter()

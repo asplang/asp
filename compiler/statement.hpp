@@ -375,18 +375,31 @@ class Parameter : public NonTerminal
 {
     public:
 
-        Parameter(const Token &name, Expression *, bool group = false);
+        enum class Type
+        {
+            Positional,
+            TupleGroup,
+            DictionaryGroup,
+        };
+
+        Parameter
+            (const Token &name, Type = Type::Positional,
+             Expression * = 0);
         ~Parameter();
 
         void Parent(const Statement *);
 
+        const std::string &Name() const
+        {
+            return name;
+        }
+        Type GetType() const
+        {
+            return type;
+        }
         bool HasDefault() const
         {
             return defaultExpression != 0;
-        }
-        bool IsGroup() const
-        {
-            return isGroup;
         }
 
         void Emit(Executable &) const;
@@ -394,8 +407,8 @@ class Parameter : public NonTerminal
     private:
 
         std::string name;
+        Type type;
         Expression *defaultExpression;
-        bool isGroup;
 };
 
 class ParameterList : public NonTerminal

@@ -6,8 +6,7 @@
 
 using namespace std;
 
-Assignment::Assignment
-    (const Token &nameToken, Literal *value) :
+Assignment::Assignment(const Token &nameToken, Literal *value) :
     name(nameToken.s),
     value(value)
 {
@@ -18,15 +17,20 @@ Assignment::~Assignment()
     delete value;
 }
 
-Parameter::Parameter
-    (const Token &nameToken, Literal *defaultValue, bool isGroup) :
+Parameter::Parameter(const Token &nameToken, Literal *defaultValue) :
     NonTerminal(nameToken),
     name(nameToken.s),
-    defaultValue(defaultValue),
-    isGroup(isGroup)
+    type(Type::Positional),
+    defaultValue(defaultValue)
 {
-    if (defaultValue != 0 && isGroup)
-        throw string("Group parameter cannot have a default");
+}
+
+Parameter::Parameter(const Token &nameToken, Type type) :
+    NonTerminal(nameToken),
+    name(nameToken.s),
+    type(type),
+    defaultValue(0)
+{
 }
 
 Parameter::~Parameter()

@@ -4,7 +4,8 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(aspg VERSION 0.1)
+# The project version should match the version encoded in the app spec header.
+project(aspg VERSION 1)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)

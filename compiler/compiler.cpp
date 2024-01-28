@@ -43,7 +43,7 @@ void Compiler::LoadApplicationSpec(istream &specStream)
     // Read and check application spec version.
     uint8_t version;
     specStream >> version;
-    if (version != 0)
+    if (version > 0x01)
     {
         ostringstream oss;
         oss
@@ -505,43 +505,74 @@ DEFINE_ACTION
     if (!parameterList->HasSourceLocation())
         (SourceElement &)*parameterList = *nameToken;
 
-    // Ensure defaulted parameters follow positional ones.
-    bool groupSeen = false, defaultSeen = false;
+    // Ensure the validity of the order of parameter types.
+    bool
+        defaultSeen = false,
+        tupleGroupSeen = false, dictionaryGroupSeen = false;
     unsigned position = 1;
     for (auto iter = parameterList->ParametersBegin();
          iter != parameterList->ParametersEnd(); iter++, position++)
     {
-        auto parameter = *iter;
+        auto &parameter = **iter;
+        Parameter::Type type = parameter.GetType();
 
-        if (parameter->IsGroup())
+        // Ensure parameter name is not duplicated.
+        unsigned prevPosition = 1;
+        for (auto prevIter = parameterList->ParametersBegin();
+             prevIter != iter; prevIter++, prevPosition++)
         {
-            if (groupSeen)
+            auto &prevParameter = **prevIter;
+            if (prevParameter.Name() == parameter.Name())
             {
                 ostringstream oss;
                 oss
-                    << "Duplicate group parameter " << position
-                    << " not permitted";
-                ReportError(oss.str());
+                    << "Duplicate parameter name '" << parameter.Name()
+                    << "' (" << position << " vs. " << prevPosition << ')';
+                ReportError(oss.str(), parameter);
             }
-            groupSeen = true;
         }
-        else if (parameter->HasDefault())
+
+        // Ensure the dictionary group parameter, if present, is the last
+        // parameter.
+        if (dictionaryGroupSeen)
         {
-            defaultSeen = true;
+            ostringstream oss;
+            oss
+                << "Parameter '" << parameter.Name() << "' (" << position
+                << ") follows dictionary group parameter";
+            ReportError(oss.str(), parameter);
         }
+
+        // Ensure there is only one tuple group parameter.
+        if (type == Parameter::Type::TupleGroup)
+        {
+            if (tupleGroupSeen)
+            {
+                ostringstream oss;
+                oss
+                    << "Duplicate tuple group parameter '" << parameter.Name()
+                    << "' (" << position << ")";
+                ReportError(oss.str(), parameter);
+            }
+            tupleGroupSeen = true;
+        }
+
+        if (type == Parameter::Type::DictionaryGroup)
+            dictionaryGroupSeen = true;
+        else if (parameter.HasDefault())
+            defaultSeen = true;
         else
         {
-            if (groupSeen || defaultSeen)
+            // Prior to any tuple group parameter, ensure that parameters with
+            // defaults are not followed by parameters without.
+            if (defaultSeen && !tupleGroupSeen)
             {
                 ostringstream oss;
                 oss
-                    << "Parameter " << position
-                    << " with no default follows";
-                if (groupSeen)
-                    oss << " group parameter";
-                else if (defaultSeen)
-                    oss << " parameter(s) with default(s)";
-                ReportError(oss.str());
+                    << "Parameter '" << parameter.Name() << "' (" << position
+                    << ") with no default value"
+                    << " follows parameter(s) with default value(s)";
+                ReportError(oss.str(), parameter);
             }
         }
     }
@@ -705,23 +736,38 @@ DEFINE_ACTION
         (SourceElement &)*argumentList = *functionExpression;
 
     // Ensure named arguments follow positional ones.
-    bool positionalArgumentAllowed = true;
+    bool namedSeen = false, dictionaryGroupSeen = false;
     unsigned position = 1;
     for (auto iter = argumentList->ArgumentsBegin();
          iter != argumentList->ArgumentsEnd(); iter++, position++)
     {
-        auto argument = *iter;
+        auto &argument = **iter;
+        Argument::Type type = argument.GetType();
+        bool isPositional =
+            type == Argument::Type::NonGroup && !argument.HasName();
 
-        if (argument->HasName())
-            positionalArgumentAllowed = false;
-        else if (!positionalArgumentAllowed)
+        if (isPositional && (namedSeen || dictionaryGroupSeen))
         {
             ostringstream oss;
             oss
-                << "Unnamed argument " << position
-                << " follows named argument(s)";
-            ReportError(oss.str());
+                << "Positional argument " << position << " follows "
+                << (dictionaryGroupSeen ? "dictionary group" : "named")
+                << " argument";
+            ReportError(oss.str(), argument);
         }
+        else if (type == Argument::Type::IterableGroup && dictionaryGroupSeen)
+        {
+            ostringstream oss;
+            oss
+                << "Iterable argument " << position
+                << " follows dictionary group argument";
+            ReportError(oss.str(), argument);
+        }
+
+        if (type == Argument::Type::DictionaryGroup)
+            dictionaryGroupSeen = true;
+        else if (argument.HasName())
+            namedSeen = true;
     }
 
     return new CallExpression(functionExpression, argumentList);
@@ -935,16 +981,28 @@ DEFINE_ACTION
     (MakeParameter, Parameter *,
      Token *, nameToken, Expression *, defaultExpression)
 {
-    auto result = new Parameter(*nameToken, defaultExpression);
+    auto result = new Parameter
+        (*nameToken, Parameter::Type::Positional, defaultExpression);
     delete nameToken;
     return result;
 }
 
 DEFINE_ACTION
-    (MakeGroupParameter, Parameter *,
+    (MakeTupleGroupParameter, Parameter *,
      Token *, nameToken)
 {
-    auto result = new Parameter(*nameToken, 0, true);
+    auto result = new Parameter
+        (*nameToken, Parameter::Type::TupleGroup);
+    delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeDictionaryGroupParameter, Parameter *,
+     Token *, nameToken)
+{
+    auto result = new Parameter
+        (*nameToken, Parameter::Type::DictionaryGroup);
     delete nameToken;
     return result;
 }
@@ -975,7 +1033,7 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
-    (MakeGroupArgument, Argument *,
+    (MakeIterableGroupArgument, Argument *,
      Expression *, valueExpression)
 {
     auto constantExpression = dynamic_cast<ConstantExpression *>
@@ -983,7 +1041,19 @@ DEFINE_ACTION
     if (constantExpression != 0)
         ReportError("Cannot pass non-tuple as a group argument");
 
-    return new Argument(valueExpression, true);
+    return new Argument(valueExpression, Argument::Type::IterableGroup);
+}
+
+DEFINE_ACTION
+    (MakeDictionaryGroupArgument, Argument *,
+     Expression *, valueExpression)
+{
+    auto constantExpression = dynamic_cast<ConstantExpression *>
+        (valueExpression);
+    if (constantExpression != 0)
+        ReportError("Cannot pass non-tuple as a group argument");
+
+    return new Argument(valueExpression, Argument::Type::DictionaryGroup);
 }
 
 DEFINE_ACTION
@@ -1126,10 +1196,22 @@ DEFINE_UTIL(ReportError, void, const char *, error)
 
 void Compiler::ReportError(const string &error)
 {
+    ReportError(error, currentSourceLocation);
+}
+
+void Compiler::ReportError
+    (const string &error, const SourceElement &sourceElement)
+{
+    ReportError(error, sourceElement.sourceLocation);
+}
+
+void Compiler::ReportError
+    (const string &error, const SourceLocation &sourceLocation)
+{
     errorStream
-        << currentSourceLocation.fileName << ':'
-        << currentSourceLocation.line << ':'
-        << currentSourceLocation.column << ": Error: "
+        << sourceLocation.fileName << ':'
+        << sourceLocation.line << ':'
+        << sourceLocation.column << ": Error: "
         << error << endl;
     errorCount++;
 }

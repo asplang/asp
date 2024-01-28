@@ -120,42 +120,48 @@ typedef enum OpCode
     OpCode_LDMOD2 = 0xBE, /* load/call module with 2-byte symbol */
     OpCode_LDMOD4 = 0xBF, /* load/call module with 4-byte symbol */
 
-    /* Function argument and parameter operations. */
+    /* Function argument operations. */
     OpCode_MKARG = 0xC0, /* make positional arg */
     OpCode_MKNARG1 = 0xC1, /* make named argument with 1-byte symbol */
     OpCode_MKNARG2 = 0xC2, /* make named argument with 2-byte symbol */
     OpCode_MKNARG4 = 0xC3, /* make named argument with 4-byte symbol */
-    OpCode_MKGARG = 0xC4, /* make group argument */
-    OpCode_MKPAR1 = 0xC5, /* make parameter with 1-byte symbol */
-    OpCode_MKPAR2 = 0xC6, /* make parameter with 2-byte symbol */
-    OpCode_MKPAR4 = 0xC7, /* make parameter with 4-byte symbol */
-    OpCode_MKDPAR1 = 0xC9, /* make parameter with default with 1-byte symbol */
-    OpCode_MKDPAR2 = 0xCA, /* make parameter with default with 2-byte symbol */
-    OpCode_MKDPAR4 = 0xCB, /* make parameter with default with 4-byte symbol */
-    OpCode_MKGPAR1 = 0xCD, /* make group parameter with 1-byte symbol */
-    OpCode_MKGPAR2 = 0xCE, /* make group parameter with 2-byte symbol */
-    OpCode_MKGPAR4 = 0xCF, /* make group parameter with 4-byte symbol */
+    OpCode_MKIGARG = 0xC4, /* make iteratable group argument */
+    OpCode_MKDGARG = 0xC5, /* make dictionary group argument */
+
+    /* Function parameter operations. */
+    OpCode_MKPAR1 = 0xD1, /* make parameter with 1-byte symbol */
+    OpCode_MKPAR2 = 0xD2, /* make parameter with 2-byte symbol */
+    OpCode_MKPAR4 = 0xD3, /* make parameter with 4-byte symbol */
+    OpCode_MKDPAR1 = 0xD5, /* make parameter with default with 1-byte symbol */
+    OpCode_MKDPAR2 = 0xD6, /* make parameter with default with 2-byte symbol */
+    OpCode_MKDPAR4 = 0xD7, /* make parameter with default with 4-byte symbol */
+    OpCode_MKTGPAR1 = 0xD9, /* make tuple group parameter with 1-byte symbol */
+    OpCode_MKTGPAR2 = 0xDA, /* make tuple group parameter with 2-byte symbol */
+    OpCode_MKTGPAR4 = 0xDB, /* make tuple group parameter with 4-byte symbol */
+    OpCode_MKDGPAR1 = 0xDD, /* make dict group parameter with 1-byte symbol */
+    OpCode_MKDGPAR2 = 0xDE, /* make dict group parameter with 1-byte symbol */
+    OpCode_MKDGPAR4 = 0xDF, /* make dict group parameter with 1-byte symbol */
 
     /* Function definition operations. */
-    OpCode_MKFUN = 0xD0, /* make function */
+    OpCode_MKFUN = 0xE0, /* make function */
 
     /* Container entry operations. */
-    OpCode_MKKVP = 0xD4, /* make key/value pair entry */
+    OpCode_MKKVP = 0xE2, /* make key/value pair entry */
 
     /* Range operations. */
-    OpCode_MKR0 = 0xD8, /* make range .. */
-    OpCode_MKRS = 0xD9, /* make range start.. */
-    OpCode_MKRE = 0xDA, /* make range ..end */
-    OpCode_MKRSE = 0xDB, /* make range start..end */
-    OpCode_MKRT = 0xDC, /* make range ..:step */
-    OpCode_MKRST = 0xDD, /* make range start..:step */
-    OpCode_MKRET = 0xDE, /* make range ..end:step */
-    OpCode_MKR = 0xDF, /* make range s..end:step */
+    OpCode_MKR0 = 0xE4, /* make range .. */
+    OpCode_MKRS = 0xE5, /* make range start.. */
+    OpCode_MKRE = 0xE6, /* make range ..end */
+    OpCode_MKRSE = 0xE7, /* make range start..end */
+    OpCode_MKRT = 0xE8, /* make range ..:step */
+    OpCode_MKRST = 0xE9, /* make range start..:step */
+    OpCode_MKRET = 0xEA, /* make range ..end:step */
+    OpCode_MKR = 0xEB, /* make range s..end:step */
 
     /* Insert operations. */
-    OpCode_INS = 0xE8, /* insert (list, set, dictionary) */
-    OpCode_INSP = 0xE9, /* insert with pop */
-    OpCode_BLD = 0xEC, /* build (tuple, list, set, dictionary, args, params) */
+    OpCode_INS = 0xEC, /* insert (list, set, dictionary) */
+    OpCode_INSP = 0xED, /* insert with pop */
+    OpCode_BLD = 0xEE, /* build (tuple, list, set, dictionary, args, params) */
 
     /* Indexing operations. */
     OpCode_IDX = 0xF0, /* index (or range) value */

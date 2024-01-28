@@ -215,7 +215,15 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
-    (MakeParameter, Parameter *,
+    (MakeParameter, Parameter *, Token *, nameToken)
+{
+    auto result = new Parameter(*nameToken);
+    delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeDefaultedParameter, Parameter *,
      Token *, nameToken, Literal *, defaultValue)
 {
     auto result = new Parameter(*nameToken, defaultValue);
@@ -224,9 +232,17 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
-    (MakeGroupParameter, Parameter *, Token *, nameToken)
+    (MakeTupleGroupParameter, Parameter *, Token *, nameToken)
 {
-    auto result = new Parameter(*nameToken, 0, true);
+    auto result = new Parameter(*nameToken, Parameter::Type::TupleGroup);
+    delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeDictionaryGroupParameter, Parameter *, Token *, nameToken)
+{
+    auto result = new Parameter(*nameToken, Parameter::Type::DictionaryGroup);
     delete nameToken;
     return result;
 }

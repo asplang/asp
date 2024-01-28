@@ -168,16 +168,16 @@ void TargetExpression::Parent(const Statement *statement)
 Argument::Argument
     (const Token &nameToken, Expression *valueExpression) :
     NonTerminal(nameToken),
+    type(Type::NonGroup),
     name(nameToken.s),
-    valueExpression(valueExpression),
-    isGroup(false)
+    valueExpression(valueExpression)
 {
 }
 
-Argument::Argument(Expression *valueExpression, bool isGroup) :
+Argument::Argument(Expression *valueExpression, Type type) :
     NonTerminal((SourceElement &)*valueExpression),
-    valueExpression(valueExpression),
-    isGroup(isGroup)
+    type(type),
+    valueExpression(valueExpression)
 {
 }
 
@@ -631,7 +631,7 @@ Expression *FoldBinaryExpression
         case TOKEN_SLASH:
         case TOKEN_FLOOR_DIVIDE:
         case TOKEN_PERCENT:
-        case TOKEN_POWER:
+        case TOKEN_DOUBLE_ASTERISK:
             return
                 leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
                 FoldArithmeticOperation
@@ -1053,7 +1053,7 @@ Expression *FoldArithmeticOperation
                 break;
             }
 
-            case TOKEN_POWER:
+            case TOKEN_DOUBLE_ASTERISK:
                 resultType = Type::Float;
                 floatResult = pow
                     (static_cast<double>(leftInt),
@@ -1099,7 +1099,7 @@ Expression *FoldArithmeticOperation
                     (leftFloat - floor(leftFloat / rightFloat) * rightFloat);
                 break;
 
-            case TOKEN_POWER:
+            case TOKEN_DOUBLE_ASTERISK:
                 floatResult = pow(leftFloat, rightFloat);
                 break;
         }

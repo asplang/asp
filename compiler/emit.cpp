@@ -573,14 +573,24 @@ void Parameter::Emit(Executable &executable) const
     auto symbol = executable.Symbol(name);
     ostringstream oss;
     oss << "Make";
-    if (isGroup)
-        oss << " group";
+    if (type == Type::TupleGroup)
+        oss << " tuple group";
+    else if (type == Type::DictionaryGroup)
+        oss << " dictionary group";
     oss << " parameter " << name;
     if (defaultExpression != 0)
-        oss << " with default";
+        oss << " with default value";
     executable.Insert
         (new MakeParameterInstruction
-            (symbol, defaultExpression != 0, isGroup, oss.str()),
+            (symbol,
+             type == Type::TupleGroup ?
+                MakeParameterInstruction::Type::TupleGroup :
+             type == Type::DictionaryGroup ?
+                MakeParameterInstruction::Type::DictionaryGroup :
+             HasDefault() != 0 ?
+                MakeParameterInstruction::Type::Defaulted :
+                MakeParameterInstruction::Type::Positional,
+             oss.str()),
          sourceLocation);
 }
 
@@ -754,7 +764,7 @@ void BinaryExpression::Emit
         {TOKEN_SLASH, OpCode_DIV},
         {TOKEN_FLOOR_DIVIDE, OpCode_FDIV},
         {TOKEN_PERCENT, OpCode_MOD},
-        {TOKEN_POWER, OpCode_POW},
+        {TOKEN_DOUBLE_ASTERISK, OpCode_POW},
 
         {TOKEN_NE, OpCode_NE},
         {TOKEN_EQ, OpCode_EQ},
@@ -873,9 +883,26 @@ void Argument::Emit(Executable &executable) const
     else
     {
         ostringstream oss;
-        oss << "Make " << (isGroup ? "group" : "positional") << " argument";
+        oss << "Make";
+        if (type == Type::IterableGroup)
+            oss << " iterable group";
+        else if (type == Type::DictionaryGroup)
+            oss << " dictionary group";
+        else if (HasName())
+            oss << " named";
+        else
+            oss << " positional";
+        oss << " argument";
         executable.Insert
-            (new MakeArgumentInstruction(isGroup, oss.str()),
+            (new MakeArgumentInstruction
+                (type == Type::IterableGroup ?
+                    MakeArgumentInstruction::Type::IterableGroup :
+                 type == Type::DictionaryGroup ?
+                    MakeArgumentInstruction::Type::DictionaryGroup :
+                 HasName() ?
+                    MakeArgumentInstruction::Type::Named :
+                    MakeArgumentInstruction::Type::Positional,
+                 oss.str()),
              sourceLocation);
     }
 }

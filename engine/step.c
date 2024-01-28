@@ -1664,12 +1664,12 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_MKARG:
-        case OpCode_MKGARG:
+        case OpCode_MKIGARG:
         {
-            bool isGroup = opCode == OpCode_MKGARG;
+            bool isGroup = opCode == OpCode_MKIGARG;
 
             #ifdef ASP_DEBUG
-            puts(isGroup ? "MKGARG" : "MKARG");
+            puts(isGroup ? "MKIGARG" : "MKARG");
             #endif
 
             /* Access argument value on top of the stack. */
@@ -1743,23 +1743,23 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_MKPAR4:
-        case OpCode_MKGPAR4:
+        case OpCode_MKTGPAR4:
             operandSize += 2;
         case OpCode_MKPAR2:
-        case OpCode_MKGPAR2:
+        case OpCode_MKTGPAR2:
             operandSize++;
         case OpCode_MKPAR1:
-        case OpCode_MKGPAR1:
+        case OpCode_MKTGPAR1:
         {
             operandSize++;
 
             bool isGroup =
-                opCode == OpCode_MKGPAR1 ||
-                opCode == OpCode_MKGPAR2 ||
-                opCode == OpCode_MKGPAR4;
+                opCode == OpCode_MKTGPAR1 ||
+                opCode == OpCode_MKTGPAR2 ||
+                opCode == OpCode_MKTGPAR4;
 
             #ifdef ASP_DEBUG
-            printf("%s ", isGroup ? "MKGPAR" : "MKPAR");
+            printf("%s ", isGroup ? "MKTGPAR" : "MKPAR");
             #endif
 
             /* Fetch the parameter's symbol from the operand. */

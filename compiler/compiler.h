@@ -241,7 +241,10 @@ class Compiler
         (MakeParameter, Parameter *,
          Token *, Expression *);
     DECLARE_METHOD
-        (MakeGroupParameter, Parameter *,
+        (MakeTupleGroupParameter, Parameter *,
+         Token *);
+    DECLARE_METHOD
+        (MakeDictionaryGroupParameter, Parameter *,
          Token *);
 
     /* Arguments. */
@@ -254,7 +257,10 @@ class Compiler
         (MakeArgument, Argument *,
          Token *, Expression *);
     DECLARE_METHOD
-        (MakeGroupArgument, Argument *,
+        (MakeIterableGroupArgument, Argument *,
+         Expression *);
+    DECLARE_METHOD
+        (MakeDictionaryGroupArgument, Argument *,
          Expression *);
 
     /* Variables. */
@@ -317,8 +323,10 @@ class Compiler
         Compiler(const Compiler &) = delete;
         Compiler &operator =(const Compiler &) = delete;
 
-        // Error reporting method.
+        // Error reporting methods.
         void ReportError(const std::string &);
+        void ReportError(const std::string &, const SourceElement &);
+        void ReportError(const std::string &, const SourceLocation &);
 
     private:
 

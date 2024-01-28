@@ -87,9 +87,13 @@ class Generator
         (AddParameterToList, ParameterList *,
          ParameterList *, Parameter *);
     DECLARE_METHOD
-        (MakeParameter, Parameter *, Token *, Literal *);
+        (MakeParameter, Parameter *, Token *);
     DECLARE_METHOD
-        (MakeGroupParameter, Parameter *, Token *);
+        (MakeDefaultedParameter, Parameter *, Token *, Literal *);
+    DECLARE_METHOD
+        (MakeTupleGroupParameter, Parameter *, Token *);
+    DECLARE_METHOD
+        (MakeDictionaryGroupParameter, Parameter *, Token *);
 
     /* Literals. */
     DECLARE_METHOD
