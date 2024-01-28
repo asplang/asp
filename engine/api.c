@@ -413,7 +413,8 @@ static AspDataEntry *ToString
                 double f;
                 AspFloatValue(entry, &f);
                 int count = snprintf(buffer, sizeof buffer, "%g", f);
-                if (strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
+                if (!isnan(f) && !isinf(f) &&
+                    strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
                     strcat(buffer, ".0");
                 break;
             }
