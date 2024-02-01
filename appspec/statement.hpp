@@ -52,9 +52,9 @@ class Parameter : public NonTerminal
         {
             return name;
         }
-        Literal *DefaultValue() const
+        Type GetType() const
         {
-            return defaultValue;
+            return type;
         }
         bool IsGroup() const
         {
@@ -66,7 +66,11 @@ class Parameter : public NonTerminal
         }
         bool IsDictionaryGroup() const
         {
-            return type == Type::TupleGroup;
+            return type == Type::DictionaryGroup;
+        }
+        Literal *DefaultValue() const
+        {
+            return defaultValue;
         }
 
     private:

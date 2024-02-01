@@ -4,6 +4,7 @@
 
 #include "generator.h"
 #include "app.h"
+#include "function.hpp"
 #include "symbol.hpp"
 #include "symbols.h"
 #include "grammar.hpp"
@@ -175,6 +176,45 @@ DEFINE_ACTION
     if (CheckReservedNameError(nameToken->s))
         return 0;
 
+    // Ensure the validity of the order of parameter types.
+    int position = 1;
+    ValidFunctionDefinition validFunctionDefinition;
+    for (auto iter = parameterList->ParametersBegin();
+         validFunctionDefinition.IsValid() &&
+         iter != parameterList->ParametersEnd();
+         iter++, position++)
+    {
+        const auto &parameter = **iter;
+
+        ValidFunctionDefinition::ParameterType type;
+        bool typeValid = true;
+        switch (parameter.GetType())
+        {
+            default:
+                typeValid = false;
+                break;
+            case Parameter::Type::Positional:
+                type = ValidFunctionDefinition::ParameterType::Positional;
+                break;
+            case Parameter::Type::TupleGroup:
+                type = ValidFunctionDefinition::ParameterType::TupleGroup;
+                break;
+            case Parameter::Type::DictionaryGroup:
+                type = ValidFunctionDefinition::ParameterType::DictionaryGroup;
+                break;
+        }
+        if (!typeValid)
+        {
+            ReportError("Internal error; unknown parameter type");
+            break;
+        }
+
+        string error = validFunctionDefinition.AddParameter
+            (parameter.Name(), type, parameter.DefaultValue() != 0);
+        if (!error.empty())
+            ReportError(error, parameter);
+    }
+
     // Replace any previous definition having the same name with this
     // latter one.
     auto findIter = definitions.find(nameToken->s);
@@ -286,10 +326,22 @@ bool Generator::CheckReservedNameError(const string &name)
 
 void Generator::ReportError(const string &error)
 {
+    ReportError(error, currentSourceLocation);
+}
+
+void Generator::ReportError
+    (const string &error, const SourceElement &sourceElement)
+{
+    ReportError(error, sourceElement.sourceLocation);
+}
+
+void Generator::ReportError
+    (const string &error, const SourceLocation &sourceLocation)
+{
     errorStream
-        << currentSourceLocation.fileName << ':'
-        << currentSourceLocation.line << ':'
-        << currentSourceLocation.column << ": Error: "
+        << sourceLocation.fileName << ':'
+        << sourceLocation.line << ':'
+        << sourceLocation.column << ": Error: "
         << error << endl;
     errorCount++;
 }

@@ -35,6 +35,7 @@ add_executable(aspg
     app.c
     literal.cpp
     statement.cpp
+    ../compiler/function.cpp
     ../compiler/search-path.cpp
     ../compiler/symbol.cpp
     crc.c

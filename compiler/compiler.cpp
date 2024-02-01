@@ -6,6 +6,7 @@
 #include "grammar.hpp"
 #include "expression.hpp"
 #include "statement.hpp"
+#include "function.hpp"
 #include "instruction.hpp"
 #include "symbols.h"
 #include <iostream>
@@ -506,75 +507,18 @@ DEFINE_ACTION
         (SourceElement &)*parameterList = *nameToken;
 
     // Ensure the validity of the order of parameter types.
-    bool
-        defaultSeen = false,
-        tupleGroupSeen = false, dictionaryGroupSeen = false;
-    unsigned position = 1;
+    ValidFunctionDefinition validFunctionDefinition;
     for (auto iter = parameterList->ParametersBegin();
-         iter != parameterList->ParametersEnd(); iter++, position++)
+         validFunctionDefinition.IsValid() &&
+         iter != parameterList->ParametersEnd();
+         iter++)
     {
-        auto &parameter = **iter;
-        Parameter::Type type = parameter.GetType();
+        const auto &parameter = **iter;
 
-        // Ensure parameter name is not duplicated.
-        unsigned prevPosition = 1;
-        for (auto prevIter = parameterList->ParametersBegin();
-             prevIter != iter; prevIter++, prevPosition++)
-        {
-            auto &prevParameter = **prevIter;
-            if (prevParameter.Name() == parameter.Name())
-            {
-                ostringstream oss;
-                oss
-                    << "Duplicate parameter name '" << parameter.Name()
-                    << "' (" << position << " vs. " << prevPosition << ')';
-                ReportError(oss.str(), parameter);
-            }
-        }
-
-        // Ensure the dictionary group parameter, if present, is the last
-        // parameter.
-        if (dictionaryGroupSeen)
-        {
-            ostringstream oss;
-            oss
-                << "Parameter '" << parameter.Name() << "' (" << position
-                << ") follows dictionary group parameter";
-            ReportError(oss.str(), parameter);
-        }
-
-        // Ensure there is only one tuple group parameter.
-        if (type == Parameter::Type::TupleGroup)
-        {
-            if (tupleGroupSeen)
-            {
-                ostringstream oss;
-                oss
-                    << "Duplicate tuple group parameter '" << parameter.Name()
-                    << "' (" << position << ")";
-                ReportError(oss.str(), parameter);
-            }
-            tupleGroupSeen = true;
-        }
-
-        if (type == Parameter::Type::DictionaryGroup)
-            dictionaryGroupSeen = true;
-        else if (parameter.HasDefault())
-            defaultSeen = true;
-        else
-        {
-            // Prior to any tuple group parameter, ensure that parameters with
-            // defaults are not followed by parameters without.
-            if (defaultSeen && !tupleGroupSeen)
-            {
-                ostringstream oss;
-                oss
-                    << "Parameter '" << parameter.Name() << "' (" << position
-                    << ") with no default value"
-                    << " follows parameter(s) with default value(s)";
-                ReportError(oss.str(), parameter);
-            }
-        }
+        string error = validFunctionDefinition.AddParameter
+            (parameter.Name(), parameter.GetType(), parameter.HasDefault());
+        if (!error.empty())
+            ReportError(error, parameter);
     }
 
     auto result = new DefStatement(*nameToken, parameterList, block);

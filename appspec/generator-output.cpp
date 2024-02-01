@@ -143,7 +143,7 @@ void Generator::WriteApplicationHeader(ostream &os)
             os << "     AspDataEntry *" << parameter.Name() << ',';
             if (parameter.IsGroup())
                 os
-                    << "/* "
+                    << " /* "
                     << (parameter.IsTupleGroup() ? "tuple" : "dictionary")
                     << " group */";
             os << '\n';

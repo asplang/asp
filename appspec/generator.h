@@ -115,6 +115,8 @@ class Generator
         bool CheckReservedNameError(const std::string &);
 
         void ReportError(const std::string &);
+        void ReportError(const std::string &, const SourceElement &);
+        void ReportError(const std::string &, const SourceLocation &);
         std::uint32_t CheckValue();
         void ComputeCheckValue();
 

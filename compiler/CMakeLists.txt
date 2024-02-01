@@ -44,6 +44,7 @@ add_executable(aspc
     asp.c
     expression.cpp
     statement.cpp
+    function.cpp
     search-path.cpp
     symbol.cpp
     emit.cpp
