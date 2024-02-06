@@ -982,8 +982,8 @@ DEFINE_ACTION
 {
     auto constantExpression = dynamic_cast<ConstantExpression *>
         (valueExpression);
-    if (constantExpression != 0)
-        ReportError("Cannot pass non-tuple as a group argument");
+    if (constantExpression != 0 && !constantExpression->IsString())
+        ReportError("Invalid type for iterable group argument");
 
     return new Argument(valueExpression, Argument::Type::IterableGroup);
 }
@@ -995,7 +995,7 @@ DEFINE_ACTION
     auto constantExpression = dynamic_cast<ConstantExpression *>
         (valueExpression);
     if (constantExpression != 0)
-        ReportError("Cannot pass non-tuple as a group argument");
+        ReportError("Invalid type for dictionary group argument");
 
     return new Argument(valueExpression, Argument::Type::DictionaryGroup);
 }

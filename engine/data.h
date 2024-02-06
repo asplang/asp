@@ -482,10 +482,14 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetBit0((eptr), (unsigned)(value)))
 #define AspDataGetParameterHasDefault(eptr) \
     ((bool)(AspDataGetBit0((eptr))))
-#define AspDataSetParameterIsGroup(eptr, value) \
+#define AspDataSetParameterIsTupleGroup(eptr, value) \
     (AspDataSetBit1((eptr), (unsigned)(value)))
-#define AspDataGetParameterIsGroup(eptr) \
+#define AspDataGetParameterIsTupleGroup(eptr) \
     ((bool)(AspDataGetBit1((eptr))))
+#define AspDataSetParameterIsDictionaryGroup(eptr, value) \
+    (AspDataSetBit2((eptr), (unsigned)(value)))
+#define AspDataGetParameterIsDictionaryGroup(eptr) \
+    ((bool)(AspDataGetBit2((eptr))))
 #define AspDataSetParameterDefaultIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetParameterDefaultIndex(eptr) \
@@ -500,10 +504,14 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
     (AspDataSetBit0((eptr), (unsigned)(value)))
 #define AspDataGetArgumentHasName(eptr) \
     ((bool)(AspDataGetBit0((eptr))))
-#define AspDataSetArgumentIsGroup(eptr, value) \
+#define AspDataSetArgumentIsIterableGroup(eptr, value) \
     (AspDataSetBit1((eptr), (unsigned)(value)))
-#define AspDataGetArgumentIsGroup(eptr) \
+#define AspDataGetArgumentIsIterableGroup(eptr) \
     ((bool)(AspDataGetBit1((eptr))))
+#define AspDataSetArgumentIsDictionaryGroup(eptr, value) \
+    (AspDataSetBit2((eptr), (unsigned)(value)))
+#define AspDataGetArgumentIsDictionaryGroup(eptr) \
+    ((bool)(AspDataGetBit2((eptr))))
 #define AspDataSetArgumentValueIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetArgumentValueIndex(eptr) \

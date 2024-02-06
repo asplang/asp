@@ -35,8 +35,9 @@ static const uint8_t HeaderSize = 12;
 static const size_t MaxCodeSize = 1 << AspWordBitSize;
 static const uint8_t Prefix_Variable = 0xFF;
 static const uint32_t ParameterSpecMask = 0x0FFFFFFF;
-static const uint32_t ParameterFlag_HasDefault = 0x10000000;
-static const uint32_t ParameterFlag_IsGroup    = 0x20000000;
+static const uint32_t ParameterFlag_HasDefault        = 0x10000000;
+static const uint32_t ParameterFlag_IsTupleGroup      = 0x20000000;
+static const uint32_t ParameterFlag_IsDictionaryGroup = 0x40000000;
 
 AspRunResult AspInitialize
     (AspEngine *engine,
@@ -415,8 +416,6 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                     (int32_t)(parameterSpec & ParameterSpecMask);
                 bool hasDefault =
                     (parameterSpec & ParameterFlag_HasDefault) != 0;
-                bool isGroup =
-                    (parameterSpec & ParameterFlag_IsGroup) != 0;
 
                 AspDataEntry *parameter = AspAllocEntry
                     (engine, DataType_Parameter);
@@ -424,7 +423,12 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                     return AspRunResult_OutOfDataMemory;
                 AspDataSetParameterSymbol(parameter, parameterSymbol);
                 AspDataSetParameterHasDefault(parameter, hasDefault);
-                AspDataSetParameterIsGroup(parameter, isGroup);
+                AspDataSetParameterIsTupleGroup
+                    (parameter,
+                     (parameterSpec & ParameterFlag_IsTupleGroup) != 0);
+                AspDataSetParameterIsDictionaryGroup
+                    (parameter,
+                     (parameterSpec & ParameterFlag_IsDictionaryGroup) != 0);
 
                 if (hasDefault)
                 {

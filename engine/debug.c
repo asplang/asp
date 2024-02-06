@@ -336,15 +336,19 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             if (AspDataGetParameterHasDefault(entry))
                 fprintf(fp, " dflt=0x%7.7X",
                     AspDataGetParameterDefaultIndex(entry));
-            else if (AspDataGetParameterIsGroup(entry))
-                fprintf(fp, " grp");
+            else if (AspDataGetParameterIsTupleGroup(entry))
+                fprintf(fp, " tgrp");
+            else if (AspDataGetParameterIsDictionaryGroup(entry))
+                fprintf(fp, " dgrp");
             break;
         case DataType_Argument:
             fprintf(fp, " val=0x%7.7X", AspDataGetArgumentValueIndex(entry));
             if (AspDataGetArgumentHasName(entry))
                 fprintf(fp, " sym=%d", AspDataGetArgumentSymbol(entry));
-            else if (AspDataGetArgumentIsGroup(entry))
-                fprintf(fp, " grp");
+            else if (AspDataGetArgumentIsIterableGroup(entry))
+                fprintf(fp, " igrp");
+            else if (AspDataGetArgumentIsDictionaryGroup(entry))
+                fprintf(fp, " dgrp");
             else
                 fprintf(fp, " pos");
             break;

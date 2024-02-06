@@ -11,6 +11,10 @@ extern "C" {
 
 #include "asp-priv.h"
 
+AspRunResult AspExpandIterableGroupArgument
+    (AspEngine *, AspDataEntry *argumentList, AspDataEntry *iterable);
+AspRunResult AspExpandDictionaryGroupArgument
+    (AspEngine *, AspDataEntry *argumentList, AspDataEntry *dictionary);
 AspRunResult AspLoadArguments
     (AspEngine *,
      AspDataEntry *argumentList, AspDataEntry *parameterList,

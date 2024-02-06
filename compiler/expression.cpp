@@ -687,6 +687,11 @@ bool ConstantExpression::IsTrue() const
     }
 }
 
+bool ConstantExpression::IsString() const
+{
+    return type == Type::String;
+}
+
 bool ConstantExpression::IsEqual(const ConstantExpression &right) const
 {
     if (type != right.type)

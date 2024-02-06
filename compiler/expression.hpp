@@ -432,6 +432,7 @@ class ConstantExpression : public Expression
         virtual void Emit(Executable &, EmitType) const;
 
         bool IsTrue() const;
+        bool IsString() const;
 
     protected:
 
