@@ -803,6 +803,8 @@ Expression *ConstantExpression::FoldMinus()
                 b ? -1 : 0, 0));
 
         case Type::Integer:
+            if (i == INT32_MIN)
+                throw string("Arithmetic overflow for unary -");
             return new ConstantExpression(Token(sourceLocation, -i, 0));
 
         case Type::Float:
@@ -928,7 +930,7 @@ Expression *FoldBitwiseOperation
             case TOKEN_LEFT_SHIFT:
                 if (rightValue < 0)
                     throw string("Negative shift count not permitted");
-                resultBits = leftBits << rightValue;
+                resultBits = rightBits >= 32 ? 0 : leftBits << rightValue;
                 break;
 
             case TOKEN_RIGHT_SHIFT:
@@ -936,9 +938,15 @@ Expression *FoldBitwiseOperation
                 if (rightValue < 0)
                     throw string("Negative shift count not permitted");
 
-                // Perform sign extension.
-                int32_t resultValue = leftValue >> rightValue;
-                resultBits = *reinterpret_cast<uint32_t *>(&resultValue);
+                if (rightValue >= 32)
+                    resultBits = leftValue < 0 ? -1 : 0;
+                else
+                {
+                    // Perform sign extension.
+                   resultBits = leftBits >> rightBits;
+                    if (leftValue < 0)
+                        resultBits |= (1 << rightBits) - 1 << 32U - rightBits;
+                }
                 break;
             }
     }
@@ -957,19 +965,20 @@ Expression *FoldArithmeticOperation
     // Fold only numeric operands. Do not fold, for example, string
     // multiplication.
     int32_t leftInt = 0, rightInt = 0;
-    uint32_t leftBits = 0, rightBits = 0;
     if (leftExpression->type == Type::Boolean)
         leftInt = leftExpression->b ? 1 : 0;
     else if (leftExpression->type == Type::Integer)
         leftInt = leftExpression->i;
     else if (leftExpression->type != Type::Float)
         return 0;
+    uint32_t leftUnsigned = *reinterpret_cast<uint32_t *>(&leftInt);
     if (rightExpression->type == Type::Boolean)
         rightInt = rightExpression->b ? 1 : 0;
     else if (rightExpression->type == Type::Integer)
         rightInt = rightExpression->i;
     else if (rightExpression->type != Type::Float)
         return 0;
+    uint32_t rightUnsigned = *reinterpret_cast<uint32_t *>(&rightInt);
     Type resultType = Type::Integer;
     double leftFloat = 0, rightFloat = 0;
     if (leftExpression->type == Type::Float ||
@@ -990,22 +999,40 @@ Expression *FoldArithmeticOperation
     double floatResult = 0;
     if (resultType == Type::Integer)
     {
+        bool overflow = false;
         switch (operatorTokenType)
         {
             default:
                 return 0;
 
             case TOKEN_PLUS:
-                intResult = leftInt + rightInt;
+            {
+                uint32_t unsignedResult = leftUnsigned + rightUnsigned;
+                intResult = *reinterpret_cast<int32_t *>(&unsignedResult);
+                overflow = intResult < leftInt != rightInt < 0;
                 break;
+            }
 
             case TOKEN_MINUS:
-                intResult = leftInt - rightInt;
+            {
+                overflow =
+                    rightInt > 0 && leftInt < INT32_MIN + rightInt ||
+                    rightInt < 0 && leftInt > INT32_MAX + rightInt;
+                if (!overflow)
+                    intResult = leftInt - rightInt;
                 break;
+            }
 
             case TOKEN_ASTERISK:
-                intResult = leftInt * rightInt;
+            {
+                uint32_t unsignedResult = leftUnsigned * rightUnsigned;
+                intResult = *reinterpret_cast<int32_t *>(&unsignedResult);
+                overflow =
+                    leftInt == INT32_MIN && rightInt == -1 ||
+                    leftInt != 0 && rightInt != 0 &&
+                    leftInt != intResult / rightInt;
                 break;
+            }
 
             case TOKEN_SLASH:
                 if (rightInt == 0)
@@ -1019,10 +1046,9 @@ Expression *FoldArithmeticOperation
             case TOKEN_FLOOR_DIVIDE:
                 if (rightInt == 0)
                     throw string("Divide by zero");
-                intResult = leftInt / rightInt;
-                if (leftInt < 0 != rightInt < 0 &&
-                    leftInt != intResult * rightInt)
-                     intResult--;
+                overflow = leftInt == INT32_MIN && rightInt == -1;
+                if (!overflow)
+                    intResult = leftInt / rightInt;
                 break;
 
             case TOKEN_PERCENT:
@@ -1030,18 +1056,22 @@ Expression *FoldArithmeticOperation
                 if (rightInt == 0)
                     throw string("Divide by zero");
 
-                /* Compute using the quotient rounded toward negative
-                   infinity. */
-                int32_t signedLeft = leftInt < 0 ? -leftInt : leftInt;
-                int32_t signedRight = rightInt < 0 ? -rightInt : rightInt;
-                int32_t quotient = signedLeft / signedRight;
-                if (leftInt < 0 != rightInt < 0)
+                overflow = leftInt == INT32_MIN && rightInt == -1;
+                if (!overflow)
                 {
-                    quotient = -quotient;
-                    if (signedLeft % signedRight != 0)
-                        quotient--;
+                    /* Compute using the quotient rounded toward negative
+                       infinity. */
+                    int32_t signedLeft = leftInt < 0 ? -leftInt : leftInt;
+                    int32_t signedRight = rightInt < 0 ? -rightInt : rightInt;
+                    int32_t quotient = signedLeft / signedRight;
+                    if (leftInt < 0 != rightInt < 0)
+                    {
+                        quotient = -quotient;
+                        if (signedLeft % signedRight != 0)
+                            quotient--;
+                    }
+                    intResult = leftInt - quotient * rightInt;
                 }
-                intResult = leftInt - quotient * rightInt;
 
                 break;
             }
@@ -1053,6 +1083,8 @@ Expression *FoldArithmeticOperation
                      static_cast<double>(rightInt));
                 break;
         }
+        if (overflow)
+            throw string("Arithmetic overflow for binary operation");
     }
     else if (resultType == Type::Float)
     {
