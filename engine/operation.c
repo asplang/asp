@@ -109,12 +109,17 @@ AspOperationResult AspPerformUnaryOperation
                     break;
 
                 case DataType_Integer:
+                {
                     result.value = AspAllocEntry(engine, DataType_Integer);
                     if (result.value == 0)
                         break;
-                    AspDataSetInteger(result.value,
-                        -AspDataGetInteger(operand));
+                    int32_t value = AspDataGetInteger(operand);
+                    if (value == INT32_MIN)
+                        result.result = AspRunResult_ArithmeticOverflow;
+                    else
+                        AspDataSetInteger(result.value, -value);
                     break;
+                }
 
                 case DataType_Float:
                     result.value = AspAllocEntry(engine, DataType_Float);
@@ -362,17 +367,20 @@ static AspOperationResult PerformBitwiseBinaryOperation
             if (rightValue < 0)
                 result.result = AspRunResult_ValueOutOfRange;
             else
-                resultBits = leftBits << rightValue;
+                resultBits = rightValue >= 32 ? 0 : leftBits << rightBits;
             break;
 
         case OpCode_RSH:
             if (rightValue < 0)
                 result.result = AspRunResult_ValueOutOfRange;
+            else if (rightValue >= 32)
+                resultBits = leftValue < 0 ? -1 : 0;
             else
             {
                 /* Perform sign extension. */
-                int32_t resultValue = leftValue >> rightValue;
-                resultBits = *(uint32_t *)&resultValue;
+                resultBits = leftBits >> rightBits;
+                if (leftValue < 0)
+                    resultBits |= (1 << rightBits) - 1 << 32U - rightBits;
             }
             break;
     }
@@ -589,10 +597,12 @@ static AspOperationResult PerformArithmeticBinaryOperation
         leftInt = (uint32_t)AspDataGetBoolean(left);
     else if (leftType == DataType_Integer)
         leftInt = (uint32_t)AspDataGetInteger(left);
+    uint32_t leftUnsigned = *(uint32_t *)&leftInt;
     if (rightType == DataType_Boolean)
         rightInt = (uint32_t)AspDataGetBoolean(right);
     else if (rightType == DataType_Integer)
         rightInt = (uint32_t)AspDataGetInteger(right);
+    uint32_t rightUnsigned = *(uint32_t *)&rightInt;
     DataType resultType = DataType_Integer;
     double leftFloat = 0.0, rightFloat = 0.0;
     if (leftType == DataType_Float || rightType == DataType_Float)
@@ -612,6 +622,7 @@ static AspOperationResult PerformArithmeticBinaryOperation
     double floatResult = 0.0;
     if (resultType == DataType_Integer)
     {
+        bool overflow = false;
         switch (opCode)
         {
             default:
@@ -619,16 +630,33 @@ static AspOperationResult PerformArithmeticBinaryOperation
                 break;
 
             case OpCode_ADD:
-                intResult = leftInt + rightInt;
+            {
+                uint32_t unsignedResult = leftUnsigned + rightUnsigned;
+                intResult = *(int32_t *)&unsignedResult;
+                overflow = intResult < leftInt != rightInt < 0;
                 break;
+            }
 
             case OpCode_SUB:
-                intResult = leftInt - rightInt;
+            {
+                overflow =
+                    rightInt > 0 && leftInt < INT32_MIN + rightInt ||
+                    rightInt < 0 && leftInt > INT32_MAX + rightInt;
+                if (!overflow)
+                    intResult = leftInt - rightInt;
                 break;
+            }
 
             case OpCode_MUL:
-                intResult = leftInt * rightInt;
+            {
+                uint32_t unsignedResult = leftUnsigned * rightUnsigned;
+                intResult = *(int32_t *)&unsignedResult;
+                overflow =
+                    leftInt == INT32_MIN && rightInt == -1 ||
+                    leftInt != 0 && rightInt != 0 &&
+                    leftInt != intResult / rightInt;
                 break;
+            }
 
             case OpCode_DIV:
                 if (rightInt == 0)
@@ -646,10 +674,9 @@ static AspOperationResult PerformArithmeticBinaryOperation
                     result.result = AspRunResult_DivideByZero;
                     break;
                 }
-                intResult = leftInt / rightInt;
-                if (leftInt < 0 != rightInt < 0 &&
-                    leftInt != intResult * rightInt)
-                    intResult--;
+                overflow = leftInt == INT32_MIN && rightInt == -1;
+                if (!overflow)
+                    intResult = leftInt / rightInt;
                 break;
 
             case OpCode_MOD:
@@ -659,19 +686,22 @@ static AspOperationResult PerformArithmeticBinaryOperation
                     result.result = AspRunResult_DivideByZero;
                     break;
                 }
-
-                /* Compute using the quotient rounded toward negative
-                   infinity. */
-                int32_t signedLeft = leftInt < 0 ? -leftInt : leftInt;
-                int32_t signedRight = rightInt < 0 ? -rightInt : rightInt;
-                int32_t quotient = signedLeft / signedRight;
-                if (leftInt < 0 != rightInt < 0)
+                overflow = leftInt == INT32_MIN && rightInt == -1;
+                if (!overflow)
                 {
-                    quotient = -quotient;
-                    if (signedLeft % signedRight != 0)
-                        quotient--;
+                    /* Compute using the quotient rounded toward negative
+                       infinity. */
+                    int32_t signedLeft = leftInt < 0 ? -leftInt : leftInt;
+                    int32_t signedRight = rightInt < 0 ? -rightInt : rightInt;
+                    int32_t quotient = signedLeft / signedRight;
+                    if (leftInt < 0 != rightInt < 0)
+                    {
+                        quotient = -quotient;
+                        if (signedLeft % signedRight != 0)
+                            quotient--;
+                    }
+                    intResult = leftInt - quotient * rightInt;
                 }
-                intResult = leftInt - quotient * rightInt;
 
                 break;
             }
@@ -681,6 +711,8 @@ static AspOperationResult PerformArithmeticBinaryOperation
                 floatResult = pow((double)leftInt, (double)rightInt);
                 break;
         }
+        if (overflow)
+            result.result = AspRunResult_ArithmeticOverflow;
     }
     else
     {

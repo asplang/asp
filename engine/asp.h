@@ -57,6 +57,7 @@ typedef enum
     AspRunResult_MalformedFunctionCall = 0x14,
     AspRunResult_UndefinedAppFunction = 0x15,
     AspRunResult_DivideByZero = 0x18,
+    AspRunResult_ArithmeticOverflow = 0x19,
     AspRunResult_OutOfDataMemory = 0x20,
     AspRunResult_Again = 0xFA,
     AspRunResult_Abort = 0xFB,
