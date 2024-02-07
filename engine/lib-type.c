@@ -66,17 +66,19 @@ ASP_LIB_API AspRunResult AspLib_bool
     return AspRunResult_OK;
 }
 
-/* int(x, base)
+/* int(x, base, check)
  * Convert a number or string to an integer.
- * Floats are truncated towards zero. Out of range floats are converted to
- * either INT32_MIN or INT32_MAX according to the sign.
+ * Floats are truncated towards zero. Out of range floats (including infinities
+ * and NaNs) raise an error condition if check is true. Otherwise, out of range
+ * floats (including infinities) are converted to either INT32_MIN or INT32_MAX
+ * according to the sign, and NaNs are converted to zero.
  * Strings are treated in the normal C way, as per strtol.
  * If base is given, x must be a string.
  * For string conversions, the default base is 10.
  */
 ASP_LIB_API AspRunResult AspLib_int
     (AspEngine *engine,
-     AspDataEntry *x, AspDataEntry *base,
+     AspDataEntry *x, AspDataEntry *base, AspDataEntry *check,
      AspDataEntry **returnValue)
 {
     if (AspIsInteger(x))
@@ -92,7 +94,9 @@ ASP_LIB_API AspRunResult AspLib_int
     int32_t intValue;
     if (AspIsNumeric(x))
     {
-        AspIntegerValue(x, &intValue);
+        bool valid = AspIntegerValue(x, &intValue);
+        if (AspIsTrue(engine, check) && !valid)
+            return AspRunResult_ValueOutOfRange;
     }
     else if (AspIsString(x))
     {

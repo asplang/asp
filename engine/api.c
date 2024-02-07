@@ -220,7 +220,12 @@ bool AspIntegerValue(const AspDataEntry *entry, int32_t *result)
         case DataType_Float:
         {
             double f = AspDataGetFloat(entry);
-            if (f < INT32_MIN)
+            if (isnan(f))
+            {
+                value = 0;
+                valid = false;
+            }
+            else if (f < INT32_MIN)
             {
                 value = INT32_MIN;
                 valid = false;
