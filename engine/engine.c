@@ -33,11 +33,7 @@ static AspRunResult LoadValue
 
 static const uint8_t HeaderSize = 12;
 static const size_t MaxCodeSize = 1 << AspWordBitSize;
-static const uint8_t Prefix_Variable = 0xFF;
-static const uint32_t ParameterSpecMask = 0x0FFFFFFF;
-static const uint32_t ParameterFlag_HasDefault        = 0x10000000;
-static const uint32_t ParameterFlag_IsTupleGroup      = 0x20000000;
-static const uint32_t ParameterFlag_IsDictionaryGroup = 0x40000000;
+static const uint32_t ParameterSpecMask = ((1U << AspWordBitSize) - 1U);
 
 AspRunResult AspInitialize
     (AspEngine *engine,
@@ -380,7 +376,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
             break;
 
         uint8_t prefix = spec[specIndex++];
-        if (prefix == Prefix_Variable)
+        if (prefix == AppSpecPrefix_Variable)
         {
             AspDataEntry *value = 0;
             AspRunResult loadValueResult = LoadValue
@@ -396,7 +392,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                 return AspRunResult_InitializationError;
             AspUnref(engine, value);
         }
-        else
+        else if (prefix != AppSpecPrefix_Symbol)
         {
             unsigned parameterCount = prefix;
 
@@ -414,8 +410,10 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                 }
                 uint32_t parameterSymbol =
                     (int32_t)(parameterSpec & ParameterSpecMask);
+                uint8_t parameterType =
+                    (int8_t)(parameterSpec >> AspWordBitSize);
                 bool hasDefault =
-                    (parameterSpec & ParameterFlag_HasDefault) != 0;
+                    parameterType == AppSpecParameterType_Defaulted;
 
                 AspDataEntry *parameter = AspAllocEntry
                     (engine, DataType_Parameter);
@@ -425,10 +423,10 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                 AspDataSetParameterHasDefault(parameter, hasDefault);
                 AspDataSetParameterIsTupleGroup
                     (parameter,
-                     (parameterSpec & ParameterFlag_IsTupleGroup) != 0);
+                     parameterType == AppSpecParameterType_TupleGroup);
                 AspDataSetParameterIsDictionaryGroup
                     (parameter,
-                     (parameterSpec & ParameterFlag_IsDictionaryGroup) != 0);
+                     parameterType == AppSpecParameterType_DictionaryGroup);
 
                 if (hasDefault)
                 {

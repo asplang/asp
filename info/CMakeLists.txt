@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(aspd
-    VERSION 0.1
+    VERSION 0.2
     LANGUAGES C
     )
 
@@ -21,6 +21,8 @@ add_dependencies(aspd
     asp-ver
     )
 
+set_property(TARGET aspd
+    PROPERTY VERSION ${PROJECT_VERSION})
 if(BUILD_SHARED_LIBS)
     set_property(TARGET aspd
         PROPERTY C_VISIBILITY_PRESET hidden)

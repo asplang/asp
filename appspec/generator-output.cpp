@@ -5,15 +5,14 @@
 #include "generator.h"
 #include "symbol.hpp"
 #include "symbols.h"
+#include "appspec.h"
+#include "data.h"
 #include "crc.h"
 #include <iomanip>
 
 using namespace std;
 
 static const char AppSpecVersion[1] = {'\x01'};
-static const uint32_t ParameterFlag_HasDefault        = 0x10000000;
-static const uint32_t ParameterFlag_IsTupleGroup      = 0x20000000;
-static const uint32_t ParameterFlag_IsDictionaryGroup = 0x40000000;
 
 static void WriteValue(ostream &, unsigned *specByteCount, const Literal &);
 static void ContributeValue(crc_spec_t &, crc_session_t &, const Literal &);
@@ -112,8 +111,21 @@ void Generator::WriteApplicationHeader(ostream &os)
            "#ifdef __cplusplus\n"
            "extern \"C\" {\n"
            "#endif\n\n"
-           "extern AspAppSpec AspAppSpec_" << baseFileName << ";\n";
+           "extern AspAppSpec AspAppSpec_" << baseFileName << ";\n\n";
 
+    // Write symbol macro definitions.
+    for (auto iter = symbolTable.Begin();
+         iter != symbolTable.End(); iter++)
+    {
+        const auto &name = iter->first;
+        const auto symbol = iter->second;
+
+        os
+            << "#define ASP_APP_" << baseFileName << "_SYM_" << name
+            << ' ' << symbol << '\n';
+    }
+
+    // Write application function declarations.
     for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
     {
         auto &definition = iter->second;
@@ -269,11 +281,16 @@ void Generator::WriteApplicationCode(ostream &os)
 
         if (assignment != 0)
         {
-            WriteStringEscapedHex(os, static_cast<uint8_t>(0xFF));
+            const auto &value = assignment->Value();
+            WriteStringEscapedHex
+                (os,
+                 static_cast<uint8_t>
+                    (value == 0 ?
+                     AppSpecPrefix_Symbol : AppSpecPrefix_Variable));
             specByteCount++;
 
-            const auto &value = assignment->Value();
-            WriteValue(os, &specByteCount, *value);
+            if (value != 0)
+                WriteValue(os, &specByteCount, *value);
         }
         else if (functionDefinition != 0)
         {
@@ -292,13 +309,15 @@ void Generator::WriteApplicationCode(ostream &os)
                 int32_t parameterSymbol = symbolTable.Symbol(parameter.Name());
                 uint32_t word = *reinterpret_cast<uint32_t *>(&parameterSymbol);
 
+                uint32_t parameterType = 0;
                 const auto &defaultValue = parameter.DefaultValue();
                 if (defaultValue != 0)
-                    word |= ParameterFlag_HasDefault;
-                if (parameter.IsTupleGroup())
-                    word |= ParameterFlag_IsTupleGroup;
+                    parameterType = AppSpecParameterType_Defaulted;
+                else if (parameter.IsTupleGroup())
+                    parameterType = AppSpecParameterType_TupleGroup;
                 else if (parameter.IsDictionaryGroup())
-                    word |= ParameterFlag_IsDictionaryGroup;
+                    parameterType = AppSpecParameterType_DictionaryGroup;
+                word |= parameterType << AspWordBitSize;
 
                 WriteStringEscapedHex(os, word);
                 specByteCount += sizeof word;
@@ -346,6 +365,7 @@ void Generator::ComputeCheckValue()
 
     // Contribute each definition to the check value.
     static const string
+        CheckValueSymbolPrefix = "`",
         CheckValueVariablePrefix = "\v",
         CheckValueFunctionPrefix = "\f",
         CheckValueParameterPrefix = "(";
@@ -366,14 +386,17 @@ void Generator::ComputeCheckValue()
             // Contribute the variable name.
             crc_add
                 (&spec, &session,
+                 value == 0 ?
+                 CheckValueSymbolPrefix.c_str() :
                  CheckValueVariablePrefix.c_str(),
                  static_cast<unsigned>(CheckValueVariablePrefix.size()));
             crc_add
                 (&spec, &session,
                  name.c_str(), static_cast<unsigned>(name.size()));
 
-            // Contribute the variable value.
-            ContributeValue(spec, session, *value);
+            // Contribute the variable value if applicable.
+            if (value != 0)
+                ContributeValue(spec, session, *value);
         }
         else if (functionDefinition != 0)
         {

@@ -89,6 +89,11 @@ statement(result) ::=
          internalName);
 }
 
+statement(result) ::= NAME(nameToken).
+{
+    result = ACTION(MakeAssignment, nameToken, 0);
+}
+
 %type parameters {ParameterList *}
 
 parameters(result) ::=

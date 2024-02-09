@@ -54,7 +54,9 @@ static void Usage()
         << COMMAND_OPTION_PREFIXES[0]
         << "l          List all source files.\n"
         << COMMAND_OPTION_PREFIXES[0]
-        << "p pc       Translate program counter source location.\n";
+        << "p pc       Translate program counter source location.\n"
+        << COMMAND_OPTION_PREFIXES[0]
+        << "s name     Translate symbol number to name.\n";
 }
 
 int main(int argc, char **argv)
@@ -82,7 +84,7 @@ int main(int argc, char **argv)
         }
 
         string option = arg.substr(1);
-        if (option == "e" || option == "a" || option == "p")
+        if (option == "e" || option == "a" || option == "p" || option == "s")
             argIndex++;
     }
 
@@ -128,7 +130,7 @@ int main(int argc, char **argv)
         string option = arg.substr(1);
 
         if (sourceInfo == nullptr &&
-            (option == "l" || option == "p"))
+            (option == "l" || option == "p" || option == "s"))
         {
             cerr
                 << arg
@@ -141,7 +143,7 @@ int main(int argc, char **argv)
             continue;
         }
 
-        if (option == "a" || option == "e" || option == "p")
+        if (option == "a" || option == "e" || option == "p" || option == "s")
         {
             string optionArgument = string(argv[++optionIndex]);
             size_t scannedSize = 0;
@@ -214,6 +216,19 @@ int main(int argc, char **argv)
                         << sourceLocation.fileName << ':'
                         << sourceLocation.line << ':' << sourceLocation.column;
                 }
+                cout << endl;
+            }
+            else if (option == "s")
+            {
+                int32_t symbol = static_cast<int32_t>(value);
+                auto name = AspGetSymbolName(sourceInfo, symbol);
+                cout << "Symbol " << symbol << ": ";
+                if (name == nullptr)
+                    cout << "? (name information not present)";
+                else if (strlen(name) == 0)
+                    cout << "? (symbol not found)";
+                else
+                    cout << name;
                 cout << endl;
             }
         }

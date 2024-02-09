@@ -83,6 +83,7 @@ if(BUILD_FOR_TARGET)
     target_include_directories(aspe PUBLIC
         "${PROJECT_BINARY_DIR}"
         "${PROJECT_SOURCE_DIR}"
+        ../appspec
         )
 
     if(WIN32)

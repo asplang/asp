@@ -4,10 +4,13 @@
 
 #include "executable.hpp"
 #include "instruction.hpp"
+#include "symbols.h"
 #include <iomanip>
 #include <map>
 
 using namespace std;
+
+static const char SourceInfoVersion[1] = {'\x01'};
 
 static void WriteItem(ostream &, const string &);
 static void WriteItem(ostream &, uint32_t);
@@ -202,6 +205,13 @@ void Executable::WriteSourceInfo(ostream &os) const
     os.put(ASP_COMPILER_VERSION_PATCH);
     os.put(ASP_COMPILER_VERSION_TWEAK);
 
+    // Write a null byte to distinguish the original format from newer
+    // versioned formats.
+    os.put('\0');
+
+    // Write the file format version.
+    os.write(SourceInfoVersion, sizeof SourceInfoVersion);
+
     // Write and keep track of all source file names.
     map<string, size_t> sourceFileNameIndices;
     for (auto instructionIter = instructions.begin();
@@ -273,9 +283,29 @@ void Executable::WriteSourceInfo(ostream &os) const
         finalOffset = finalInstruction->Offset() + finalInstruction->Size();
     }
     WriteItem(os, finalOffset);
-    WriteItem(os, 0xFFFFFFFF);
+    WriteItem(os, UINT32_MAX);
     WriteItem(os, 0);
     WriteItem(os, 0);
+
+    // Write symbol names in order of their numeric value.
+    map<int32_t, string> sortedSymbols;
+    for (auto iter = symbolTable.Begin();
+         iter != symbolTable.End(); iter++)
+        sortedSymbols.emplace(iter->second, iter->first);
+    unsigned symbol = 0;
+    for (auto iter = sortedSymbols.begin();
+         iter != sortedSymbols.end(); iter++, symbol++)
+    {
+        // Skip reserved symbols, as their names are already known.
+        if (symbol < AspScriptSymbolBase)
+            continue;
+
+        const auto &name = iter->second;
+        WriteItem(os, name);
+    }
+
+    // Terminate the symbol names list.
+    os.put('\0');
 }
 
 static void WriteItem(ostream &os, const string &s)

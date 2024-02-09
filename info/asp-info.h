@@ -34,6 +34,8 @@ ASP_API AspSourceLocation AspGetSourceLocation
     (const AspSourceInfo *, size_t pc);
 ASP_API const char *AspGetSourceFileName
     (const AspSourceInfo *, unsigned index);
+ASP_API const char *AspGetSymbolName
+    (const AspSourceInfo *, int32_t symbol);
 
 #ifdef __cplusplus
 }
