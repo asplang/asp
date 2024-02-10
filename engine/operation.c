@@ -10,6 +10,7 @@
 #include "sequence.h"
 #include "compare.h"
 #include "tree.h"
+#include "arithmetic.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
@@ -631,9 +632,7 @@ static AspOperationResult PerformArithmeticBinaryOperation
 
             case OpCode_ADD:
             {
-                uint32_t unsignedResult = leftUnsigned + rightUnsigned;
-                intResult = *(int32_t *)&unsignedResult;
-                overflow = intResult < leftInt != rightInt < 0;
+                result.result = AspAddIntegers(leftInt, rightInt, &intResult);
                 break;
             }
 

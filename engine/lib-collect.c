@@ -6,6 +6,7 @@
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
+#include "arithmetic.h"
 
 static AspRunResult FillSequence
     (AspEngine *, AspDataEntry *sequence, AspDataEntry *iterable);
@@ -54,7 +55,10 @@ static AspRunResult FillSequence
     {
         int32_t start, end, step;
         AspGetRange(engine, iterable, &start, &end, &step);
-        for (int32_t i = start; step < 0 ? i < end : i < end; i += step)
+        AspRunResult stepResult = AspRunResult_OK;
+        for (int32_t i = start;
+             stepResult == AspRunResult_OK && step < 0 ? i < end : i < end;
+             stepResult = AspAddIntegers(i, step, &i))
         {
             AspDataEntry *value = AspNewInteger(engine, i);
             if (value == 0)
@@ -65,6 +69,8 @@ static AspRunResult FillSequence
                 return appendResult.result;
             AspUnref(engine, value);
         }
+        if (stepResult != AspRunResult_OK)
+            return stepResult;
     }
     else if (AspIsString(iterable) || AspIsSequence(iterable))
     {

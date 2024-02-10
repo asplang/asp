@@ -6,6 +6,7 @@
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
+#include "arithmetic.h"
 
 AspIteratorResult AspIteratorCreate
     (AspEngine *engine, AspDataEntry *iterable)
@@ -141,7 +142,11 @@ AspRunResult AspIteratorNext
                 return AspRunResult_UnexpectedType;
 
             AspGetRange(engine, iterable, 0, &endValue, &stepValue);
-            int32_t newValue = AspDataGetInteger(member) + stepValue;
+            int32_t newValue;
+            AspRunResult addResult = AspAddIntegers
+                (AspDataGetInteger(member), stepValue, &newValue);
+            if (addResult != AspRunResult_OK)
+                return addResult;
             AspUnref(engine, member);
             if (engine->runResult != AspRunResult_OK)
                 return engine->runResult;

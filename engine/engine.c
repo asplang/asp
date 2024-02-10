@@ -56,7 +56,7 @@ AspRunResult AspInitializeEx
      const AspAppSpec *appSpec, void *context,
      AspFloatConverter floatConverter)
 {
-    if (codeSize > MaxCodeSize)
+    if (data == 0 || codeSize > MaxCodeSize)
         return AspRunResult_InitializationError;
 
     engine->context = context;
@@ -198,7 +198,8 @@ AspRunResult AspReset(AspEngine *engine)
     engine->again = false;
     engine->runResult = AspRunResult_OK;
     memset(engine->version, 0, sizeof engine->version);
-    memset(engine->codeArea, 0, engine->maxCodeSize);
+    if (engine->codeArea != 0)
+        memset(engine->codeArea, 0, engine->maxCodeSize);
     engine->pc = engine->code = engine->codeArea;
     engine->codeEndIndex = 0;
     engine->appFunctionSymbol = 0;
@@ -243,6 +244,13 @@ AspRunResult AspRestart(AspEngine *engine)
 
 static void ProcessCodeHeader(AspEngine *engine)
 {
+    /* Ensure the application specification has been specified. */
+    if (engine->appSpec == 0)
+    {
+        engine->loadResult = AspAddCodeResult_InvalidState;
+        return;
+    }
+
     /* Check the header signature. */
     if (memcmp(engine->code, "AspE", 4) != 0)
     {
