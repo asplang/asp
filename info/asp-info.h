@@ -9,6 +9,7 @@
 #define ASP_INFO_080177a8_14ce_11ed_b65f_7328ac4c64a3_H
 
 #include <asp-api.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
@@ -31,7 +32,7 @@ ASP_API AspSourceInfo *AspLoadSourceInfo
     (const char *data, size_t size);
 ASP_API void AspUnloadSourceInfo(AspSourceInfo *);
 ASP_API AspSourceLocation AspGetSourceLocation
-    (const AspSourceInfo *, size_t pc);
+    (const AspSourceInfo *, uint32_t pc);
 ASP_API const char *AspGetSourceFileName
     (const AspSourceInfo *, unsigned index);
 

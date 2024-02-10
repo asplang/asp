@@ -178,16 +178,16 @@ static unsigned long ScanSourceFileNames
 }
 
 AspSourceLocation AspGetSourceLocation
-    (const AspSourceInfo *info, size_t pc)
+    (const AspSourceInfo *info, uint32_t pc)
 {
     /* Locate the applicable source info record. */
     const uint8_t *p = info->sourceInfos, *pp = p;
-    size_t infoProgramCounter = 0;
+    uint32_t infoProgramCounter = 0;
     bool found = false;
     for (; p < (const uint8_t *)info->data + info->size;
          p += SourceInfoRecordSize)
     {
-        infoProgramCounter = (size_t)LoadValue
+        infoProgramCounter = LoadValue
             (p + SourceInfo_ProgramCounterOffset);
         if (infoProgramCounter >= pc)
         {
@@ -205,8 +205,8 @@ AspSourceLocation AspGetSourceLocation
     result.fileName = AspGetSourceFileName(info, (unsigned)sourceIndex);
 
     /* Fill in the source file location information. */
-    result.line = LoadValue(p + SourceInfo_LineOffset);
-    result.column = LoadValue(p + SourceInfo_ColumnOffset);
+    result.line = (unsigned)LoadValue(p + SourceInfo_LineOffset);
+    result.column = (unsigned)LoadValue(p + SourceInfo_ColumnOffset);
     return result;
 }
 
