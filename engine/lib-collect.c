@@ -57,7 +57,7 @@ static AspRunResult FillSequence
         AspGetRange(engine, iterable, &start, &end, &step);
         AspRunResult stepResult = AspRunResult_OK;
         for (int32_t i = start;
-             stepResult == AspRunResult_OK && step < 0 ? i < end : i < end;
+             stepResult == AspRunResult_OK && step < 0 ? i > end : i < end;
              stepResult = AspAddIntegers(i, step, &i))
         {
             AspDataEntry *value = AspNewInteger(engine, i);
