@@ -383,8 +383,8 @@ static AspOperationResult PerformBitwiseBinaryOperation
             {
                 /* Perform sign extension. */
                 resultBits = leftBits >> rightBits;
-                if (leftValue < 0)
-                    resultBits |= (1 << rightBits) - 1 << 32U - rightBits;
+                if (leftValue < 0 && rightBits != 0)
+                    resultBits |= (1U << rightBits) - 1U << 32U - rightBits;
             }
             break;
     }
