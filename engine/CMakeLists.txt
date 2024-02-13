@@ -59,7 +59,7 @@ if(BUILD_FOR_TARGET)
         lib-collect.c
         lib-iter.c
         lib-math.c
-        arithmetic.c
+        integer.c
         $<$<BOOL:${ENABLE_ENGINE_DEBUG}>:debug.c>
         )
 

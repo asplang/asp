@@ -10,7 +10,7 @@
 #include "sequence.h"
 #include "compare.h"
 #include "tree.h"
-#include "arithmetic.h"
+#include "integer.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
@@ -102,23 +102,26 @@ AspOperationResult AspPerformUnaryOperation
                     break;
 
                 case DataType_Boolean:
+                {
                     result.value = AspAllocEntry(engine, DataType_Integer);
                     if (result.value == 0)
                         break;
-                    AspDataSetInteger(result.value,
-                        -(int32_t)AspDataGetBoolean(operand));
+                    int32_t intResult = 0;
+                    result.result = AspNegateInteger
+                        ((int32_t)AspDataGetBoolean(operand), &intResult);
+                    AspDataSetInteger(result.value, intResult);
                     break;
+                }
 
                 case DataType_Integer:
                 {
                     result.value = AspAllocEntry(engine, DataType_Integer);
                     if (result.value == 0)
                         break;
-                    int32_t value = AspDataGetInteger(operand);
-                    if (value == INT32_MIN)
-                        result.result = AspRunResult_ArithmeticOverflow;
-                    else
-                        AspDataSetInteger(result.value, -value);
+                    int32_t intResult = 0;
+                    result.result = AspNegateInteger
+                        (AspDataGetInteger(operand), &intResult);
+                    AspDataSetInteger(result.value, intResult);
                     break;
                 }
 
@@ -631,31 +634,19 @@ static AspOperationResult PerformArithmeticBinaryOperation
                 break;
 
             case OpCode_ADD:
-            {
-                result.result = AspAddIntegers(leftInt, rightInt, &intResult);
+                result.result = AspAddIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
-            }
 
             case OpCode_SUB:
-            {
-                overflow =
-                    rightInt > 0 && leftInt < INT32_MIN + rightInt ||
-                    rightInt < 0 && leftInt > INT32_MAX + rightInt;
-                if (!overflow)
-                    intResult = leftInt - rightInt;
+                result.result = AspSubtractIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
-            }
 
             case OpCode_MUL:
-            {
-                uint32_t unsignedResult = leftUnsigned * rightUnsigned;
-                intResult = *(int32_t *)&unsignedResult;
-                overflow =
-                    leftInt == INT32_MIN && rightInt == -1 ||
-                    leftInt != 0 && rightInt != 0 &&
-                    leftInt != intResult / rightInt;
+                result.result = AspMultiplyIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
-            }
 
             case OpCode_DIV:
                 if (rightInt == 0)
@@ -668,50 +659,20 @@ static AspOperationResult PerformArithmeticBinaryOperation
                 break;
 
             case OpCode_FDIV:
-                if (rightInt == 0)
-                {
-                    result.result = AspRunResult_DivideByZero;
-                    break;
-                }
-                overflow = leftInt == INT32_MIN && rightInt == -1;
-                if (!overflow)
-                    intResult = leftInt / rightInt;
+                result.result = AspDivideIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
 
             case OpCode_MOD:
-            {
-                if (rightInt == 0)
-                {
-                    result.result = AspRunResult_DivideByZero;
-                    break;
-                }
-                overflow = leftInt == INT32_MIN && rightInt == -1;
-                if (!overflow)
-                {
-                    /* Compute using the quotient rounded toward negative
-                       infinity. */
-                    int32_t signedLeft = leftInt < 0 ? -leftInt : leftInt;
-                    int32_t signedRight = rightInt < 0 ? -rightInt : rightInt;
-                    int32_t quotient = signedLeft / signedRight;
-                    if (leftInt < 0 != rightInt < 0)
-                    {
-                        quotient = -quotient;
-                        if (signedLeft % signedRight != 0)
-                            quotient--;
-                    }
-                    intResult = leftInt - quotient * rightInt;
-                }
-
+                result.result = AspModuloIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
-            }
 
             case OpCode_POW:
                 resultType = DataType_Float;
                 floatResult = pow((double)leftInt, (double)rightInt);
                 break;
         }
-        if (overflow)
-            result.result = AspRunResult_ArithmeticOverflow;
     }
     else
     {

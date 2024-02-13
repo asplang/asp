@@ -6,7 +6,7 @@
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
-#include "arithmetic.h"
+#include "integer.h"
 
 AspIteratorResult AspIteratorCreate
     (AspEngine *engine, AspDataEntry *iterable)
