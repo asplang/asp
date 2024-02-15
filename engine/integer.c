@@ -3,6 +3,7 @@
  */
 
 #include "integer.h"
+#include <stdbool.h>
 
 AspIntegerResult AspNegateInteger(int32_t value, int32_t *result)
 {
@@ -95,7 +96,37 @@ AspIntegerResult AspModuloIntegers
     return AspIntegerResult_OK;
 }
 
-AspIntegerResult AspLeftShiftIntegers
+AspIntegerResult AspBitwiseOrIntegers
+    (int32_t left, int32_t right, int32_t *result)
+{
+    uint32_t uLeft = *(uint32_t *)&left, uRight = *(uint32_t *)&right;
+    uint32_t uResult = uLeft | uRight;
+    *result = *(int32_t *)&uResult;
+
+    return AspIntegerResult_OK;
+}
+
+AspIntegerResult AspBitwiseExclusiveOrIntegers
+    (int32_t left, int32_t right, int32_t *result)
+{
+    uint32_t uLeft = *(uint32_t *)&left, uRight = *(uint32_t *)&right;
+    uint32_t uResult = uLeft ^ uRight;
+    *result = *(int32_t *)&uResult;
+
+    return AspIntegerResult_OK;
+}
+
+AspIntegerResult AspBitwiseAndIntegers
+    (int32_t left, int32_t right, int32_t *result)
+{
+    uint32_t uLeft = *(uint32_t *)&left, uRight = *(uint32_t *)&right;
+    uint32_t uResult = uLeft & uRight;
+    *result = *(int32_t *)&uResult;
+
+    return AspIntegerResult_OK;
+}
+
+AspIntegerResult AspLeftShiftInteger
     (int32_t left, int32_t right, int32_t *result)
 {
    if (right < 0)
@@ -108,7 +139,7 @@ AspIntegerResult AspLeftShiftIntegers
     return AspIntegerResult_OK;
 }
 
-AspIntegerResult AspRightShiftIntegers
+AspIntegerResult AspRightShiftInteger
     (int32_t left, int32_t right, int32_t *result)
 {
     if (right < 0)

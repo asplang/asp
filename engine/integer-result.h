@@ -9,16 +9,8 @@
 extern "C" {
 #endif
 
-#include "asp-priv.h"
-#include <stdint.h>
-
-typedef enum AspIntegerResult
-{
-    AspIntegerResult_OK,
-    AspIntegerResult_ValueOutOfRange,
-    AspIntegerResult_DivideByZero,
-    AspIntegerResult_ArithmeticOverflow,
-} AspIntegerResult;
+#include "integer.h"
+#include "asp.h"
 
 AspRunResult AspTranslateIntegerResult(AspIntegerResult);
 

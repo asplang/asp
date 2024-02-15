@@ -906,7 +906,6 @@ Expression *FoldBitwiseOperation
     typedef ConstantExpression::Type Type;
 
     int32_t leftValue = 0, rightValue = 0;
-    uint32_t leftBits = 0, rightBits = 0;
     if (leftExpression->type == Type::Boolean)
         leftValue = leftExpression->b ? 1 : 0;
     else if (leftExpression->type == Type::Integer)
@@ -914,7 +913,6 @@ Expression *FoldBitwiseOperation
     else
         throw string
             ("Invalid left operand type in binary bitwise expression");
-    leftBits = *reinterpret_cast<uint32_t *>(&leftValue);
     if (rightExpression->type == Type::Boolean)
         rightValue = rightExpression->b ? 1 : 0;
     else if (rightExpression->type == Type::Integer)
@@ -922,58 +920,67 @@ Expression *FoldBitwiseOperation
     else
         throw string
             ("Invalid right operand type in binary bitwise expression");
-    rightBits = *reinterpret_cast<uint32_t *>(&rightValue);
 
-    uint32_t resultBits = 0;
+    int32_t intResult = 0;
     switch (operatorTokenType)
     {
         default:
             return 0;
 
         case TOKEN_BAR:
-            resultBits = leftBits | rightBits;
+        {
+            AspIntegerResult result = AspBitwiseOrIntegers
+                (leftValue, rightValue, &intResult);
+            if (result != AspIntegerResult_OK)
+                throw string("Invalid bitwise or expression");
             break;
+        }
 
         case TOKEN_CARET:
-            resultBits = leftBits ^ rightBits;
+        {
+            AspIntegerResult result = AspBitwiseExclusiveOrIntegers
+                (leftValue, rightValue, &intResult);
+            if (result != AspIntegerResult_OK)
+                throw string("Invalid bitwise or expression");
             break;
+        }
 
         case TOKEN_AMPERSAND:
-            resultBits = leftBits & rightBits;
+        {
+            AspIntegerResult result = AspBitwiseAndIntegers
+                (leftValue, rightValue, &intResult);
+            if (result != AspIntegerResult_OK)
+                throw string("Invalid bitwise or expression");
             break;
+        }
 
         case TOKEN_LEFT_SHIFT:
         {
-            int32_t intResult;
-            AspIntegerResult result = AspLeftShiftIntegers
+            AspIntegerResult result = AspLeftShiftInteger
                 (leftValue, rightValue, &intResult);
             if (result == AspIntegerResult_ValueOutOfRange)
                 throw string
                     ("Out of range value(s) in binary left shift expression");
             else if (result != AspIntegerResult_OK)
                 throw string("Invalid left shift expression");
-            resultBits = *(uint32_t *)&intResult;
             break;
         }
 
         case TOKEN_RIGHT_SHIFT:
         {
-            int32_t intResult;
-            AspIntegerResult result = AspRightShiftIntegers
+            AspIntegerResult result = AspRightShiftInteger
                 (leftValue, rightValue, &intResult);
             if (result == AspIntegerResult_ValueOutOfRange)
                 throw string
                     ("Out of range value(s) in binary right shift expression");
             else if (result != AspIntegerResult_OK)
                 throw string("Invalid right shift expression");
-            resultBits = *(uint32_t *)&intResult;
             break;
         }
     }
 
-    int32_t resultValue = *reinterpret_cast<int32_t *>(&resultBits);
     return new ConstantExpression
-        (Token(leftExpression->sourceLocation, resultValue, 0));
+        (Token(leftExpression->sourceLocation, intResult, 0));
 }
 
 Expression *FoldArithmeticOperation

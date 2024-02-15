@@ -9,8 +9,15 @@
 extern "C" {
 #endif
 
-#include "integer-result.h"
 #include <stdint.h>
+
+typedef enum AspIntegerResult
+{
+    AspIntegerResult_OK,
+    AspIntegerResult_ValueOutOfRange,
+    AspIntegerResult_DivideByZero,
+    AspIntegerResult_ArithmeticOverflow,
+} AspIntegerResult;
 
 AspIntegerResult AspNegateInteger(int32_t value, int32_t *result);
 AspIntegerResult AspAddIntegers
@@ -23,9 +30,15 @@ AspIntegerResult AspDivideIntegers
     (int32_t left, int32_t right, int32_t *result);
 AspIntegerResult AspModuloIntegers
     (int32_t left, int32_t right, int32_t *result);
-AspIntegerResult AspLeftShiftIntegers
+AspIntegerResult AspBitwiseOrIntegers
     (int32_t left, int32_t right, int32_t *result);
-AspIntegerResult AspRightShiftIntegers
+AspIntegerResult AspBitwiseExclusiveOrIntegers
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspBitwiseAndIntegers
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspLeftShiftInteger
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspRightShiftInteger
     (int32_t left, int32_t right, int32_t *result);
 
 #ifdef __cplusplus

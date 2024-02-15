@@ -11,6 +11,7 @@
 #include "compare.h"
 #include "tree.h"
 #include "integer.h"
+#include "integer-result.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdint.h>
@@ -359,14 +360,32 @@ static AspOperationResult PerformBitwiseBinaryOperation
             break;
 
         case OpCode_OR:
-            resultBits = leftBits | rightBits;
+        {
+            int32_t intResult;
+            result.result = AspTranslateIntegerResult
+                (AspBitwiseOrIntegers(leftValue, rightValue, &intResult));
+            resultBits = *(uint32_t *)&intResult;
             break;
+        }
 
         case OpCode_XOR:
-            resultBits = leftBits ^ rightBits;
+        {
+            int32_t intResult;
+            result.result = AspTranslateIntegerResult
+                (AspBitwiseExclusiveOrIntegers
+                    (leftValue, rightValue, &intResult));
+            resultBits = *(uint32_t *)&intResult;
             break;
+        }
 
         case OpCode_AND:
+        {
+            int32_t intResult;
+            result.result = AspTranslateIntegerResult
+                (AspBitwiseAndIntegers(leftValue, rightValue, &intResult));
+            resultBits = *(uint32_t *)&intResult;
+            break;
+        }
             resultBits = leftBits & rightBits;
             break;
 
@@ -374,7 +393,7 @@ static AspOperationResult PerformBitwiseBinaryOperation
         {
             int32_t intResult;
             result.result = AspTranslateIntegerResult
-                (AspLeftShiftIntegers(leftValue, rightValue, &intResult));
+                (AspLeftShiftInteger(leftValue, rightValue, &intResult));
             resultBits = *(uint32_t *)&intResult;
             break;
         }
@@ -383,7 +402,7 @@ static AspOperationResult PerformBitwiseBinaryOperation
         {
             int32_t intResult;
             result.result = AspTranslateIntegerResult
-                (AspRightShiftIntegers(leftValue, rightValue, &intResult));
+                (AspRightShiftInteger(leftValue, rightValue, &intResult));
             resultBits = *(uint32_t *)&intResult;
             break;
         }
