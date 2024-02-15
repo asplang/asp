@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <cstring>
 #include <cstdlib>
-#include <cctype>
+#include <cerrno>
 
 #ifndef FILE_NAME_SEPARATORS
 #error FILE_NAME_SEPARATORS macro undefined
@@ -189,7 +189,10 @@ static int main1(int argc, char **argv)
                 << token->sourceLocation.line << ':'
                 << token->sourceLocation.column
                 << ": Bad token encountered: '"
-                << token->s << '\'' << endl;
+                << token->s << '\'';
+            if (!token->error.empty())
+                cerr << ": " << token->error;
+            cerr << endl;
             delete token;
             errorDetected = true;
             break;

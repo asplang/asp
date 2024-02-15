@@ -4,10 +4,12 @@
 
 #include <lexer.h>
 #include <token-types.h>
+#include <cstdint>
 #include <cctype>
 #include <map>
 #include <limits>
 #include <cstdlib>
+#include <cerrno>
 
 using namespace std;
 
@@ -119,7 +121,7 @@ Token *Lexer::ProcessNumber()
                     state = State::IncompleteSimpleFloat;
                 else if (isdigit(c))
                     state = State::Decimal;
-                else
+                else if (c != '-')
                     state = State::Invalid;
                 break;
 
@@ -250,16 +252,39 @@ Token *Lexer::ProcessNumber()
         case State::Zero:
         case State::Decimal:
         {
-            auto value = static_cast<unsigned>(strtoul(s, 0, 10));
-            return new Token
-                (sourceLocation, *reinterpret_cast<int *>(&value), 0, lex);
+            errno = 0;
+            auto value = strtol(s, 0, 10);
+            return
+                errno != 0 || value < INT32_MIN || value > INT32_MAX ?
+                new Token
+                    (sourceLocation, -1, lex,
+                     "Decimal constant out of range") :
+                new Token
+                    (sourceLocation, static_cast<int>(value), 0, lex);
         }
 
         case State::Hexadecimal:
         {
-            auto value = static_cast<unsigned>(strtoul(s, 0, 0x10));
-            return new Token
-                (sourceLocation, *reinterpret_cast<int *>(&value), 0, lex);
+            bool negative = *s == '-';
+            if (negative)
+                s++;
+            errno = 0;
+            unsigned long ulValue = strtoul(s, 0, 0x10);
+            bool error = errno != 0 || ulValue > UINT32_MAX;
+            uint32_t uValue = static_cast<uint32_t>(ulValue);
+            int32_t value = *reinterpret_cast<int32_t *>(&uValue);
+            if (!error && negative)
+            {
+                error = value == INT32_MIN;
+                if (!error)
+                    value = -value;
+            }
+            return error ?
+                new Token
+                    (sourceLocation, -1, lex,
+                     "Hexadecimal constant out of range") :
+                new Token
+                    (sourceLocation, static_cast<int>(value), 0, lex);
         }
 
         case State::SimpleFloat:

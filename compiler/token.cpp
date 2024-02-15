@@ -8,10 +8,12 @@
 using namespace std;
 
 Token::Token
-    (const SourceLocation &sourceLocation, int type, const string &s) :
+    (const SourceLocation &sourceLocation, int type, const string &s,
+     const string &error) :
     SourceElement(sourceLocation),
     type(type),
-    s(s)
+    s(s),
+    error(error)
 {
 }
 

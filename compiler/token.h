@@ -20,7 +20,8 @@ extern "C" {
 struct Token : public SourceElement
 {
     explicit Token
-        (const SourceLocation &, int type = 0, const std::string & = "");
+        (const SourceLocation &, int type = 0, const std::string & = "",
+         const std::string &error = "");
     Token(const SourceLocation &, int, int, const std::string & = "");
     Token(const SourceLocation &, double, const std::string & = "");
     Token(const SourceLocation &, const std::string &);
@@ -31,7 +32,7 @@ struct Token : public SourceElement
         std::int32_t i;
         double f;
     };
-    std::string s;
+    std::string s, error;
 };
 
 } // extern "C"
