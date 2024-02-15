@@ -9,15 +9,24 @@
 extern "C" {
 #endif
 
-#include "asp-priv.h"
+#include "integer-result.h"
 #include <stdint.h>
 
-AspRunResult AspNegateInteger(int32_t value, int32_t *result);
-AspRunResult AspAddIntegers(int32_t left, int32_t right, int32_t *result);
-AspRunResult AspSubtractIntegers(int32_t left, int32_t right, int32_t *result);
-AspRunResult AspMultiplyIntegers(int32_t left, int32_t right, int32_t *result);
-AspRunResult AspDivideIntegers(int32_t left, int32_t right, int32_t *result);
-AspRunResult AspModuloIntegers(int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspNegateInteger(int32_t value, int32_t *result);
+AspIntegerResult AspAddIntegers
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspSubtractIntegers
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspMultiplyIntegers
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspDivideIntegers
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspModuloIntegers
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspLeftShiftIntegers
+    (int32_t left, int32_t right, int32_t *result);
+AspIntegerResult AspRightShiftIntegers
+    (int32_t left, int32_t right, int32_t *result);
 
 #ifdef __cplusplus
 }

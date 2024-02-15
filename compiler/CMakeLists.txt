@@ -43,6 +43,7 @@ add_executable(aspc
     token.cpp
     asp.c
     expression.cpp
+    ../engine/integer.c
     statement.cpp
     search-path.cpp
     symbol.cpp

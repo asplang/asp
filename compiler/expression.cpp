@@ -4,6 +4,7 @@
 
 #include "expression.hpp"
 #include "asp.h"
+#include "integer.h"
 #include <cmath>
 
 using namespace std;
@@ -718,7 +719,7 @@ int ConstantExpression::Compare(const ConstantExpression &right) const
          right.type == Type::Float) ||
         type == Type::String && right.type == Type::String;
     if (!comparable)
-        throw string("Bad operand types for comparison operation");
+        throw string("Invalid operand types in comparison expression");
     return
         type == Type::String ?
         StringCompare(right) : NumericCompare(right);
@@ -732,13 +733,15 @@ int ConstantExpression::NumericCompare(const ConstantExpression &right) const
     else if (type == Type::Integer)
         leftInt = i;
     else
-        throw string("Internal error: Invalid type for numeric comparison");
+        throw string
+            ("Internal error: Invalid type in numeric comparison expression");
     if (right.type == Type::Boolean)
         rightInt = right.b ? 1 : 0;
     else if (right.type == Type::Integer)
         rightInt = right.i;
     else
-        throw string("Internal error: Invalid type for numeric comparison");
+        throw string
+            ("Internal error: Invalid type in numeric comparison expression");
     Type resultType = Type::Integer;
     double leftFloat = 0, rightFloat = 0;
     if (type == Type::Float || right.type == Type::Float)
@@ -763,7 +766,8 @@ int ConstantExpression::NumericCompare(const ConstantExpression &right) const
 int ConstantExpression::StringCompare(const ConstantExpression &right) const
 {
     if (type != Type::String || right.type != Type::String)
-        throw string("Internal error: Invalid type for string comparison");
+        throw string
+            ("Internal error: Invalid type in string comparison expression");
 
     return s == right.s ? 0 : s < right.s ? -1 : +1;
 }
@@ -779,7 +783,7 @@ Expression *ConstantExpression::FoldPlus()
     switch (type)
     {
         default:
-            throw string("Bad operand type for unary +");
+            throw string("Invalid operand type in unary positive expression");
 
         case Type::Boolean:
             return new ConstantExpression(Token(sourceLocation,
@@ -796,16 +800,24 @@ Expression *ConstantExpression::FoldMinus()
     switch (type)
     {
         default:
-            throw string("Bad operand type for unary -");
+            throw string
+                ("Invalid operand type in unary negation expression");
 
         case Type::Boolean:
             return new ConstantExpression(Token(sourceLocation,
                 b ? -1 : 0, 0));
 
         case Type::Integer:
-            if (i == INT32_MIN)
-                throw string("Arithmetic overflow for unary -");
-            return new ConstantExpression(Token(sourceLocation, -i, 0));
+        {
+            int32_t intResult;
+            AspIntegerResult result = AspNegateInteger(i, &intResult);
+            if (result == AspIntegerResult_ArithmeticOverflow)
+                throw string
+                    ("Arithmetic overflow in unary negation expression");
+            else if (result != AspIntegerResult_OK)
+                throw string("Invalid unary negation expression");
+            return new ConstantExpression(Token(sourceLocation, intResult, 0));
+        }
 
         case Type::Float:
             return new ConstantExpression(Token(sourceLocation, -f));
@@ -817,7 +829,8 @@ Expression *ConstantExpression::FoldInvert()
     switch (type)
     {
         default:
-            throw string("Bad operand type for unary ~");
+            throw string
+                ("Invalid operand type in unary invert expression");
 
         case Type::Boolean:
             return new ConstantExpression(Token(sourceLocation,
@@ -899,14 +912,16 @@ Expression *FoldBitwiseOperation
     else if (leftExpression->type == Type::Integer)
         leftValue = leftExpression->i;
     else
-        throw string("Bad left operand type for binary bitwise operation");
+        throw string
+            ("Invalid left operand type in binary bitwise expression");
     leftBits = *reinterpret_cast<uint32_t *>(&leftValue);
     if (rightExpression->type == Type::Boolean)
         rightValue = rightExpression->b ? 1 : 0;
     else if (rightExpression->type == Type::Integer)
         rightValue = rightExpression->i;
     else
-        throw string("Bad right operand type for binary bitwise operation");
+        throw string
+            ("Invalid right operand type in binary bitwise expression");
     rightBits = *reinterpret_cast<uint32_t *>(&rightValue);
 
     uint32_t resultBits = 0;
@@ -915,40 +930,45 @@ Expression *FoldBitwiseOperation
         default:
             return 0;
 
-            case TOKEN_BAR:
-                resultBits = leftBits | rightBits;
-                break;
+        case TOKEN_BAR:
+            resultBits = leftBits | rightBits;
+            break;
 
-            case TOKEN_CARET:
-                resultBits = leftBits ^ rightBits;
-                break;
+        case TOKEN_CARET:
+            resultBits = leftBits ^ rightBits;
+            break;
 
-            case TOKEN_AMPERSAND:
-                resultBits = leftBits & rightBits;
-                break;
+        case TOKEN_AMPERSAND:
+            resultBits = leftBits & rightBits;
+            break;
 
-            case TOKEN_LEFT_SHIFT:
-                if (rightValue < 0)
-                    throw string("Negative shift count not permitted");
-                resultBits = rightBits >= 32 ? 0 : leftBits << rightValue;
-                break;
+        case TOKEN_LEFT_SHIFT:
+        {
+            int32_t intResult;
+            AspIntegerResult result = AspLeftShiftIntegers
+                (leftValue, rightValue, &intResult);
+            if (result == AspIntegerResult_ValueOutOfRange)
+                throw string
+                    ("Out of range value(s) in binary left shift expression");
+            else if (result != AspIntegerResult_OK)
+                throw string("Invalid left shift expression");
+            resultBits = *(uint32_t *)&intResult;
+            break;
+        }
 
-            case TOKEN_RIGHT_SHIFT:
-            {
-                if (rightValue < 0)
-                    throw string("Negative shift count not permitted");
-
-                if (rightValue >= 32)
-                    resultBits = leftValue < 0 ? -1 : 0;
-                else
-                {
-                    // Perform sign extension.
-                   resultBits = leftBits >> rightBits;
-                    if (leftValue < 0)
-                        resultBits |= (1 << rightBits) - 1 << 32U - rightBits;
-                }
-                break;
-            }
+        case TOKEN_RIGHT_SHIFT:
+        {
+            int32_t intResult;
+            AspIntegerResult result = AspRightShiftIntegers
+                (leftValue, rightValue, &intResult);
+            if (result == AspIntegerResult_ValueOutOfRange)
+                throw string
+                    ("Out of range value(s) in binary right shift expression");
+            else if (result != AspIntegerResult_OK)
+                throw string("Invalid right shift expression");
+            resultBits = *(uint32_t *)&intResult;
+            break;
+        }
     }
 
     int32_t resultValue = *reinterpret_cast<int32_t *>(&resultBits);
@@ -997,46 +1017,36 @@ Expression *FoldArithmeticOperation
 
     int intResult = 0;
     double floatResult = 0;
+    string desc;
     if (resultType == Type::Integer)
     {
-        bool overflow = false;
+        AspIntegerResult integerResult = AspIntegerResult_OK;
         switch (operatorTokenType)
         {
             default:
                 return 0;
 
             case TOKEN_PLUS:
-            {
-                uint32_t unsignedResult = leftUnsigned + rightUnsigned;
-                intResult = *reinterpret_cast<int32_t *>(&unsignedResult);
-                overflow = intResult < leftInt != rightInt < 0;
+                desc = "addition";
+                integerResult = AspAddIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
-            }
 
             case TOKEN_MINUS:
-            {
-                overflow =
-                    rightInt > 0 && leftInt < INT32_MIN + rightInt ||
-                    rightInt < 0 && leftInt > INT32_MAX + rightInt;
-                if (!overflow)
-                    intResult = leftInt - rightInt;
+                desc = "subtraction";
+                integerResult = AspSubtractIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
-            }
 
             case TOKEN_ASTERISK:
-            {
-                uint32_t unsignedResult = leftUnsigned * rightUnsigned;
-                intResult = *reinterpret_cast<int32_t *>(&unsignedResult);
-                overflow =
-                    leftInt == INT32_MIN && rightInt == -1 ||
-                    leftInt != 0 && rightInt != 0 &&
-                    leftInt != intResult / rightInt;
+                desc = "multiplication";
+                integerResult = AspMultiplyIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
-            }
 
             case TOKEN_SLASH:
                 if (rightInt == 0)
-                    throw string("Divide by zero");
+                    throw string("Divide by zero in division expression");
                 resultType = Type::Float;
                 floatResult =
                     static_cast<double>(leftInt) /
@@ -1044,37 +1054,16 @@ Expression *FoldArithmeticOperation
                 break;
 
             case TOKEN_FLOOR_DIVIDE:
-                if (rightInt == 0)
-                    throw string("Divide by zero");
-                overflow = leftInt == INT32_MIN && rightInt == -1;
-                if (!overflow)
-                    intResult = leftInt / rightInt;
+                desc = "division";
+                integerResult = AspDivideIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
 
             case TOKEN_PERCENT:
-            {
-                if (rightInt == 0)
-                    throw string("Divide by zero");
-
-                overflow = leftInt == INT32_MIN && rightInt == -1;
-                if (!overflow)
-                {
-                    /* Compute using the quotient rounded toward negative
-                       infinity. */
-                    int32_t signedLeft = leftInt < 0 ? -leftInt : leftInt;
-                    int32_t signedRight = rightInt < 0 ? -rightInt : rightInt;
-                    int32_t quotient = signedLeft / signedRight;
-                    if (leftInt < 0 != rightInt < 0)
-                    {
-                        quotient = -quotient;
-                        if (signedLeft % signedRight != 0)
-                            quotient--;
-                    }
-                    intResult = leftInt - quotient * rightInt;
-                }
-
+                desc = "modulo";
+                integerResult = AspModuloIntegers
+                    (leftInt, rightInt, &intResult);
                 break;
-            }
 
             case TOKEN_POWER:
                 resultType = Type::Float;
@@ -1083,8 +1072,21 @@ Expression *FoldArithmeticOperation
                      static_cast<double>(rightInt));
                 break;
         }
-        if (overflow)
-            throw string("Arithmetic overflow for binary operation");
+
+        desc = "binary " + desc + " expression";
+        switch (integerResult)
+        {
+            default:
+                throw string("Invalid " + desc);
+            case AspIntegerResult_OK:
+                break;
+            case AspIntegerResult_ValueOutOfRange:
+                throw string("Out of range value(s) in " + desc);
+            case AspIntegerResult_DivideByZero:
+                throw string("Divide by zero in " + desc);
+            case AspIntegerResult_ArithmeticOverflow:
+                throw string("Arithmetic overflow in " + desc);
+        }
     }
     else if (resultType == Type::Float)
     {
@@ -1107,19 +1109,19 @@ Expression *FoldArithmeticOperation
 
             case TOKEN_SLASH:
                 if (rightFloat == 0)
-                    throw string("Divide by zero");
+                    throw string("Divide by zero in division expression");
                 floatResult = leftFloat / rightFloat;
                 break;
 
             case TOKEN_FLOOR_DIVIDE:
                 if (rightFloat == 0)
-                    throw string("Divide by zero");
+                    throw string("Divide by zero in division expression");
                 floatResult = floor(leftFloat / rightFloat);
                 break;
 
             case TOKEN_PERCENT:
                 if (rightFloat == 0)
-                    throw string("Divide by zero");
+                    throw string("Divide by zero in division expression");
                 floatResult = static_cast<double>
                     (leftFloat - floor(leftFloat / rightFloat) * rightFloat);
                 break;

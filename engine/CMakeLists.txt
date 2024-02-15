@@ -60,6 +60,7 @@ if(BUILD_FOR_TARGET)
         lib-iter.c
         lib-math.c
         integer.c
+        integer-result.c
         $<$<BOOL:${ENABLE_ENGINE_DEBUG}>:debug.c>
         )
 

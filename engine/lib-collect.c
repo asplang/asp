@@ -55,7 +55,7 @@ static AspRunResult FillSequence
     {
         int32_t start, end, step;
         AspGetRange(engine, iterable, &start, &end, &step);
-        AspRunResult stepResult = AspRunResult_OK;
+        AspIntegerResult stepResult = AspRunResult_OK;
         for (int32_t i = start;
              stepResult == AspRunResult_OK && step < 0 ? i > end : i < end;
              stepResult = AspAddIntegers(i, step, &i))
@@ -69,8 +69,8 @@ static AspRunResult FillSequence
                 return appendResult.result;
             AspUnref(engine, value);
         }
-        if (stepResult != AspRunResult_OK)
-            return stepResult;
+        if (stepResult != AspIntegerResult_OK)
+            return AspTranslateIntegerResult(stepResult);
     }
     else if (AspIsString(iterable) || AspIsSequence(iterable))
     {

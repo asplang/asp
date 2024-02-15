@@ -143,10 +143,10 @@ AspRunResult AspIteratorNext
 
             AspGetRange(engine, iterable, 0, &endValue, &stepValue);
             int32_t newValue;
-            AspRunResult addResult = AspAddIntegers
+            AspIntegerResult addResult = AspAddIntegers
                 (AspDataGetInteger(member), stepValue, &newValue);
-            if (addResult != AspRunResult_OK)
-                return addResult;
+            if (addResult != AspIntegerResult_OK)
+                return AspTranslateIntegerResult(addResult);
             AspUnref(engine, member);
             if (engine->runResult != AspRunResult_OK)
                 return engine->runResult;

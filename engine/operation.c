@@ -107,8 +107,10 @@ AspOperationResult AspPerformUnaryOperation
                     if (result.value == 0)
                         break;
                     int32_t intResult = 0;
-                    result.result = AspNegateInteger
-                        ((int32_t)AspDataGetBoolean(operand), &intResult);
+                    result.result = AspTranslateIntegerResult
+                        (AspNegateInteger
+                            ((int32_t)AspDataGetBoolean(operand),
+                             &intResult));
                     AspDataSetInteger(result.value, intResult);
                     break;
                 }
@@ -119,8 +121,9 @@ AspOperationResult AspPerformUnaryOperation
                     if (result.value == 0)
                         break;
                     int32_t intResult = 0;
-                    result.result = AspNegateInteger
-                        (AspDataGetInteger(operand), &intResult);
+                    result.result = AspTranslateIntegerResult
+                        (AspNegateInteger
+                            (AspDataGetInteger(operand), &intResult));
                     AspDataSetInteger(result.value, intResult);
                     break;
                 }
@@ -368,25 +371,22 @@ static AspOperationResult PerformBitwiseBinaryOperation
             break;
 
         case OpCode_LSH:
-            if (rightValue < 0)
-                result.result = AspRunResult_ValueOutOfRange;
-            else
-                resultBits = rightValue >= 32 ? 0 : leftBits << rightBits;
+        {
+            int32_t intResult;
+            result.result = AspTranslateIntegerResult
+                (AspLeftShiftIntegers(leftValue, rightValue, &intResult));
+            resultBits = *(uint32_t *)&intResult;
             break;
+        }
 
         case OpCode_RSH:
-            if (rightValue < 0)
-                result.result = AspRunResult_ValueOutOfRange;
-            else if (rightValue >= 32)
-                resultBits = leftValue < 0 ? -1 : 0;
-            else
-            {
-                /* Perform sign extension. */
-                resultBits = leftBits >> rightBits;
-                if (leftValue < 0 && rightBits != 0)
-                    resultBits |= (1U << rightBits) - 1U << 32U - rightBits;
-            }
+        {
+            int32_t intResult;
+            result.result = AspTranslateIntegerResult
+                (AspRightShiftIntegers(leftValue, rightValue, &intResult));
+            resultBits = *(uint32_t *)&intResult;
             break;
+        }
     }
 
     if (result.result == AspRunResult_OK)
@@ -626,7 +626,6 @@ static AspOperationResult PerformArithmeticBinaryOperation
     double floatResult = 0.0;
     if (resultType == DataType_Integer)
     {
-        bool overflow = false;
         switch (opCode)
         {
             default:
@@ -634,18 +633,18 @@ static AspOperationResult PerformArithmeticBinaryOperation
                 break;
 
             case OpCode_ADD:
-                result.result = AspAddIntegers
-                    (leftInt, rightInt, &intResult);
+                result.result = AspTranslateIntegerResult
+                    (AspAddIntegers(leftInt, rightInt, &intResult));
                 break;
 
             case OpCode_SUB:
-                result.result = AspSubtractIntegers
-                    (leftInt, rightInt, &intResult);
+                result.result = AspTranslateIntegerResult
+                    (AspSubtractIntegers(leftInt, rightInt, &intResult));
                 break;
 
             case OpCode_MUL:
-                result.result = AspMultiplyIntegers
-                    (leftInt, rightInt, &intResult);
+                result.result = AspTranslateIntegerResult
+                    (AspMultiplyIntegers(leftInt, rightInt, &intResult));
                 break;
 
             case OpCode_DIV:
@@ -659,13 +658,13 @@ static AspOperationResult PerformArithmeticBinaryOperation
                 break;
 
             case OpCode_FDIV:
-                result.result = AspDivideIntegers
-                    (leftInt, rightInt, &intResult);
+                result.result = AspTranslateIntegerResult
+                    (AspDivideIntegers(leftInt, rightInt, &intResult));
                 break;
 
             case OpCode_MOD:
-                result.result = AspModuloIntegers
-                    (leftInt, rightInt, &intResult);
+                result.result = AspTranslateIntegerResult
+                    (AspModuloIntegers(leftInt, rightInt, &intResult));
                 break;
 
             case OpCode_POW:
