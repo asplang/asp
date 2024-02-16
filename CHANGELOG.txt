@@ -7,6 +7,26 @@ chronological order.
 Changes
 -------
 
+Version 0.7.4.0 (compiler 0.7.2.0, engine 0.7.6.0):
+- Compiler:
+  - Modified lexical analysis to treat negative integers as single tokens
+    (instead of a unary negation token followed by a positive integer) in order
+    to accept the most negative value (i.e., INT32_MIN) as a constant.
+  - Replaced local implementation of integer arithmetic used in constant
+    folding with calls to the same routines that the engine uses for these
+    operations, thus making constant folding behave similar to Python rather
+    than C.
+- Engine:
+  - Fixed several issues related to integer arithmetic, including undefined
+    behaviour and overflow.
+  - Corrected the behaviour of integer division and modulo operations to be
+    similar to Python instead of C.
+  - Fixed overflow conditions happening during range iteration.
+  - Added checks to the script-callable int function for floating-point
+    infinities and NaNs, and added an option to indicate how to handle them.
+  - Fixed a bug in the script-callable tuple and list conversion functions that
+    would occur when converting ranges with negative step.
+
 Version 0.7.3.2 (compiler 0.7.1.5, engine 0.7.5.1):
 - Engine:
   - Added cycle detection logic where applicable to end script execution when
