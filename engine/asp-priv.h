@@ -126,7 +126,7 @@ typedef struct
 ASP_API AspDataEntry *AspParameterValue
     (AspEngine *, AspDataEntry *ns, int32_t symbol);
 ASP_API AspParameterResult AspGroupParameterValue
-    (AspEngine *, AspDataEntry *ns, int32_t symbol);
+    (AspEngine *, AspDataEntry *ns, int32_t symbol, bool dictionary);
 
 #ifdef __cplusplus
 }

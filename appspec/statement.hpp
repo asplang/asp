@@ -37,28 +37,47 @@ class Parameter : public NonTerminal
 {
     public:
 
-        Parameter
-            (const Token &name, Literal *, bool group = false);
+        enum class Type
+        {
+            Positional,
+            TupleGroup,
+            DictionaryGroup,
+        };
+
+        Parameter(const Token &name, Literal *);
+        Parameter(const Token &name, Type = Type::Positional);
         ~Parameter();
 
         std::string Name() const
         {
             return name;
         }
-        Literal *DefaultValue() const
+        Type GetType() const
         {
-            return defaultValue;
+            return type;
         }
         bool IsGroup() const
         {
-            return isGroup;
+            return IsTupleGroup() || IsDictionaryGroup();
+        }
+        bool IsTupleGroup() const
+        {
+            return type == Type::TupleGroup;
+        }
+        bool IsDictionaryGroup() const
+        {
+            return type == Type::DictionaryGroup;
+        }
+        Literal *DefaultValue() const
+        {
+            return defaultValue;
         }
 
     private:
 
         std::string name;
+        Type type;
         Literal *defaultValue;
-        bool isGroup;
 };
 
 class ParameterList : public NonTerminal

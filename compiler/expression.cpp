@@ -169,16 +169,16 @@ void TargetExpression::Parent(const Statement *statement)
 Argument::Argument
     (const Token &nameToken, Expression *valueExpression) :
     NonTerminal(nameToken),
+    type(Type::NonGroup),
     name(nameToken.s),
-    valueExpression(valueExpression),
-    isGroup(false)
+    valueExpression(valueExpression)
 {
 }
 
-Argument::Argument(Expression *valueExpression, bool isGroup) :
+Argument::Argument(Expression *valueExpression, Type type) :
     NonTerminal((SourceElement &)*valueExpression),
-    valueExpression(valueExpression),
-    isGroup(isGroup)
+    type(type),
+    valueExpression(valueExpression)
 {
 }
 
@@ -298,6 +298,13 @@ bool VariableExpression::HasSymbol() const
 string VariableExpression::Name() const
 {
     return name;
+}
+
+SymbolExpression::SymbolExpression
+    (const Token &operatorToken, const Token &nameToken) :
+    Expression(operatorToken),
+    name(nameToken.s)
+{
 }
 
 KeyValuePair::KeyValuePair
@@ -625,7 +632,7 @@ Expression *FoldBinaryExpression
         case TOKEN_SLASH:
         case TOKEN_FLOOR_DIVIDE:
         case TOKEN_PERCENT:
-        case TOKEN_POWER:
+        case TOKEN_DOUBLE_ASTERISK:
             return
                 leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
                 FoldArithmeticOperation
@@ -679,6 +686,11 @@ bool ConstantExpression::IsTrue() const
         case Type::String:
             return !s.empty();
     }
+}
+
+bool ConstantExpression::IsString() const
+{
+    return type == Type::String;
 }
 
 bool ConstantExpression::IsEqual(const ConstantExpression &right) const
@@ -1072,7 +1084,7 @@ Expression *FoldArithmeticOperation
                     (leftInt, rightInt, &intResult);
                 break;
 
-            case TOKEN_POWER:
+            case TOKEN_DOUBLE_ASTERISK:
                 resultType = Type::Float;
                 floatResult = pow
                     (static_cast<double>(leftInt),
@@ -1133,7 +1145,7 @@ Expression *FoldArithmeticOperation
                     (leftFloat - floor(leftFloat / rightFloat) * rightFloat);
                 break;
 
-            case TOKEN_POWER:
+            case TOKEN_DOUBLE_ASTERISK:
                 floatResult = pow(leftFloat, rightFloat);
                 break;
         }

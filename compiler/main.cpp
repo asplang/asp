@@ -423,10 +423,17 @@ static int main1(int argc, char **argv)
     }
 
     compiler.Finalize();
-
     if (errorDetected)
     {
         cerr << "Ended in ERROR" << endl;
+
+        // Remove output files.
+        executableStream.close();
+        remove(executableFileName.c_str());
+        listingStream.close();
+        remove(listingFileName.c_str());
+        sourceInfoStream.close();
+        remove(sourceInfoFileName.c_str());
         return 4;
     }
 
@@ -465,6 +472,8 @@ static int main1(int argc, char **argv)
     // Indicate any error writing the code.
     if (!executableStream)
         return 5;
+    if (!listingStream || !sourceInfoStream)
+        return 6;
 
     // Write statistics.
     if (executableStream && !silent)

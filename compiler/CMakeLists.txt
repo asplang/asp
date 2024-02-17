@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.5)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspc
-    VERSION 0.7.2.0
+    VERSION 0.8.0.0
     )
 
 set(ABI_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
@@ -45,6 +45,7 @@ add_executable(aspc
     expression.cpp
     ../engine/integer.c
     statement.cpp
+    function.cpp
     search-path.cpp
     symbol.cpp
     emit.cpp

@@ -6,6 +6,7 @@
 #include "grammar.hpp"
 #include "expression.hpp"
 #include "statement.hpp"
+#include "function.hpp"
 #include "instruction.hpp"
 #include "symbols.h"
 #include <iostream>
@@ -43,7 +44,7 @@ void Compiler::LoadApplicationSpec(istream &specStream)
     // Read and check application spec version.
     uint8_t version;
     specStream >> version;
-    if (version != 0)
+    if (version > 0x01)
     {
         ostringstream oss;
         oss
@@ -505,45 +506,19 @@ DEFINE_ACTION
     if (!parameterList->HasSourceLocation())
         (SourceElement &)*parameterList = *nameToken;
 
-    // Ensure defaulted parameters follow positional ones.
-    bool groupSeen = false, defaultSeen = false;
-    unsigned position = 1;
+    // Ensure the validity of the order of parameter types.
+    ValidFunctionDefinition validFunctionDefinition;
     for (auto iter = parameterList->ParametersBegin();
-         iter != parameterList->ParametersEnd(); iter++, position++)
+         validFunctionDefinition.IsValid() &&
+         iter != parameterList->ParametersEnd();
+         iter++)
     {
-        auto parameter = *iter;
+        const auto &parameter = **iter;
 
-        if (parameter->IsGroup())
-        {
-            if (groupSeen)
-            {
-                ostringstream oss;
-                oss
-                    << "Duplicate group parameter " << position
-                    << " not permitted";
-                ReportError(oss.str());
-            }
-            groupSeen = true;
-        }
-        else if (parameter->HasDefault())
-        {
-            defaultSeen = true;
-        }
-        else
-        {
-            if (groupSeen || defaultSeen)
-            {
-                ostringstream oss;
-                oss
-                    << "Parameter " << position
-                    << " with no default follows";
-                if (groupSeen)
-                    oss << " group parameter";
-                else if (defaultSeen)
-                    oss << " parameter(s) with default(s)";
-                ReportError(oss.str());
-            }
-        }
+        string error = validFunctionDefinition.AddParameter
+            (parameter.Name(), parameter.GetType(), parameter.HasDefault());
+        if (!error.empty())
+            ReportError(error, parameter);
     }
 
     auto result = new DefStatement(*nameToken, parameterList, block);
@@ -705,23 +680,38 @@ DEFINE_ACTION
         (SourceElement &)*argumentList = *functionExpression;
 
     // Ensure named arguments follow positional ones.
-    bool positionalArgumentAllowed = true;
+    bool namedSeen = false, dictionaryGroupSeen = false;
     unsigned position = 1;
     for (auto iter = argumentList->ArgumentsBegin();
          iter != argumentList->ArgumentsEnd(); iter++, position++)
     {
-        auto argument = *iter;
+        auto &argument = **iter;
+        Argument::Type type = argument.GetType();
+        bool isPositional =
+            type == Argument::Type::NonGroup && !argument.HasName();
 
-        if (argument->HasName())
-            positionalArgumentAllowed = false;
-        else if (!positionalArgumentAllowed)
+        if (isPositional && (namedSeen || dictionaryGroupSeen))
         {
             ostringstream oss;
             oss
-                << "Unnamed argument " << position
-                << " follows named argument(s)";
-            ReportError(oss.str());
+                << "Positional argument " << position << " follows "
+                << (dictionaryGroupSeen ? "dictionary group" : "named")
+                << " argument";
+            ReportError(oss.str(), argument);
         }
+        else if (type == Argument::Type::IterableGroup && dictionaryGroupSeen)
+        {
+            ostringstream oss;
+            oss
+                << "Iterable argument " << position
+                << " follows dictionary group argument";
+            ReportError(oss.str(), argument);
+        }
+
+        if (type == Argument::Type::DictionaryGroup)
+            dictionaryGroupSeen = true;
+        else if (argument.HasName())
+            namedSeen = true;
     }
 
     return new CallExpression(functionExpression, argumentList);
@@ -748,6 +738,16 @@ DEFINE_ACTION
      Token *, nameToken)
 {
     auto result = new VariableExpression(*nameToken);
+    delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeSymbolExpression, Expression *,
+     Token *, operatorToken, Token *, nameToken)
+{
+    auto result = new SymbolExpression(*operatorToken, *nameToken);
+    delete operatorToken;
     delete nameToken;
     return result;
 }
@@ -925,16 +925,28 @@ DEFINE_ACTION
     (MakeParameter, Parameter *,
      Token *, nameToken, Expression *, defaultExpression)
 {
-    auto result = new Parameter(*nameToken, defaultExpression);
+    auto result = new Parameter
+        (*nameToken, Parameter::Type::Positional, defaultExpression);
     delete nameToken;
     return result;
 }
 
 DEFINE_ACTION
-    (MakeGroupParameter, Parameter *,
+    (MakeTupleGroupParameter, Parameter *,
      Token *, nameToken)
 {
-    auto result = new Parameter(*nameToken, 0, true);
+    auto result = new Parameter
+        (*nameToken, Parameter::Type::TupleGroup);
+    delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
+    (MakeDictionaryGroupParameter, Parameter *,
+     Token *, nameToken)
+{
+    auto result = new Parameter
+        (*nameToken, Parameter::Type::DictionaryGroup);
     delete nameToken;
     return result;
 }
@@ -965,15 +977,27 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
-    (MakeGroupArgument, Argument *,
+    (MakeIterableGroupArgument, Argument *,
+     Expression *, valueExpression)
+{
+    auto constantExpression = dynamic_cast<ConstantExpression *>
+        (valueExpression);
+    if (constantExpression != 0 && !constantExpression->IsString())
+        ReportError("Invalid type for iterable group argument");
+
+    return new Argument(valueExpression, Argument::Type::IterableGroup);
+}
+
+DEFINE_ACTION
+    (MakeDictionaryGroupArgument, Argument *,
      Expression *, valueExpression)
 {
     auto constantExpression = dynamic_cast<ConstantExpression *>
         (valueExpression);
     if (constantExpression != 0)
-        ReportError("Cannot pass non-tuple as a group argument");
+        ReportError("Invalid type for dictionary group argument");
 
-    return new Argument(valueExpression, true);
+    return new Argument(valueExpression, Argument::Type::DictionaryGroup);
 }
 
 DEFINE_ACTION
@@ -1116,10 +1140,22 @@ DEFINE_UTIL(ReportError, void, const char *, error)
 
 void Compiler::ReportError(const string &error)
 {
+    ReportError(error, currentSourceLocation);
+}
+
+void Compiler::ReportError
+    (const string &error, const SourceElement &sourceElement)
+{
+    ReportError(error, sourceElement.sourceLocation);
+}
+
+void Compiler::ReportError
+    (const string &error, const SourceLocation &sourceLocation)
+{
     errorStream
-        << currentSourceLocation.fileName << ':'
-        << currentSourceLocation.line << ':'
-        << currentSourceLocation.column << ": Error: "
+        << sourceLocation.fileName << ':'
+        << sourceLocation.line << ':'
+        << sourceLocation.column << ": Error: "
         << error << endl;
     errorCount++;
 }

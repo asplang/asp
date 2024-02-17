@@ -7,6 +7,24 @@ chronological order.
 Changes
 -------
 
+Version 0.8.0.0 (compiler 0.8.0.0, engine 0.8.0.0):
+- Compiler:
+  - Added variable symbol syntax: `var_name.
+  - Added symbol names to the source info file.
+  - Added **kwargs support to function calls and definitions.
+  - Removed output files on detection of error(s).
+- Engine:
+  - Added ability to pass ranges, strings, lists, sets, and dictionaries as
+    iterable group arguments (*args). Previously, only tuples were accepted.
+  - Added support for functions accepting variable-length keyword arguments
+    (**kwargs), using variable symbols as keys instead of strings.
+- Application specification generator:
+  - Added the ability to define extra symbols for use in the application
+    without assigning a value.
+  - Added symbol macro definitions to the generated header.
+- Information utility:
+  - Added symbol to name translation.
+
 Version 0.7.4.0 (compiler 0.7.2.0, engine 0.7.6.0):
 - Compiler:
   - Modified lexical analysis to treat negative integers as single tokens

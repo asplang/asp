@@ -91,7 +91,8 @@ AspRunResult AspCompare
                     break;
 
                 case AspCompareType_Relational:
-                    if (type == DataType_Range ||
+                    if (type == DataType_Symbol ||
+                        type == DataType_Range ||
                         type == DataType_Set ||
                         type == DataType_Dictionary ||
                         type == DataType_Iterator ||
@@ -153,6 +154,16 @@ AspRunResult AspCompare
                         comparison = CompareFloats
                             (leftValue, rightValue,
                              compareType, &localNanDetected);
+                        break;
+                    }
+
+                    case DataType_Symbol:
+                    {
+                        int32_t
+                            leftValue = AspDataGetSymbol(leftEntry),
+                            rightValue = AspDataGetSymbol(rightEntry);
+                        if (leftValue != rightValue)
+                            comparison = leftValue < rightValue ? -1 : 1;
                         break;
                     }
 

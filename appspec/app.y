@@ -89,6 +89,11 @@ statement(result) ::=
          internalName);
 }
 
+statement(result) ::= NAME(nameToken).
+{
+    result = ACTION(MakeAssignment, nameToken, 0);
+}
+
 %type parameters {ParameterList *}
 
 parameters(result) ::=
@@ -115,17 +120,22 @@ parameters(result) ::= .
 parameter(result) ::=
     NAME(nameToken) ASSIGN literal(defaultValue).
 {
-    result = ACTION(MakeParameter, nameToken, defaultValue);
+    result = ACTION(MakeDefaultedParameter, nameToken, defaultValue);
 }
 
 parameter(result) ::= NAME(nameToken).
 {
-    result = ACTION(MakeParameter, nameToken, 0);
+    result = ACTION(MakeParameter, nameToken);
 }
 
 parameter(result) ::= ASTERISK NAME(nameToken).
 {
-    result = ACTION(MakeGroupParameter, nameToken);
+    result = ACTION(MakeTupleGroupParameter, nameToken);
+}
+
+parameter(result) ::= DOUBLE_ASTERISK NAME(nameToken).
+{
+    result = ACTION(MakeDictionaryGroupParameter, nameToken);
 }
 
 %type literal {Literal *}

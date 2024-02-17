@@ -148,28 +148,35 @@ class Argument : public NonTerminal
 {
     public:
 
+        enum class Type
+        {
+            NonGroup,
+            IterableGroup,
+            DictionaryGroup,
+        };
+
         Argument(const Token &, Expression *);
-        explicit Argument(Expression *, bool isGroup = false);
+        explicit Argument(Expression *, Type = Type::NonGroup);
         ~Argument();
 
         void Parent(const Statement *);
 
+        Type GetType() const
+        {
+            return type;
+        }
         bool HasName() const
         {
             return !name.empty();
-        }
-        bool IsGroup() const
-        {
-            return isGroup;
         }
 
         void Emit(Executable &) const;
 
     private:
 
+        Type type;
         std::string name;
         Expression *valueExpression;
-        bool isGroup;
 };
 
 class ArgumentList : public NonTerminal
@@ -267,6 +274,20 @@ class VariableExpression : public Expression
         std::string name;
         bool hasSymbol;
         int32_t symbol;
+};
+
+class SymbolExpression : public Expression
+{
+    public:
+
+        SymbolExpression
+            (const Token &operatorToken, const Token &nameToken);
+
+        virtual void Emit(Executable &, EmitType) const;
+
+    private:
+
+        std::string name;
 };
 
 class KeyValuePair : public NonTerminal
@@ -411,6 +432,7 @@ class ConstantExpression : public Expression
         virtual void Emit(Executable &, EmitType) const;
 
         bool IsTrue() const;
+        bool IsString() const;
 
     protected:
 

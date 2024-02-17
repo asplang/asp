@@ -325,6 +325,32 @@ void PushFloatInstruction::PrintCode(ostream &os) const
     os << "PUSHD " << value;
 }
 
+PushSymbolInstruction::PushSymbolInstruction
+    (int32_t symbol, const string &comment) :
+    Instruction
+        ((OperandSize(symbol) <= 1 ? OpCode_PUSHY1 :
+          OperandSize(symbol) == 2 ? OpCode_PUSHY2 : OpCode_PUSHY4),
+         comment),
+    symbol(symbol)
+{
+}
+
+unsigned PushSymbolInstruction::OperandsSize() const
+{
+    return max(1U, OperandSize(symbol));
+}
+
+void PushSymbolInstruction::WriteOperands(ostream &os) const
+{
+    uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
+    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+}
+
+void PushSymbolInstruction::PrintCode(ostream &os) const
+{
+    os << "PUSHY " << symbol;
+}
+
 PushStringInstruction::PushStringInstruction
     (const string &s, const string &comment) :
     Instruction
@@ -663,10 +689,15 @@ void LoadModuleInstruction::PrintCode(ostream &os) const
 }
 
 MakeArgumentInstruction::MakeArgumentInstruction
-    (bool isGroup, const string &comment) :
-    Instruction(isGroup ? OpCode_MKGARG : OpCode_MKARG, comment),
+    (Type type, const string &comment) :
+    Instruction
+        (type == Type::IterableGroup ? OpCode_MKIGARG :
+         type == Type::DictionaryGroup ? OpCode_MKDGARG : OpCode_MKARG,
+         comment),
     symbol(0)
 {
+    if (type == Type::Named)
+        throw string("Invalid instruction: Named argument without symbol");
 }
 
 MakeArgumentInstruction::MakeArgumentInstruction
@@ -682,13 +713,17 @@ MakeArgumentInstruction::MakeArgumentInstruction
 unsigned MakeArgumentInstruction::OperandsSize() const
 {
     return
-        OpCode() == OpCode_MKARG || OpCode() == OpCode_MKGARG ?
-        0 : max(1U, OperandSize(symbol));
+        OpCode() == OpCode_MKNARG1 ||
+        OpCode() == OpCode_MKNARG2 ||
+        OpCode() == OpCode_MKNARG4 ?
+        max(1U, OperandSize(symbol)) : 0;
 }
 
 void MakeArgumentInstruction::WriteOperands(ostream &os) const
 {
-    if (OpCode() != OpCode_MKARG && OpCode() != OpCode_MKGARG)
+    if (OpCode() == OpCode_MKNARG1 ||
+        OpCode() == OpCode_MKNARG2 ||
+        OpCode() == OpCode_MKNARG4)
     {
         uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
         WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
@@ -698,26 +733,33 @@ void MakeArgumentInstruction::WriteOperands(ostream &os) const
 void MakeArgumentInstruction::PrintCode(ostream &os) const
 {
     os << "MK";
-    if (OpCode() == OpCode_MKGARG)
-        os << 'G';
+    if (OpCode() == OpCode_MKIGARG)
+        os << "IG";
+    else if (OpCode() == OpCode_MKDGARG)
+        os << "DG";
     else if (OpCode() != OpCode_MKARG)
         os << 'N';
     os << "ARG";
-    if (OpCode() != OpCode_MKARG && OpCode() != OpCode_MKGARG)
+    if (OpCode() == OpCode_MKNARG1 ||
+        OpCode() == OpCode_MKNARG2 ||
+        OpCode() == OpCode_MKNARG4)
         os << ' ' << symbol;
 }
 
 MakeParameterInstruction::MakeParameterInstruction
-    (int32_t symbol, bool withDefault, bool isGroup, const string &comment) :
+    (int32_t symbol, Type type, const string &comment) :
     Instruction
-        (withDefault ?
+        (type == Type::Defaulted ?
             (OperandSize(symbol) <= 1 ? OpCode_MKDPAR1 :
              OperandSize(symbol) == 2 ? OpCode_MKDPAR2 : OpCode_MKDPAR4) :
-             isGroup ?
-                (OperandSize(symbol) <= 1 ? OpCode_MKGPAR1 :
-                 OperandSize(symbol) == 2 ? OpCode_MKGPAR2 : OpCode_MKGPAR4) :
-                (OperandSize(symbol) <= 1 ? OpCode_MKPAR1 :
-                 OperandSize(symbol) == 2 ? OpCode_MKPAR2 : OpCode_MKPAR4),
+         type == Type::TupleGroup ?
+            (OperandSize(symbol) <= 1 ? OpCode_MKTGPAR1 :
+             OperandSize(symbol) == 2 ? OpCode_MKTGPAR2 : OpCode_MKTGPAR4) :
+         type == Type::DictionaryGroup ?
+            (OperandSize(symbol) <= 1 ? OpCode_MKDGPAR1 :
+             OperandSize(symbol) == 2 ? OpCode_MKDGPAR2 : OpCode_MKDGPAR4) :
+            (OperandSize(symbol) <= 1 ? OpCode_MKPAR1 :
+             OperandSize(symbol) == 2 ? OpCode_MKPAR2 : OpCode_MKPAR4),
          comment),
     symbol(symbol)
 {
@@ -737,14 +779,18 @@ void MakeParameterInstruction::WriteOperands(ostream &os) const
 void MakeParameterInstruction::PrintCode(ostream &os) const
 {
     os << "MK";
-    if (OpCode() == OpCode_MKGPAR1 ||
-        OpCode() == OpCode_MKGPAR2 ||
-        OpCode() == OpCode_MKGPAR4)
-        os << 'G';
     if (OpCode() == OpCode_MKDPAR1 ||
         OpCode() == OpCode_MKDPAR2 ||
         OpCode() == OpCode_MKDPAR4)
         os << 'D';
+    else if (OpCode() == OpCode_MKTGPAR1 ||
+             OpCode() == OpCode_MKTGPAR2 ||
+             OpCode() == OpCode_MKTGPAR4)
+        os << "TG";
+    else if (OpCode() == OpCode_MKDGPAR1 ||
+             OpCode() == OpCode_MKDGPAR2 ||
+             OpCode() == OpCode_MKDGPAR4)
+        os << "DG";
     os << "PAR " << symbol;
 }
 

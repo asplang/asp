@@ -3,6 +3,7 @@
  */
 
 #include "asp-info.h"
+#include "symbols.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,9 +26,11 @@ static const unsigned SourceInfo_ColumnOffset = 3 * 4;
 struct AspSourceInfo
 {
     bool owned;
+    char version;
     size_t size;
     char *data;
     const uint8_t *sourceInfos;
+    const char *symbolNames;
 };
 
 AspSourceInfo *AspLoadSourceInfoFromFile(const char *fileName)
@@ -63,6 +66,26 @@ AspSourceInfo *AspLoadSourceInfoFromFile(const char *fileName)
         return 0;
     }
 
+    /* Determine the format version. */
+    char delimitorByte = getc(fp);
+    if (feof(fp))
+    {
+        fclose(fp);
+        return 0;
+    }
+    char version = 0;
+    if (delimitorByte != '\0')
+        ungetc(delimitorByte, fp);
+    else
+    {
+        version = getc(fp);
+        if (feof(fp))
+        {
+            fclose(fp);
+            return 0;
+        }
+    }
+
     /* Allocate and populate the source info object with data from the file. */
     AspSourceInfo *info = (AspSourceInfo *)malloc(sizeof(AspSourceInfo));
     if (info == 0)
@@ -70,7 +93,10 @@ AspSourceInfo *AspLoadSourceInfoFromFile(const char *fileName)
         fclose(fp);
         return 0;
     }
+    info->version = version;
     info->size = (size_t)tellResult - SourceInfoHeaderSize;
+    if (version >= 0x01)
+        info->size -= 2;
     info->data = (char *)malloc(info->size);
     if (info->data == 0)
     {
@@ -83,8 +109,7 @@ AspSourceInfo *AspLoadSourceInfoFromFile(const char *fileName)
     fclose(fp);
     if (readResult != info->size)
     {
-        free(info->data);
-        free(info);
+        AspUnloadSourceInfo(info);
         return 0;
     }
 
@@ -105,13 +130,25 @@ AspSourceInfo *AspLoadSourceInfo(const char *data, size_t size)
         memcmp(data, "AspD", 4) != 0)
         return 0;
 
+    /* Determine the format version. */
+    char version = 0;
+    if (size > SourceInfoHeaderSize + 1 &&
+        data[SourceInfoHeaderSize] == 0)
+        version = data[SourceInfoHeaderSize + 1];
+
     /* Allocate and populate the source info object. Note that the
        data simply points to the caller's data. */
     AspSourceInfo *info = (AspSourceInfo *)malloc(sizeof(AspSourceInfo));
     if (info == 0)
         return 0;
+    info->version = version;
     info->size = size - SourceInfoHeaderSize;
     info->data = (char *)data + SourceInfoHeaderSize;
+    if (version >= 0x01)
+    {
+        info->size -= 2;
+        info->data += 2;
+    }
     info->owned = false;
 
     /* Finish initialization. */
@@ -136,6 +173,25 @@ static bool FinishLoad(AspSourceInfo *info)
 
     /* Mark the start of the source info records. */
     info->sourceInfos = (uint8_t *)info->data + offset + 1;
+
+    /* Mark the start of the symbol names, if present. */
+    info->symbolNames = 0;
+    if (info->version >= 0x01)
+    {
+        /* Locate the end of the list of source info records. */
+        for (const uint8_t *p = info->sourceInfos;
+             p < (const uint8_t *)info->data + info->size;
+             p += SourceInfoRecordSize)
+        {
+            uint32_t sourceIndex = LoadValue
+                (p + SourceInfo_SourceIndexOffset);
+            if (sourceIndex == UINT32_MAX)
+            {
+                info->symbolNames = (const char *)p + SourceInfoRecordSize;
+                break;
+            }
+        }
+    }
 
     return true;
 }
@@ -215,6 +271,28 @@ const char *AspGetSourceFileName
 {
     unsigned long offset = ScanSourceFileNames(info, index, false);
     return offset == ULONG_MAX ? 0 : info->data + offset;
+}
+
+const char *AspGetSymbolName
+    (const AspSourceInfo *info, int32_t symbol)
+{
+    if (info->symbolNames == 0)
+        return 0;
+    if (symbol < 0)
+        return "";
+    if (symbol == AspSystemModuleSymbol)
+        return AspSystemModuleName;
+    if (symbol == AspSystemArgumentsSymbol)
+        return AspSystemArgumentsName;
+    symbol -= AspScriptSymbolBase;
+    for (const char *p = info->symbolNames;
+         p < info->data + info->size && *p != '\0';
+         p += strlen(p) + 1, symbol--)
+    {
+        if (symbol == 0)
+            return p;
+    }
+    return "";
 }
 
 static uint32_t LoadValue(const uint8_t *buffer)

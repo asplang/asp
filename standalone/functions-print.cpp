@@ -14,7 +14,7 @@ static AspRunResult asp_print1(AspEngine *, AspDataEntry *);
  */
 extern "C" AspRunResult asp_print
     (AspEngine *engine,
-     AspDataEntry *values, /* group */
+     AspDataEntry *values, /* tuple group */
      AspDataEntry *sep, AspDataEntry *end,
      AspDataEntry **returnValue)
 {

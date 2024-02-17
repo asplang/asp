@@ -206,6 +206,45 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
+        case OpCode_PUSHY4:
+            operandSize += 2;
+        case OpCode_PUSHY2:
+            operandSize++;
+        case OpCode_PUSHY1:
+            operandSize++;
+        {
+            #ifdef ASP_DEBUG
+            printf("PUSHY ");
+            #endif
+
+            /* Fetch the symbol from the operand. */
+            int32_t value;
+            AspRunResult operandLoadResult = LoadSignedWordOperand
+                (engine, operandSize, &value);
+            if (operandLoadResult != AspRunResult_OK)
+            {
+                #ifdef ASP_DEBUG
+                puts("?");
+                #endif
+                return operandLoadResult;
+            }
+            #ifdef ASP_DEBUG
+            printf("%d\n", value);
+            #endif
+
+            AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Symbol);
+            if (valueEntry == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspDataSetSymbol(valueEntry, value);
+
+            AspDataEntry *stackEntry = AspPush(engine, valueEntry);
+            if (stackEntry == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspUnref(engine, valueEntry);
+
+            break;
+        }
+
         case OpCode_PUSHS4:
             operandSize += 2;
         case OpCode_PUSHS2:
@@ -1630,12 +1669,16 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_MKARG:
-        case OpCode_MKGARG:
+        case OpCode_MKIGARG:
+        case OpCode_MKDGARG:
         {
-            bool isGroup = opCode == OpCode_MKGARG;
+            bool isIterableGroup = opCode == OpCode_MKIGARG;
+            bool isDictionaryGroup = opCode == OpCode_MKDGARG;
 
             #ifdef ASP_DEBUG
-            puts(isGroup ? "MKGARG" : "MKARG");
+            puts
+                (isIterableGroup ? "MKIGARG" :
+                 isDictionaryGroup ? "MKDGARG" : "MKARG");
             #endif
 
             /* Access argument value on top of the stack. */
@@ -1643,8 +1686,13 @@ static AspRunResult Step(AspEngine *engine)
             if (top == 0)
                 return AspRunResult_StackUnderflow;
 
-            /* For a group argument, ensure the value is a tuple. */
-            if (isGroup && AspDataGetType(top) != DataType_Tuple)
+            /* For a group argument, ensure the value type is valid. */
+            uint8_t type = AspDataGetType(top);
+            if (isIterableGroup &&
+                type != DataType_Range && type != DataType_String &&
+                type != DataType_Tuple && type != DataType_List &&
+                type != DataType_Set && type != DataType_Dictionary ||
+                isDictionaryGroup && type != DataType_Dictionary)
                 return AspRunResult_UnexpectedType;
 
             /* Create an argument. */
@@ -1652,7 +1700,8 @@ static AspRunResult Step(AspEngine *engine)
             if (argument == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetArgumentValueIndex(argument, AspIndex(engine, top));
-            AspDataSetArgumentIsGroup(argument, isGroup);
+            AspDataSetArgumentIsIterableGroup(argument, isIterableGroup);
+            AspDataSetArgumentIsDictionaryGroup(argument, isDictionaryGroup);
 
             /* Replace the top stack entry with the argument. */
             AspDataSetStackEntryValueIndex
@@ -1709,23 +1758,33 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_MKPAR4:
-        case OpCode_MKGPAR4:
+        case OpCode_MKTGPAR4:
+        case OpCode_MKDGPAR4:
             operandSize += 2;
         case OpCode_MKPAR2:
-        case OpCode_MKGPAR2:
+        case OpCode_MKTGPAR2:
+        case OpCode_MKDGPAR2:
             operandSize++;
         case OpCode_MKPAR1:
-        case OpCode_MKGPAR1:
+        case OpCode_MKTGPAR1:
+        case OpCode_MKDGPAR1:
         {
             operandSize++;
 
-            bool isGroup =
-                opCode == OpCode_MKGPAR1 ||
-                opCode == OpCode_MKGPAR2 ||
-                opCode == OpCode_MKGPAR4;
+            bool isTupleGroup =
+                opCode == OpCode_MKTGPAR1 ||
+                opCode == OpCode_MKTGPAR2 ||
+                opCode == OpCode_MKTGPAR4;
+            bool isDictionaryGroup =
+                opCode == OpCode_MKDGPAR1 ||
+                opCode == OpCode_MKDGPAR2 ||
+                opCode == OpCode_MKDGPAR4;
 
             #ifdef ASP_DEBUG
-            printf("%s ", isGroup ? "MKGPAR" : "MKPAR");
+            printf
+                ("%s ",
+                 isTupleGroup ? "MKTGPAR" :
+                 isDictionaryGroup ? "MKDGPAR" : "MKPAR");
             #endif
 
             /* Fetch the parameter's symbol from the operand. */
@@ -1748,7 +1807,8 @@ static AspRunResult Step(AspEngine *engine)
             if (parameter == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetParameterSymbol(parameter, parameterSymbol);
-            AspDataSetParameterIsGroup(parameter, isGroup);
+            AspDataSetParameterIsTupleGroup(parameter, isTupleGroup);
+            AspDataSetParameterIsDictionaryGroup(parameter, isDictionaryGroup);
 
             /* Push the parameter onto the stack. */
             AspDataEntry *stackEntry = AspPush(engine, parameter);
@@ -2101,43 +2161,19 @@ static AspRunResult Step(AspEngine *engine)
 
                 case DataType_ArgumentList:
                 {
-                    if (AspDataGetArgumentIsGroup(item))
+                    if (AspDataGetArgumentIsIterableGroup(item) ||
+                        AspDataGetArgumentIsDictionaryGroup(item))
                     {
-                        /* Access the underlying tuple. */
-                        AspDataEntry *tuple = AspValueEntry
+                        AspDataEntry *iterable = AspValueEntry
                             (engine, AspDataGetArgumentValueIndex(item));
-                        if (AspDataGetType(tuple) != DataType_Tuple)
-                            return AspRunResult_UnexpectedType;
 
-                        /* Add each value in the group as an argument. */
-                        uint32_t iterationCount = 0;
-                        for (AspSequenceResult nextResult =
-                             AspSequenceNext(engine, tuple, 0);
-                             iterationCount < engine->cycleDetectionLimit &&
-                             nextResult.element != 0;
-                             iterationCount++,
-                             nextResult = AspSequenceNext
-                                (engine, tuple, nextResult.element))
-                        {
-                            AspDataEntry *value = nextResult.value;
-
-                            /* Create an argument. */
-                            AspDataEntry *argument = AspAllocEntry
-                                (engine, DataType_Argument);
-                            if (argument == 0)
-                                return AspRunResult_OutOfDataMemory;
-                            AspDataSetArgumentValueIndex
-                                (argument, AspIndex(engine, value));
-                            AspRef(engine, value);
-
-                            /* Append the argument to the list. */
-                            AspSequenceResult appendResult = AspSequenceAppend
-                                (engine, container, argument);
-                            if (appendResult.result != AspRunResult_OK)
-                                return appendResult.result;
-                        }
-                        if (iterationCount >= engine->cycleDetectionLimit)
-                            return AspRunResult_CycleDetected;
+                        AspRunResult expandResult =
+                            (AspDataGetArgumentIsIterableGroup(item) ?
+                             AspExpandIterableGroupArgument :
+                             AspExpandDictionaryGroupArgument)
+                            (engine, container, iterable);
+                        if (expandResult != AspRunResult_OK)
+                            return expandResult;
 
                         AspUnref(engine, item);
                         if (engine->runResult != AspRunResult_OK)
@@ -2283,25 +2319,11 @@ static AspRunResult Step(AspEngine *engine)
                                     return AspRunResult_ValueOutOfRange;
                             }
 
-                            /* Create a single-character string fragment. */
-                            AspDataEntry *fragment =
-                                AspAllocEntry(engine, DataType_StringFragment);
-                            if (fragment == 0)
-                                return AspRunResult_OutOfDataMemory;
-                            AspDataSetStringFragment(fragment, &c, 1);
-
-                            /* Create a new string. */
-                            AspDataEntry *element = AspAllocEntry
-                                (engine, DataType_String);
+                            /* Create a single-character string. */
+                            AspDataEntry *element = AspNewString
+                                (engine, &c, 1);
                             if (element == 0)
                                 return AspRunResult_OutOfDataMemory;
-
-                            /* Add the single-character fragment to the new
-                               string. */
-                            AspSequenceResult appendResult = AspSequenceAppend
-                                (engine, element, fragment);
-                            if (appendResult.result != AspRunResult_OK)
-                                return appendResult.result;
 
                             /* Push the single-character string. */
                             AspDataEntry *stackEntry = AspPush(engine, element);

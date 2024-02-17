@@ -83,8 +83,16 @@ Token *Lexer::Next()
         }
         else if (c == '*')
         {
-            Get();
-            token = new Token(sourceLocation, TOKEN_ASTERISK);
+            if (Peek(1) == '*')
+            {
+                Get(); Get();
+                token = new Token(sourceLocation, TOKEN_DOUBLE_ASTERISK);
+            }
+            else
+            {
+                Get();
+                token = new Token(sourceLocation, TOKEN_ASTERISK);
+            }
         }
         else
         {

@@ -90,6 +90,11 @@ bool AspIsNumeric(const AspDataEntry *entry)
          type == DataType_Float);
 }
 
+bool AspIsSymbol(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Symbol;
+}
+
 bool AspIsRange(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Range;
@@ -277,6 +282,19 @@ bool AspFloatValue(const AspDataEntry *entry, double *result)
     return true;
 }
 
+bool AspSymbolValue(const AspDataEntry *entry, int32_t *result)
+{
+    if (!AspIsSymbol(entry))
+        return false;
+
+    int32_t value = AspDataGetSymbol(entry);
+
+    if (result != 0)
+        *result = value;
+
+    return true;
+}
+
 bool AspRangeValues
     (AspEngine *engine, const AspDataEntry *entry,
      int32_t *start, int32_t *end, int32_t *step)
@@ -421,6 +439,14 @@ static AspDataEntry *ToString
                 if (!isnan(f) && !isinf(f) &&
                     strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
                     strcat(buffer, ".0");
+                break;
+            }
+
+            case DataType_Symbol:
+            {
+                int32_t symbol;
+                AspSymbolValue(entry, &symbol);
+                snprintf(buffer, sizeof buffer, "`%d", symbol);
                 break;
             }
 
@@ -1070,6 +1096,14 @@ AspDataEntry *AspNewFloat(AspEngine *engine, double value)
     AspDataEntry *entry = NewObject(engine, DataType_Float);
     if (entry != 0)
         AspDataSetFloat(entry, value);
+    return entry;
+}
+
+AspDataEntry *AspNewSymbol(AspEngine *engine, int32_t value)
+{
+    AspDataEntry *entry = NewObject(engine, DataType_Symbol);
+    if (entry != 0)
+        AspDataSetSymbol(entry, value);
     return entry;
 }
 

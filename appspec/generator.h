@@ -87,9 +87,13 @@ class Generator
         (AddParameterToList, ParameterList *,
          ParameterList *, Parameter *);
     DECLARE_METHOD
-        (MakeParameter, Parameter *, Token *, Literal *);
+        (MakeParameter, Parameter *, Token *);
     DECLARE_METHOD
-        (MakeGroupParameter, Parameter *, Token *);
+        (MakeDefaultedParameter, Parameter *, Token *, Literal *);
+    DECLARE_METHOD
+        (MakeTupleGroupParameter, Parameter *, Token *);
+    DECLARE_METHOD
+        (MakeDictionaryGroupParameter, Parameter *, Token *);
 
     /* Literals. */
     DECLARE_METHOD
@@ -111,6 +115,8 @@ class Generator
         bool CheckReservedNameError(const std::string &);
 
         void ReportError(const std::string &);
+        void ReportError(const std::string &, const SourceElement &);
+        void ReportError(const std::string &, const SourceLocation &);
         std::uint32_t CheckValue();
         void ComputeCheckValue();
 
