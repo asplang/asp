@@ -7,6 +7,9 @@ lib
 # Object type function.
 def type(object) = AspLib_type
 
+# Set/dictionary key test function.
+def key(object) = AspLib_key
+
 # Container length function.
 def len(object) = AspLib_len
 

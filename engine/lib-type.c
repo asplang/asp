@@ -27,6 +27,27 @@ ASP_LIB_API AspRunResult AspLib_type
     return AspRunResult_OK;
 }
 
+/* key(x)
+ * Return x if it can be used as a set/dictionary key, otherwise None.
+ */
+ASP_LIB_API AspRunResult AspLib_key
+    (AspEngine *engine,
+     AspDataEntry *object,
+     AspDataEntry **returnValue)
+{
+    bool isImmutable;
+    AspRunResult result = AspCheckIsImmutableObject
+        (engine, object, &isImmutable);
+    if (result != AspRunResult_OK)
+        return result;
+    if (isImmutable)
+    {
+        AspRef(engine, object);
+        *returnValue = object;
+    }
+    return AspRunResult_OK;
+}
+
 /* len(object)
  * Return length of object. Return 1 if object is not a container.
  */
@@ -187,10 +208,10 @@ ASP_LIB_API AspRunResult AspLib_float
  */
 ASP_LIB_API AspRunResult AspLib_str
     (AspEngine *engine,
-     AspDataEntry *object,
+     AspDataEntry *x,
      AspDataEntry **returnValue)
 {
-    AspDataEntry *entry = AspToString(engine, object);
+    AspDataEntry *entry = AspToString(engine, x);
     if (entry == 0)
         return AspRunResult_OutOfDataMemory;
     *returnValue = entry;
@@ -202,10 +223,10 @@ ASP_LIB_API AspRunResult AspLib_str
  */
 ASP_LIB_API AspRunResult AspLib_repr
     (AspEngine *engine,
-     AspDataEntry *object,
+     AspDataEntry *x,
      AspDataEntry **returnValue)
 {
-    AspDataEntry *entry = AspToRepr(engine, object);
+    AspDataEntry *entry = AspToRepr(engine, x);
     if (entry == 0)
         return AspRunResult_OutOfDataMemory;
     *returnValue = entry;
