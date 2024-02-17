@@ -76,6 +76,8 @@ const char *AspRunResultToString(int result)
             return "Malformed function call";
         case AspRunResult_UndefinedAppFunction:
             return "Undefined app function";
+        case AspRunResult_InvalidAppFunction:
+            return "Invalid app function";
         case AspRunResult_DivideByZero:
             return "Divide by zero";
         case AspRunResult_ArithmeticOverflow:

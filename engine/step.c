@@ -1343,7 +1343,7 @@ static AspRunResult Step(AspEngine *engine)
                 if (callResult != AspRunResult_OK)
                 {
                     if (callResult == AspRunResult_Complete)
-                        callResult = AspRunResult_MalformedFunctionCall;
+                        callResult = AspRunResult_InvalidAppFunction;
                     return callResult;
                 }
 
