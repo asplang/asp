@@ -55,6 +55,7 @@ if(BUILD_FOR_TARGET)
         operation.c
         function.c
         arguments.c
+        lib-sys.c
         lib-type.c
         lib-collect.c
         lib-iter.c

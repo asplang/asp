@@ -2,6 +2,7 @@
 # Standalone Asp application function specifications.
 #
 
+include sys
 include type
 include collect
 include iter

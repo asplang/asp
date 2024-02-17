@@ -1,0 +1,8 @@
+#
+# Asp application function specifications - system.
+#
+
+lib
+
+# Exit function.
+def exit(code = None) = AspLib_exit
