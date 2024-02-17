@@ -72,39 +72,36 @@ typedef enum
 #endif
 
 /* Data entry. */
-struct AspDataEntry
+union AspDataEntry
 {
-    union
+    bool b;
+    struct
     {
-        bool b;
-        struct
+        uint8_t c;
+        uint8_t s[14];
+        uint8_t t;
+    } s;
+    struct
+    {
+        union
         {
-            uint8_t c;
-            uint8_t s[14];
-            uint8_t t;
-        };
-        struct
+            struct
+            {
+                uint32_t u0, u1;
+            } u;
+            void *p;
+            void (*fi)(AspEngine *, int16_t, int32_t);
+            void (*fp)(AspEngine *, int16_t, void *);
+        } u;
+        uint32_t u2;
+        union
         {
-            union
-            {
-                struct
-                {
-                    uint32_t u0, u1;
-                };
-                void *p;
-                void (*fi)(AspEngine *, int16_t, int32_t);
-                void (*fp)(AspEngine *, int16_t, void *);
-            };
-            uint32_t u2;
-            union
-            {
-                uint16_t h6;
-                int16_t ih6;
-            };
-        };
-        int32_t i;
-        double d;
-    };
+            uint16_t h6;
+            int16_t ih6;
+        } h;
+    } w;
+    int32_t i;
+    double d;
 };
 
 /* Word constants. */
@@ -115,53 +112,53 @@ struct AspDataEntry
 
 /* Low-level field access. */
 #define AspDataSetWord0(eptr, value) \
-    (AspBitSetField(&(eptr)->u0, 0, (AspWordBitSize), (value)))
+    (AspBitSetField(&(eptr)->w.u.u.u0, 0, (AspWordBitSize), (value)))
 #define AspDataGetWord0(eptr) \
-    (AspBitGetField((eptr)->u0, 0, (AspWordBitSize)))
+    (AspBitGetField((eptr)->w.u.u.u0, 0, (AspWordBitSize)))
 #define AspDataSetSignedWord0(eptr, value) \
-    (AspBitSetSignedField(&(eptr)->u0, 0, (AspWordBitSize), (value)))
+    (AspBitSetSignedField(&(eptr)->w.u.u.u0, 0, (AspWordBitSize), (value)))
 #define AspDataGetSignedWord0(eptr) \
-    (AspBitGetSignedField((eptr)->u0, 0, (AspWordBitSize)))
+    (AspBitGetSignedField((eptr)->w.u.u.u0, 0, (AspWordBitSize)))
 #define AspDataSetWord1(eptr, value) \
-    (AspBitSetField(&(eptr)->u1, 0, (AspWordBitSize), (value)))
+    (AspBitSetField(&(eptr)->w.u.u.u1, 0, (AspWordBitSize), (value)))
 #define AspDataGetWord1(eptr) \
-    (AspBitGetField((eptr)->u1, 0, (AspWordBitSize)))
+    (AspBitGetField((eptr)->w.u.u.u1, 0, (AspWordBitSize)))
 #define AspDataSetSignedWord1(eptr, value) \
-    (AspBitSetSignedField(&(eptr)->u1, 0, (AspWordBitSize), (value)))
+    (AspBitSetSignedField(&(eptr)->w.u.u.u1, 0, (AspWordBitSize), (value)))
 #define AspDataGetSignedWord1(eptr) \
-    (AspBitGetSignedField((eptr)->u1, 0, (AspWordBitSize)))
+    (AspBitGetSignedField((eptr)->w.u.u.u1, 0, (AspWordBitSize)))
 #define AspDataSetWord2(eptr, value) \
-    (AspBitSetField(&(eptr)->u2, 0, (AspWordBitSize), (value)))
+    (AspBitSetField(&(eptr)->w.u2, 0, (AspWordBitSize), (value)))
 #define AspDataGetWord2(eptr) \
-    (AspBitGetField((eptr)->u2, 0, (AspWordBitSize)))
+    (AspBitGetField((eptr)->w.u2, 0, (AspWordBitSize)))
 #define AspDataSetSignedWord2(eptr, value) \
-    (AspBitSetSignedField(&(eptr)->u2, 0, (AspWordBitSize), (value)))
+    (AspBitSetSignedField(&(eptr)->w.u2, 0, (AspWordBitSize), (value)))
 #define AspDataGetSignedWord2(eptr) \
-    (AspBitGetSignedField((eptr)->u2, 0, (AspWordBitSize)))
+    (AspBitGetSignedField((eptr)->w.u2, 0, (AspWordBitSize)))
 void AspDataSetWord3(AspDataEntry *, uint32_t value);
 uint32_t AspDataGetWord3(const AspDataEntry *);
 #define AspDataSetBit0(eptr, value) \
-    (AspBitSet(&(eptr)->u1, (AspWordBitSize), (value)))
+    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize), (value)))
 #define AspDataGetBit0(eptr) \
-    (AspBitGet((eptr)->u1, (AspWordBitSize)))
+    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize)))
 #define AspDataSetBit1(eptr, value) \
-    (AspBitSet(&(eptr)->u1, (AspWordBitSize) + 1, (value)))
+    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 1, (value)))
 #define AspDataGetBit1(eptr) \
-    (AspBitGet((eptr)->u1, (AspWordBitSize) + 1))
+    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 1))
 #define AspDataSetBit2(eptr, value) \
-    (AspBitSet(&(eptr)->u1, (AspWordBitSize) + 2, (value)))
+    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 2, (value)))
 #define AspDataGetBit2(eptr) \
-    (AspBitGet((eptr)->u1, (AspWordBitSize) + 2))
+    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 2))
 #define AspDataSetBit3(eptr, value) \
-    (AspBitSet(&(eptr)->u1, (AspWordBitSize) + 3, (value)))
+    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 3, (value)))
 #define AspDataGetBit3(eptr) \
-    (AspBitGet((eptr)->u1, (AspWordBitSize) + 3))
+    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 3))
 
 /* Common field access. */
 #define AspDataSetType(eptr, ty) \
-    ((eptr)->t = (uint8_t)(ty))
+    ((eptr)->s.t = (uint8_t)(ty))
 #define AspDataGetType(eptr) \
-    ((eptr)->t)
+    ((eptr)->s.t)
 #define AspDataSetUseCount(eptr, value) \
     (AspDataSetWord2((eptr), (value)))
 #define AspDataGetUseCount(eptr) \
@@ -256,9 +253,9 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 #define AspDataGetIteratorMemberNeedsCleanup(eptr) \
     ((bool)(AspDataGetBit0((eptr))))
 #define AspDataSetIteratorStringIndex(eptr, value) \
-    ((eptr)->s[11] = (value))
+    ((eptr)->s.s[11] = (value))
 #define AspDataGetIteratorStringIndex(eptr) \
-    ((eptr)->s[11])
+    ((eptr)->s.s[11])
 
 /* Function entry field access. */
 #define AspDataSetFunctionIsApp(eptr, value) \
@@ -298,42 +295,42 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 
 /* AppIntegerObject and AppPointerObject entry field access. */
 #define AspDataSetAppObjectType(eptr, value) \
-    ((eptr)->ih6 = (value))
+    ((eptr)->w.h.ih6 = (value))
 #define AspDataGetAppObjectType(eptr) \
-    ((eptr)->ih6)
+    ((eptr)->w.h.ih6)
 #define AspDataSetAppIntegerObjectValue(eptr, value) \
     (AspDataSetSignedWord1((eptr), (value)))
 #define AspDataGetAppIntegerObjectValue(eptr) \
     (AspDataGetSignedWord1((eptr)))
 #ifndef ASP_WIDE_PTR
 #define AspDataSetAppPointerObjectValue(eptr, value) \
-    (*(void **)&(eptr)->u1 = (value))
+    (*(void **)&(eptr)->w.u.u.u1 = (value))
 #define AspDataGetAppPointerObjectValue(eptr) \
-    ((void *)(eptr)->u1)
+    ((void *)(eptr)->w.u.u.u1)
 #else
 #define AspDataSetAppObjectInfoIndex(eptr, value) \
     (AspDataSetWord3((eptr), (value)))
 #define AspDataGetAppObjectInfoIndex(eptr) \
     (AspDataGetWord3((eptr)))
 #define AspDataSetAppPointerObjectValue(eptr, value) \
-    ((eptr)->p = (value))
+    ((eptr)->w.u.p = (value))
 #define AspDataGetAppPointerObjectValue(eptr) \
-    ((eptr)->p)
+    ((eptr)->w.u.p)
 #endif
 #define AspDataSetAppIntegerObjectDestructor(eptr, value) \
-    ((eptr)->fi = (value))
+    ((eptr)->w.u.fi = (value))
 #define AspDataGetAppIntegerObjectDestructor(eptr) \
-    ((eptr)->fi)
+    ((eptr)->w.u.fi)
 #define AspDataSetAppPointerObjectDestructor(eptr, value) \
-    ((eptr)->fp = (value))
+    ((eptr)->w.u.fp = (value))
 #define AspDataGetAppPointerObjectDestructor(eptr) \
-    ((eptr)->fp)
+    ((eptr)->w.u.fp)
 
 /* Type entry field access. */
 #define AspDataSetTypeValue(eptr, value) \
-    ((eptr)->c = (value))
+    ((eptr)->s.c = (value))
 #define AspDataGetTypeValue(eptr) \
-    ((eptr)->c)
+    ((eptr)->s.c)
 
 /* CodeAddress entry field access. */
 #define AspDataSetCodeAddress(eptr, value) \
@@ -393,17 +390,17 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 
 /* StringFragment entry field access. */
 #define AspDataGetStringFragmentMaxSize() \
-    ((uint8_t)(offsetof(AspDataEntry, t) - offsetof(AspDataEntry, s)))
+    ((uint8_t)(offsetof(AspDataEntry, s.t) - offsetof(AspDataEntry, s.s)))
 #define AspDataSetStringFragment(eptr, value, count) \
-    ((eptr)->c = (count), memcpy((eptr)->s, (value), (count)))
+    ((eptr)->s.c = (count), memcpy((eptr)->s.s, (value), (count)))
 #define AspDataSetStringFragmentData(eptr, index, value, count) \
-    (memcpy((eptr)->s + (index), (value), (count)))
+    (memcpy((eptr)->s.s + (index), (value), (count)))
 #define AspDataSetStringFragmentSize(eptr, count) \
-    ((eptr)->c = (count))
+    ((eptr)->s.c = (count))
 #define AspDataGetStringFragmentSize(eptr) \
-    ((eptr)->c)
+    ((eptr)->s.c)
 #define AspDataGetStringFragmentData(eptr) \
-    ((char *)(eptr)->s)
+    ((char *)(eptr)->s.s)
 
 /* KeyValuePair entry field access. */
 #define AspDataSetKeyValuePairKeyIndex(eptr, value) \

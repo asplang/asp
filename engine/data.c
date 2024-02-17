@@ -12,21 +12,21 @@ static bool IsSimpleImmutableObject(const AspDataEntry *);
 
 void AspDataSetWord3(AspDataEntry *entry, uint32_t value)
 {
-    entry->s[11] = (uint8_t)AspBitGetField(value, 0, 8);
-    entry->s[12] = (uint8_t)AspBitGetField(value, 8, 8);
-    entry->s[13] = (uint8_t)AspBitGetField(value, 16, 8);
+    entry->s.s[11] = (uint8_t)AspBitGetField(value, 0, 8);
+    entry->s.s[12] = (uint8_t)AspBitGetField(value, 8, 8);
+    entry->s.s[13] = (uint8_t)AspBitGetField(value, 16, 8);
     AspBitSetField
-        (&entry->u2, AspWordBitSize, AspWordBitSize - 24U,
+        (&entry->w.u2, AspWordBitSize, AspWordBitSize - 24U,
          AspBitGetField(value, 24U, AspWordBitSize - 24U));
 }
 
 uint32_t AspDataGetWord3(const AspDataEntry *entry)
 {
     return (uint32_t)
-        (uint32_t)entry->s[11] |
-        (uint32_t)entry->s[12] << 8 |
-        (uint32_t)entry->s[13] << 16 |
-        AspBitGetField(entry->u2, AspWordBitSize, AspWordBitSize - 24U) << 24;
+        (uint32_t)entry->s.s[11] |
+        (uint32_t)entry->s.s[12] << 8 |
+        (uint32_t)entry->s.s[13] << 16 |
+        AspBitGetField(entry->w.u2, AspWordBitSize, AspWordBitSize - 24U) << 24;
 }
 
 size_t AspDataEntrySize(void)

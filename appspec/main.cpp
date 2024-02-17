@@ -315,7 +315,7 @@ static int main1(int argc, char **argv)
     }
 
     // Define a function to close all output files.
-    auto closeAll = [&] (bool reportError = true)
+    auto closeAll = [&] (bool reportError)
     {
         bool writeError = false;
         struct
@@ -361,5 +361,5 @@ static int main1(int argc, char **argv)
     generator.WriteApplicationCode(codeStream);
 
     // Close all output files.
-    return closeAll() ? 0 : 2;
+    return closeAll(true) ? 0 : 2;
 }

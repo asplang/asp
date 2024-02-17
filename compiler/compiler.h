@@ -55,7 +55,7 @@ DECLARE_TYPE(Block)
 DECLARE_TYPE(Module)
 
 #ifndef __cplusplus
-DECLARE_TYPE(Compiler);
+DECLARE_TYPE(Compiler)
 #else
 extern "C" {
 
@@ -79,241 +79,241 @@ class Compiler
 
     /* Module (top-level). */
     DECLARE_METHOD
-        (MakeModule, NonTerminal *, Block *);
+        (MakeModule, NonTerminal *, Block *)
 
     /* Blocks. */
     DECLARE_METHOD
-        (MakeEmptyBlock, Block *, int);
+        (MakeEmptyBlock, Block *, int)
     DECLARE_METHOD
         (AddStatementToBlock, Block *,
-         Block *, Statement *);
+         Block *, Statement *)
     DECLARE_METHOD
-        (AssignBlock, Block *, Block *);
+        (AssignBlock, Block *, Block *)
 
     /* Statements. */
     DECLARE_METHOD
         (MakeMultipleAssignmentStatement, AssignmentStatement *,
-         Token *, Expression *, AssignmentStatement *);
+         Token *, Expression *, AssignmentStatement *)
     DECLARE_METHOD
         (MakeSingleAssignmentStatement, AssignmentStatement *,
-         Token *, Expression *, Expression *);
+         Token *, Expression *, Expression *)
     DECLARE_METHOD
         (AssignAssignmentStatement, AssignmentStatement *,
-         AssignmentStatement *);
+         AssignmentStatement *)
     DECLARE_METHOD
-        (MakeAssignmentStatement, Statement *, AssignmentStatement *);
+        (MakeAssignmentStatement, Statement *, AssignmentStatement *)
     DECLARE_METHOD
         (MakeMultipleValueInsertionStatement, InsertionStatement *,
-         Token *, InsertionStatement *, Expression *);
+         Token *, InsertionStatement *, Expression *)
     DECLARE_METHOD
         (MakeMultiplePairInsertionStatement, InsertionStatement *,
-         Token *, InsertionStatement *, KeyValuePair *);
+         Token *, InsertionStatement *, KeyValuePair *)
     DECLARE_METHOD
         (MakeSingleValueInsertionStatement, InsertionStatement *,
-         Token *, Expression *, Expression *);
+         Token *, Expression *, Expression *)
     DECLARE_METHOD
         (MakeSinglePairInsertionStatement, InsertionStatement *,
-         Token *, Expression *, KeyValuePair *);
+         Token *, Expression *, KeyValuePair *)
     DECLARE_METHOD
-        (MakeInsertionStatement, Statement *, InsertionStatement *);
+        (MakeInsertionStatement, Statement *, InsertionStatement *)
     DECLARE_METHOD
         (MakeExpressionStatement, Statement *,
-         Expression *);
+         Expression *)
     DECLARE_METHOD
-        (MakeImportStatement, Statement *, ImportNameList *);
+        (MakeImportStatement, Statement *, ImportNameList *)
     DECLARE_METHOD
         (MakeFromImportStatement, Statement *,
          ImportName *, ImportNameList *)
     DECLARE_METHOD
-        (MakeGlobalStatement, Statement *, VariableList *);
+        (MakeGlobalStatement, Statement *, VariableList *)
     DECLARE_METHOD
-        (MakeLocalStatement, Statement *, VariableList *);
+        (MakeLocalStatement, Statement *, VariableList *)
     DECLARE_METHOD
-        (MakeDelStatement, Statement *, Expression *);
+        (MakeDelStatement, Statement *, Expression *)
     DECLARE_METHOD
         (MakeReturnStatement, Statement *,
-         Token *, Expression *);
+         Token *, Expression *)
     DECLARE_METHOD
-        (MakeAssertStatement, Statement *, Expression *);
+        (MakeAssertStatement, Statement *, Expression *)
     DECLARE_METHOD
-        (MakeBreakStatement, Statement *, Token *);
+        (MakeBreakStatement, Statement *, Token *)
     DECLARE_METHOD
-        (MakeContinueStatement, Statement *, Token *);
+        (MakeContinueStatement, Statement *, Token *)
     DECLARE_METHOD
-        (MakePassStatement, Statement *, Token *);
+        (MakePassStatement, Statement *, Token *)
     DECLARE_METHOD
         (MakeIfElseIfStatement, IfStatement *,
-         Expression *, Block *, IfStatement *);
+         Expression *, Block *, IfStatement *)
     DECLARE_METHOD
         (MakeIfElseStatement, IfStatement *,
-         Expression *, Block *, Block *);
+         Expression *, Block *, Block *)
     DECLARE_METHOD
         (MakeIfStatement, IfStatement *,
-         Expression *, Block *);
+         Expression *, Block *)
     DECLARE_METHOD
         (MakeWhileStatement, Statement *,
-         Expression *, Block *, Block *);
+         Expression *, Block *, Block *)
     DECLARE_METHOD
         (MakeForStatement, Statement *,
-         TargetExpression *, Expression *, Block *, Block *);
+         TargetExpression *, Expression *, Block *, Block *)
     DECLARE_METHOD
         (MakeDefStatement, Statement *,
-         Token *, ParameterList *, Block *);
+         Token *, ParameterList *, Block *)
     DECLARE_METHOD
-        (AssignStatement, Statement *, Statement *);
+        (AssignStatement, Statement *, Statement *)
 
     /* Expressions. */
     DECLARE_METHOD
         (MakeConditionalExpression, Expression *,
-         Token *, Expression *, Expression *, Expression *);
+         Token *, Expression *, Expression *, Expression *)
     DECLARE_METHOD
         (MakeShortCircuitLogicalExpression, Expression *,
-         Token *, Expression *, Expression *);
+         Token *, Expression *, Expression *)
     DECLARE_METHOD
         (MakeBinaryExpression, Expression *,
-         Token *, Expression *, Expression *);
+         Token *, Expression *, Expression *)
     DECLARE_METHOD
         (MakeUnaryExpression, Expression *,
-         Token *, Expression *);
+         Token *, Expression *)
     DECLARE_METHOD
         (MakeCallExpression, Expression *,
-         Expression *, ArgumentList *);
+         Expression *, ArgumentList *)
     DECLARE_METHOD
         (MakeElementExpression, Expression *,
-         Expression *, Expression *);
+         Expression *, Expression *)
     DECLARE_METHOD
         (MakeMemberExpression, Expression *,
-         Expression *, Token *);
+         Expression *, Token *)
     DECLARE_METHOD
-        (MakeVariableExpression, Expression *, Token *);
+        (MakeVariableExpression, Expression *, Token *)
     DECLARE_METHOD
         (MakeSymbolExpression, Expression *,
-         Token *, Token *);
+         Token *, Token *)
     DECLARE_METHOD
         (MakeLiteralExpression, Expression *,
-         ConstantExpression *);
+         ConstantExpression *)
     DECLARE_METHOD
-        (MakeDictionaryExpression, Expression *, DictionaryExpression *);
+        (MakeDictionaryExpression, Expression *, DictionaryExpression *)
     DECLARE_METHOD
-        (MakeSetExpression, Expression *, SetExpression *);
+        (MakeSetExpression, Expression *, SetExpression *)
     DECLARE_METHOD
-        (MakeListExpression, Expression *, ListExpression *);
+        (MakeListExpression, Expression *, ListExpression *)
     DECLARE_METHOD
         (MakeTupleExpression, Expression *,
-         Token *, Expression *, Expression *);
+         Token *, Expression *, Expression *)
     DECLARE_METHOD
-        (MakeRangeExpression, Expression *, RangeExpression *);
+        (MakeRangeExpression, Expression *, RangeExpression *)
     DECLARE_METHOD
         (MakeConstantExpression, ConstantExpression *,
-         Token *);
+         Token *)
     DECLARE_METHOD
-        (MakeEnclosedExpression, Expression *, Expression *);
+        (MakeEnclosedExpression, Expression *, Expression *)
     DECLARE_METHOD
-        (AssignExpression, Expression *, Expression *);
+        (AssignExpression, Expression *, Expression *)
 
     /* Target expressions. */
     DECLARE_METHOD
         (MakeTargetExpression, TargetExpression *,
-         Token *, TargetExpression *, TargetExpression *);
+         Token *, TargetExpression *, TargetExpression *)
     DECLARE_METHOD
         (MakeEnclosedTargetExpression,
-         TargetExpression *, TargetExpression *);
+         TargetExpression *, TargetExpression *)
     DECLARE_METHOD
-        (AssignTargetExpression, TargetExpression *, TargetExpression *);
+        (AssignTargetExpression, TargetExpression *, TargetExpression *)
 
     /* Imports. */
     DECLARE_METHOD
-        (MakeEmptyImportNameList, ImportNameList *, int);
+        (MakeEmptyImportNameList, ImportNameList *, int)
     DECLARE_METHOD
         (AddImportNameToList, ImportNameList *,
-         ImportNameList *, ImportName *);
+         ImportNameList *, ImportName *)
     DECLARE_METHOD
         (MakeImportName, ImportName *,
-         Token *, Token *);
+         Token *, Token *)
 
     /* Parameters. */
     DECLARE_METHOD
-        (MakeEmptyParameterList, ParameterList *, int);
+        (MakeEmptyParameterList, ParameterList *, int)
     DECLARE_METHOD
         (AddParameterToList, ParameterList *,
-         ParameterList *, Parameter *);
+         ParameterList *, Parameter *)
     DECLARE_METHOD
         (MakeParameter, Parameter *,
-         Token *, Expression *);
+         Token *, Expression *)
     DECLARE_METHOD
         (MakeTupleGroupParameter, Parameter *,
-         Token *);
+         Token *)
     DECLARE_METHOD
         (MakeDictionaryGroupParameter, Parameter *,
-         Token *);
+         Token *)
 
     /* Arguments. */
     DECLARE_METHOD
-        (MakeEmptyArgumentList, ArgumentList *, int);
+        (MakeEmptyArgumentList, ArgumentList *, int)
     DECLARE_METHOD
         (AddArgumentToList, ArgumentList *,
          ArgumentList *, Argument *)
     DECLARE_METHOD
         (MakeArgument, Argument *,
-         Token *, Expression *);
+         Token *, Expression *)
     DECLARE_METHOD
         (MakeIterableGroupArgument, Argument *,
-         Expression *);
+         Expression *)
     DECLARE_METHOD
         (MakeDictionaryGroupArgument, Argument *,
-         Expression *);
+         Expression *)
 
     /* Variables. */
     DECLARE_METHOD
-        (MakeEmptyVariableList, VariableList *, int);
+        (MakeEmptyVariableList, VariableList *, int)
     DECLARE_METHOD
         (AddVariableToList, VariableList *,
-         VariableList *, Token *);
+         VariableList *, Token *)
     DECLARE_METHOD
-        (AssignVariableList, VariableList *, VariableList *);
+        (AssignVariableList, VariableList *, VariableList *)
 
     /* Dictionaries. */
     DECLARE_METHOD
-        (MakeEmptyDictionary, DictionaryExpression *, Token *);
+        (MakeEmptyDictionary, DictionaryExpression *, Token *)
     DECLARE_METHOD
         (AddEntryToDictionary, DictionaryExpression *,
-         DictionaryExpression *, KeyValuePair *);
+         DictionaryExpression *, KeyValuePair *)
     DECLARE_METHOD
-        (AssignDictionary, DictionaryExpression *, DictionaryExpression *);
+        (AssignDictionary, DictionaryExpression *, DictionaryExpression *)
 
     /* Sets. */
     DECLARE_METHOD
-        (MakeEmptySet, SetExpression *, Token *);
+        (MakeEmptySet, SetExpression *, Token *)
     DECLARE_METHOD
-        (AssignSet, SetExpression *, Token *, ListExpression *);
+        (AssignSet, SetExpression *, Token *, ListExpression *)
 
     /* Lists. */
     DECLARE_METHOD
-        (MakeEmptyList, ListExpression *, Token *);
+        (MakeEmptyList, ListExpression *, Token *)
     DECLARE_METHOD
         (AddExpressionToList, ListExpression *,
-         ListExpression *, Expression *);
+         ListExpression *, Expression *)
     DECLARE_METHOD
-        (AssignList, ListExpression *, Token *, ListExpression *);
+        (AssignList, ListExpression *, Token *, ListExpression *)
 
     /* Key/value pairs. */
     DECLARE_METHOD
         (MakeKeyValuePair, KeyValuePair *,
-         Expression *, Expression *);
+         Expression *, Expression *)
 
     /* Ranges. */
     DECLARE_METHOD
         (MakeRange, RangeExpression *,
-         Token *, Expression *, Expression *, Expression *);
+         Token *, Expression *, Expression *, Expression *)
 
     /* Tokens. */
     DECLARE_METHOD
-        (AssignToken, Token *, Token *);
+        (AssignToken, Token *, Token *)
 
     /* Miscellaneous methods. */
-    DECLARE_METHOD(FreeNonTerminal, void, NonTerminal *);
-    DECLARE_METHOD(FreeToken, void, Token *);
-    DECLARE_METHOD(ReportError, void, const char *);
+    DECLARE_METHOD(FreeNonTerminal, void, NonTerminal *)
+    DECLARE_METHOD(FreeToken, void, Token *)
+    DECLARE_METHOD(ReportError, void, const char *)
 
 #ifdef __cplusplus
 

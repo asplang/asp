@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 typedef struct AspEngine AspEngine;
-typedef struct AspDataEntry AspDataEntry;
+typedef union AspDataEntry AspDataEntry;
 typedef struct AspAppSpec AspAppSpec;
 
 #ifdef __cplusplus

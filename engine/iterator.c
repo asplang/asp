@@ -290,7 +290,7 @@ AspIteratorResult AspIteratorDereference
             }
             uint8_t stringIndex =
                 AspDataGetIteratorStringIndex(iterator);
-            const uint8_t *stringData =
+            const uint8_t *stringData = (const uint8_t *)
                 AspDataGetStringFragmentData(fragment);
             uint8_t c = stringData[stringIndex];
 

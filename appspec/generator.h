@@ -37,7 +37,7 @@ DECLARE_TYPE(ParameterList)
 DECLARE_TYPE(Parameter)
 
 #ifndef __cplusplus
-DECLARE_TYPE(Generator);
+DECLARE_TYPE(Generator)
 #else
 extern "C" {
 
@@ -72,37 +72,37 @@ class Generator
 
     /* Statements. */
     DECLARE_METHOD
-        (DeclareAsLibrary, NonTerminal *, int);
+        (DeclareAsLibrary, NonTerminal *, int)
     DECLARE_METHOD
-        (IncludeHeader, NonTerminal *, Token *);
+        (IncludeHeader, NonTerminal *, Token *)
     DECLARE_METHOD
-        (MakeAssignment, NonTerminal *, Token *, Literal *);
+        (MakeAssignment, NonTerminal *, Token *, Literal *)
     DECLARE_METHOD
-        (MakeFunction, NonTerminal *, Token *, ParameterList *, Token *);
+        (MakeFunction, NonTerminal *, Token *, ParameterList *, Token *)
 
     /* Parameters. */
     DECLARE_METHOD
-        (MakeEmptyParameterList, ParameterList *, int);
+        (MakeEmptyParameterList, ParameterList *, int)
     DECLARE_METHOD
         (AddParameterToList, ParameterList *,
-         ParameterList *, Parameter *);
+         ParameterList *, Parameter *)
     DECLARE_METHOD
-        (MakeParameter, Parameter *, Token *);
+        (MakeParameter, Parameter *, Token *)
     DECLARE_METHOD
-        (MakeDefaultedParameter, Parameter *, Token *, Literal *);
+        (MakeDefaultedParameter, Parameter *, Token *, Literal *)
     DECLARE_METHOD
-        (MakeTupleGroupParameter, Parameter *, Token *);
+        (MakeTupleGroupParameter, Parameter *, Token *)
     DECLARE_METHOD
-        (MakeDictionaryGroupParameter, Parameter *, Token *);
+        (MakeDictionaryGroupParameter, Parameter *, Token *)
 
     /* Literals. */
     DECLARE_METHOD
-        (MakeLiteral, Literal *, Token *);
+        (MakeLiteral, Literal *, Token *)
 
     /* Miscellaneous methods. */
-    DECLARE_METHOD(FreeNonTerminal, void, NonTerminal *);
-    DECLARE_METHOD(FreeToken, void, Token *);
-    DECLARE_METHOD(ReportError, void, const char *);
+    DECLARE_METHOD(FreeNonTerminal, void, NonTerminal *)
+    DECLARE_METHOD(FreeToken, void, Token *)
+    DECLARE_METHOD(ReportError, void, const char *)
 
 #ifdef __cplusplus
 

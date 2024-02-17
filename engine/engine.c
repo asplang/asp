@@ -544,7 +544,7 @@ static AspRunResult LoadValue
                 valueSize |= spec[(*specIndex)++];
             }
             *valueEntry = AspNewString
-                (engine, spec + *specIndex, valueSize);
+                (engine, (const char *)(spec + *specIndex), valueSize);
             *specIndex += valueSize;
             break;
         }

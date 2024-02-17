@@ -972,7 +972,8 @@ char AspStringElement
             continue;
         }
 
-        const uint8_t *stringData = AspDataGetStringFragmentData(fragment);
+        const uint8_t *stringData = (const uint8_t *)
+            AspDataGetStringFragmentData(fragment);
         return (char)stringData[index];
     }
     if (iterationCount >= engine->cycleDetectionLimit)
