@@ -29,15 +29,15 @@ add_executable(aspg
     generator.cpp
     generator-output.cpp
     lexer.cpp
-    ../compiler/lexer-common.cpp
-    ../compiler/grammar.cpp
-    ../compiler/token.cpp
+    "${aspc_SOURCE_DIR}/lexer-common.cpp"
+    "${aspc_SOURCE_DIR}/grammar.cpp"
+    "${aspc_SOURCE_DIR}/token.cpp"
     app.c
     literal.cpp
     statement.cpp
-    ../compiler/function.cpp
-    ../compiler/search-path.cpp
-    ../compiler/symbol.cpp
+    "${aspc_SOURCE_DIR}/function.cpp"
+    "${aspc_SOURCE_DIR}/search-path.cpp"
+    "${aspc_SOURCE_DIR}/symbol.cpp"
     crc.c
     )
 
@@ -51,8 +51,9 @@ target_compile_definitions(aspg PRIVATE
 target_include_directories(aspg PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
-    ../compiler
-    ../engine
+    "${aspc_SOURCE_DIR}"
+    "${aspe_BINARY_DIR}"
+    "${aspe_SOURCE_DIR}"
     )
 
 install(TARGETS aspg

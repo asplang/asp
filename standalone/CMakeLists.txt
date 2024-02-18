@@ -19,10 +19,10 @@ add_custom_command(
     DEPENDS
         aspg
         "${PROJECT_SOURCE_DIR}/standalone.asps"
-        ../engine/type.asps
-        ../engine/collect.asps
-        ../engine/iter.asps
-        ../engine/math.asps
+        "${aspe_SOURCE_DIR}/type.asps"
+        "${aspe_SOURCE_DIR}/collect.asps"
+        "${aspe_SOURCE_DIR}/iter.asps"
+        "${aspe_SOURCE_DIR}/math.asps"
     COMMAND
         ${CMAKE_COMMAND} -E env
         "ASP_SPEC_INCLUDE=${PATH_NAME_SEPARATOR}${aspe_SOURCE_DIR}"

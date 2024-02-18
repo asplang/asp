@@ -35,7 +35,7 @@ target_compile_definitions(aspd
     )
 
 target_include_directories(aspd PUBLIC
-    ../engine
+    "${aspe_SOURCE_DIR}"
     "${aspe_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
     )

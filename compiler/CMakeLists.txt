@@ -43,7 +43,7 @@ add_executable(aspc
     token.cpp
     asp.c
     expression.cpp
-    ../engine/integer.c
+    "${aspe_SOURCE_DIR}/integer.c"
     statement.cpp
     function.cpp
     search-path.cpp
@@ -69,7 +69,7 @@ target_compile_definitions(aspc PRIVATE
 target_include_directories(aspc PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
-    ../engine
+    "${aspe_SOURCE_DIR}"
     )
 
 install(TARGETS aspc
