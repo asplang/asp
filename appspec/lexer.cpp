@@ -25,8 +25,8 @@ Lexer::Lexer(istream &is, const string &fileName) :
 
 Token *Lexer::Next()
 {
-    Token *token = 0;
-    while (token == 0)
+    Token *token = nullptr;
+    while (token == nullptr)
     {
         sourceLocation = caret;
 

@@ -29,7 +29,7 @@ Parameter::Parameter(const Token &nameToken, Type type) :
     NonTerminal(nameToken),
     name(nameToken.s),
     type(type),
-    defaultValue(0)
+    defaultValue(nullptr)
 {
 }
 

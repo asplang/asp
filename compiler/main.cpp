@@ -206,7 +206,7 @@ static int main1(int argc, char **argv)
 
                 accepted = true;
                 *input.fileName = fileName;
-                if (input.suffixPos != 0)
+                if (input.suffixPos != nullptr)
                     *input.suffixPos = suffixPos;
             }
         }

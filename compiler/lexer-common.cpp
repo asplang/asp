@@ -73,7 +73,7 @@ Token *Lexer::ProcessLineContinuation()
     }
     Get(); // newline
 
-    return !trailingSpace ? 0 : new Token(sourceLocation, -1, lex);
+    return !trailingSpace ? nullptr : new Token(sourceLocation, -1, lex);
 }
 
 Token *Lexer::ProcessComment()
@@ -81,7 +81,7 @@ Token *Lexer::ProcessComment()
     int c;
     while (c = Peek(), c != '\n' && c != EOF)
         Get();
-    return 0; // no token
+    return nullptr; // no token
 }
 
 Token *Lexer::ProcessStatementEnd()
@@ -253,7 +253,7 @@ Token *Lexer::ProcessNumber()
         case State::Decimal:
         {
             errno = 0;
-            auto value = strtol(s, 0, 10);
+            auto value = strtol(s, nullptr, 10);
             return
                 errno != 0 || value < INT32_MIN || value > INT32_MAX ?
                 new Token
@@ -269,7 +269,7 @@ Token *Lexer::ProcessNumber()
             if (negative)
                 s++;
             errno = 0;
-            unsigned long ulValue = strtoul(s, 0, 0x10);
+            unsigned long ulValue = strtoul(s, nullptr, 0x10);
             bool error = errno != 0 || ulValue > UINT32_MAX;
             uint32_t uValue = static_cast<uint32_t>(ulValue);
             int32_t value = *reinterpret_cast<int32_t *>(&uValue);
@@ -289,7 +289,7 @@ Token *Lexer::ProcessNumber()
 
         case State::SimpleFloat:
         case State::Exponential:
-            return new Token(sourceLocation, strtod(s, 0), lex);
+            return new Token(sourceLocation, strtod(s, nullptr), lex);
     }
 
     return new Token(sourceLocation, -1, lex);
@@ -414,7 +414,8 @@ Token *Lexer::ProcessString()
                     badString = true;
                 else if (escapeLex.size() == 2)
                 {
-                    lex += static_cast<char>(strtol(escapeLex.c_str(), 0, 16));
+                    lex += static_cast<char>
+                        (strtol(escapeLex.c_str(), nullptr, 16));
                     escapeLex.clear();
                     state = State::Normal;
                 }

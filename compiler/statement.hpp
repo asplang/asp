@@ -33,7 +33,7 @@ class Statement : public NonTerminal
 
     private:
 
-        const Block *parentBlock = 0;
+        const Block *parentBlock = nullptr;
 };
 
 class Block : public NonTerminal
@@ -54,7 +54,7 @@ class Block : public NonTerminal
 
     private:
 
-        Statement *parentStatement = 0;
+        Statement *parentStatement = nullptr;
         std::list<Statement *> statements;
 };
 
@@ -203,7 +203,7 @@ class ImportStatement : public Statement
 
         explicit ImportStatement
             (ImportNameList *moduleNameList,
-             ImportNameList *memberNameList = 0);
+             ImportNameList *memberNameList = nullptr);
         ~ImportStatement();
 
         virtual void Emit(Executable &) const;
@@ -239,7 +239,7 @@ class VariableList : public NonTerminal
 
     private:
 
-        const Statement *parentStatement = 0;
+        const Statement *parentStatement = nullptr;
         std::list<std::string> names;
 };
 
@@ -384,7 +384,7 @@ class Parameter : public NonTerminal
 
         Parameter
             (const Token &name, Type = Type::Positional,
-             Expression * = 0);
+             Expression * = nullptr);
         ~Parameter();
 
         void Parent(const Statement *);
@@ -399,7 +399,7 @@ class Parameter : public NonTerminal
         }
         bool HasDefault() const
         {
-            return defaultExpression != 0;
+            return defaultExpression != nullptr;
         }
 
         void Emit(Executable &) const;

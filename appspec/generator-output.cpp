@@ -80,7 +80,7 @@ void Generator::WriteCompilerSpec(ostream &os)
         auto &definition = iter->second;
         auto functionDefinition =
             dynamic_cast<const FunctionDefinition *>(definition);
-        if (functionDefinition == 0)
+        if (functionDefinition == nullptr)
             continue;
 
         auto &parameters = functionDefinition->Parameters();
@@ -131,7 +131,7 @@ void Generator::WriteApplicationHeader(ostream &os)
         auto &definition = iter->second;
         auto functionDefinition =
             dynamic_cast<const FunctionDefinition *>(definition);
-        if (functionDefinition == 0)
+        if (functionDefinition == nullptr)
             continue;
 
         os << '\n';
@@ -197,7 +197,7 @@ void Generator::WriteApplicationCode(ostream &os)
         auto &definition = iter->second;
         auto functionDefinition =
             dynamic_cast<const FunctionDefinition *>(definition);
-        if (functionDefinition == 0)
+        if (functionDefinition == nullptr)
             continue;
 
         auto symbol = symbolTable.Symbol(functionDefinition->Name());
@@ -279,20 +279,20 @@ void Generator::WriteApplicationCode(ostream &os)
 
         os << "\n    \"";
 
-        if (assignment != 0)
+        if (assignment != nullptr)
         {
             const auto &value = assignment->Value();
             WriteStringEscapedHex
                 (os,
                  static_cast<uint8_t>
-                    (value == 0 ?
+                    (value == nullptr ?
                      AppSpecPrefix_Symbol : AppSpecPrefix_Variable));
             specByteCount++;
 
-            if (value != 0)
+            if (value != nullptr)
                 WriteValue(os, &specByteCount, *value);
         }
-        else if (functionDefinition != 0)
+        else if (functionDefinition != nullptr)
         {
             auto &parameters = functionDefinition->Parameters();
 
@@ -311,7 +311,7 @@ void Generator::WriteApplicationCode(ostream &os)
 
                 uint32_t parameterType = 0;
                 const auto &defaultValue = parameter.DefaultValue();
-                if (defaultValue != 0)
+                if (defaultValue != nullptr)
                     parameterType = AppSpecParameterType_Defaulted;
                 else if (parameter.IsTupleGroup())
                     parameterType = AppSpecParameterType_TupleGroup;
@@ -322,7 +322,7 @@ void Generator::WriteApplicationCode(ostream &os)
                 WriteStringEscapedHex(os, word);
                 specByteCount += sizeof word;
 
-                if (defaultValue != 0)
+                if (defaultValue != nullptr)
                     WriteValue(os, &specByteCount, *defaultValue);
             }
         }
@@ -378,7 +378,7 @@ void Generator::ComputeCheckValue()
         auto functionDefinition =
             dynamic_cast<const FunctionDefinition *>(definition);
 
-        if (assignment != 0)
+        if (assignment != nullptr)
         {
             const auto &value = assignment->Value();
 
@@ -392,10 +392,10 @@ void Generator::ComputeCheckValue()
                  name.c_str(), static_cast<unsigned>(name.size()));
 
             // Contribute the variable value if applicable.
-            if (value != 0)
+            if (value != nullptr)
                 ContributeValue(spec, session, *value);
         }
-        else if (functionDefinition != 0)
+        else if (functionDefinition != nullptr)
         {
             // Contribute the function name.
             crc_add
@@ -428,7 +428,7 @@ void Generator::ComputeCheckValue()
 
                 // Contribute the default value if present.
                 const auto &defaultValue = parameter.DefaultValue();
-                if (defaultValue != 0)
+                if (defaultValue != nullptr)
                     ContributeValue(spec, session, *defaultValue);
             }
         }

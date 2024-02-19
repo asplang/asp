@@ -415,7 +415,7 @@ bool ListExpression::IsEmpty() const
 Expression *ListExpression::PopFront()
 {
     if (expressions.empty())
-        return 0;
+        return nullptr;
     else
     {
         auto result = expressions.front();
@@ -480,11 +480,11 @@ RangeExpression::~RangeExpression()
 
 void RangeExpression::Parent(const Statement *statement)
 {
-    if (startExpression != 0)
+    if (startExpression != nullptr)
         startExpression->Parent(statement);
-    if (endExpression != 0)
+    if (endExpression != nullptr)
         endExpression->Parent(statement);
-    if (stepExpression != 0)
+    if (stepExpression != nullptr)
         stepExpression->Parent(statement);
 }
 
@@ -535,8 +535,8 @@ Expression *FoldUnaryExpression
     (int operatorTokenType, Expression *expression)
 {
     auto *constExpression = dynamic_cast<ConstantExpression *>(expression);
-    if (constExpression == 0)
-        return 0;
+    if (constExpression == nullptr)
+        return nullptr;
 
     switch (operatorTokenType)
     {
@@ -564,56 +564,68 @@ Expression *FoldBinaryExpression
         (leftExpression);
     auto *rightConstExpression = dynamic_cast<ConstantExpression *>
         (rightExpression);
-    if (leftConstExpression == 0 && rightConstExpression == 0)
-        return 0;
+    if (leftConstExpression == nullptr && rightConstExpression == nullptr)
+        return nullptr;
 
     switch (operatorTokenType)
     {
         case TOKEN_OR:
             return
-                leftConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ? nullptr :
                 FoldOr(leftConstExpression, rightExpression);
 
         case TOKEN_AND:
             return
-                leftConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ? nullptr :
                 FoldAnd(leftConstExpression, rightExpression);
 
         case TOKEN_EQ:
             return
-                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
                 FoldEqual(leftConstExpression, rightConstExpression);
 
         case TOKEN_NE:
             return
-                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
                 FoldNotEqual(leftConstExpression, rightConstExpression);
 
         case TOKEN_LT:
             return
-                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
                 FoldLess(leftConstExpression, rightConstExpression);
 
         case TOKEN_LE:
             return
-                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
                 FoldLessOrEqual(leftConstExpression, rightConstExpression);
 
         case TOKEN_GT:
             return
-                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
                 FoldGreater(leftConstExpression, rightConstExpression);
 
         case TOKEN_GE:
             return
-                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
                 FoldGreaterOrEqual(leftConstExpression, rightConstExpression);
 
         case TOKEN_IN:
         case TOKEN_NOT_IN:
         case TOKEN_IS:
         case TOKEN_IS_NOT:
-            return 0;
+            return nullptr;
 
         case TOKEN_BAR:
         case TOKEN_CARET:
@@ -621,7 +633,9 @@ Expression *FoldBinaryExpression
         case TOKEN_LEFT_SHIFT:
         case TOKEN_RIGHT_SHIFT:
             return
-                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
                 FoldBitwiseOperation
                     (operatorTokenType,
                      leftConstExpression, rightConstExpression);
@@ -634,7 +648,9 @@ Expression *FoldBinaryExpression
         case TOKEN_PERCENT:
         case TOKEN_DOUBLE_ASTERISK:
             return
-                leftConstExpression == 0 || rightConstExpression == 0 ? 0 :
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
                 FoldArithmeticOperation
                     (operatorTokenType,
                      leftConstExpression, rightConstExpression);
@@ -655,7 +671,7 @@ Expression *FoldTernaryExpression
     {
         case TOKEN_IF:
             return
-                conditionConstExpression == 0 ? 0 :
+                conditionConstExpression == nullptr ? nullptr :
                 FoldConditional
                     (conditionConstExpression,
                      trueExpression, falseExpression);
@@ -681,7 +697,7 @@ bool ConstantExpression::IsTrue() const
             return i != 0;
 
         case Type::Float:
-            return f != 0;
+            return f != 0.0;
 
         case Type::String:
             return !s.empty();
@@ -755,7 +771,7 @@ int ConstantExpression::NumericCompare(const ConstantExpression &right) const
         throw string
             ("Internal error: Invalid type in numeric comparison expression");
     Type resultType = Type::Integer;
-    double leftFloat = 0, rightFloat = 0;
+    double leftFloat = 0.0, rightFloat = 0.0;
     if (type == Type::Float || right.type == Type::Float)
     {
         resultType = Type::Float;
@@ -937,7 +953,7 @@ Expression *FoldBitwiseOperation
     switch (operatorTokenType)
     {
         default:
-            return 0;
+            return nullptr;
 
         case TOKEN_BAR:
         {
@@ -1009,17 +1025,17 @@ Expression *FoldArithmeticOperation
     else if (leftExpression->type == Type::Integer)
         leftInt = leftExpression->i;
     else if (leftExpression->type != Type::Float)
-        return 0;
+        return nullptr;
     uint32_t leftUnsigned = *reinterpret_cast<uint32_t *>(&leftInt);
     if (rightExpression->type == Type::Boolean)
         rightInt = rightExpression->b ? 1 : 0;
     else if (rightExpression->type == Type::Integer)
         rightInt = rightExpression->i;
     else if (rightExpression->type != Type::Float)
-        return 0;
+        return nullptr;
     uint32_t rightUnsigned = *reinterpret_cast<uint32_t *>(&rightInt);
     Type resultType = Type::Integer;
-    double leftFloat = 0, rightFloat = 0;
+    double leftFloat = 0.0, rightFloat = 0.0;
     if (leftExpression->type == Type::Float ||
         rightExpression->type == Type::Float)
     {
@@ -1035,7 +1051,7 @@ Expression *FoldArithmeticOperation
     }
 
     int intResult = 0;
-    double floatResult = 0;
+    double floatResult = 0.0;
     string desc;
     if (resultType == Type::Integer)
     {
@@ -1043,7 +1059,7 @@ Expression *FoldArithmeticOperation
         switch (operatorTokenType)
         {
             default:
-                return 0;
+                return nullptr;
 
             case TOKEN_PLUS:
                 desc = "addition";
@@ -1112,7 +1128,7 @@ Expression *FoldArithmeticOperation
         switch (operatorTokenType)
         {
             default:
-                return 0;
+                return nullptr;
 
             case TOKEN_PLUS:
                 floatResult = leftFloat + rightFloat;
@@ -1127,19 +1143,19 @@ Expression *FoldArithmeticOperation
                 break;
 
             case TOKEN_SLASH:
-                if (rightFloat == 0)
+                if (rightFloat == 0.0)
                     throw string("Divide by zero in division expression");
                 floatResult = leftFloat / rightFloat;
                 break;
 
             case TOKEN_FLOOR_DIVIDE:
-                if (rightFloat == 0)
+                if (rightFloat == 0.0)
                     throw string("Divide by zero in division expression");
                 floatResult = floor(leftFloat / rightFloat);
                 break;
 
             case TOKEN_PERCENT:
-                if (rightFloat == 0)
+                if (rightFloat == 0.0)
                     throw string("Divide by zero in division expression");
                 floatResult = static_cast<double>
                     (leftFloat - floor(leftFloat / rightFloat) * rightFloat);

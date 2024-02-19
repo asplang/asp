@@ -45,18 +45,19 @@ static AspRunResult asp_print1
     (AspEngine *engine, AspDataEntry *value)
 {
     AspDataEntry *valueString = AspToString(engine, value);
-    if (valueString == 0)
+    if (valueString == nullptr)
         return AspRunResult_OutOfDataMemory;
 
     size_t size;
-    AspStringValue(engine, valueString, &size, 0, 0, 0);
+    AspStringValue(engine, valueString, &size, nullptr, 0, 0);
     char buffer[16];
     for (size_t index = 0; index < size; index += sizeof buffer)
     {
         size_t bufferLen = sizeof buffer;
         if (index + sizeof buffer > size)
             bufferLen = size - index;
-        AspStringValue(engine, valueString, 0, buffer, index, sizeof buffer);
+        AspStringValue
+            (engine, valueString, nullptr, buffer, index, sizeof buffer);
         for (size_t byteIndex = 0; byteIndex < bufferLen; byteIndex++)
             putchar(buffer[byteIndex]);
     }

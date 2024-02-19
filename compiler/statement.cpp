@@ -51,22 +51,22 @@ const Statement *Block::Parent() const
 
 const Statement *Block::FinalStatement() const
 {
-    return statements.empty() ? 0 : statements.back();
+    return statements.empty() ? nullptr : statements.back();
 }
 
 const LoopStatement *Statement::ParentLoop() const
 {
     // Search for parent loop statement, ending the search if we reach a
     // function definition or the top level first.
-    const LoopStatement *loopStatement = 0;
+    const LoopStatement *loopStatement = nullptr;
     for (auto parentStatement = Parent()->Parent();
-         parentStatement != 0 && loopStatement == 0;
+         parentStatement != nullptr && loopStatement == nullptr;
          loopStatement = dynamic_cast<const LoopStatement *>(parentStatement),
          parentStatement = parentStatement->Parent()->Parent())
     {
         auto defStatement =
             dynamic_cast<const DefStatement *>(parentStatement);
-        if (defStatement != 0)
+        if (defStatement != nullptr)
             break;
     }
     return loopStatement;
@@ -76,9 +76,9 @@ const DefStatement *Statement::ParentDef() const
 {
     // Search for parent function definition statement, ending the search
     // if we reach a the top level first.
-    const DefStatement *defStatement = 0;
+    const DefStatement *defStatement = nullptr;
     for (auto parentStatement = Parent()->Parent();
-         parentStatement != 0 && defStatement == 0;
+         parentStatement != nullptr && defStatement == nullptr;
          defStatement = dynamic_cast<const DefStatement *>(parentStatement),
          parentStatement = parentStatement->Parent()->Parent()) ;
     return defStatement;
@@ -102,7 +102,7 @@ AssignmentStatement::AssignmentStatement
     Statement(assignmentToken),
     assignmentTokenType(assignmentToken.type),
     targetExpression(targetExpression),
-    valueExpression(0),
+    valueExpression(nullptr),
     valueAssignmentStatement(valueAssignmentStatement)
 {
     targetExpression->Parent(this);
@@ -115,7 +115,7 @@ AssignmentStatement::AssignmentStatement
     assignmentTokenType(assignmentToken.type),
     targetExpression(targetExpression),
     valueExpression(valueExpression),
-    valueAssignmentStatement(0)
+    valueAssignmentStatement(nullptr)
 {
     targetExpression->Parent(this);
     valueExpression->Parent(this);
@@ -141,9 +141,9 @@ InsertionStatement::InsertionStatement
      Expression *itemExpression) :
     Statement(insertionToken),
     containerInsertionStatement(containerInsertionStatement),
-    containerExpression(0),
+    containerExpression(nullptr),
     itemExpression(itemExpression),
-    keyValuePair(0)
+    keyValuePair(nullptr)
 {
 }
 
@@ -153,8 +153,8 @@ InsertionStatement::InsertionStatement
      KeyValuePair *keyValuePair) :
     Statement(insertionToken),
     containerInsertionStatement(containerInsertionStatement),
-    containerExpression(0),
-    itemExpression(0),
+    containerExpression(nullptr),
+    itemExpression(nullptr),
     keyValuePair(keyValuePair)
 {
 }
@@ -163,10 +163,10 @@ InsertionStatement::InsertionStatement
     (const Token &insertionToken,
      Expression *containerExpression, Expression *itemExpression) :
     Statement(insertionToken),
-    containerInsertionStatement(0),
+    containerInsertionStatement(nullptr),
     containerExpression(containerExpression),
     itemExpression(itemExpression),
-    keyValuePair(0)
+    keyValuePair(nullptr)
 {
 }
 
@@ -174,9 +174,9 @@ InsertionStatement::InsertionStatement
     (const Token &insertionToken,
      Expression *containerExpression, KeyValuePair *keyValuePair) :
     Statement(insertionToken),
-    containerInsertionStatement(0),
+    containerInsertionStatement(nullptr),
     containerExpression(containerExpression),
-    itemExpression(0),
+    itemExpression(nullptr),
     keyValuePair(keyValuePair)
 {
 }
@@ -316,7 +316,7 @@ IfStatement::IfStatement
     Statement(*conditionExpression),
     conditionExpression(conditionExpression),
     trueBlock(trueBlock),
-    falseBlock(0),
+    falseBlock(nullptr),
     elsePart(elsePart)
 {
     conditionExpression->Parent(this);
@@ -329,7 +329,7 @@ IfStatement::IfStatement
     conditionExpression(conditionExpression),
     trueBlock(trueBlock),
     falseBlock(falseBlock),
-    elsePart(0)
+    elsePart(nullptr)
 {
     conditionExpression->Parent(this);
     trueBlock->Parent(this);
@@ -341,8 +341,8 @@ IfStatement::IfStatement
     Statement(*conditionExpression),
     conditionExpression(conditionExpression),
     trueBlock(trueBlock),
-    falseBlock(0),
-    elsePart(0)
+    falseBlock(nullptr),
+    elsePart(nullptr)
 {
     conditionExpression->Parent(this);
     trueBlock->Parent(this);
@@ -431,7 +431,7 @@ Parameter::Parameter
     type(type),
     defaultExpression(defaultExpression)
 {
-    if (defaultExpression != 0 &&
+    if (defaultExpression != nullptr &&
         (type == Type::TupleGroup || type == Type::DictionaryGroup))
         throw string("Group parameter cannot have a default value");
 }

@@ -31,8 +31,8 @@ int main(int argc, char **argv)
     char *data = (char *)malloc(dataByteSize);
     AspRunResult initializeResult = AspInitialize
         (&engine,
-         0, 0, data, dataByteSize,
-         0, 0);
+         nullptr, 0, data, dataByteSize,
+         nullptr, nullptr);
     if (initializeResult != AspRunResult_OK)
     {
         auto oldFlags = cerr.flags();
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 
             keys[j] = AspNewInteger(&engine, j);
             AspTreeResult insertResult = AspTreeInsert
-                (&engine, set, keys[j], 0);
+                (&engine, set, keys[j], nullptr);
             if (insertResult.result != AspRunResult_OK)
             {
                 PrintTree(&engine, set, cerr);
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
             int j = (i + k / 2 + 1) % k;
 
             auto iNode = AspTreeFind(&engine, set, keys[j]).node;
-            if (iNode == 0)
+            if (iNode == nullptr)
             {
                 cerr << "COULD NOT FIND KEY" << endl;
                 break;
@@ -194,7 +194,7 @@ static void PrintNode
         << (side == -1 ? 'L' : side == 1 ? 'R' : 'T')
         << ": ";
 
-    if (node == 0)
+    if (node == nullptr)
     {
         os << "~\n";
         return;
@@ -219,7 +219,7 @@ static void PrintNode
     else
     {
         auto linksNode = AspEntry(engine, AspDataGetTreeNodeLinksIndex(node));
-        if (linksNode != 0)
+        if (linksNode != nullptr)
             leftIndex = AspDataGetTreeLinksNodeLeftIndex(linksNode);
     }
     AspDataEntry *leftNode = AspEntry(engine, leftIndex);
@@ -231,7 +231,7 @@ static void PrintNode
     else
     {
         auto linksNode = AspEntry(engine, AspDataGetTreeNodeLinksIndex(node));
-        if (linksNode != 0)
+        if (linksNode != nullptr)
             rightIndex = AspDataGetTreeLinksNodeRightIndex(linksNode);
     }
     AspDataEntry *rightNode = AspEntry(engine, rightIndex);

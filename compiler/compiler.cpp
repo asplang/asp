@@ -250,7 +250,7 @@ DEFINE_ACTION(MakeModule, NonTerminal *, Block *, module)
         module->Emit(executable);
 
         const SourceElement *finalSourceElement = module->FinalStatement();
-        if (finalSourceElement == 0)
+        if (finalSourceElement == nullptr)
             finalSourceElement = module;
         executable.Insert
             (new ExitModuleInstruction("Exit module"),
@@ -263,7 +263,7 @@ DEFINE_ACTION(MakeModule, NonTerminal *, Block *, module)
 
     delete module;
 
-    return 0;
+    return nullptr;
 }
 
 DEFINE_ACTION(MakeEmptyBlock, Block *, int, _)
@@ -538,7 +538,7 @@ DEFINE_ACTION
      Expression *, trueExpression, Expression *, falseExpression)
 {
     // Attempt to fold constant expression.
-    Expression *result = 0;
+    Expression *result = nullptr;
     try
     {
         result = FoldTernaryExpression
@@ -574,7 +574,7 @@ DEFINE_ACTION
      Expression *, leftExpression, Expression *, rightExpression)
 {
     // Attempt to fold constant expression.
-    Expression *result = 0;
+    Expression *result = nullptr;
     try
     {
         result = FoldBinaryExpression
@@ -596,7 +596,7 @@ DEFINE_ACTION
     {
         auto castLeftExpression = dynamic_cast<ShortCircuitLogicalExpression *>
             (leftExpression);
-        if (castLeftExpression != 0 &&
+        if (castLeftExpression != nullptr &&
             castLeftExpression->OperatorTokenType() == operatorToken->type)
         {
             castLeftExpression->Add(rightExpression);
@@ -619,7 +619,7 @@ DEFINE_ACTION
      Expression *, leftExpression, Expression *, rightExpression)
 {
     // Attempt to fold constant expression.
-    Expression *result = 0;
+    Expression *result = nullptr;
     try
     {
         result = FoldBinaryExpression
@@ -650,7 +650,7 @@ DEFINE_ACTION
      Token *, operatorToken, Expression *, expression)
 {
     // Attempt to fold constant expression.
-    Expression *result = 0;
+    Expression *result = nullptr;
     try
     {
         result = FoldUnaryExpression(operatorToken->type, expression);
@@ -793,7 +793,7 @@ DEFINE_ACTION
      Expression *, leftExpression, Expression *, rightExpression)
 {
     auto result = dynamic_cast<TupleExpression *>(leftExpression);
-    if (leftExpression == 0 || result == 0 || result->IsEnclosed())
+    if (leftExpression == nullptr || result == nullptr || result->IsEnclosed())
     {
         result = new TupleExpression(*token);
         if (leftExpression)
@@ -840,18 +840,18 @@ DEFINE_ACTION
      TargetExpression *, rightTargetExpression)
 {
     TargetExpression *result = leftTargetExpression;
-    if (leftTargetExpression == 0 ||
+    if (leftTargetExpression == nullptr ||
         !leftTargetExpression->IsTuple() ||
         leftTargetExpression->IsEnclosed())
     {
         result = new TargetExpression(*token);
-        if (leftTargetExpression != 0)
+        if (leftTargetExpression != nullptr)
             result->Add(leftTargetExpression);
         else if (result->IsTuple())
             result->Enclose();
     }
 
-    if (rightTargetExpression != 0)
+    if (rightTargetExpression != nullptr)
         result->Add(rightTargetExpression);
 
     delete token;
@@ -963,7 +963,7 @@ DEFINE_ACTION
     (MakeArgument, Argument *,
      Token *, nameToken, Expression *, valueExpression)
 {
-    auto result = nameToken != 0 ?
+    auto result = nameToken != nullptr ?
         new Argument(*nameToken, valueExpression) :
         new Argument(valueExpression);
     delete nameToken;
@@ -976,7 +976,7 @@ DEFINE_ACTION
 {
     auto constantExpression = dynamic_cast<ConstantExpression *>
         (valueExpression);
-    if (constantExpression != 0 && !constantExpression->IsString())
+    if (constantExpression != nullptr && !constantExpression->IsString())
         ReportError("Invalid type for iterable group argument");
 
     return new Argument(valueExpression, Argument::Type::IterableGroup);
@@ -988,7 +988,7 @@ DEFINE_ACTION
 {
     auto constantExpression = dynamic_cast<ConstantExpression *>
         (valueExpression);
-    if (constantExpression != 0)
+    if (constantExpression != nullptr)
         ReportError("Invalid type for dictionary group argument");
 
     return new Argument(valueExpression, Argument::Type::DictionaryGroup);
@@ -1019,7 +1019,7 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeEmptyDictionary, DictionaryExpression *, Token *, token)
 {
-    auto result = token != 0 ?
+    auto result = token != nullptr ?
         new DictionaryExpression(*token) : new DictionaryExpression;
     delete token;
     return result;
@@ -1064,7 +1064,7 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeEmptyList, ListExpression *, Token *, token)
 {
-    if (token != 0)
+    if (token != nullptr)
     {
         auto result = new ListExpression(*token);
         delete token;

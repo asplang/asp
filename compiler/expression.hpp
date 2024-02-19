@@ -40,7 +40,7 @@ class Expression : public NonTerminal
     private:
 
         bool enclosed = false;
-        const Statement *parentStatement = 0;
+        const Statement *parentStatement = nullptr;
 };
 
 class ConditionalExpression : public Expression
@@ -139,7 +139,7 @@ class TargetExpression : public Expression
 
     private:
 
-        const Statement *parentStatement = 0;
+        const Statement *parentStatement = nullptr;
         std::string name;
         std::list<TargetExpression *> targetExpressions;
 };

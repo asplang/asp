@@ -32,7 +32,7 @@ Token *Lexer::Next()
         pendingTokens.empty())
         FetchNext();
 
-    Token *nextToken = 0;
+    Token *nextToken = nullptr;
 
     // Turn "is" followed by "not" into "is not".
     if (token->type == TOKEN_IS &&
@@ -64,7 +64,7 @@ void Lexer::FetchNext()
     while (pendingTokens.empty())
     {
         sourceLocation = caret;
-        Token *token = 0;
+        Token *token = nullptr;
 
         // Check indent if applicable. Note that this may generate pending
         // tokens to indicate block-end or indent errors.
@@ -157,13 +157,13 @@ Token *Lexer::ProcessSpecial()
     {
         lex += static_cast<char>(Get());
     }
-    else if (c != 0 && strchr(dbl, c) != 0 && c2 == c)
+    else if (c != '\0' && strchr(dbl, c) != nullptr && c2 == c)
     {
         lex += static_cast<char>(Get());
-        if (strchr(eq3, c) != 0 && Peek() == '=')
+        if (strchr(eq3, c) != nullptr && Peek() == '=')
             lex += static_cast<char>(Get());
     }
-    else if (c != 0 && strchr(eq2, c) != 0 && c2 == '=')
+    else if (c != '\0' && strchr(eq2, c) != nullptr && c2 == '=')
     {
         lex += static_cast<char>(Get());
     }
@@ -325,5 +325,5 @@ void Lexer::CheckIndent()
 static bool IsSpecial(int c)
 {
     static const char chars[] = "!\"%&'()*+,-./:<=>[]^`{|}~";
-    return c > 0 && c <= 0xFF && strchr(chars, c) != 0;
+    return c > 0 && c <= 0xFF && strchr(chars, c) != nullptr;
 }

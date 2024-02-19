@@ -38,7 +38,7 @@ void AssignmentStatement::Emit1(Executable &executable, bool top) const
     if (assignmentTokenType != TOKEN_ASSIGN)
         targetExpression->Emit(executable, Expression::EmitType::Value);
 
-    if (valueAssignmentStatement != 0)
+    if (valueAssignmentStatement != nullptr)
         valueAssignmentStatement->Emit1(executable, false);
     else
         valueExpression->Emit(executable);
@@ -96,12 +96,12 @@ void InsertionStatement::Emit(Executable &executable) const
 
 void InsertionStatement::Emit1(Executable &executable, bool top) const
 {
-    if (containerInsertionStatement != 0)
+    if (containerInsertionStatement != nullptr)
         containerInsertionStatement->Emit1(executable, false);
     else
         containerExpression->Emit(executable);
 
-    if (keyValuePair != 0)
+    if (keyValuePair != nullptr)
         keyValuePair->Emit(executable);
     else
         itemExpression->Emit(executable);
@@ -116,7 +116,7 @@ void InsertionStatement::Emit1(Executable &executable, bool top) const
 void BreakStatement::Emit(Executable &executable) const
 {
     auto loopStatement = ParentLoop();
-    if (loopStatement == 0)
+    if (loopStatement == nullptr)
         throw string("break outside loop");
 
     executable.Insert
@@ -128,7 +128,7 @@ void BreakStatement::Emit(Executable &executable) const
 void ContinueStatement::Emit(Executable &executable) const
 {
     auto loopStatement = ParentLoop();
-    if (loopStatement == 0)
+    if (loopStatement == nullptr)
         throw string("continue outside loop");
 
     executable.Insert
@@ -159,7 +159,7 @@ void ImportStatement::Emit(Executable &executable) const
                  sourceLocation);
         }
 
-        if (memberNameList == 0)
+        if (memberNameList == nullptr)
         {
             auto asName = importName->AsName();
             auto asNameSymbol = executable.Symbol(asName);
@@ -224,7 +224,7 @@ void ImportStatement::Emit(Executable &executable) const
 
 void GlobalStatement::Emit(Executable &executable) const
 {
-    bool isLocal = ParentDef() != 0;
+    bool isLocal = ParentDef() != nullptr;
     if (!isLocal)
         throw string("global outside function");
 
@@ -244,7 +244,7 @@ void GlobalStatement::Emit(Executable &executable) const
 
 void LocalStatement::Emit(Executable &executable) const
 {
-    bool isLocal = ParentDef() != 0;
+    bool isLocal = ParentDef() != nullptr;
     if (!isLocal)
         throw string("local outside function");
 
@@ -273,7 +273,7 @@ void DelStatement::Emit1(Executable &executable, Expression *expression) const
     auto elementExpression = dynamic_cast<ElementExpression *>(expression);
     auto memberExpression = dynamic_cast<MemberExpression *>(expression);
     auto variableExpression = dynamic_cast<VariableExpression *>(expression);
-    if (tupleExpression != 0)
+    if (tupleExpression != nullptr)
     {
         for (auto iter = tupleExpression->ExpressionsBegin();
              iter != tupleExpression->ExpressionsEnd(); iter++)
@@ -282,21 +282,21 @@ void DelStatement::Emit1(Executable &executable, Expression *expression) const
             Emit1(executable, elementExpression);
         }
     }
-    else if (elementExpression != 0)
+    else if (elementExpression != nullptr)
     {
         elementExpression->Emit(executable, Expression::EmitType::Delete);
         executable.Insert
             (new EraseInstruction("Erase element"),
              sourceLocation);
     }
-    else if (memberExpression != 0)
+    else if (memberExpression != nullptr)
     {
         memberExpression->Emit(executable, Expression::EmitType::Delete);
         executable.Insert
             (new EraseInstruction("Erase member"),
              sourceLocation);
     }
-    else if (variableExpression != 0)
+    else if (variableExpression != nullptr)
     {
         if (variableExpression->HasSymbol())
             throw string("Cannot delete temporary variable");
@@ -317,11 +317,11 @@ void DelStatement::Emit1(Executable &executable, Expression *expression) const
 void ReturnStatement::Emit(Executable &executable) const
 {
     // Ensure the return statement is within a function definition.
-    auto isLocal = ParentDef() != 0;
+    auto isLocal = ParentDef() != nullptr;
     if (!isLocal)
         throw string("return outside function");
 
-    if (expression != 0)
+    if (expression != nullptr)
         expression->Emit(executable);
     else
     {
@@ -340,7 +340,7 @@ void AssertStatement::Emit(Executable &executable) const
 {
     auto *constantExpression = dynamic_cast<const ConstantExpression *>
         (expression);
-    if (constantExpression != 0 && !constantExpression->IsTrue())
+    if (constantExpression != nullptr && !constantExpression->IsTrue())
     {
         executable.Insert(new AbortInstruction, sourceLocation);
     }
@@ -375,16 +375,16 @@ void IfStatement::Emit(Executable &executable) const
             (false, elseLocation, "Jump if false to else"),
          sourceLocation);
     trueBlock->Emit(executable);
-    if (falseBlock != 0 || elsePart != 0)
+    if (falseBlock != nullptr || elsePart != nullptr)
         executable.Insert
             (new JumpInstruction(endLocation, "Jump to end"),
              sourceLocation);
     executable.PopLocation();
 
     executable.PushLocation(endLocation);
-    if (falseBlock != 0)
+    if (falseBlock != nullptr)
         falseBlock->Emit(executable);
-    else if (elsePart != 0)
+    else if (elsePart != nullptr)
         elsePart->Emit(executable);
     executable.PopLocation();
 }
@@ -392,7 +392,7 @@ void IfStatement::Emit(Executable &executable) const
 void WhileStatement::Emit(Executable &executable) const
 {
     int loopedVariableSymbol = 0;
-    if (falseBlock != 0)
+    if (falseBlock != nullptr)
     {
         loopedVariableSymbol = executable.TemporarySymbol();
 
@@ -423,7 +423,7 @@ void WhileStatement::Emit(Executable &executable) const
         (new ConditionalJumpInstruction
             (false, elseLocation, "Jump if false to else"),
          sourceLocation);
-    if (falseBlock != 0)
+    if (falseBlock != nullptr)
     {
         auto loopedExpression = new VariableExpression
             ((SourceElement &)*this, loopedVariableSymbol);
@@ -443,7 +443,7 @@ void WhileStatement::Emit(Executable &executable) const
          sourceLocation);
     executable.PopLocation();
 
-    if (falseBlock != 0)
+    if (falseBlock != nullptr)
     {
         executable.PushLocation(endLocation);
         auto loopedExpression = new VariableExpression
@@ -472,7 +472,7 @@ void WhileStatement::Emit(Executable &executable) const
 void ForStatement::Emit(Executable &executable) const
 {
     int loopedVariableSymbol = 0;
-    if (falseBlock != 0)
+    if (falseBlock != nullptr)
     {
         loopedVariableSymbol = executable.TemporarySymbol();
 
@@ -507,7 +507,7 @@ void ForStatement::Emit(Executable &executable) const
         (new ConditionalJumpInstruction
             (false, elseLocation, "Jump if false to else"),
          sourceLocation);
-    if (falseBlock != 0)
+    if (falseBlock != nullptr)
     {
         auto loopedExpression = new VariableExpression
             ((SourceElement &)*this, loopedVariableSymbol);
@@ -537,7 +537,7 @@ void ForStatement::Emit(Executable &executable) const
     executable.PopLocation();
 
     executable.PushLocation(endLocation);
-    if (falseBlock != 0)
+    if (falseBlock != nullptr)
     {
         executable.PushLocation(endLocation);
         auto loopedExpression = new VariableExpression
@@ -568,7 +568,7 @@ void ForStatement::Emit(Executable &executable) const
 
 void Parameter::Emit(Executable &executable) const
 {
-    if (defaultExpression != 0)
+    if (defaultExpression != nullptr)
         defaultExpression->Emit(executable);
     auto symbol = executable.Symbol(name);
     ostringstream oss;
@@ -578,7 +578,7 @@ void Parameter::Emit(Executable &executable) const
     else if (type == Type::DictionaryGroup)
         oss << " dictionary group";
     oss << " parameter " << name;
-    if (defaultExpression != 0)
+    if (defaultExpression != nullptr)
         oss << " with default value";
     executable.Insert
         (new MakeParameterInstruction
@@ -587,7 +587,7 @@ void Parameter::Emit(Executable &executable) const
                 MakeParameterInstruction::Type::TupleGroup :
              type == Type::DictionaryGroup ?
                 MakeParameterInstruction::Type::DictionaryGroup :
-             HasDefault() != 0 ?
+             HasDefault() ?
                 MakeParameterInstruction::Type::Defaulted :
                 MakeParameterInstruction::Type::Positional,
              oss.str()),
@@ -631,7 +631,7 @@ void DefStatement::Emit(Executable &executable) const
         // Emit a final return statement if needed.
         auto finalReturnStatement = dynamic_cast<const ReturnStatement *>
             (block->FinalStatement());
-        if (finalReturnStatement == 0)
+        if (finalReturnStatement == nullptr)
         {
             executable.Insert
                 (new PushNoneInstruction("Push default return value)"),
@@ -1118,7 +1118,7 @@ void RangeExpression::Emit
          iter != partExpressions.rend(); iter++)
     {
         auto partExpression = *iter;
-        if (partExpression != 0)
+        if (partExpression != nullptr)
         {
             partExpression->Emit(executable);
             partCount++;
@@ -1127,12 +1127,14 @@ void RangeExpression::Emit
     ostringstream oss;
     oss
         << "Make range of pattern "
-        << (startExpression ? "S" : "") << ".."
-        << (endExpression ? "E" : "") << ':'
-        << (stepExpression ? "T" : "");
+        << (startExpression != nullptr ? "S" : "") << ".."
+        << (endExpression != nullptr ? "E" : "") << ':'
+        << (stepExpression != nullptr ? "T" : "");
     executable.Insert
         (new MakeRangeInstruction
-            (startExpression != 0, endExpression != 0, stepExpression != 0,
+            (startExpression != nullptr,
+             endExpression != nullptr,
+             stepExpression != nullptr,
              oss.str()),
          sourceLocation);
 }

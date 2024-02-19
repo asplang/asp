@@ -116,11 +116,11 @@ DEFINE_ACTION
     if (!newFile)
     {
         ReportError("lib must be the first statement");
-        return 0;
+        return nullptr;
     }
 
     isLibrary = true;
-    return 0;
+    return nullptr;
 }
 
 DEFINE_ACTION
@@ -133,7 +133,7 @@ DEFINE_ACTION
 
     delete includeNameToken;
 
-    return 0;
+    return nullptr;
 }
 
 DEFINE_ACTION
@@ -143,7 +143,7 @@ DEFINE_ACTION
     newFile = false;
 
     if (CheckReservedNameError(nameToken->s))
-        return 0;
+        return nullptr;
 
     // Replace any previous definition having the same name with this
     // latter one.
@@ -163,7 +163,7 @@ DEFINE_ACTION
 
     delete nameToken;
 
-    return 0;
+    return nullptr;
 }
 
 DEFINE_ACTION
@@ -174,7 +174,7 @@ DEFINE_ACTION
     newFile = false;
 
     if (CheckReservedNameError(nameToken->s))
-        return 0;
+        return nullptr;
 
     // Ensure the validity of the order of parameter types.
     int position = 1;
@@ -210,7 +210,7 @@ DEFINE_ACTION
         }
 
         string error = validFunctionDefinition.AddParameter
-            (parameter.Name(), type, parameter.DefaultValue() != 0);
+            (parameter.Name(), type, parameter.DefaultValue() != nullptr);
         if (!error.empty())
             ReportError(error, parameter);
     }
@@ -237,7 +237,7 @@ DEFINE_ACTION
     delete nameToken;
     delete internalNameToken;
 
-    return 0;
+    return nullptr;
 }
 
 DEFINE_ACTION
