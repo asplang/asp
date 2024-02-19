@@ -793,14 +793,18 @@ DEFINE_ACTION
      Expression *, leftExpression, Expression *, rightExpression)
 {
     auto result = dynamic_cast<TupleExpression *>(leftExpression);
-    if (result == 0 || result->IsEnclosed())
+    if (leftExpression == 0 || result == 0 || result->IsEnclosed())
     {
         result = new TupleExpression(*token);
         if (leftExpression)
             result->Add(leftExpression);
+        else
+            result->Enclose();
     }
+
     if (rightExpression)
         result->Add(rightExpression);
+
     delete token;
     return result;
 }
@@ -835,30 +839,20 @@ DEFINE_ACTION
      TargetExpression *, leftTargetExpression,
      TargetExpression *, rightTargetExpression)
 {
-    TargetExpression *result = 0;
-    if (leftTargetExpression == 0)
-        result = new TargetExpression(*token);
-    else
+    TargetExpression *result = leftTargetExpression;
+    if (leftTargetExpression == 0 ||
+        !leftTargetExpression->IsTuple() ||
+        leftTargetExpression->IsEnclosed())
     {
-        if (leftTargetExpression->IsTuple())
-        {
-            if (leftTargetExpression->IsEnclosed())
-            {
-                result = new TargetExpression;
-                result->Add(leftTargetExpression);
-            }
-            else
-                result = leftTargetExpression;
-        }
-        else
-        {
-            // Convert single variable into a tuple.
-            result = new TargetExpression;
+        result = new TargetExpression(*token);
+        if (leftTargetExpression != 0)
             result->Add(leftTargetExpression);
-        }
-        if (rightTargetExpression != 0)
-            result->Add(rightTargetExpression);
+        else if (result->IsTuple())
+            result->Enclose();
     }
+
+    if (rightTargetExpression != 0)
+        result->Add(rightTargetExpression);
 
     delete token;
     return result;
@@ -868,8 +862,8 @@ DEFINE_ACTION
     (MakeEnclosedTargetExpression, TargetExpression *,
      TargetExpression *, targetExpression)
 {
-    // Enclose the expression in parentheses. This prevents tuples in
-    // parentheses from being added to.
+    // Enclose the expression in parentheses. This prevents target expressions
+    // in parentheses from being added to.
     targetExpression->Enclose();
     return targetExpression;
 }
