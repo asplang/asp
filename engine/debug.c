@@ -243,8 +243,23 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fprintf(fp, " ptr=%d",
                     AspDataGetAppPointerObjectValue(entry));
             #endif
-            fprintf(fp, " dtor=%p",
-                AspDataGetAppIntegerObjectDestructor(entry));
+            if (t == DataType_AppIntegerObject)
+            {
+                union
+                {
+                    void (*fp)(AspEngine *, int16_t, int32_t);
+                    void *vp;
+                } u = {.fp = AspDataGetAppIntegerObjectDestructor(entry)};
+                fprintf(fp, " dtor=%p", u.vp);
+            }
+            else
+            {
+                union
+                {
+                    void (*fp)(AspEngine *, int16_t, void *); void *vp;
+                } u = {.fp = AspDataGetAppPointerObjectDestructor(entry)};
+                fprintf(fp, " dtor=%p", u.vp);
+            }
             break;
         case DataType_Type:
             fprintf(fp, " type=0x%2.2X",
@@ -279,17 +294,18 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         case DataType_StringFragment:
         {
             uint8_t count = AspDataGetStringFragmentSize(entry);
-            const uint8_t *s = AspDataGetStringFragmentData(entry);
+            const char *s = AspDataGetStringFragmentData(entry);
             fprintf(fp, " c=%d s='", count);
             for (unsigned i = 0; i < count; i++)
             {
-                uint8_t c = s[i];
+                char c = s[i];
+                uint8_t uc = *(uint8_t *)&c;
                 if (c == '\'')
                     fputc('\\', fp);
                 if (isprint(c))
                     fputc(c, fp);
                 else
-                    fprintf(fp, "\\x%02x", c);
+                    fprintf(fp, "\\x%02x", uc);
             }
             fputc('\'', fp);
             break;
