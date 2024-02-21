@@ -5,6 +5,10 @@
 #ifndef ASP_ASPEC_H
 #define ASP_ASPEC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum AppSpecPrefix
 {
     AppSpecPrefix_Symbol = 0xFE,
@@ -30,5 +34,9 @@ typedef enum AppSpecValueType
     AppSpecValueType_String = 0x05,
 
 } AppSpecValueType;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

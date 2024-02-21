@@ -5,11 +5,11 @@
 #ifndef ASP_INTEGER_H
 #define ASP_INTEGER_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 typedef enum AspIntegerResult
 {

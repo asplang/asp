@@ -5,12 +5,12 @@
 #ifndef ASP_INTEGER_RESULT_H
 #define ASP_INTEGER_RESULT_H
 
+#include "integer.h"
+#include "asp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "integer.h"
-#include "asp.h"
 
 AspRunResult AspTranslateIntegerResult(AspIntegerResult);
 

@@ -5,12 +5,12 @@
 #ifndef ASP_ITERATOR_H
 #define ASP_ITERATOR_H
 
+#include "asp-priv.h"
+#include "data.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "asp-priv.h"
-#include "data.h"
 
 typedef struct
 {

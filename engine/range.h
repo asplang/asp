@@ -5,12 +5,12 @@
 #ifndef ASP_RANGE_H
 #define ASP_RANGE_H
 
+#include "asp-priv.h"
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "asp-priv.h"
-#include <stdint.h>
 
 void AspGetRange
     (AspEngine *engine, const AspDataEntry *entry,

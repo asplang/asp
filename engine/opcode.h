@@ -5,6 +5,10 @@
 #ifndef ASP_OPCODE_H
 #define ASP_OPCODE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum OpCode
 {
     /* Generic stack operations. */
@@ -180,5 +184,9 @@ typedef enum OpCode
     OpCode_END = 0xFF, /* normal exit, stack must be empty */
 
 } OpCode;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

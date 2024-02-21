@@ -5,11 +5,11 @@
 #ifndef ASP_OPERATION_H
 #define ASP_OPERATION_H
 
+#include "asp-priv.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "asp-priv.h"
 
 typedef struct
 {

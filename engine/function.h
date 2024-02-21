@@ -5,11 +5,11 @@
 #ifndef ASP_FUNCTION_H
 #define ASP_FUNCTION_H
 
+#include "asp-priv.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "asp-priv.h"
 
 AspRunResult AspExpandIterableGroupArgument
     (AspEngine *, AspDataEntry *argumentList, AspDataEntry *iterable);

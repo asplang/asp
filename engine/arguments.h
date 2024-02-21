@@ -5,11 +5,11 @@
 #ifndef ASP_ARGUMENTS_H
 #define ASP_ARGUMENTS_H
 
+#include "asp-priv.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "asp-priv.h"
 
 AspRunResult AspInitializeArguments(AspEngine *);
 
