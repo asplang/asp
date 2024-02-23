@@ -7,6 +7,8 @@
 #include "range.h"
 #include "sequence.h"
 #include "tree.h"
+#include "integer.h"
+#include "integer-result.h"
 #include "data.h"
 
 #ifdef ASP_DEBUG
@@ -25,7 +27,11 @@ AspRunResult AspExpandIterableGroupArgument
         {
             int32_t start, end, step;
             AspGetRange(engine, iterable, &start, &end, &step);
-            for (int32_t i = start; step < 0 ? i < end : i < end; i += step)
+            AspRunResult stepResult = AspRunResult_OK;
+            for (int32_t i = start;
+                 stepResult == AspRunResult_OK && step < 0 ? i > end : i < end;
+                 stepResult = AspTranslateIntegerResult
+                    (AspAddIntegers(i, step, &i)))
             {
                 /* Create an integer value from the range. */
                 AspDataEntry *value = AspNewInteger(engine, i);
