@@ -270,8 +270,9 @@ static AspRunResult generic_function_1
     if (!AspFloatValue(a, &aValue))
         return AspRunResult_UnexpectedType;
     double resultValue = function(aValue);
-    *returnValue = AspNewFloat(engine, resultValue);
-    return AspAssert(engine, *returnValue != 0);
+    return
+        (*returnValue = AspNewFloat(engine, resultValue)) == 0 ?
+        AspRunResult_OutOfDataMemory : AspRunResult_OK;
 }
 
 static AspRunResult generic_function_2
@@ -286,6 +287,7 @@ static AspRunResult generic_function_2
     if (!AspFloatValue(b, &bValue))
         return AspRunResult_UnexpectedType;
     double resultValue = function(aValue, bValue);
-    *returnValue = AspNewFloat(engine, resultValue);
-    return AspAssert(engine, *returnValue != 0);
+    return
+        (*returnValue = AspNewFloat(engine, resultValue)) == 0 ?
+        AspRunResult_OutOfDataMemory : AspRunResult_OK;
 }

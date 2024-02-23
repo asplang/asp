@@ -27,27 +27,6 @@ ASP_LIB_API AspRunResult AspLib_type
     return AspRunResult_OK;
 }
 
-/* key(x)
- * Return x if it can be used as a set/dictionary key, otherwise None.
- */
-ASP_LIB_API AspRunResult AspLib_key
-    (AspEngine *engine,
-     AspDataEntry *object,
-     AspDataEntry **returnValue)
-{
-    bool isImmutable;
-    AspRunResult result = AspCheckIsImmutableObject
-        (engine, object, &isImmutable);
-    if (result != AspRunResult_OK)
-        return result;
-    if (isImmutable)
-    {
-        AspRef(engine, object);
-        *returnValue = object;
-    }
-    return AspRunResult_OK;
-}
-
 /* len(object)
  * Return length of object. Return 1 if object is not a container.
  */
@@ -80,11 +59,9 @@ ASP_LIB_API AspRunResult AspLib_bool
         return AspRunResult_OK;
     }
 
-    AspDataEntry *entry = AspNewBoolean(engine, AspIsTrue(engine, x));
-    if (entry == 0)
-        return AspRunResult_OutOfDataMemory;
-    *returnValue = entry;
-    return AspRunResult_OK;
+    return
+        (*returnValue = AspNewBoolean(engine, AspIsTrue(engine, x))) == 0 ?
+        AspRunResult_OutOfDataMemory : AspRunResult_OK;
 }
 
 /* int(x, base, check)
@@ -150,11 +127,9 @@ ASP_LIB_API AspRunResult AspLib_int
     else
         return AspRunResult_UnexpectedType;
 
-    AspDataEntry *entry = AspNewInteger(engine, intValue);
-    if (entry == 0)
-        return AspRunResult_OutOfDataMemory;
-    *returnValue = entry;
-    return AspRunResult_OK;
+    return
+        (*returnValue = AspNewInteger(engine, intValue)) == 0 ?
+        AspRunResult_OutOfDataMemory : AspRunResult_OK;
 }
 
 /* float(x)
@@ -196,11 +171,9 @@ ASP_LIB_API AspRunResult AspLib_float
     else
         return AspRunResult_UnexpectedType;
 
-    AspDataEntry *entry = AspNewFloat(engine, floatValue);
-    if (entry == 0)
-        return AspRunResult_OutOfDataMemory;
-    *returnValue = entry;
-    return AspRunResult_OK;
+    return
+        (*returnValue = AspNewFloat(engine, floatValue)) == 0 ?
+        AspRunResult_OutOfDataMemory : AspRunResult_OK;
 }
 
 /* str(x)
@@ -211,11 +184,9 @@ ASP_LIB_API AspRunResult AspLib_str
      AspDataEntry *x,
      AspDataEntry **returnValue)
 {
-    AspDataEntry *entry = AspToString(engine, x);
-    if (entry == 0)
-        return AspRunResult_OutOfDataMemory;
-    *returnValue = entry;
-    return AspRunResult_OK;
+    return
+        (*returnValue = AspToString(engine, x)) == 0 ?
+        AspRunResult_OutOfDataMemory : AspRunResult_OK;
 }
 
 /* repr(x)
@@ -226,10 +197,41 @@ ASP_LIB_API AspRunResult AspLib_repr
      AspDataEntry *x,
      AspDataEntry **returnValue)
 {
-    AspDataEntry *entry = AspToRepr(engine, x);
-    if (entry == 0)
-        return AspRunResult_OutOfDataMemory;
-    *returnValue = entry;
+    return
+        (*returnValue = AspToRepr(engine, x)) == 0 ?
+        AspRunResult_OutOfDataMemory : AspRunResult_OK;
+}
+
+/* key(object, stringize)
+ * Convert a non-key to either a string, if requested, or None, both of which
+ * are valid keys. If the object is already a key, it is returned as is.
+ */
+ASP_LIB_API AspRunResult AspLib_key
+    (AspEngine *engine,
+     AspDataEntry *object, AspDataEntry *stringize,
+     AspDataEntry **returnValue)
+{
+    /* If the object is already a key, return it. */
+    bool isImmutable;
+    AspRunResult result = AspCheckIsImmutableObject
+        (engine, object, &isImmutable);
+    if (result != AspRunResult_OK)
+        return result;
+    if (isImmutable)
+    {
+        AspRef(engine, object);
+        *returnValue = object;
+        return AspRunResult_OK;
+    }
+
+    /* Convert non-keys to a string if requested. */
+    if (AspIsTrue(engine, stringize))
+    {
+        return
+            (*returnValue = AspToString(engine, object)) == 0 ?
+            AspRunResult_OutOfDataMemory : AspRunResult_OK;
+    }
+
     return AspRunResult_OK;
 }
 
