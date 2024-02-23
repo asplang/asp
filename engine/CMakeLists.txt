@@ -28,17 +28,12 @@ math(EXPR VERSION_VALUE
 # The template file references the VERSION_VALUE variable.
 configure_file(asp-ver-template.h asp-ver.h)
 
-add_custom_target(asp-ver ALL
-    DEPENDS "${PROJECT_BINARY_DIR}/asp-ver.h"
-    )
-
 if(BUILD_FOR_TARGET)
 
     set(CMAKE_C_STANDARD 99)
     set(CMAKE_C_STANDARD_REQUIRED True)
 
     add_library(aspe
-        "${PROJECT_BINARY_DIR}/asp-ver.h"
         engine.c
         step.c
         bits.c
@@ -135,12 +130,6 @@ if(BUILD_FOR_TARGET)
 endif()
 
 if(INSTALL_DEV)
-
-    if(NOT BUILD_FOR_TARGET)
-        add_custom_target(asp_ver_h ALL
-            DEPENDS "${PROJECT_BINARY_DIR}/asp-ver.h"
-            )
-    endif()
 
     set(HEADER_FILES
         asp.h

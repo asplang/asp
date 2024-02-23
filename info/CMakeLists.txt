@@ -17,10 +17,6 @@ add_library(aspd
     source.c
     )
 
-add_dependencies(aspd
-    asp-ver
-    )
-
 set_property(TARGET aspd
     PROPERTY VERSION ${PROJECT_VERSION})
 if(BUILD_SHARED_LIBS)
