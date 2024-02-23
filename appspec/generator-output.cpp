@@ -58,10 +58,6 @@ void Generator::WriteCompilerSpec(ostream &os)
     os.write(AppSpecVersion, sizeof AppSpecVersion);
     Write(os, CheckValue());
 
-    // Reserve symbols used by the system module.
-    symbolTable.Symbol(AspSystemModuleName);
-    symbolTable.Symbol(AspSystemArgumentsName);
-
     // Assign symbols, to variable and function names first, then to parameter
     // names, writing each name only once, in order of assigned symbol.
     for (auto iter = definitions.begin(); iter != definitions.end(); iter++)

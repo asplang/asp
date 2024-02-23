@@ -4,5 +4,14 @@
 
 lib
 
+# Current module function.
+def module() = AspLib_module
+
+# Symbol checking function.
+def exists(symbol) = AspLib_exists
+
+# Object identity function.
+def id(object) = AspLib_id
+
 # Exit function.
 def exit(code = None) = AspLib_exit

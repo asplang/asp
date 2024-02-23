@@ -19,6 +19,7 @@ add_custom_command(
     DEPENDS
         aspg
         "${PROJECT_SOURCE_DIR}/standalone.asps"
+        "${aspe_SOURCE_DIR}/sys.asps"
         "${aspe_SOURCE_DIR}/type.asps"
         "${aspe_SOURCE_DIR}/collect.asps"
         "${aspe_SOURCE_DIR}/iter.asps"

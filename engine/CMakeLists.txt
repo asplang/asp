@@ -149,6 +149,7 @@ if(INSTALL_DEV)
         "${PROJECT_BINARY_DIR}/asp-ver.h"
         )
     set(ASPS_FILES
+        sys.asps
         type.asps
         collect.asps
         iter.asps

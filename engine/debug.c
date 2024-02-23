@@ -172,21 +172,26 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fprintf(fp, " value=%s",
                 AspDataGetBoolean(entry) ? "True" : "False");
             break;
+
         case DataType_Integer:
             fprintf(fp, " value=%d", AspDataGetInteger(entry));
             break;
+
         case DataType_Float:
             fprintf(fp, " value=%g", AspDataGetFloat(entry));
             break;
+
         case DataType_Symbol:
             fprintf(fp, " value=%d", AspDataGetSymbol(entry));
             break;
+
         case DataType_Range:
             fprintf(fp, " start=0x%7.7X end=0x%7.7X step=0x%7.7X",
                 AspDataGetRangeStartIndex(entry),
                 AspDataGetRangeEndIndex(entry),
                 AspDataGetRangeStepIndex(entry));
             break;
+
         case DataType_String:
         case DataType_Tuple:
         case DataType_List:
@@ -197,6 +202,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetSequenceHeadIndex(entry),
                 AspDataGetSequenceTailIndex(entry));
             break;
+
         case DataType_Set:
         case DataType_Dictionary:
         case DataType_Namespace:
@@ -204,6 +210,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetTreeCount(entry),
                 AspDataGetTreeRootIndex(entry));
             break;
+
         case DataType_Iterator:
             fprintf(fp, " coll=0x%7.7X mem=0x%7.7X si=%d",
                 AspDataGetIteratorIterableIndex(entry),
@@ -212,6 +219,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             if (AspDataGetIteratorMemberNeedsCleanup(entry))
                 fputs(" nc", fp);
             break;
+
         case DataType_Function:
             if (AspDataGetFunctionIsApp(entry))
                 fprintf(fp, " s=%d", AspDataGetFunctionSymbol(entry));
@@ -222,12 +230,14 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetFunctionModuleIndex(entry),
                 AspDataGetFunctionParametersIndex(entry));
             break;
+
         case DataType_Module:
             fprintf(fp, " code=0x%7.7X ns=0x%7.7X ld=%d",
                 AspDataGetModuleCodeAddress(entry),
                 AspDataGetModuleNamespaceIndex(entry),
                 AspDataGetModuleIsLoaded(entry));
             break;
+
         case DataType_AppIntegerObject:
         case DataType_AppPointerObject:
             #ifdef ASP_WIDE_PTR
@@ -261,14 +271,17 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fprintf(fp, " dtor=%p", u.vp);
             }
             break;
+
         case DataType_Type:
             fprintf(fp, " type=0x%2.2X",
                 AspDataGetTypeValue(entry));
             break;
+
         case DataType_CodeAddress:
             fprintf(fp, " addr=0x%7.7X",
                 AspDataGetCodeAddress(entry));
             break;
+
         case DataType_StackEntry:
             fprintf(fp, " prev=0x%7.7X val=0x%7.7X",
                 AspDataGetStackEntryPreviousIndex(entry),
@@ -279,18 +292,21 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             if (AspDataGetStackEntryFlag(entry))
                 fputs(" fl", fp);
             break;
+
         case DataType_Frame:
             fprintf(fp, " ra=0x%7.7X mod=0x%7.7X locns=0x%7.7X",
                 AspDataGetFrameReturnAddress(entry),
                 AspDataGetFrameModuleIndex(entry),
                 AspDataGetFrameLocalNamespaceIndex(entry));
             break;
+
         case DataType_Element:
             fprintf(fp, " prev=0x%7.7X next=0x%7.7X val=0x%7.7X",
                 AspDataGetElementPreviousIndex(entry),
                 AspDataGetElementNextIndex(entry),
                 AspDataGetElementValueIndex(entry));
             break;
+
         case DataType_StringFragment:
         {
             uint8_t count = AspDataGetStringFragmentSize(entry);
@@ -310,11 +326,13 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fputc('\'', fp);
             break;
         }
+
         case DataType_KeyValuePair:
             fprintf(fp, " key=0x%7.7X val=0x%7.7X",
                 AspDataGetKeyValuePairKeyIndex(entry),
                 AspDataGetKeyValuePairValueIndex(entry));
             break;
+
         case DataType_SetNode:
             fprintf(fp, " key=0x%7.7X p=0x%7.7X l=0x%7.7X r=0x%7.7X clr=%c",
                 AspDataGetTreeNodeKeyIndex(entry),
@@ -323,6 +341,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetSetNodeRightIndex(entry),
                 AspDataGetTreeNodeIsBlack(entry) ? 'B' : 'R');
             break;
+
         case DataType_DictionaryNode:
             fprintf(fp, " key=0x%7.7X p=0x%7.7X lr=0x%7.7X val=0x%7.7X clr=%c",
                 AspDataGetTreeNodeKeyIndex(entry),
@@ -331,6 +350,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetTreeNodeValueIndex(entry),
                 AspDataGetTreeNodeIsBlack(entry) ? 'B' : 'R');
             break;
+
         case DataType_NamespaceNode:
             fprintf(fp,
                 " sym=%d p=0x%7.7X lr=0x%7.7X val=0x%7.7X clr=%c gl=%d loc=%d",
@@ -342,11 +362,13 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetNamespaceNodeIsGlobal(entry),
                 !AspDataGetNamespaceNodeIsNotLocal(entry));
             break;
+
         case DataType_TreeLinksNode:
             fprintf(fp, " l=0x%7.7X r=0x%7.7X",
                 AspDataGetTreeLinksNodeLeftIndex(entry),
                 AspDataGetTreeLinksNodeRightIndex(entry));
             break;
+
         case DataType_Parameter:
             fprintf(fp, " s=%u", AspDataGetParameterSymbol(entry));
             if (AspDataGetParameterHasDefault(entry))
@@ -357,6 +379,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             else if (AspDataGetParameterIsDictionaryGroup(entry))
                 fprintf(fp, " dgrp");
             break;
+
         case DataType_Argument:
             fprintf(fp, " val=0x%7.7X", AspDataGetArgumentValueIndex(entry));
             if (AspDataGetArgumentHasName(entry))
@@ -368,16 +391,19 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             else
                 fprintf(fp, " pos");
             break;
+
         case DataType_AppIntegerObjectInfo:
             fprintf(fp, " type=%d val=%d",
                 AspDataGetAppObjectType(entry),
                 AspDataGetAppIntegerObjectValue(entry));
             break;
+
         case DataType_AppPointerObjectInfo:
             fprintf(fp, " type=%d ptr=%p",
                 AspDataGetAppObjectType(entry),
                 AspDataGetAppPointerObjectValue(entry));
             break;
+
         case DataType_Free:
             fprintf(fp, " next=0x%7.7X", AspDataGetFreeNext(entry));
             break;

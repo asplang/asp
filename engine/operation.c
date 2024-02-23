@@ -1255,6 +1255,10 @@ static AspOperationResult PerformMembershipOperation
     bool isIn = false;
     switch (rightType)
     {
+        default:
+            result.result = AspRunResult_UnexpectedType;
+            break;
+
         case DataType_String:
         {
             if (leftType != DataType_String)
@@ -1318,6 +1322,7 @@ static AspOperationResult PerformMembershipOperation
             }
             if (iterationCount >= engine->cycleDetectionLimit)
                 result.result = AspRunResult_CycleDetected;
+
             break;
         }
 
@@ -1331,6 +1336,39 @@ static AspOperationResult PerformMembershipOperation
                 break;
             }
             isIn = findResult.node != 0;
+
+            break;
+        }
+
+        case DataType_Ellipsis:
+        case DataType_Module:
+        {
+            int32_t symbol;
+            if (!AspSymbolValue(left, &symbol))
+            {
+                result.result = AspRunResult_UnexpectedType;
+                break;
+            }
+
+            AspDataEntry *ns =
+                rightType == DataType_Module ?
+                AspValueEntry
+                    (engine, AspDataGetModuleNamespaceIndex(right)) :
+                engine->localNamespace;
+            if (AspDataGetType(ns) != DataType_Namespace)
+            {
+                result.result = AspRunResult_InternalError;
+                break;
+            }
+
+            AspTreeResult findResult = AspFindSymbol(engine, ns, symbol);
+            if (findResult.result != AspRunResult_OK)
+            {
+                result.result = findResult.result;
+                break;
+            }
+            isIn = findResult.node != 0;
+
             break;
         }
     }

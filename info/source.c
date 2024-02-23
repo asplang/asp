@@ -136,8 +136,8 @@ AspSourceInfo *AspLoadSourceInfo(const char *data, size_t size)
         data[SourceInfoHeaderSize] == 0)
         version = data[SourceInfoHeaderSize + 1];
 
-    /* Allocate and populate the source info object. Note that the
-       data simply points to the caller's data. */
+    /* Allocate and populate the source info object. Note that the data simply
+       points to the caller's data. */
     AspSourceInfo *info = (AspSourceInfo *)malloc(sizeof(AspSourceInfo));
     if (info == 0)
         return 0;
@@ -284,6 +284,8 @@ const char *AspGetSymbolName
         return AspSystemModuleName;
     if (symbol == AspSystemArgumentsSymbol)
         return AspSystemArgumentsName;
+    if (symbol == AspSystemMainModuleSymbol)
+        return AspSystemMainModuleName;
     symbol -= AspScriptSymbolBase;
     for (const char *p = info->symbolNames;
          p < info->data + info->size && *p != '\0';

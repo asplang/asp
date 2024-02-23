@@ -972,7 +972,7 @@ void MemberExpression::Emit
     ostringstream oss;
     oss
         << "Lookup " << (emitType == EmitType::Address ? "address" : "value")
-        << " of member";
+        << " of member " << name;
     executable.Insert
         (new MemberInstruction
             (symbol, emitType == EmitType::Address, oss.str()),

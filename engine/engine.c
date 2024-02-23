@@ -372,9 +372,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
     }
 
     /* Create definitions for application variables and functions.
-       Note that the first few symbols are reserved:
-       0 - main module name
-       1 - args */
+       Note that the first few symbols are reserved. */
     unsigned specIndex = 0;
     const uint8_t *spec = (const uint8_t *)engine->appSpec->spec;
     for (int32_t symbol = AspScriptSymbolBase;

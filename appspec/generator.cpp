@@ -312,8 +312,7 @@ DEFINE_UTIL(ReportError, void, const char *, error)
 
 bool Generator::CheckReservedNameError(const string &name)
 {
-    if (name == AspSystemModuleName ||
-        name == AspSystemArgumentsName)
+    if (AspIsNameReserved(name.c_str()))
     {
         ostringstream oss;
         oss << "Cannot redefine reserved name '" << name << '\'';

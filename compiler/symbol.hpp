@@ -13,6 +13,9 @@ class SymbolTable
 {
     public:
 
+        // Constructor.
+        SymbolTable();
+
         // Symbol fetch method.
         // If the name is empty, get a new symbol for a temporary.
         std::int32_t Symbol(const std::string & = "");

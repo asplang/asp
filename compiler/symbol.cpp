@@ -3,9 +3,18 @@
 //
 
 #include "symbol.hpp"
+#include "symbols.h"
 #include <utility>
 
 using namespace std;
+
+SymbolTable::SymbolTable()
+{
+    // Reserve symbols used by the system module.
+    Symbol(AspSystemModuleName);
+    Symbol(AspSystemArgumentsName);
+    Symbol(AspSystemMainModuleName);
+}
 
 int32_t SymbolTable::Symbol(const string &name)
 {

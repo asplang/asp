@@ -1640,6 +1640,13 @@ static AspRunResult Step(AspEngine *engine)
                 break;
             AspDataSetModuleIsLoaded(module, true);
 
+            /* Set the system __main__ variable to the first loaded module. */
+            AspTreeResult mainInsertResult = AspTreeTryInsertBySymbol
+                (engine, engine->systemNamespace,
+                 AspSystemMainModuleSymbol, module);
+            if (mainInsertResult.result != AspRunResult_OK)
+                return mainInsertResult.result;
+
             /* Create a new frame and push it onto the stack. */
             AspDataEntry *frame = AspAllocEntry(engine, DataType_Frame);
             if (frame == 0)

@@ -64,10 +64,6 @@ void Compiler::LoadApplicationSpec(istream &specStream)
     }
     executable.SetCheckValue(checkValue);
 
-    // Reserve symbols used in the system module.
-    symbolTable.Symbol(AspSystemModuleName);
-    symbolTable.Symbol(AspSystemArgumentsName);
-
     // Define symbols for all names used in the application.
     while (true)
     {
