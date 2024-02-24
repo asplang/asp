@@ -7,7 +7,28 @@ chronological order.
 Changes
 -------
 
-Version 0.8.0.0 (compiler 0.8.0.0, engine 0.8.0.0):
+Version 1.0.0.0 (compiler 1.0.0.0, engine 1.0.0.0):
+- Compiler:
+  - Changed the order of searching for the application specification file to
+    prioritize an app.spec file in the same directory as the source file over
+    the one specified by the ASP_SPEC_FILE environment variable.
+  - Fixed a bug that caused incorrect code to be generated for some tuple
+    expressions and some structured target expressions in for statements.
+- Engine:
+  - Added new script-callable functions: module, exists, id, exit, and key.
+  - Added the ability for the "in" operator to check for the existence of a
+    symbol within a module or the local scope (represented by the Ellipsis).
+  - Fixed a bug with the "in" operator that caused it to return False when
+    presented invalid typed operands instead of generating an error.
+  - Added the __main__ variable for use in checking if the current module is
+    the main module.
+  - Added a distinct error code to indicate invalid application function
+    behaviour (instead of using the same error code that indicates a malformed
+    function call).
+  - Corrected the error code returned by the math routines when an out of data
+    memory condition is detected.
+
+Version 0.8.0.0 (compiler 0.8.0.0, engine 0.8.0.0) - not released:
 - Compiler:
   - Added variable symbol syntax: `var_name.
   - Added symbol names to the source info file.
