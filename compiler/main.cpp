@@ -52,10 +52,14 @@ static void Usage()
         << "Compile the Asp script source file SCRIPT (*.asp)."
         << " The application specification\n"
         << "file (*.aspec) may be given as SPEC."
-        << " If omitted, the value of the ASP_SPEC_FILE\n"
-        << "environment variable is used,"
-        << " or the app.aspec file in the local directory,\n"
-        << "if that is not defined.\n"
+        << " If omitted, an app.aspec file in the same\n"
+        << "directory as the source file is used if present."
+        << " Otherwise, the value of the\n"
+        << "ASP_SPEC_FILE environment variable is used if defined."
+        << " If the application\n"
+        << "specification file is not specified in any of these ways,"
+        << " the command ends\n"
+        << "in error.\n"
         << "\n"
         << "Use " << COMMAND_OPTION_PREFIXES[0] << COMMAND_OPTION_PREFIXES[0]
         << " before the first argument if it starts with an option prefix.\n"
@@ -199,7 +203,9 @@ static int main1(int argc, char **argv)
             {
                 if (!input.fileName->empty())
                 {
-                    cerr << "Multiple files of the same type specified" << endl;
+                    cerr
+                        << "Error: Multiple files of the same type specified"
+                        << endl;
                     Usage();
                     return 1;
                 }
@@ -212,26 +218,17 @@ static int main1(int argc, char **argv)
         }
         if (!accepted)
         {
-            cerr << "Unrecognized input file type" << endl;
+            cerr << "Error: Unrecognized input file type" << endl;
             Usage();
             return 1;
         }
     }
 
-    // Use default application specification if one is not given.
-    if (specFileName.empty())
-    {
-        const char *specFileNameString = getenv("ASP_SPEC_FILE");
-        if (specFileNameString != nullptr)
-            specFileName = specFileNameString;
-    }
-    if (specFileName.empty())
-        specFileName = "app.aspec";
-
-    // Ensure the script has been identified.
+    // If the application specification is not defined at this point, issue an
+    // error and exit.
     if (mainModuleFileName.empty())
     {
-        cerr << "Script not specified" << endl;
+        cerr << "Error: Source file not specified" << endl;
         Usage();
         return 1;
     }
@@ -241,7 +238,55 @@ static int main1(int argc, char **argv)
         (FILE_NAME_SEPARATORS);
     size_t baseNamePos = mainModuleDirectorySeparatorPos == string::npos ?
         0 : mainModuleDirectorySeparatorPos + 1;
+    string mainModuleDirectoryName = mainModuleFileName.substr(0, baseNamePos);
     string mainModuleBaseFileName = mainModuleFileName.substr(baseNamePos);
+
+    // If the application specification is not specified, check for the
+    // existence of a fixed-named file in the same directory as the source
+    // file.
+    if (specFileName.empty())
+    {
+        static const string localSpecBaseFileName = "app.aspec";
+        string localSpecFileName = mainModuleDirectoryName;
+        if (!localSpecFileName.empty() &&
+            strchr(FILE_NAME_SEPARATORS, localSpecFileName.back()) == nullptr)
+            localSpecFileName += FILE_NAME_SEPARATORS[0];
+        localSpecFileName += localSpecBaseFileName;
+        ifstream localSpecStream(localSpecFileName, ios::binary);
+        if (localSpecStream)
+            specFileName = localSpecFileName;
+    }
+
+    // If the application specification is still not defined, resort to the
+    // environment variable.
+    if (specFileName.empty())
+    {
+        const char *envSpecFileNameString = getenv("ASP_SPEC_FILE");
+        if (envSpecFileNameString != nullptr)
+            specFileName = envSpecFileNameString;
+    }
+
+    // If the application specification is not defined at this point, issue an
+    // error and exit.
+    if (specFileName.empty())
+    {
+        cerr
+            << "Error: Application specification not specified"
+            << " and no default found" << endl;
+        return 2;
+    }
+
+    // Open the application specification file.
+    ifstream specStream(specFileName, ios::binary);
+    if (!specStream)
+    {
+        cerr
+            << "Error opening " << specFileName
+            << ": " << strerror(errno) << endl;
+        return 2;
+    }
+    if (!silent)
+        cout << "Using " << specFileName << endl;
 
     // Determine the base name of all output files.
     static string executableSuffix = ".aspe";
@@ -258,18 +303,6 @@ static int main1(int argc, char **argv)
             outputBaseName +
             mainModuleBaseFileName.substr
                 (0, mainModuleSuffixPos - baseNamePos);
-
-    // Open application specification.
-    ifstream specStream(specFileName, ios::binary);
-    if (!specStream)
-    {
-        cerr
-            << "Error opening " << specFileName
-            << ": " << strerror(errno) << endl;
-        return 2;
-    }
-    if (!silent)
-        cout << "Using " << specFileName << endl;
 
     // Open output executable.
     string executableFileName = baseName + executableSuffix;
