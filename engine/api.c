@@ -329,12 +329,12 @@ bool AspStringValue
 
         uint32_t iterationCount = 0;
         for (AspSequenceResult fragmentResult =
-             AspSequenceNext(engine, entry, 0);
+             AspSequenceNext(engine, entry, 0, true);
              iterationCount < engine->cycleDetectionLimit &&
              localSize > 0 && fragmentResult.element != 0;
              iterationCount++,
              fragmentResult = AspSequenceNext
-                (engine, entry, fragmentResult.element))
+                (engine, entry, fragmentResult.element, true))
         {
             AspDataEntry *fragment = fragmentResult.value;
 
@@ -497,12 +497,12 @@ static AspDataEntry *ToString
                 /* Append the string. */
                 uint32_t iterationCount = 0;
                 for (AspSequenceResult nextResult =
-                     AspSequenceNext(engine, entry, 0);
+                     AspSequenceNext(engine, entry, 0, true);
                      iterationCount < engine->cycleDetectionLimit &&
                      nextResult.element != 0;
                      iterationCount++,
                      nextResult = AspSequenceNext
-                        (engine, entry, nextResult.element))
+                        (engine, entry, nextResult.element, true))
                 {
                     AspDataEntry *fragment = nextResult.value;
                     uint8_t fragmentSize =
@@ -635,7 +635,7 @@ static AspDataEntry *ToString
 
                 /* Examine the next element of the sequence. */
                 AspSequenceResult nextResult = AspSequenceNext
-                    (engine, entry, next);
+                    (engine, entry, next, true);
                 next = nextResult.element;
 
                 /* Append any applicable punctuation. */
@@ -956,13 +956,13 @@ char AspStringElement
     }
 
     /* Locate the character within the applicable fragment. */
-    AspSequenceResult nextResult = AspSequenceNext(engine, str, 0);
+    AspSequenceResult nextResult = AspSequenceNext(engine, str, 0, true);
     uint32_t iterationCount = 0;
     for (;
          iterationCount < engine->cycleDetectionLimit &&
          nextResult.element != 0;
          iterationCount++,
-         nextResult = AspSequenceNext(engine, str, nextResult.element))
+         nextResult = AspSequenceNext(engine, str, nextResult.element, true))
     {
         AspDataEntry *fragment = nextResult.value;
         uint8_t fragmentSize = AspDataGetStringFragmentSize(fragment);

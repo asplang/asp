@@ -85,17 +85,17 @@ AspRunResult AspAssignSequence
         AspSequenceResult newValueIterResult = {AspRunResult_OK, 0, 0};
         uint32_t iterationCount = 0;
         for (AspSequenceResult addressIterResult = AspSequenceNext
-                (engine, address, 0);
+                (engine, address, 0, true);
              iterationCount < engine->cycleDetectionLimit &&
              addressIterResult.element != 0;
              iterationCount++,
              addressIterResult = AspSequenceNext
-                (engine, address, addressIterResult.element))
+                (engine, address, addressIterResult.element, true))
         {
             AspDataEntry *addressElement = addressIterResult.value;
 
             newValueIterResult = AspSequenceNext
-                (engine, newValue, newValueIterResult.element);
+                (engine, newValue, newValueIterResult.element, true);
             AspDataEntry *newValueElement = newValueIterResult.value;
 
             DataType addressElementType = AspDataGetType(addressElement);

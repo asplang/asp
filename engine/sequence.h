@@ -33,9 +33,7 @@ bool AspSequenceEraseElement
 AspSequenceResult AspSequenceIndex
     (AspEngine *, AspDataEntry *sequence, int index);
 AspSequenceResult AspSequenceNext
-    (AspEngine *, AspDataEntry *sequence, AspDataEntry *element);
-AspSequenceResult AspSequencePrevious
-    (AspEngine *, AspDataEntry *sequence, AspDataEntry *element);
+    (AspEngine *, AspDataEntry *sequence, AspDataEntry *element, bool right);
 AspRunResult AspStringAppendBuffer
     (AspEngine *, AspDataEntry *str, const char *buffer, size_t bufferSize);
 

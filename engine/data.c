@@ -120,12 +120,12 @@ AspRunResult AspCheckIsImmutableObject
     {
         uint32_t iterationCount = 0;
         for (AspSequenceResult nextResult = AspSequenceNext
-                (engine, (AspDataEntry *)entry, 0);
+                (engine, (AspDataEntry *)entry, 0, true);
              iterationCount < engine->cycleDetectionLimit &&
              nextResult.element != 0;
              iterationCount++,
              nextResult = AspSequenceNext
-                (engine, (AspDataEntry *)entry, nextResult.element))
+                (engine, (AspDataEntry *)entry, nextResult.element, true))
         {
             AspDataEntry *value = nextResult.value;
 
