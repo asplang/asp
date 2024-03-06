@@ -7,6 +7,15 @@ chronological order.
 Changes
 -------
 
+Version 1.0.0.1 (compiler 1.0.0.1, engine 1.0.0.0):
+- Compiler:
+  - Changed the way the compiler searches for import modules. Previously, the
+    current working directory was searched by default. Now, the directory in
+    which the main module resides is searched instead. This includes when blank
+    entries are used in the ASP_INCLUDE environment variable.
+  - Fixed a minor bug in the compiler with command line file name suffix
+    checking.
+
 Version 1.0.0.0 (compiler 1.0.0.0, engine 1.0.0.0):
 - Compiler:
   - Changed the order of searching for the application specification file to

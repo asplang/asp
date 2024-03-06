@@ -377,13 +377,18 @@ static int main1(int argc, char **argv)
         }
         else
         {
-            // Search for module file.
+            // Search for the module file using the search path.
             for (auto iter = searchPath.begin();
                  iter != searchPath.end(); iter++)
             {
                 auto directory = *iter;
 
-                // Determine path name of module file.
+                // For an empty entry, use the main module's directory (which,
+                // it may be noted, may also be empty).
+                if (directory.empty())
+                    directory = mainModuleDirectoryName;
+
+                // Construct a path name for the module file.
                 if (!directory.empty() &&
                     strchr(FILE_NAME_SEPARATORS, directory.back()) == nullptr)
                     directory += FILE_NAME_SEPARATORS[0];

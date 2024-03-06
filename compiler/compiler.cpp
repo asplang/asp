@@ -101,7 +101,7 @@ void Compiler::AddModuleFileName(const string &moduleFileName)
     // Ensure the file name includes the proper suffix.
     bool bad = moduleFileName.size() <= ModuleSuffix.size();
     auto suffixIndex = moduleFileName.size() - ModuleSuffix.size();
-    bad = !bad && moduleFileName.substr(suffixIndex) != ModuleSuffix;
+    bad = bad || moduleFileName.substr(suffixIndex) != ModuleSuffix;
     if (bad)
     {
         ostringstream oss;
