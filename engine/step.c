@@ -63,7 +63,9 @@ AspRunResult AspStep(AspEngine *engine)
 static AspRunResult Step(AspEngine *engine)
 {
     #ifdef ASP_DEBUG
-    printf("@0x%7.7X: ", (uint32_t)AspProgramCounter(engine));
+    fprintf
+        (engine->traceFile, "@0x%7.7zX: ",
+         AspProgramCounter(engine));
     #endif
 
     if (engine->pc >= engine->code + engine->codeEndIndex)
@@ -71,7 +73,7 @@ static AspRunResult Step(AspEngine *engine)
     uint8_t *pc = engine->pc;
     uint8_t opCode = *engine->pc++;
     #ifdef ASP_DEBUG
-    printf("0x%2.2X ", opCode);
+    fprintf(engine->traceFile, "0x%2.2X ", opCode);
     #endif
 
     unsigned operandSize = 0;
@@ -83,7 +85,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHN:
         {
             #ifdef ASP_DEBUG
-            puts("PUSHN");
+            fputs("PUSHN\n", engine->traceFile);
             #endif
 
             AspDataEntry *stackEntry = AspPush
@@ -97,7 +99,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHE:
         {
             #ifdef ASP_DEBUG
-            puts("PUSHE");
+            fputs("PUSHE\n", engine->traceFile);
             #endif
 
             AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Ellipsis);
@@ -116,7 +118,9 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHT:
         {
             #ifdef ASP_DEBUG
-            printf("PUSH%c\n", opCode == OpCode_PUSHF ? 'F' : 'T');
+            fprintf
+                (engine->traceFile, "PUSH%c\n",
+                 opCode == OpCode_PUSHF ? 'F' : 'T');
             #endif
 
             AspDataEntry *valueEntry = AspNewBoolean
@@ -141,7 +145,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHI0:
         {
             #ifdef ASP_DEBUG
-            printf("PUSHI ");
+            fputs("PUSHI ", engine->traceFile);
             #endif
 
             /* Fetch the integer value from the operand. */
@@ -151,12 +155,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", value);
+            fprintf(engine->traceFile, "%d\n", value);
             #endif
 
             AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Integer);
@@ -175,7 +179,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHD:
         {
             #ifdef ASP_DEBUG
-            printf("PUSHD ");
+            fputs("PUSHD ", engine->traceFile);
             #endif
 
             /* Fetch the floating-point value from the operand. */
@@ -185,12 +189,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%g\n", value);
+            fprintf(engine->traceFile, "%g\n", value);
             #endif
 
             AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Float);
@@ -214,7 +218,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
         {
             #ifdef ASP_DEBUG
-            printf("PUSHY ");
+            fputs("PUSHY ", engine->traceFile);
             #endif
 
             /* Fetch the symbol from the operand. */
@@ -224,12 +228,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", value);
+            fprintf(engine->traceFile, "%d\n", value);
             #endif
 
             AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Symbol);
@@ -254,7 +258,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHS0:
         {
             #ifdef ASP_DEBUG
-            printf("PUSHS ");
+            fputs("PUSHS ", engine->traceFile);
             #endif
 
             /* Fetch the string size from the operand. */
@@ -264,24 +268,24 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d, ", size);
+            fprintf(engine->traceFile, "%d, ", size);
             #endif
 
             /* Validate the bytes of the string. */
             #ifdef ASP_DEBUG
-            putchar('\'');
+            fputc('\'', engine->traceFile);
             #endif
             for (uint32_t i = 0; i < size; i++)
             {
                 if (engine->pc + i >= engine->code + engine->codeEndIndex)
                 {
                     #ifdef ASP_DEBUG
-                    puts("");
+                    fputc('\n', engine->traceFile);
                     #endif
                     return AspRunResult_BeyondEndOfCode;
                 }
@@ -289,12 +293,12 @@ static AspRunResult Step(AspEngine *engine)
                 #ifdef ASP_DEBUG
                 uint8_t c = engine->pc[i];
                 if (c == '\'')
-                    putchar('\\');
-                putchar(isprint(c) ? c : '.');
+                    fputc('\\', engine->traceFile);
+                fputc(isprint(c) ? c : '.', engine->traceFile);
                 #endif
             }
             #ifdef ASP_DEBUG
-            puts("'");
+            fputs("'\n", engine->traceFile);
             #endif
 
             AspDataEntry *stringEntry = AspAllocEntry(engine, DataType_String);
@@ -376,7 +380,7 @@ static AspRunResult Step(AspEngine *engine)
             }
 
             #ifdef ASP_DEBUG
-            printf("PUSH%s\n", suffix);
+            fprintf(engine->traceFile, "PUSH%s\n", suffix);
             #endif
 
             AspDataEntry *valueEntry = AspAllocEntry(engine, type);
@@ -395,7 +399,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHCA:
         {
             #ifdef ASP_DEBUG
-            printf("PUSHCA ");
+            fputs("PUSHCA ", engine->traceFile);
             #endif
 
             /* Fetch the code address from the operand. */
@@ -405,12 +409,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("@0x%7.7X\n", codeAddressOperand);
+            fprintf(engine->traceFile, "@0x%7.7X\n", codeAddressOperand);
             #endif
             if (codeAddressOperand >= engine->codeEndIndex)
                 return AspRunResult_BeyondEndOfCode;
@@ -436,7 +440,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("PUSHM ");
+            fputs("PUSHM ", engine->traceFile);
             #endif
 
             /* Fetch the module's symbol from the operand. */
@@ -446,12 +450,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", moduleSymbol);
+            fprintf(engine->traceFile, "%d\n", moduleSymbol);
             #endif
 
             /* Look up the module. */
@@ -476,7 +480,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_POP:
         {
             #ifdef ASP_DEBUG
-            puts("POP");
+            fputs("POP\n", engine->traceFile);
             #endif
 
             AspDataEntry *operand = AspTopValue(engine);
@@ -495,7 +499,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_NOT:
         {
             #ifdef ASP_DEBUG
-            puts("Unary op");
+            fputs("Unary op\n", engine->traceFile);
             #endif
 
             /* Fetch the operand from the stack. */
@@ -549,7 +553,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_IS:
         {
             #ifdef ASP_DEBUG
-            puts("Binary op");
+            fputs("Binary op\n", engine->traceFile);
             #endif
 
             /* Access the right value from the stack. */
@@ -600,7 +604,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("LD ");
+            fputs("LD ", engine->traceFile);
             #endif
 
             /* Fetch the variable's symbol from the operand. */
@@ -610,12 +614,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", variableSymbol);
+            fprintf(engine->traceFile, "%d\n", variableSymbol);
             #endif
 
             /* Look up the variable, trying first the local namespace, and
@@ -666,7 +670,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("LDA ");
+            fputs("LDA ", engine->traceFile);
             #endif
 
             /* Fetch the variable's symbol from the operand. */
@@ -676,12 +680,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", variableSymbol);
+            fprintf(engine->traceFile, "%d\n", variableSymbol);
             #endif
 
             /* Look up the variable, creating it if it doesn't exist. */
@@ -716,7 +720,9 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_SETP:
         {
             #ifdef ASP_DEBUG
-            puts(opCode == OpCode_SET ? "SET" : "SETP");
+            fprintf
+                (engine->traceFile, "SET%s\n",
+                 opCode == OpCode_SETP ? "P" : "");
             #endif
 
             /* Obtain destination from the stack. */
@@ -747,7 +753,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_ERASE:
         {
             #ifdef ASP_DEBUG
-            puts("ERASE");
+            fputs("ERASE\n", engine->traceFile);
             #endif
 
             /* Access the index/key on top of the stack. */
@@ -929,7 +935,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("DEL ");
+            fputs("DEL ", engine->traceFile);
             #endif
 
             /* Fetch the variable's symbol from the operand. */
@@ -939,12 +945,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", variableSymbol);
+            fprintf(engine->traceFile, "%d\n", variableSymbol);
             #endif
 
             /* Look up the variable in the local namespace. */
@@ -989,7 +995,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("GLOB ");
+            fputs("GLOB ", engine->traceFile);
             #endif
 
             /* Fetch the variable's symbol from the operand. */
@@ -999,12 +1005,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", variableSymbol);
+            fprintf(engine->traceFile, "%d\n", variableSymbol);
             #endif
 
             /* Ensure we're in the context of a function. */
@@ -1051,7 +1057,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("LOC ");
+            fputs("LOC ", engine->traceFile);
             #endif
 
             /* Fetch the variable's symbol from the operand. */
@@ -1061,12 +1067,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", variableSymbol);
+            fprintf(engine->traceFile, "%d\n", variableSymbol);
             #endif
 
             /* Ensure we're in the context of a function. */
@@ -1104,7 +1110,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_SITER:
         {
             #ifdef ASP_DEBUG
-            puts("SITER");
+            fputs("SITER\n", engine->traceFile);
             #endif
 
             /* Access the iterable on top of the stack. */
@@ -1131,7 +1137,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_TITER:
         {
             #ifdef ASP_DEBUG
-            puts("TITER");
+            fputs("TITER\n", engine->traceFile);
             #endif
 
             /* Access the iterator on top of the stack. */
@@ -1157,7 +1163,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_NITER:
         {
             #ifdef ASP_DEBUG
-            puts("NITER");
+            fputs("NITER\n", engine->traceFile);
             #endif
 
             /* Access the iterator on top of the stack. */
@@ -1179,7 +1185,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_DITER:
         {
             #ifdef ASP_DEBUG
-            puts("DITER");
+            fputs("DITER\n", engine->traceFile);
             #endif
 
             /* Access the iterator on top of the stack. */
@@ -1206,7 +1212,7 @@ static AspRunResult Step(AspEngine *engine)
 
         case OpCode_NOOP:
             #ifdef ASP_DEBUG
-            puts("NOOP");
+            fputs("NOOP\n", engine->traceFile);
             #endif
 
             break;
@@ -1218,8 +1224,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_LAND:
         {
             #ifdef ASP_DEBUG
-            printf
-                ("%s ",
+            fprintf
+                (engine->traceFile, "%s ",
                  opCode == OpCode_JMPF ? "JMPF" :
                  opCode == OpCode_JMPT ? "JMPT" :
                  opCode == OpCode_LOR ? "LOR" :
@@ -1233,12 +1239,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("@0x%7.7X\n", codeAddress);
+            fprintf(engine->traceFile, "@0x%7.7X\n", codeAddress);
             #endif
             if (codeAddress >= engine->codeEndIndex)
                 return AspRunResult_BeyondEndOfCode;
@@ -1271,7 +1277,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_CALL:
         {
             #ifdef ASP_DEBUG
-            puts("CALL");
+            fputs("CALL\n", engine->traceFile);
             #endif
 
             AspDataEntry *function = 0, *ns = 0;
@@ -1421,7 +1427,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_RET:
         {
             #ifdef ASP_DEBUG
-            puts("RET");
+            fputs("RET\n", engine->traceFile);
             #endif
 
             /* Ensure we're in the context of a function. */
@@ -1491,7 +1497,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("ADDMOD ");
+            fputs("ADDMOD ", engine->traceFile);
             #endif
 
             /* Fetch the module's symbol from the first operand. */
@@ -1501,12 +1507,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?, ?");
+                fputs("?, ?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d, @", moduleSymbol);
+            fprintf(engine->traceFile, "%d, @", moduleSymbol);
             #endif
 
             /* Fetch the module's code address from the second operand. */
@@ -1516,12 +1522,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("0x%7.7X\n", codeAddress);
+            fprintf(engine->traceFile, "0x%7.7X\n", codeAddress);
             #endif
             if (codeAddress >= engine->codeEndIndex)
                 return AspRunResult_BeyondEndOfCode;
@@ -1561,7 +1567,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_XMOD:
         {
             #ifdef ASP_DEBUG
-            puts("XMOD");
+            fputs("XMOD\n", engine->traceFile);
             #endif
 
             /* Access the frame on top of the stack. */
@@ -1606,7 +1612,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("LDMOD ");
+            fputs("LDMOD ", engine->traceFile);
             #endif
 
             /* Fetch the module's symbol from the operand. */
@@ -1616,12 +1622,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", moduleSymbol);
+            fprintf(engine->traceFile, "%d\n", moduleSymbol);
             #endif
 
             /* Look up the module. */
@@ -1683,9 +1689,10 @@ static AspRunResult Step(AspEngine *engine)
             bool isDictionaryGroup = opCode == OpCode_MKDGARG;
 
             #ifdef ASP_DEBUG
-            puts
-                (isIterableGroup ? "MKIGARG" :
-                 isDictionaryGroup ? "MKDGARG" : "MKARG");
+            fprintf
+                (engine->traceFile, "MK%sARG\n",
+                 isIterableGroup ? "IG" :
+                 isDictionaryGroup ? "DG" : "");
             #endif
 
             /* Access argument value on top of the stack. */
@@ -1726,7 +1733,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("MKNARG ");
+            fputs("MKNARG ", engine->traceFile);
             #endif
 
             /* Fetch the argument's symbol from the operand. */
@@ -1736,12 +1743,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", argumentSymbol);
+            fprintf(engine->traceFile, "%d\n", argumentSymbol);
             #endif
 
             /* Access argument value on top of the stack. */
@@ -1788,10 +1795,10 @@ static AspRunResult Step(AspEngine *engine)
                 opCode == OpCode_MKDGPAR4;
 
             #ifdef ASP_DEBUG
-            printf
-                ("%s ",
-                 isTupleGroup ? "MKTGPAR" :
-                 isDictionaryGroup ? "MKDGPAR" : "MKPAR");
+            fprintf
+                (engine->traceFile, "MK%sPAR ",
+                 isTupleGroup ? "TG" :
+                 isDictionaryGroup ? "DG" : "");
             #endif
 
             /* Fetch the parameter's symbol from the operand. */
@@ -1801,12 +1808,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", parameterSymbol);
+            fprintf(engine->traceFile, "%d\n", parameterSymbol);
             #endif
 
             /* Create a parameter. */
@@ -1834,7 +1841,7 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
 
             #ifdef ASP_DEBUG
-            printf("MKDPAR ");
+            fputs("MKDPAR ", engine->traceFile);
             #endif
 
             /* Fetch the parameter's symbol from the operand. */
@@ -1844,12 +1851,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", parameterSymbol);
+            fprintf(engine->traceFile, "%d\n", parameterSymbol);
             #endif
 
             /* Access parameter default value on top of the stack. */
@@ -1878,7 +1885,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_MKFUN:
         {
             #ifdef ASP_DEBUG
-            printf("MKFUN @");
+            fputs("MKFUN @", engine->traceFile);
             #endif
 
             /* Access code address on top of the stack. */
@@ -1886,20 +1893,20 @@ static AspRunResult Step(AspEngine *engine)
             if (codeAddressEntry == 0)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return AspRunResult_StackUnderflow;
             }
             if (AspDataGetType(codeAddressEntry) != DataType_CodeAddress)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return AspRunResult_UnexpectedType;
             }
             uint32_t codeAddress = AspDataGetCodeAddress(codeAddressEntry);
             #ifdef ASP_DEBUG
-            printf("0x%7.7X\n", codeAddress);
+            fprintf(engine->traceFile, "0x%7.7X\n", codeAddress);
             #endif
             if (codeAddress >= engine->codeEndIndex)
                 return AspRunResult_BeyondEndOfCode;
@@ -1936,7 +1943,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_MKKVP:
         {
             #ifdef ASP_DEBUG
-            puts("MKKVP");
+            fputs("MKKVP\n", engine->traceFile);
             #endif
 
             /* Access the key on top of the stack. */
@@ -1997,17 +2004,17 @@ static AspRunResult Step(AspEngine *engine)
                 opCode == OpCode_MKRET ||
                 opCode == OpCode_MKR;
             #ifdef ASP_DEBUG
-            printf("MKR");
+            fprintf(engine->traceFile, "MKR");
             if (!hasStart || !hasEnd || !hasStep)
             {
                 if (hasStart)
-                    putchar('S');
+                    fputc('S', engine->traceFile);
                 if (hasEnd)
-                    putchar('E');
+                    fputc('E', engine->traceFile);
                 if (hasStep)
-                    putchar('T');
+                    fputc('T', engine->traceFile);
             }
-            putchar('\n');
+            fputc('\n', engine->traceFile);
             #endif
 
             /* Access the start, end, and step entries on top of the stack,
@@ -2078,8 +2085,9 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_BLD:
         {
             #ifdef ASP_DEBUG
-            puts
-                (opCode == OpCode_BLD ? "BLD" :
+            fprintf
+                (engine->traceFile, "%s\n",
+                 opCode == OpCode_BLD ? "BLD" :
                  opCode == OpCode_INS ? "INS" : "INSP");
             #endif
 
@@ -2272,7 +2280,9 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_IDXA:
         {
             #ifdef ASP_DEBUG
-            puts(opCode == OpCode_IDXA ? "IDXA" : "IDX");
+            fprintf
+                (engine->traceFile, "IDX%s\n",
+                 opCode == OpCode_IDXA ? "A" : "");
             #endif
 
             /* Access the index/key on top of the stack. */
@@ -2600,10 +2610,9 @@ static AspRunResult Step(AspEngine *engine)
                 opCode == OpCode_MEMA2 ||
                 opCode == OpCode_MEMA4;
             #ifdef ASP_DEBUG
-            {
-                printf(isAddressInstruction ? "MEMA" : "MEM");
-                putchar(' ');
-            }
+            fprintf
+                (engine->traceFile, "MEM%s ",
+                 isAddressInstruction ? "A" : "");
             #endif
 
             /* Fetch the member variables's symbol from the operand. */
@@ -2613,12 +2622,12 @@ static AspRunResult Step(AspEngine *engine)
             if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
-                puts("?");
+                fputs("?\n", engine->traceFile);
                 #endif
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            printf("%d\n", variableSymbol);
+            fprintf(engine->traceFile, "%d\n", variableSymbol);
             #endif
 
             /* Obtain the module from the stack. */
@@ -2669,7 +2678,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_END:
         {
             #ifdef ASP_DEBUG
-            puts("END");
+            fputs("END\n", engine->traceFile);
             #endif
 
             /* Ensure the stack is empty. */

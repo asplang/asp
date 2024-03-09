@@ -113,6 +113,10 @@ struct AspEngine
     bool inApp;
     int32_t appFunctionSymbol;
     AspDataEntry *appFunctionNamespace, *appFunctionReturnValue;
+
+    #ifdef ASP_DEBUG
+    FILE *traceFile;
+    #endif
 };
 
 /* Definitions used by auto-generated application function support code. */

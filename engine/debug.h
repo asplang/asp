@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+void AspTraceFile(AspEngine *, FILE *);
 void AspDump(const AspEngine *, FILE *);
 
 #ifdef __cplusplus

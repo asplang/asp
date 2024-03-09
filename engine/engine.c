@@ -14,12 +14,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#ifdef ASP_DEBUG
-#include "debug.h"
-#include <stdio.h>
-#include <ctype.h>
-#endif
-
 #if !defined ASP_ENGINE_VERSION_MAJOR || \
     !defined ASP_ENGINE_VERSION_MINOR
 #error ASP_ENGINE_VERSION_* macros undefined
@@ -65,6 +59,10 @@ AspRunResult AspInitializeEx
     engine->cycleDetectionLimit = (uint32_t)(engine->dataEndIndex / 2);
     engine->appSpec = appSpec;
     engine->inApp = false;
+
+    #ifdef ASP_DEBUG
+    engine->traceFile = stdout;
+    #endif
 
     return AspReset(engine);
 }

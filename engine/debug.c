@@ -12,6 +12,11 @@
 static void DumpData(const AspEngine *, FILE *);
 static void DumpDataEntry(uint32_t index, const AspDataEntry *, FILE *);
 
+void AspTraceFile(AspEngine *engine, FILE *fp)
+{
+    engine->traceFile = fp;
+}
+
 void AspDump(const AspEngine *engine, FILE *fp)
 {
     DumpData(engine, fp);

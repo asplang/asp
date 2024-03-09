@@ -113,6 +113,7 @@ ASP_API bool AspIsRunnable(const AspEngine *);
 ASP_API size_t AspProgramCounter(const AspEngine *);
 ASP_API size_t AspLowFreeCount(const AspEngine *);
 #ifdef ASP_DEBUG
+ASP_API void AspDebugOutput(const AspEngine *, FILE *);
 ASP_API void AspDump(const AspEngine *, FILE *);
 #endif
 
