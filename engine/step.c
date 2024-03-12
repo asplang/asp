@@ -806,25 +806,23 @@ static AspRunResult Step(AspEngine *engine)
                                  &startValue, &endValue, &stepValue);
 
                             /* Erase the elements selected by the slice. */
-                            AspSequenceResult (*Navigate)
-                                (AspEngine *, AspDataEntry *, AspDataEntry *) =
-                                stepValue < 0 ?
-                                AspSequencePrevious : AspSequenceNext;
-                            int32_t i = stepValue < 0 ? -1 : 0;
-                            int32_t increment = stepValue < 0 ? -1 : +1;
-                            int32_t select = stepValue < 0 ?
-                                startValue + 1 : startValue;
+                            bool right = stepValue >= 0;
+                            int32_t i = right ? 0 : -1;
+                            int32_t increment = right ? +1 : -1;
+                            int32_t select = right ?
+                                startValue : startValue + 1;
                             AspDataEntry *selectedElement = 0;
                             uint32_t iterationCount = 0;
                             for (AspSequenceResult nextResult =
-                                 Navigate(engine, container, 0);
+                                 AspSequenceNext(engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
-                                 (stepValue < 0 ? i > endValue : i < endValue);
+                                 (right ? i < endValue : i > endValue);
                                  iterationCount++,
                                  i += increment, select -= increment,
-                                 nextResult = Navigate
-                                    (engine, container, nextResult.element))
+                                 nextResult = AspSequenceNext
+                                    (engine, container,
+                                     nextResult.element, right))
                             {
                                 /* Erase the previously selected element,
                                    if applicable. */
@@ -2370,23 +2368,21 @@ static AspRunResult Step(AspEngine *engine)
                                 return AspRunResult_OutOfDataMemory;
 
                             /* Perform the slice. */
-                            AspSequenceResult (*Navigate)
-                                (AspEngine *, AspDataEntry *, AspDataEntry *) =
-                                stepValue < 0 ?
-                                AspSequencePrevious : AspSequenceNext;
-                            int32_t i = stepValue < 0 ? -1 : 0;
-                            int32_t increment = stepValue < 0 ? -1 : +1;
-                            int32_t select = stepValue < 0 ?
-                                startValue + 1 : startValue;
+                            bool right = stepValue >= 0;
+                            int32_t i = right ? 0 : -1;
+                            int32_t increment = right ? +1 : -1;
+                            int32_t select = right ?
+                                startValue : startValue + 1;
                             uint32_t iterationCount = 0;
                             for (AspSequenceResult nextResult =
-                                 Navigate(engine, container, 0);
+                                 AspSequenceNext(engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
-                                 (stepValue < 0 ? i > endValue : i < endValue);
+                                 (right ? i < endValue : i > endValue);
                                  iterationCount++,
-                                 nextResult = Navigate
-                                    (engine, container, nextResult.element))
+                                 nextResult = AspSequenceNext
+                                    (engine, container,
+                                     nextResult.element, right))
                             {
                                 AspDataEntry *fragment = nextResult.value;
                                 uint8_t fragmentSize =
@@ -2396,8 +2392,7 @@ static AspRunResult Step(AspEngine *engine)
 
                                 for (uint8_t fragmentIndex = 0;
                                      fragmentIndex < fragmentSize &&
-                                     (stepValue < 0 ?
-                                      i > endValue : i < endValue);
+                                     (right ? i < endValue : i > endValue);
                                      i += increment, select -= increment,
                                      fragmentIndex++)
                                 {
@@ -2407,9 +2402,9 @@ static AspRunResult Step(AspEngine *engine)
 
                                     /* Append the character. */
                                     uint8_t charIndex =
-                                        stepValue < 0 ?
-                                        fragmentSize - fragmentIndex - 1 :
-                                        fragmentIndex;
+                                        right ?
+                                        fragmentIndex :
+                                        fragmentSize - fragmentIndex - 1;
                                     char c = fragmentData[charIndex];
                                     AspRunResult appendResult =
                                         AspStringAppendBuffer
@@ -2492,24 +2487,22 @@ static AspRunResult Step(AspEngine *engine)
                                 return AspRunResult_OutOfDataMemory;
 
                             /* Perform the slice. */
-                            AspSequenceResult (*Navigate)
-                                (AspEngine *, AspDataEntry *, AspDataEntry *) =
-                                stepValue < 0 ?
-                                AspSequencePrevious : AspSequenceNext;
-                            int32_t i = stepValue < 0 ? -1 : 0;
-                            int32_t increment = stepValue < 0 ? -1 : +1;
-                            int32_t select = stepValue < 0 ?
-                                startValue + 1 : startValue;
+                            bool right = stepValue >= 0;
+                            int32_t i = right ? 0 : -1;
+                            int32_t increment = right ? +1 : -1;
+                            int32_t select = right ?
+                                startValue : startValue + 1;
                             uint32_t iterationCount = 0;
                             for (AspSequenceResult nextResult =
-                                 Navigate(engine, container, 0);
+                                 AspSequenceNext(engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
-                                 (stepValue < 0 ? i > endValue : i < endValue);
+                                 (right ? i < endValue : i > endValue);
                                  iterationCount++,
                                  i += increment, select -= increment,
-                                 nextResult = Navigate
-                                    (engine, container, nextResult.element))
+                                 nextResult = AspSequenceNext
+                                    (engine, container,
+                                     nextResult.element, right))
                             {
                                 /* Skip if not selected. */
                                 if (select != 0)

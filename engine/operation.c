@@ -449,14 +449,14 @@ static AspOperationResult PerformConcatenationBinaryOperation
             for (unsigned i = 0; i < sizeof operands / sizeof *operands; i++)
             {
                 AspSequenceResult nextResult = AspSequenceNext
-                    (engine, operands[i], 0);
+                    (engine, operands[i], 0, true);
                 uint32_t iterationCount = 0;
                 for (;
                      iterationCount < engine->cycleDetectionLimit &&
                      nextResult.element != 0;
                      iterationCount++,
                      nextResult = AspSequenceNext
-                        (engine, operands[i], nextResult.element))
+                        (engine, operands[i], nextResult.element, true))
                 {
                     AspDataEntry *value = nextResult.value;
 
@@ -549,12 +549,12 @@ static AspOperationResult PerformRepetitionBinaryOperation
                 {
                     uint32_t iterationCount = 0;
                     for (AspSequenceResult nextResult = AspSequenceNext
-                            (engine, sequence, 0);
+                            (engine, sequence, 0, true);
                          iterationCount < engine->cycleDetectionLimit &&
                          nextResult.element != 0;
                          iterationCount++,
                          nextResult = AspSequenceNext
-                            (engine, sequence, nextResult.element))
+                            (engine, sequence, nextResult.element, true))
                     {
                         AspDataEntry *value = nextResult.value;
 
@@ -778,11 +778,13 @@ static AspOperationResult PerformFormatBinaryOperation
     AspSequenceResult nextValueResult = {AspRunResult_OK, 0, 0};
     char formatBuffer[31], *fp = 0, formattedValueBuffer[61];
     uint32_t iterationCount = 0;
-    for (AspSequenceResult nextResult = AspSequenceNext(engine, format, 0);
+    for (AspSequenceResult nextResult = AspSequenceNext
+            (engine, format, 0, true);
          iterationCount < engine->cycleDetectionLimit &&
          nextResult.element != 0;
          iterationCount++,
-         nextResult = AspSequenceNext(engine, format, nextResult.element))
+         nextResult = AspSequenceNext
+            (engine, format, nextResult.element, true))
     {
         AspDataEntry *fragment = nextResult.value;
         uint8_t fragmentSize =
@@ -884,7 +886,7 @@ static AspOperationResult PerformFormatBinaryOperation
 
                     /* Fetch the next value from the tuple. */
                     nextValueResult = AspSequenceNext
-                        (engine, tuple, nextValueResult.element);
+                        (engine, tuple, nextValueResult.element, true);
                     if (nextValueResult.result != AspRunResult_OK)
                     {
                         result.result = nextValueResult.result;
@@ -970,12 +972,12 @@ static AspOperationResult PerformFormatBinaryOperation
                         unsigned long remainingSize = sourceSize;
                         uint32_t iterationCount = 0;
                         for (AspSequenceResult strNextResult = AspSequenceNext
-                                (engine, str, 0);
+                                (engine, str, 0, true);
                              iterationCount < engine->cycleDetectionLimit &&
                              remainingSize > 0 && strNextResult.element != 0;
                              iterationCount++,
                              strNextResult = AspSequenceNext
-                                (engine, str, strNextResult.element))
+                                (engine, str, strNextResult.element, true))
                         {
                             AspDataEntry *fragment = strNextResult.value;
                             uint8_t fragmentSize =
@@ -1141,7 +1143,7 @@ static AspOperationResult PerformFormatBinaryOperation
 
     /* Ensure all the values in the tuple were used. */
     nextValueResult = AspSequenceNext
-        (engine, tuple, nextValueResult.element);
+        (engine, tuple, nextValueResult.element, true);
     if (nextValueResult.result != AspRunResult_OK)
     {
         result.result = nextValueResult.result;
@@ -1304,12 +1306,12 @@ static AspOperationResult PerformMembershipOperation
         {
             uint32_t iterationCount = 0;
             for (AspSequenceResult nextResult = AspSequenceNext
-                    (engine, right, 0);
+                    (engine, right, 0, true);
                  iterationCount < engine->cycleDetectionLimit &&
                  !isIn && nextResult.element != 0;
                  iterationCount++,
                  nextResult = AspSequenceNext
-                    (engine, right, nextResult.element))
+                    (engine, right, nextResult.element, true))
             {
                 AspDataEntry *value = nextResult.value;
                 int comparison;

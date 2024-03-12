@@ -239,9 +239,9 @@ AspRunResult AspCompare
                             *mutableRightEntry = (AspDataEntry *)rightEntry;
                         AspSequenceResult
                             leftResult = AspSequenceNext
-                                (engine, mutableLeftEntry, leftNext),
+                                (engine, mutableLeftEntry, leftNext, true),
                             rightResult = AspSequenceNext
-                                (engine, mutableRightEntry, rightNext);
+                                (engine, mutableRightEntry, rightNext, true);
                         leftNext = leftResult.element;
                         rightNext = rightResult.element;
                         if (leftNext == 0 || rightNext == 0)

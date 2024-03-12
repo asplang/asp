@@ -61,12 +61,12 @@ AspRunResult AspExpandIterableGroupArgument
         {
             uint32_t iterationCount = 0;
             for (AspSequenceResult nextResult =
-                 AspSequenceNext(engine, iterable, 0);
+                 AspSequenceNext(engine, iterable, 0, true);
                  iterationCount < engine->cycleDetectionLimit &&
                  nextResult.element != 0;
                  iterationCount++,
                  nextResult = AspSequenceNext
-                    (engine, iterable, nextResult.element))
+                    (engine, iterable, nextResult.element, true))
             {
                 AspDataEntry *value = nextResult.value;
 
@@ -258,7 +258,7 @@ AspRunResult AspLoadArguments
     AspDataEntry *tupleGroup = 0;
 
     AspSequenceResult argumentResult = AspSequenceNext
-        (engine, argumentList, 0);
+        (engine, argumentList, 0, true);
 
     /* Assign each positional argument to its matching parameter. */
     AspSequenceResult parameterResult = {AspRunResult_OK, 0, 0};
@@ -268,7 +268,7 @@ AspRunResult AspLoadArguments
          argumentResult.element != 0;
          iterationCount++,
          argumentResult = AspSequenceNext
-            (engine, argumentList, argumentResult.element))
+            (engine, argumentList, argumentResult.element, true))
     {
         AspDataEntry *argument = argumentResult.value;
         if (AspDataGetArgumentHasName(argument) ||
@@ -279,7 +279,7 @@ AspRunResult AspLoadArguments
         if (tupleGroup == 0)
         {
             parameterResult = AspSequenceNext
-                (engine, parameterList, parameterResult.element);
+                (engine, parameterList, parameterResult.element, true);
             if (parameterResult.element == 0)
             {
                 #ifdef ASP_DEBUG
@@ -327,8 +327,8 @@ AspRunResult AspLoadArguments
 
     /* Determine whether there is a dictionary group parameter. */
     AspDataEntry *dictionaryGroup = 0;
-    AspSequenceResult lastParameterResult = AspSequencePrevious
-        (engine, parameterList, 0);
+    AspSequenceResult lastParameterResult = AspSequenceNext
+        (engine, parameterList, 0, false);
     if (lastParameterResult.element != 0 &&
         AspDataGetParameterIsDictionaryGroup(lastParameterResult.value))
     {
@@ -353,7 +353,7 @@ AspRunResult AspLoadArguments
          argumentResult.element != 0;
          iterationCount++,
          argumentResult = AspSequenceNext
-            (engine, argumentList, argumentResult.element))
+            (engine, argumentList, argumentResult.element, true))
     {
         AspDataEntry *argument = argumentResult.value;
         AspDataEntry *value = AspValueEntry
@@ -369,7 +369,7 @@ AspRunResult AspLoadArguments
         int32_t argumentSymbol = AspDataGetArgumentSymbol(argument);
 
         AspSequenceResult parameterResult = AspSequenceNext
-            (engine, parameterList, 0);
+            (engine, parameterList, 0, true);
         bool parameterFound = false;
         uint32_t iterationCount = 0;
         for (;
@@ -377,7 +377,7 @@ AspRunResult AspLoadArguments
              parameterResult.element != 0;
              iterationCount++,
              parameterResult = AspSequenceNext
-                (engine, parameterList, parameterResult.element))
+                (engine, parameterList, parameterResult.element, true))
         {
             AspDataEntry *parameter = parameterResult.value;
 
@@ -470,12 +470,12 @@ AspRunResult AspLoadArguments
 
     /* Assign default values to remaining parameters. */
     iterationCount = 0;
-    for (parameterResult = AspSequenceNext(engine, parameterList, 0);
+    for (parameterResult = AspSequenceNext(engine, parameterList, 0, true);
          iterationCount < engine->cycleDetectionLimit &&
          parameterResult.element != 0;
          iterationCount++,
          parameterResult = AspSequenceNext
-            (engine, parameterList, parameterResult.element))
+            (engine, parameterList, parameterResult.element, true))
     {
         AspDataEntry *parameter = parameterResult.value;
         int32_t parameterSymbol = AspDataGetParameterSymbol(parameter);

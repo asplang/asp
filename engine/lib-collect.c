@@ -78,12 +78,12 @@ static AspRunResult FillSequence
     {
         uint32_t iterationCount = 0;
         for (AspSequenceResult nextResult =
-             AspSequenceNext(engine, iterable, 0);
+             AspSequenceNext(engine, iterable, 0, true);
              iterationCount < engine->cycleDetectionLimit &&
              nextResult.element != 0;
              iterationCount++,
              nextResult = AspSequenceNext
-                (engine, iterable, nextResult.element))
+                (engine, iterable, nextResult.element, true))
         {
             if (AspIsString(iterable))
             {

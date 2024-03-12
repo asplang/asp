@@ -65,7 +65,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 for (;
                      iterationCount < engine->cycleDetectionLimit &&
                      (nextResult = AspSequenceNext
-                        (engine, entry, 0)).element != 0;
+                        (engine, entry, 0, true)).element != 0;
                      iterationCount++)
                 {
                     AspRunResult assertResult = AspAssert

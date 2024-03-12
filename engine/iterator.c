@@ -71,7 +71,7 @@ AspIteratorResult AspIteratorCreate
         case DataType_List:
         {
             AspSequenceResult startResult = AspSequenceNext
-                (engine, iterable, 0);
+                (engine, iterable, 0, true);
             if (startResult.result != AspRunResult_OK)
             {
                 result.result = startResult.result;
@@ -203,7 +203,7 @@ AspRunResult AspIteratorNext
             if (AspDataGetType(member) != DataType_Element)
                 return AspRunResult_UnexpectedType;
             AspSequenceResult nextResult = AspSequenceNext
-                (engine, iterable, member);
+                (engine, iterable, member, true);
             if (nextResult.result != AspRunResult_OK)
                 return nextResult.result;
             member = nextResult.element;

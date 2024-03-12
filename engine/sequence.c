@@ -227,7 +227,7 @@ AspSequenceResult AspSequenceIndex
     else
     {
         /* Traverse the sequence to arrive at the requested element. */
-        result = AspSequenceNext(engine, sequence, 0);
+        result = AspSequenceNext(engine, sequence, 0, true);
         int i = 0;
         uint32_t iterationCount = 0;
         for (i = 0;
@@ -235,7 +235,7 @@ AspSequenceResult AspSequenceIndex
              i < index && result.element != 0;
              iterationCount++, i++)
         {
-            result = AspSequenceNext(engine, sequence, result.element);
+            result = AspSequenceNext(engine, sequence, result.element, true);
         }
         if (iterationCount >= engine->cycleDetectionLimit)
         {
@@ -248,7 +248,8 @@ AspSequenceResult AspSequenceIndex
 }
 
 AspSequenceResult AspSequenceNext
-    (AspEngine *engine, AspDataEntry *sequence, AspDataEntry *element)
+    (AspEngine *engine, AspDataEntry *sequence,
+     AspDataEntry *element, bool right)
 {
     AspSequenceResult result = {AspRunResult_OK, 0, 0};
 
@@ -262,32 +263,12 @@ AspSequenceResult AspSequenceNext
     result.element = AspEntry
         (engine,
          element == 0 ?
-         AspDataGetSequenceHeadIndex(sequence) :
-         AspDataGetElementNextIndex(element));
-
-    result.value = result.element == 0 ? 0 :
-        AspValueEntry(engine, AspDataGetElementValueIndex(result.element));
-
-    return result;
-}
-
-AspSequenceResult AspSequencePrevious
-    (AspEngine *engine, AspDataEntry *sequence, AspDataEntry *element)
-{
-    AspSequenceResult result = {AspRunResult_OK, 0, 0};
-
-    AspAssert
-        (engine, sequence != 0 && IsSequenceType(AspDataGetType(sequence)));
-    result.result = AspAssert
-        (engine, element == 0 || IsElementType(AspDataGetType(element)));
-    if (result.result != AspRunResult_OK)
-        return result;
-
-    result.element = AspEntry
-        (engine,
-         element == 0 ?
-         AspDataGetSequenceTailIndex(sequence) :
-         AspDataGetElementPreviousIndex(element));
+         right ?
+            AspDataGetSequenceHeadIndex(sequence) :
+            AspDataGetSequenceTailIndex(sequence) :
+         right ?
+             AspDataGetElementNextIndex(element) :
+             AspDataGetElementPreviousIndex(element));
 
     result.value = result.element == 0 ? 0 :
         AspValueEntry(engine, AspDataGetElementValueIndex(result.element));
