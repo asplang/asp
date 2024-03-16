@@ -154,6 +154,8 @@ ASP_API AspRunResult AspCount
     (AspEngine *, const AspDataEntry *, int32_t *count);
 ASP_API AspDataEntry *AspElement
     (AspEngine *, AspDataEntry *sequence, int32_t index);
+ASP_API int32_t AspRangeElement
+    (AspEngine *, const AspDataEntry *range, int32_t index);
 ASP_API char AspStringElement
     (AspEngine *, const AspDataEntry *str, int32_t index);
 ASP_API AspDataEntry *AspFind

@@ -120,7 +120,8 @@ AspRunResult AspRangeCount
 }
 
 AspRangeResult AspRangeIndex
-    (AspEngine *engine, AspDataEntry *range, int32_t index, bool createObject)
+    (AspEngine *engine, const AspDataEntry *range, int32_t index,
+     bool createObject)
 {
     AspRangeResult result = {AspRunResult_OK, 0, 0};
 
@@ -219,7 +220,7 @@ AspRunResult AspGetSliceRange
 }
 
 AspRangeResult AspRangeSlice
-    (AspEngine *engine, AspDataEntry *range, AspDataEntry *sliceRange)
+    (AspEngine *engine, const AspDataEntry *range, AspDataEntry *sliceRange)
 {
     AspRangeResult result = {AspRunResult_OK, 0, 0};
 

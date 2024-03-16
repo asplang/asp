@@ -26,7 +26,8 @@ void AspGetRange
 AspRunResult AspRangeCount
     (AspEngine *, const AspDataEntry *range, int32_t *count);
 AspRangeResult AspRangeIndex
-    (AspEngine *, AspDataEntry *range, int32_t index, bool createObject);
+    (AspEngine *, const AspDataEntry *range, int32_t index,
+     bool createObject);
 bool AspIsValueAtRangeEnd
     (int32_t testValue, int32_t endValue, int32_t stepValue);
 
@@ -35,7 +36,7 @@ AspRunResult AspGetSliceRange
     (AspEngine *engine, const AspDataEntry *range, int32_t sequenceCount,
      int32_t *startValue, int32_t *endValue, int32_t *stepValue);
 AspRangeResult AspRangeSlice
-    (AspEngine *, AspDataEntry *range, AspDataEntry *sliceRange);
+    (AspEngine *, const AspDataEntry *range, AspDataEntry *sliceRange);
 
 #ifdef __cplusplus
 }

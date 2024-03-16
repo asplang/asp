@@ -948,20 +948,32 @@ AspDataEntry *AspElement
     return result.value;
 }
 
+int32_t AspRangeElement
+    (AspEngine *engine, const AspDataEntry *range, int32_t index)
+{
+    if (AspDataGetType(range) != DataType_Range)
+        return 0;
+
+    AspRangeResult result = AspRangeIndex(engine, range, index, false);
+    if (result.result != AspRunResult_OK)
+        return 0;
+    return result.intValue;
+}
+
 char AspStringElement
     (AspEngine *engine, const AspDataEntry *strEntry, int32_t index)
 {
     AspDataEntry *str = (AspDataEntry *)strEntry;
 
     if (AspDataGetType(str) != DataType_String)
-        return 0;
+        return '\0';
 
     /* Treat negative indices as counting backwards from the end. */
     if (index < 0)
     {
         index += AspDataGetSequenceCount(strEntry);
         if (index < 0)
-            return 0;
+            return '\0';
     }
 
     /* Locate the character within the applicable fragment. */
@@ -989,10 +1001,10 @@ char AspStringElement
     if (iterationCount >= engine->cycleDetectionLimit)
     {
         engine->runResult = AspRunResult_CycleDetected;
-        return 0;
+        return '\0';
     }
 
-    return 0;
+    return '\0';
 }
 
 AspDataEntry *AspFind
