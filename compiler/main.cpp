@@ -425,30 +425,44 @@ static int main1(int argc, char **argv)
         do
         {
             token = lexer.Next();
-            if (token->type == -1)
+            string error;
+            switch (token->type)
+            {
+                default:
+                    break;
+                case -1:
+                    error = "Bad token encountered";
+                    break;
+                case TOKEN_UNEXPECTED_INDENT:
+                    error = "Unexpected indentation";
+                    break;
+                case TOKEN_MISSING_INDENT:
+                    error = "Missing indentation";
+                    break;
+                case TOKEN_MISMATCHED_UNINDENT:
+                    error = "Mismatched indentation";
+                    break;
+                case TOKEN_INCONSISTENT_WS:
+                    error = "Inconsistent whitespace in indentation";
+                    break;
+            }
+            if (!error.empty())
             {
                 cerr
                     << token->sourceLocation.fileName << ':'
                     << token->sourceLocation.line << ':'
                     << token->sourceLocation.column
-                    << ": Bad token encountered: '"
-                    << token->s << '\'';
+                    << ": " << error;
+                if (!token->s.empty())
+                    cerr << ": '" << token->s << '\'';
                 if (!token->error.empty())
                     cerr << ": " << token->error;
                 cerr << endl;
+
                 delete token;
                 errorDetected = true;
                 break;
             }
-
-            if (token->type == TOKEN_UNEXPECTED_INDENT)
-                errorDetected = true;
-            else if (token->type == TOKEN_MISSING_INDENT)
-                errorDetected = true;
-            else if (token->type == TOKEN_MISMATCHED_UNINDENT)
-                errorDetected = true;
-            else if (token->type == TOKEN_INCONSISTENT_WS)
-                errorDetected = true;
 
             Parse(parser, token->type, token);
             if (compiler.ErrorCount() > 0)
