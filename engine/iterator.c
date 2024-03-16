@@ -30,6 +30,15 @@ AspIteratorResult AspIteratorCreate
     AspDataSetIteratorIterableIndex
         (iterator, AspIndex(engine, iterable));
 
+    /* Check if the argument is already an iterator. */
+    uint8_t iterableType = AspDataGetType(iterable);
+    if (iterableType == DataType_Iterator)
+    {
+        *iterator = *iterable;
+        result.value = iterator;
+        return result;
+    }
+
     /* Set the iterator specifics based on the iterable. */
     AspDataEntry *member = 0;
     switch (AspDataGetType(iterable))
