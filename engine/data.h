@@ -137,6 +137,8 @@ union AspDataEntry
     (AspBitGetSignedField((eptr)->w.u2, 0, (AspWordBitSize)))
 void AspDataSetWord3(AspDataEntry *, uint32_t value);
 uint32_t AspDataGetWord3(const AspDataEntry *);
+void AspDataSetSignedWord3(AspDataEntry *, int32_t value);
+int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataSetBit0(eptr, value) \
     (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize), (value)))
 #define AspDataGetBit0(eptr) \
@@ -217,9 +219,9 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 /* Sequence entry field access for String, Tuple, List, ParameterList, and
    ArgumentList. */
 #define AspDataSetSequenceCount(eptr, value) \
-    (AspDataSetWord3((eptr), (value)))
+    (AspDataSetSignedWord3((eptr), (value)))
 #define AspDataGetSequenceCount(eptr) \
-    (AspDataGetWord3((eptr)))
+    (AspDataGetSignedWord3((eptr)))
 #define AspDataSetSequenceHeadIndex(eptr, value) \
     (AspDataSetWord0((eptr), (value)))
 #define AspDataGetSequenceHeadIndex(eptr) \
@@ -231,9 +233,9 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 
 /* Common tree entry field access for Set, Dictionary, and Namespace. */
 #define AspDataSetTreeCount(eptr, value) \
-    (AspDataSetWord0((eptr), (value)))
+    (AspDataSetSignedWord0((eptr), (value)))
 #define AspDataGetTreeCount(eptr) \
-    (AspDataGetWord0((eptr)))
+    (AspDataGetSignedWord0((eptr)))
 #define AspDataSetTreeRootIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetTreeRootIndex(eptr) \

@@ -798,12 +798,13 @@ static AspRunResult Step(AspEngine *engine)
 
                         case DataType_Range:
                         {
-                            int32_t count = (int32_t)
-                                AspDataGetSequenceCount(container);
+                            int32_t count = AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
-                            AspGetSliceRange
+                            AspRunResult getSliceRangeResult = AspGetSliceRange
                                 (engine, index, count,
                                  &startValue, &endValue, &stepValue);
+                            if (getSliceRangeResult != AspRunResult_OK)
+                                return getSliceRangeResult;
 
                             /* Erase the elements selected by the slice. */
                             bool right = stepValue >= 0;
@@ -2308,6 +2309,62 @@ static AspRunResult Step(AspEngine *engine)
                 default:
                     return AspRunResult_UnexpectedType;
 
+                case DataType_Range:
+                {
+                    if (opCode == OpCode_IDXA)
+                        return AspRunResult_UnexpectedType;
+
+                    switch (indexType)
+                    {
+                        default:
+                            return AspRunResult_UnexpectedType;
+
+                        case DataType_Integer:
+                        {
+                            int32_t indexValue = AspDataGetInteger(index);
+
+                            /* Compute the indexed integer value. */
+                            AspRangeResult rangeResult = AspRangeIndex
+                                (engine, container, indexValue, true);
+                            if (rangeResult.result != AspRunResult_OK)
+                                return rangeResult.result;
+
+                            /* Push the integer. */
+                            AspDataEntry *stackEntry = AspPush
+                                (engine, rangeResult.value);
+                            if (stackEntry == 0)
+                                return AspRunResult_OutOfDataMemory;
+                            AspUnref(engine, rangeResult.value);
+                            if (engine->runResult != AspRunResult_OK)
+                                return engine->runResult;
+
+                            break;
+                        }
+
+                        case DataType_Range:
+                        {
+                            /* Compute the sliced range. */
+                            AspRangeResult rangeResult = AspRangeSlice
+                                (engine, container, index);
+                            if (rangeResult.result != AspRunResult_OK)
+                                return rangeResult.result;
+
+                            /* Push the resulting range. */
+                            AspDataEntry *stackEntry = AspPush
+                                (engine, rangeResult.value);
+                            if (stackEntry == 0)
+                                return AspRunResult_OutOfDataMemory;
+                            AspUnref(engine, rangeResult.value);
+                            if (engine->runResult != AspRunResult_OK)
+                                return engine->runResult;
+
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+
                 case DataType_String:
                 {
                     if (opCode == OpCode_IDXA)
@@ -2327,7 +2384,7 @@ static AspRunResult Step(AspEngine *engine)
                                 (engine, container, indexValue);
                             if (c == 0)
                             {
-                                int32_t count = (int32_t)
+                                int32_t count =
                                     AspDataGetSequenceCount(container);
                                 if (indexValue >= count ||
                                     indexValue < -count)
@@ -2353,12 +2410,14 @@ static AspRunResult Step(AspEngine *engine)
 
                         case DataType_Range:
                         {
-                            int32_t count = (int32_t)
+                            int32_t count =
                                 AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
-                            AspGetSliceRange
+                            AspRunResult getSliceRangeResult = AspGetSliceRange
                                 (engine, index, count,
                                  &startValue, &endValue, &stepValue);
+                            if (getSliceRangeResult != AspRunResult_OK)
+                                return getSliceRangeResult;
 
                             /* Create a new string to receive the sliced
                                characters. */
@@ -2472,12 +2531,13 @@ static AspRunResult Step(AspEngine *engine)
 
                         case DataType_Range:
                         {
-                            int32_t count = (int32_t)
-                                AspDataGetSequenceCount(container);
+                            int32_t count = AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
-                            AspGetSliceRange
+                            AspRunResult getSliceRangeResult = AspGetSliceRange
                                 (engine, index, count,
                                  &startValue, &endValue, &stepValue);
+                            if (getSliceRangeResult != AspRunResult_OK)
+                                return getSliceRangeResult;
 
                             /* Create a new container to receive the sliced
                                elements. */

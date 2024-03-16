@@ -529,7 +529,11 @@ static AspOperationResult PerformRepetitionBinaryOperation
             }
 
             /* Reuse the sequence argument as the return value if possible. */
-            if ((AspCount(sequence) == 0 || repeatCountValue == 1) &&
+            int32_t count;
+            result.result = AspCount(engine, sequence, &count);
+            if (result.result != AspRunResult_OK)
+                return result;
+            if ((count == 0 || repeatCountValue == 1) &&
                 (sequenceType == DataType_String ||
                  sequenceType == DataType_Tuple))
             {
@@ -543,7 +547,7 @@ static AspOperationResult PerformRepetitionBinaryOperation
                 break;
 
             AspSequenceResult appendResult = {AspRunResult_OK, 0, 0};
-            if (AspCount(sequence) != 0)
+            if (count != 0)
             {
                 for (int32_t i = 0; i < repeatCountValue; i++)
                 {
@@ -940,12 +944,16 @@ static AspOperationResult PerformFormatBinaryOperation
                         }
 
                         /* Determine number of bytes of the string to print. */
-                        unsigned long sourceSize = AspCount(str);
+                        int32_t length;
+                        result.result = AspCount(engine, str, &length);
+                        if (result.result != AspRunResult_OK)
+                            return result;
+                        unsigned long sourceSize = *(uint32_t *)&length;
                         if (precision < sourceSize)
                             sourceSize = precision;
 
                         /* Determine the number of bytes to print. */
-                        unsigned fieldSize = sourceSize;
+                        unsigned long fieldSize = sourceSize;
                         if (width > fieldSize)
                             fieldSize = width;
 
@@ -1077,7 +1085,12 @@ static AspOperationResult PerformFormatBinaryOperation
                                 }
                                 else if (AspIsString(nextValue))
                                 {
-                                    if (AspCount(nextValue) != 1)
+                                    int32_t count;
+                                    result.result = AspCount
+                                        (engine, nextValue, &count);
+                                    if (result.result != AspRunResult_OK)
+                                        return result;
+                                    if (count != 1)
                                     {
                                         result.result =
                                             AspRunResult_ValueOutOfRange;
@@ -1261,6 +1274,40 @@ static AspOperationResult PerformMembershipOperation
             result.result = AspRunResult_UnexpectedType;
             break;
 
+        case DataType_Range:
+        {
+            if (leftType != DataType_Integer)
+            {
+                result.result = AspRunResult_UnexpectedType;
+                break;
+            }
+
+            int32_t value = AspDataGetInteger(left);
+            int32_t start, end, step;
+            AspGetRange(engine, right, &start, &end, &step);
+
+            /* Check bounds. */
+            isIn = end < 0 ?
+                value <= start && value > end :
+                value >= start && value < end;
+
+            /* Determine membership if within bounds. */
+            if (isIn)
+            {
+                /* Compute membership as ((value - start) % step == 0). */
+                int32_t resultValue = 0;
+                AspIntegerResult integerResult = AspSubtractIntegers
+                    (value, start, &resultValue);
+                if (integerResult == AspIntegerResult_OK)
+                    integerResult = AspModuloIntegers
+                        (resultValue, step, &resultValue);
+                result.result = AspTranslateIntegerResult(integerResult);
+                isIn = resultValue == 0;
+            }
+
+            break;
+        }
+
         case DataType_String:
         {
             if (leftType != DataType_String)
@@ -1270,20 +1317,22 @@ static AspOperationResult PerformMembershipOperation
             }
 
             /* Search for substring. */
-            int
-                leftCount = (int)AspDataGetSequenceCount(left),
-                rightCount = (int)AspDataGetSequenceCount(right);
+            int32_t
+                leftCount = AspDataGetSequenceCount(left),
+                rightCount = AspDataGetSequenceCount(right);
             if (leftCount == 0)
                 isIn = true;
             else if (leftCount > rightCount)
                 isIn = false;
             else
             {
-                for (int index = 0; index <= rightCount - leftCount; index++)
+                for (int32_t index = 0;
+                     index <= rightCount - leftCount;
+                     index++)
                 {
                     isIn = true;
-                    int rightIndex = index;
-                    for (int leftIndex = 0; leftIndex < leftCount;
+                    int32_t rightIndex = index;
+                    for (int32_t leftIndex = 0; leftIndex < leftCount;
                          leftIndex++, rightIndex++)
                     {
                         if (AspStringElement(engine, left, leftIndex) !=

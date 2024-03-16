@@ -51,8 +51,8 @@ AspSequenceResult AspSequenceAppend
     }
 
     /* Update the sequence count. */
-    uint32_t sizeChange = AspDataGetType(sequence) == DataType_String ?
-        AspDataGetStringFragmentSize(value) : 1U;
+    int32_t sizeChange = AspDataGetType(sequence) == DataType_String ?
+        (int32_t)AspDataGetStringFragmentSize(value) : 1;
     AspDataSetSequenceCount
         (sequence, AspDataGetSequenceCount(sequence) + sizeChange);
 
@@ -61,9 +61,9 @@ AspSequenceResult AspSequenceAppend
 
 AspSequenceResult AspSequenceInsertByIndex
     (AspEngine *engine, AspDataEntry *sequence,
-     int index, AspDataEntry *value)
+     int32_t index, AspDataEntry *value)
 {
-    if (index == -1 || index == (int)AspDataGetSequenceCount(sequence))
+    if (index == -1 || index == AspDataGetSequenceCount(sequence))
         return AspSequenceAppend(engine, sequence, value);
 
     /* Locate insertion point, adjusting by one for a negative index. */
@@ -123,8 +123,8 @@ static AspSequenceResult AspSequenceInsert
     AspDataSetElementPreviousIndex(element, newElementIndex);
 
     /* Update the sequence count. */
-    uint32_t sizeChange = AspDataGetType(sequence) == DataType_String ?
-        AspDataGetStringFragmentSize(value) : 1U;
+    int32_t sizeChange = AspDataGetType(sequence) == DataType_String ?
+        (int32_t)AspDataGetStringFragmentSize(value) : 1;
     AspDataSetSequenceCount
         (sequence, AspDataGetSequenceCount(sequence) + sizeChange);
 
@@ -132,7 +132,7 @@ static AspSequenceResult AspSequenceInsert
 }
 
 bool AspSequenceErase
-    (AspEngine *engine, AspDataEntry *sequence, int index,
+    (AspEngine *engine, AspDataEntry *sequence, int32_t index,
      bool eraseValue)
 {
     AspSequenceResult result = AspSequenceIndex(engine, sequence, index);
@@ -171,8 +171,8 @@ bool AspSequenceEraseElement
     /* Prepare to drop the element. */
     AspDataEntry *value = AspValueEntry
         (engine, AspDataGetElementValueIndex(element));
-    uint32_t sizeChange = AspDataGetType(sequence) == DataType_String ?
-        AspDataGetStringFragmentSize(value) : 1U;
+    int32_t sizeChange = AspDataGetType(sequence) == DataType_String ?
+        (int32_t)AspDataGetStringFragmentSize(value) : 1;
 
     /* Unreference entries. */
     if (eraseValue &&
@@ -194,7 +194,7 @@ bool AspSequenceEraseElement
 }
 
 AspSequenceResult AspSequenceIndex
-    (AspEngine *engine, AspDataEntry *sequence, int index)
+    (AspEngine *engine, AspDataEntry *sequence, int32_t index)
 {
     AspSequenceResult result = {AspRunResult_OK, 0, 0};
 
@@ -203,15 +203,15 @@ AspSequenceResult AspSequenceIndex
         (engine, IsSequenceType(type) && type != DataType_String);
 
     /* Treat negative indices as counting backwards from the end. */
-    int count = (int)AspDataGetSequenceCount(sequence);
+    int32_t count = AspDataGetSequenceCount(sequence);
     if (index < 0)
+        index += count;
+
+    /* Ensure the index is in range. */
+    if (index < 0 || index >= count)
     {
-        index = count + index;
-        if (index < 0)
-        {
-            result.result = AspRunResult_ValueOutOfRange;
-            return result;
-        }
+        result.result = AspRunResult_ValueOutOfRange;
+        return result;
     }
 
     /* Check if the request is for the last element, as it's easier to
@@ -228,9 +228,8 @@ AspSequenceResult AspSequenceIndex
     {
         /* Traverse the sequence to arrive at the requested element. */
         result = AspSequenceNext(engine, sequence, 0, true);
-        int i = 0;
         uint32_t iterationCount = 0;
-        for (i = 0;
+        for (int32_t i = 0;
              iterationCount < engine->cycleDetectionLimit &&
              i < index && result.element != 0;
              iterationCount++, i++)
@@ -339,7 +338,7 @@ AspRunResult AspStringAppendBuffer
         else
         {
             AspDataSetSequenceCount
-                (str, AspDataGetSequenceCount(str) + copySize);
+                (str, AspDataGetSequenceCount(str) + (int32_t)copySize);
         }
 
         fragmentIndex += copySize;

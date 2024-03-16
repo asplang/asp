@@ -24,14 +24,14 @@ AspSequenceResult AspSequenceAppend
     (AspEngine *, AspDataEntry *sequence, AspDataEntry *value);
 AspSequenceResult AspSequenceInsertByIndex
     (AspEngine *, AspDataEntry *sequence,
-     int index, AspDataEntry *value);
+     int32_t index, AspDataEntry *value);
 bool AspSequenceErase
-    (AspEngine *, AspDataEntry *sequence, int index, bool eraseValue);
+    (AspEngine *, AspDataEntry *sequence, int32_t index, bool eraseValue);
 bool AspSequenceEraseElement
     (AspEngine *, AspDataEntry *sequence, AspDataEntry *element,
      bool eraseValue);
 AspSequenceResult AspSequenceIndex
-    (AspEngine *, AspDataEntry *sequence, int index);
+    (AspEngine *, AspDataEntry *sequence, int32_t index);
 AspSequenceResult AspSequenceNext
     (AspEngine *, AspDataEntry *sequence, AspDataEntry *element, bool right);
 AspRunResult AspStringAppendBuffer

@@ -190,12 +190,12 @@ AspRunResult AspCompare
 
                     case DataType_String:
                     {
-                        uint32_t
+                        int32_t
                             leftCount = AspDataGetSequenceCount(leftEntry),
                             rightCount = AspDataGetSequenceCount(rightEntry);
-                        uint32_t shortCount =
+                        int32_t shortCount =
                             leftCount < rightCount ? leftCount : rightCount;
-                        for (uint32_t i = 0; i < shortCount; i++)
+                        for (int32_t i = 0; i < shortCount; i++)
                         {
                             char
                                 leftChar = AspStringElement
@@ -221,7 +221,7 @@ AspRunResult AspCompare
                            efficiency. */
                         if (compareType == AspCompareType_Key)
                         {
-                            uint32_t
+                            int32_t
                                 leftCount = AspDataGetSequenceCount
                                     (leftEntry),
                                 rightCount = AspDataGetSequenceCount

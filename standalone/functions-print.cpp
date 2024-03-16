@@ -18,23 +18,28 @@ extern "C" AspRunResult asp_print
      AspDataEntry *sep, AspDataEntry *end,
      AspDataEntry **returnValue)
 {
-    unsigned argCount = AspCount(values);
-    for (unsigned i = 0; i < argCount; i++)
+    AspRunResult result = AspRunResult_OK;
+
+    int32_t argCount;
+    result = AspCount(engine, values, &argCount);
+    if (result != AspRunResult_OK)
+        return result;
+    for (int32_t i = 0; i < argCount; i++)
     {
         if (i != 0)
         {
-            AspRunResult result = asp_print1(engine, sep);
+            result = asp_print1(engine, sep);
             if (result != AspRunResult_OK)
                 return result;
         }
 
         AspDataEntry *value = AspElement(engine, values, i);
-        AspRunResult result = asp_print1(engine, value);
+        result = asp_print1(engine, value);
         if (result != AspRunResult_OK)
             return result;
     }
 
-    AspRunResult result = asp_print1(engine, end);
+    result = asp_print1(engine, end);
     if (result != AspRunResult_OK)
         return result;
 

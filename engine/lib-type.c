@@ -28,19 +28,23 @@ ASP_LIB_API AspRunResult AspLib_type
 }
 
 /* len(object)
- * Return length of object. Return 1 if object is not a container.
+ * Return length of object. Return 1 if object is not like a container.
  */
 ASP_LIB_API AspRunResult AspLib_len
     (AspEngine *engine,
      AspDataEntry *object,
      AspDataEntry **returnValue)
 {
-    unsigned count = AspCount(object);
-    int32_t len = *(int32_t *)&count;
-    AspDataEntry *lenEntry = AspNewInteger(engine, len);
-    if (lenEntry == 0)
+    AspRunResult result = AspRunResult_OK;
+
+    uint32_t count;
+    result = AspCount(engine, object, &count);
+    if (result != AspRunResult_OK)
+        return result;
+    AspDataEntry *countEntry = AspNewInteger(engine, count);
+    if (countEntry == 0)
         return AspRunResult_OutOfDataMemory;
-    *returnValue = lenEntry;
+    *returnValue = countEntry;
     return AspRunResult_OK;
 }
 
@@ -239,10 +243,16 @@ static AspRunResult ExtractWord
     (AspEngine *engine, AspDataEntry *str,
      char *buffer, size_t *bufferSize)
 {
+    AspRunResult result = AspRunResult_OK;
+
     size_t maxBufferSize = *bufferSize;
     *bufferSize = 0;
     bool end = false;
-    for (int index = 0; index < (int)AspCount(str); index++)
+    int32_t length;
+    result = AspCount(engine, str, &length);
+    if (result != AspRunResult_OK)
+        return result;
+    for (int32_t index = 0; index < length; index++)
     {
         char c = AspStringElement(engine, str, index);
         if (isspace(c))

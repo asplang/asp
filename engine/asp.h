@@ -150,11 +150,12 @@ ASP_API bool AspStringValue
      size_t *size, char *buffer, size_t index, size_t bufferSize);
 ASP_API AspDataEntry *AspToString(AspEngine *, AspDataEntry *);
 ASP_API AspDataEntry *AspToRepr(AspEngine *, const AspDataEntry *);
-ASP_API unsigned AspCount(const AspDataEntry *);
+ASP_API AspRunResult AspCount
+    (AspEngine *, const AspDataEntry *, int32_t *count);
 ASP_API AspDataEntry *AspElement
-    (AspEngine *, AspDataEntry *sequence, int index);
+    (AspEngine *, AspDataEntry *sequence, int32_t index);
 ASP_API char AspStringElement
-    (AspEngine *, const AspDataEntry *str, int index);
+    (AspEngine *, const AspDataEntry *str, int32_t index);
 ASP_API AspDataEntry *AspFind
     (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
 ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
@@ -194,8 +195,8 @@ ASP_API bool AspListAppend
     (AspEngine *, AspDataEntry *list, AspDataEntry *value, bool take);
 ASP_API bool AspListInsert
     (AspEngine *, AspDataEntry *list,
-     int index, AspDataEntry *value, bool take);
-ASP_API bool AspListErase(AspEngine *, AspDataEntry *list, int index);
+     int32_t index, AspDataEntry *value, bool take);
+ASP_API bool AspListErase(AspEngine *, AspDataEntry *list, int32_t index);
 ASP_API bool AspStringAppend
     (AspEngine *, AspDataEntry *str,
      const char *buffer, size_t bufferSize);

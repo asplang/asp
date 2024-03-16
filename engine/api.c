@@ -207,7 +207,7 @@ bool AspIntegerValue(const AspDataEntry *entry, int32_t *result)
     if (!AspIsNumeric(entry))
         return false;
 
-    int value;
+    int32_t value;
     bool valid = true;
     switch (AspDataGetType(entry))
     {
@@ -241,7 +241,7 @@ bool AspIntegerValue(const AspDataEntry *entry, int32_t *result)
                 valid = false;
             }
             else
-                value = (int)round(f);
+                value = (int32_t)round(f);
             break;
         }
     }
@@ -435,7 +435,7 @@ static AspDataEntry *ToString
             {
                 double f;
                 AspFloatValue(entry, &f);
-                int count = snprintf(buffer, sizeof buffer, "%g", f);
+                snprintf(buffer, sizeof buffer, "%g", f);
                 if (!isnan(f) && !isinf(f) &&
                     strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
                     strcat(buffer, ".0");
@@ -905,7 +905,8 @@ static const char *TypeString(DataType type)
     return "?";
 }
 
-unsigned AspCount(const AspDataEntry *entry)
+AspRunResult AspCount
+    (AspEngine *engine, const AspDataEntry *entry, int32_t *count)
 {
     if (entry == 0)
         return 0;
@@ -913,21 +914,29 @@ unsigned AspCount(const AspDataEntry *entry)
     switch (AspDataGetType(entry))
     {
         default:
-            return 1;
+            *count = 1;
+            break;
+
+        case DataType_Range:
+            return AspRangeCount(engine, entry, count);
 
         case DataType_String:
         case DataType_Tuple:
         case DataType_List:
-            return AspDataGetSequenceCount(entry);
+            *count = AspDataGetSequenceCount(entry);
+            break;
 
         case DataType_Set:
         case DataType_Dictionary:
-            return AspDataGetTreeCount(entry);
+            *count = AspDataGetTreeCount(entry);
+            break;
     }
+
+    return AspRunResult_OK;
 }
 
 AspDataEntry *AspElement
-    (AspEngine *engine, AspDataEntry *sequence, int index)
+    (AspEngine *engine, AspDataEntry *sequence, int32_t index)
 {
     uint8_t type = AspDataGetType(sequence);
     if (type != DataType_Tuple && type != DataType_List)
@@ -940,7 +949,7 @@ AspDataEntry *AspElement
 }
 
 char AspStringElement
-    (AspEngine *engine, const AspDataEntry *strEntry, int index)
+    (AspEngine *engine, const AspDataEntry *strEntry, int32_t index)
 {
     AspDataEntry *str = (AspDataEntry *)strEntry;
 
@@ -950,7 +959,7 @@ char AspStringElement
     /* Treat negative indices as counting backwards from the end. */
     if (index < 0)
     {
-        index = (int)AspDataGetSequenceCount(strEntry) + index;
+        index += AspDataGetSequenceCount(strEntry);
         if (index < 0)
             return 0;
     }
@@ -965,7 +974,8 @@ char AspStringElement
          nextResult = AspSequenceNext(engine, str, nextResult.element, true))
     {
         AspDataEntry *fragment = nextResult.value;
-        uint8_t fragmentSize = AspDataGetStringFragmentSize(fragment);
+        uint32_t uFragmentSize = AspDataGetStringFragmentSize(fragment);
+        int32_t fragmentSize = *(int32_t *)&uFragmentSize;
         if (index >= fragmentSize)
         {
             index -= fragmentSize;
@@ -1336,7 +1346,7 @@ bool AspListAppend
 
 bool AspListInsert
     (AspEngine *engine, AspDataEntry *list,
-     int index, AspDataEntry *value, bool take)
+     int32_t index, AspDataEntry *value, bool take)
 {
     /* Ensure the container is a list, not a tuple. */
     AspRunResult assertResult = AspAssert
@@ -1355,7 +1365,7 @@ bool AspListInsert
     return true;
 }
 
-bool AspListErase(AspEngine *engine, AspDataEntry *list, int index)
+bool AspListErase(AspEngine *engine, AspDataEntry *list, int32_t index)
 {
     /* Ensure the container is a list, not a tuple. */
     AspRunResult assertResult = AspAssert

@@ -29,6 +29,17 @@ uint32_t AspDataGetWord3(const AspDataEntry *entry)
         AspBitGetField(entry->w.u2, AspWordBitSize, AspWordBitSize - 24U) << 24;
 }
 
+void AspDataSetSignedWord3(AspDataEntry *entry, int32_t value)
+{
+    AspDataSetWord3(entry, *(uint32_t *)&value);
+}
+
+int32_t AspDataGetSignedWord3(const AspDataEntry *entry)
+{
+    uint32_t value = AspDataGetWord3(entry);
+    return *(int32_t *)&value;
+}
+
 size_t AspDataEntrySize(void)
 {
     return sizeof(AspDataEntry);

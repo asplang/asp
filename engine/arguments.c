@@ -101,7 +101,7 @@ AspRunResult AspSetArgumentsString(AspEngine *engine, const char *s)
     /* Process the arguments string. */
     bool inArgument = false, inString = false, escape = false;
     char c, quote;
-    unsigned argumentIndex = AspDataGetSequenceCount(arguments);
+    int32_t argumentIndex = AspDataGetSequenceCount(arguments);
     AspDataEntry *argument = 0;
     while (c = *s++)
     {

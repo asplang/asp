@@ -423,7 +423,7 @@ AspRunResult AspTreeEraseNode
     AspUnref(engine, node);
     if (engine->runResult != AspRunResult_OK)
         return engine->runResult;
-    AspDataSetTreeCount(tree, AspDataGetTreeCount(tree) - 1U);
+    AspDataSetTreeCount(tree, AspDataGetTreeCount(tree) - 1);
 
     return result;
 }
@@ -699,7 +699,7 @@ static AspRunResult Insert
     AspDataSetTreeNodeIsBlack
         (AspEntry(engine, AspDataGetTreeRootIndex(tree)), true);
 
-    AspDataSetTreeCount(tree, AspDataGetTreeCount(tree) + 1U);
+    AspDataSetTreeCount(tree, AspDataGetTreeCount(tree) + 1);
 
     return result;
 }
