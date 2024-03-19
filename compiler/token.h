@@ -22,11 +22,14 @@ struct Token : public SourceElement
     explicit Token
         (const SourceLocation &, int type = 0, const std::string & = "",
          const std::string &error = "");
-    Token(const SourceLocation &, int, int, const std::string & = "");
+    Token
+        (const SourceLocation &, std::int32_t, bool negatedMin,
+         const std::string & = "");
     Token(const SourceLocation &, double, const std::string & = "");
     Token(const SourceLocation &, const std::string &);
 
     int type;
+    bool negatedMinInteger = false;
     union
     {
         std::int32_t i;

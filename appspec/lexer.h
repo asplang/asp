@@ -37,6 +37,7 @@ class Lexer
         Token *ProcessComment();
         Token *ProcessStatementEnd();
         Token *ProcessNumber();
+        Token *ProcessSignedNumber();
         Token *ProcessString();
         Token *ProcessName();
         Token *ProcessSpecial();

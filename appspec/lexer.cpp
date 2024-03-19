@@ -48,9 +48,6 @@ Token *Lexer::Next()
             token = ProcessName();
         else if (c == '\'' || c == '"')
             token = ProcessString();
-        else if (c == '-' &&
-                 (isdigit(Peek(1)) || Peek(1) == '.' && isdigit(Peek(2))))
-            token = ProcessNumber();
         else if (c == '.')
         {
             if (Peek(1) == '.' && Peek(2) == '.')
@@ -61,6 +58,9 @@ Token *Lexer::Next()
             else
                 token = ProcessNumber();
         }
+        else if (c == '-' &&
+                 (isdigit(Peek(1)) || Peek(1) == '.' && isdigit(Peek(2))))
+            token = ProcessSignedNumber();
         else if (c == '=')
         {
             Get();
@@ -103,6 +103,28 @@ Token *Lexer::Next()
     }
 
     return token;
+}
+
+Token *Lexer::ProcessSignedNumber()
+{
+    Get(); // -
+    Token *result = ProcessNumber();
+    if (result->type == -1)
+        return result;
+    switch (result->type)
+    {
+        case TOKEN_INTEGER:
+        {
+            result->i = result->negatedMinInteger ? INT32_MIN : -result->i;
+            result->negatedMinInteger = false;
+            break;
+        }
+
+        case TOKEN_FLOAT:
+            result->f = -result->f;
+            break;
+    }
+    return result;
 }
 
 int Lexer::Get()

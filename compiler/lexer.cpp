@@ -101,9 +101,6 @@ void Lexer::FetchNext()
             token = ProcessName();
         else if (c == '\'' || c == '"')
             token = ProcessString();
-        else if (c == '-' &&
-                 (isdigit(Peek(1)) || Peek(1) == '.' && isdigit(Peek(2))))
-            token = ProcessNumber();
         else if (c == '.')
             token = isdigit(Peek(1)) ? ProcessNumber() : ProcessSpecial();
         else if (c == ':')

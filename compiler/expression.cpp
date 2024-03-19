@@ -515,7 +515,8 @@ ConstantExpression::ConstantExpression(const Token &token) :
             break;
 
         case TOKEN_INTEGER:
-            type = Type::Integer;
+            type = token.negatedMinInteger ?
+                Type::NegatedMinInteger : Type::Integer;
             i = token.i;
             break;
 
@@ -682,6 +683,9 @@ Expression *FoldTernaryExpression
 
 bool ConstantExpression::IsTrue() const
 {
+    if (type == Type::NegatedMinInteger)
+        throw string("Integer constant out of range");
+
     switch (type)
     {
         default:
@@ -711,6 +715,10 @@ bool ConstantExpression::IsString() const
 
 bool ConstantExpression::IsEqual(const ConstantExpression &right) const
 {
+    if (type == Type::NegatedMinInteger ||
+        right.type == Type::NegatedMinInteger)
+        throw string("Integer constant out of range");
+
     if (type != right.type)
         return false;
     switch (type)
@@ -738,6 +746,10 @@ bool ConstantExpression::IsEqual(const ConstantExpression &right) const
 
 int ConstantExpression::Compare(const ConstantExpression &right) const
 {
+    if (type == Type::NegatedMinInteger ||
+        right.type == Type::NegatedMinInteger)
+        throw string("Integer constant out of range");
+
     bool comparable =
         (type == Type::Boolean ||
          type == Type::Integer ||
@@ -808,6 +820,9 @@ Expression *ConstantExpression::FoldNot()
 
 Expression *ConstantExpression::FoldPlus()
 {
+    if (type == Type::NegatedMinInteger)
+        throw string("Integer constant out of range");
+
     switch (type)
     {
         default:
@@ -815,7 +830,7 @@ Expression *ConstantExpression::FoldPlus()
 
         case Type::Boolean:
             return new ConstantExpression(Token(sourceLocation,
-                b ? 1 : 0, 0));
+                b ? 1 : 0, false));
 
         case Type::Integer:
         case Type::Float:
@@ -833,7 +848,7 @@ Expression *ConstantExpression::FoldMinus()
 
         case Type::Boolean:
             return new ConstantExpression(Token(sourceLocation,
-                b ? -1 : 0, 0));
+                b ? -1 : 0, false));
 
         case Type::Integer:
         {
@@ -844,8 +859,13 @@ Expression *ConstantExpression::FoldMinus()
                     ("Arithmetic overflow in unary negation expression");
             else if (result != AspIntegerResult_OK)
                 throw string("Invalid unary negation expression");
-            return new ConstantExpression(Token(sourceLocation, intResult, 0));
+            return new ConstantExpression(Token(sourceLocation,
+                intResult, false));
         }
+
+        case Type::NegatedMinInteger:
+            return new ConstantExpression(Token(sourceLocation,
+                INT32_MIN, false));
 
         case Type::Float:
             return new ConstantExpression(Token(sourceLocation, -f));
@@ -854,6 +874,9 @@ Expression *ConstantExpression::FoldMinus()
 
 Expression *ConstantExpression::FoldInvert()
 {
+    if (type == Type::NegatedMinInteger)
+        throw string("Integer constant out of range");
+
     switch (type)
     {
         default:
@@ -862,10 +885,11 @@ Expression *ConstantExpression::FoldInvert()
 
         case Type::Boolean:
             return new ConstantExpression(Token(sourceLocation,
-                ~(b ? 1 : 0), 0));
+                ~(b ? 1 : 0), false));
 
         case Type::Integer:
-            return new ConstantExpression(Token(sourceLocation, ~i, 0));
+            return new ConstantExpression(Token(sourceLocation,
+                ~i, false));
     }
 }
 
@@ -932,6 +956,10 @@ Expression *FoldBitwiseOperation
      ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
     typedef ConstantExpression::Type Type;
+
+    if (leftExpression->type == Type::NegatedMinInteger ||
+        rightExpression->type == Type::NegatedMinInteger)
+        throw string("Integer constant out of range BIT");
 
     int32_t leftValue = 0, rightValue = 0;
     if (leftExpression->type == Type::Boolean)
@@ -1008,7 +1036,7 @@ Expression *FoldBitwiseOperation
     }
 
     return new ConstantExpression
-        (Token(leftExpression->sourceLocation, intResult, 0));
+        (Token(leftExpression->sourceLocation, intResult, false));
 }
 
 Expression *FoldArithmeticOperation
@@ -1016,6 +1044,10 @@ Expression *FoldArithmeticOperation
      ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
     typedef ConstantExpression::Type Type;
+
+    if (leftExpression->type == Type::NegatedMinInteger ||
+        rightExpression->type == Type::NegatedMinInteger)
+        throw string("Integer constant out of range ARITH");
 
     // Fold only numeric operands. Do not fold, for example, string
     // multiplication.
@@ -1169,7 +1201,7 @@ Expression *FoldArithmeticOperation
 
     return resultType == Type::Integer ?
         new ConstantExpression
-            (Token(leftExpression->sourceLocation, intResult, 0)) :
+            (Token(leftExpression->sourceLocation, intResult, false)) :
         new ConstantExpression
             (Token(leftExpression->sourceLocation, floatResult));
 }
@@ -1178,5 +1210,17 @@ Expression *FoldConditional
     (ConstantExpression *conditionExpression,
      Expression *leftExpression, Expression *rightExpression)
 {
+    typedef ConstantExpression::Type Type;
+
+    auto *leftConstExpression = dynamic_cast<ConstantExpression *>
+        (leftExpression);
+    auto *rightConstExpression = dynamic_cast<ConstantExpression *>
+        (rightExpression);
+    if (leftConstExpression != nullptr &&
+        leftConstExpression->type == Type::NegatedMinInteger ||
+        rightConstExpression != nullptr &&
+        rightConstExpression->type == Type::NegatedMinInteger)
+        throw string("Integer constant out of range COND");
+
     return conditionExpression->IsTrue() ? leftExpression : rightExpression;
 }

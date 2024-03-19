@@ -1161,6 +1161,8 @@ void ConstantExpression::Emit
         case Type::Integer:
             executable.Insert(new PushIntegerInstruction(i), sourceLocation);
             break;
+        case Type::NegatedMinInteger:
+            throw string("Integer constant out of range");
         case Type::Float:
             executable.Insert(new PushFloatInstruction(f), sourceLocation);
             break;
