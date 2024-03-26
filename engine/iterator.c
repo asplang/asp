@@ -51,11 +51,12 @@ AspIteratorResult AspIteratorCreate
         {
             /* Determine a start value. */
             int32_t startValue, endValue, stepValue;
+            bool bounded;
             AspGetRange
                 (engine, iterable,
-                 &startValue, &endValue, &stepValue);
+                 &startValue, &endValue, &stepValue, &bounded);
             bool atEnd = AspIsValueAtRangeEnd
-                (startValue, endValue, stepValue);
+                (startValue, endValue, stepValue, bounded);
 
             /* Create an integer set to the start value. */
             if (!atEnd)
@@ -146,12 +147,12 @@ AspRunResult AspIteratorNext
 
         case DataType_Range:
         {
-            int32_t endValue, stepValue;
-
             if (AspDataGetType(member) != DataType_Integer)
                 return AspRunResult_UnexpectedType;
 
-            AspGetRange(engine, iterable, 0, &endValue, &stepValue);
+            int32_t endValue, stepValue;
+            bool bounded;
+            AspGetRange(engine, iterable, 0, &endValue, &stepValue, &bounded);
             int32_t newValue;
             AspRunResult addResult = AspTranslateIntegerResult
                 (AspAddIntegers
@@ -162,7 +163,7 @@ AspRunResult AspIteratorNext
             if (engine->runResult != AspRunResult_OK)
                 return engine->runResult;
             bool atEnd = AspIsValueAtRangeEnd
-                (newValue, endValue, stepValue);
+                (newValue, endValue, stepValue, bounded);
             if (atEnd)
             {
                 AspDataSetIteratorMemberNeedsCleanup(iterator, false);

@@ -102,7 +102,7 @@ static AspRunResult Step(AspEngine *engine)
             fputs("PUSHE\n", engine->traceFile);
             #endif
 
-            AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Ellipsis);
+            AspDataEntry *valueEntry = AspNewEllipsis(engine);
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
@@ -163,10 +163,9 @@ static AspRunResult Step(AspEngine *engine)
             fprintf(engine->traceFile, "%d\n", value);
             #endif
 
-            AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Integer);
+            AspDataEntry *valueEntry = AspNewInteger(engine, value);
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspDataSetInteger(valueEntry, value);
 
             AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
@@ -197,10 +196,9 @@ static AspRunResult Step(AspEngine *engine)
             fprintf(engine->traceFile, "%g\n", value);
             #endif
 
-            AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Float);
+            AspDataEntry *valueEntry = AspNewFloat(engine, value);
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspDataSetFloat(valueEntry, value);
 
             AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
@@ -236,10 +234,9 @@ static AspRunResult Step(AspEngine *engine)
             fprintf(engine->traceFile, "%d\n", value);
             #endif
 
-            AspDataEntry *valueEntry = AspAllocEntry(engine, DataType_Symbol);
+            AspDataEntry *valueEntry = AspNewSymbol(engine, value);
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspDataSetSymbol(valueEntry, value);
 
             AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
@@ -301,14 +298,10 @@ static AspRunResult Step(AspEngine *engine)
             fputs("'\n", engine->traceFile);
             #endif
 
-            AspDataEntry *stringEntry = AspAllocEntry(engine, DataType_String);
+            AspDataEntry *stringEntry = AspNewString
+                (engine, (char *)engine->pc, (size_t)size);
             if (stringEntry == 0)
                 return AspRunResult_OutOfDataMemory;
-
-            AspRunResult appendResult = AspStringAppendBuffer
-                (engine, stringEntry, (char *)engine->pc, (size_t)size);
-            if (appendResult != AspRunResult_OK)
-                return appendResult;
 
             engine->pc += size;
 
@@ -783,9 +776,11 @@ static AspRunResult Step(AspEngine *engine)
                         default:
                             return AspRunResult_UnexpectedType;
 
+                        case DataType_Boolean:
                         case DataType_Integer:
                         {
-                            int32_t indexValue = AspDataGetInteger(index);
+                            int32_t indexValue;
+                            AspIntegerValue(index, &indexValue);
 
                             /* Erase the element. */
                             bool eraseResult = AspSequenceErase
@@ -800,9 +795,10 @@ static AspRunResult Step(AspEngine *engine)
                         {
                             int32_t count = AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
+                            bool bounded;
                             AspRunResult getSliceRangeResult = AspGetSliceRange
                                 (engine, index, count,
-                                 &startValue, &endValue, &stepValue);
+                                 &startValue, &endValue, &stepValue, &bounded);
                             if (getSliceRangeResult != AspRunResult_OK)
                                 return getSliceRangeResult;
 
@@ -818,7 +814,8 @@ static AspRunResult Step(AspEngine *engine)
                                  AspSequenceNext(engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
-                                 (right ? i < endValue : i > endValue);
+                                 (!bounded ||
+                                  (right ? i < endValue : i > endValue));
                                  iterationCount++,
                                  i += increment, select -= increment,
                                  nextResult = AspSequenceNext
@@ -2024,12 +2021,14 @@ static AspRunResult Step(AspEngine *engine)
                 start = AspTopValue(engine);
                 if (start == 0)
                     return AspRunResult_StackUnderflow;
-                if (AspDataGetType(start) != DataType_Integer)
-                    return AspRunResult_UnexpectedType;
-                if (AspDataGetInteger(start) == 0)
+                if (AspIsNone(start))
                     hasStart = false;
                 else
+                {
+                    if (!AspIsIntegral(start))
+                        return AspRunResult_UnexpectedType;
                     AspRef(engine, start);
+                }
                 AspPop(engine);
             }
             if (hasEnd)
@@ -2037,23 +2036,45 @@ static AspRunResult Step(AspEngine *engine)
                 end = AspTopValue(engine);
                 if (end == 0)
                     return AspRunResult_StackUnderflow;
-                if (AspDataGetType(end) != DataType_Integer)
-                    return AspRunResult_UnexpectedType;
-                AspRef(engine, end);
+                if (AspIsNone(end))
+                    hasEnd = false;
+                else
+                {
+                    if (!AspIsIntegral(end))
+                        return AspRunResult_UnexpectedType;
+                    AspRef(engine, end);
+                }
                 AspPop(engine);
             }
+            int32_t stepValue = 1;
             if (hasStep)
             {
                 step = AspTopValue(engine);
                 if (step == 0)
                     return AspRunResult_StackUnderflow;
-                if (AspDataGetType(step) != DataType_Integer)
-                    return AspRunResult_UnexpectedType;
-                if (AspDataGetInteger(step) == 1)
+                if (AspIsNone(step))
                     hasStep = false;
                 else
-                    AspRef(engine, step);
+                {
+                    if (!AspIsIntegral(step))
+                        return AspRunResult_UnexpectedType;
+                    AspIntegerValue(step, &stepValue);
+                    if (stepValue == 1)
+                        hasStep = false;
+                    else
+                        AspRef(engine, step);
+                }
                 AspPop(engine);
+            }
+            int32_t startValue = 0;
+            if (hasStart)
+            {
+                AspIntegerValue(start, &startValue);
+                if (startValue == (stepValue < 0 ? -1 : 0))
+                {
+                    hasStart = false;
+                    AspUnref(engine, start);
+                }
             }
 
             /* Create a range entry. */
@@ -2062,13 +2083,42 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetRangeHasStart(range, hasStart);
             if (hasStart)
+            {
+                if (AspDataGetType(start) != DataType_Integer)
+                {
+                    AspUnref(engine, start);
+                    start = AspNewInteger(engine, startValue);
+                    if (start == 0)
+                        return AspRunResult_OutOfDataMemory;
+                }
                 AspDataSetRangeStartIndex(range, AspIndex(engine, start));
+            }
             AspDataSetRangeHasEnd(range, hasEnd);
             if (hasEnd)
+            {
+                if (AspDataGetType(end) != DataType_Integer)
+                {
+                    int32_t endValue;
+                    AspIntegerValue(end, &endValue);
+                    AspUnref(engine, end);
+                    end = AspNewInteger(engine, endValue);
+                    if (end == 0)
+                        return AspRunResult_OutOfDataMemory;
+                }
                 AspDataSetRangeEndIndex(range, AspIndex(engine, end));
+            }
             AspDataSetRangeHasStep(range, hasStep);
             if (hasStep)
+            {
+                if (AspDataGetType(step) != DataType_Integer)
+                {
+                    AspUnref(engine, step);
+                    step = AspNewInteger(engine, stepValue);
+                    if (step == 0)
+                        return AspRunResult_OutOfDataMemory;
+                }
                 AspDataSetRangeStepIndex(range, AspIndex(engine, step));
+            }
 
             /* Push the range onto the stack. */
             AspDataEntry *stackEntry = AspPush(engine, range);
@@ -2223,9 +2273,10 @@ static AspRunResult Step(AspEngine *engine)
                     else
                     {
                         /* Ensure the index is an integer. */
-                        if (AspDataGetType(key) != DataType_Integer)
+                        if (!AspIsIntegral(key))
                             return AspRunResult_UnexpectedType;
-                        int32_t index = AspDataGetInteger(key);
+                        int32_t index;
+                        AspIntegerValue(key, &index);
 
                         /* Insert the value at the given index. */
                         insertResult = AspSequenceInsertByIndex
@@ -2319,9 +2370,11 @@ static AspRunResult Step(AspEngine *engine)
                         default:
                             return AspRunResult_UnexpectedType;
 
+                        case DataType_Boolean:
                         case DataType_Integer:
                         {
-                            int32_t indexValue = AspDataGetInteger(index);
+                            int32_t indexValue;
+                            AspIntegerValue(index, &indexValue);
 
                             /* Compute the indexed integer value. */
                             AspRangeResult rangeResult = AspRangeIndex
@@ -2375,9 +2428,11 @@ static AspRunResult Step(AspEngine *engine)
                         default:
                             return AspRunResult_UnexpectedType;
 
+                        case DataType_Boolean:
                         case DataType_Integer:
                         {
-                            int32_t indexValue = AspDataGetInteger(index);
+                            int32_t indexValue;
+                            AspIntegerValue(index, &indexValue);
 
                             /* Get the indexed character. */
                             char c = AspStringElement
@@ -2413,9 +2468,10 @@ static AspRunResult Step(AspEngine *engine)
                             int32_t count =
                                 AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
+                            bool bounded;
                             AspRunResult getSliceRangeResult = AspGetSliceRange
                                 (engine, index, count,
-                                 &startValue, &endValue, &stepValue);
+                                 &startValue, &endValue, &stepValue, &bounded);
                             if (getSliceRangeResult != AspRunResult_OK)
                                 return getSliceRangeResult;
 
@@ -2437,7 +2493,8 @@ static AspRunResult Step(AspEngine *engine)
                                  AspSequenceNext(engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
-                                 (right ? i < endValue : i > endValue);
+                                 (!bounded ||
+                                  (right ? i < endValue : i > endValue));
                                  iterationCount++,
                                  nextResult = AspSequenceNext
                                     (engine, container,
@@ -2506,9 +2563,11 @@ static AspRunResult Step(AspEngine *engine)
                         default:
                             return AspRunResult_UnexpectedType;
 
+                        case DataType_Boolean:
                         case DataType_Integer:
                         {
-                            int32_t indexValue = AspDataGetInteger(index);
+                            int32_t indexValue;
+                            AspIntegerValue(index, &indexValue);
 
                             /* Locate the element. */
                             AspSequenceResult indexResult = AspSequenceIndex
@@ -2533,9 +2592,10 @@ static AspRunResult Step(AspEngine *engine)
                         {
                             int32_t count = AspDataGetSequenceCount(container);
                             int32_t startValue, endValue, stepValue;
+                            bool bounded;
                             AspRunResult getSliceRangeResult = AspGetSliceRange
                                 (engine, index, count,
-                                 &startValue, &endValue, &stepValue);
+                                 &startValue, &endValue, &stepValue, &bounded);
                             if (getSliceRangeResult != AspRunResult_OK)
                                 return getSliceRangeResult;
 
@@ -2557,7 +2617,8 @@ static AspRunResult Step(AspEngine *engine)
                                  AspSequenceNext(engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
-                                 (right ? i < endValue : i > endValue);
+                                 (!bounded ||
+                                  (right ? i < endValue : i > endValue));
                                  iterationCount++,
                                  i += increment, select -= increment,
                                  nextResult = AspSequenceNext

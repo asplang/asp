@@ -17,53 +17,53 @@ static AspRunResult UnboundedRangeIndex
 
 void AspGetRange
     (AspEngine *engine, const AspDataEntry *range,
-     int32_t *startValue, int32_t *endValue, int32_t *stepValue)
+     int32_t *startValue, int32_t *endValue, int32_t *stepValue,
+     bool *bounded)
 {
     AspAssert
         (engine, range != 0 && AspDataGetType(range) == DataType_Range);
     if (engine->runResult != AspRunResult_OK)
         return;
 
+    /* Extract values from the range object. */
+    AspDataEntry *startEntry = 0, *endEntry = 0, *stepEntry = 0;
+    if (AspDataGetRangeHasStart(range))
+    {
+        startEntry = AspValueEntry
+            (engine, AspDataGetRangeStartIndex(range));
+        AspAssert(engine, AspDataGetType(startEntry) == DataType_Integer);
+    }
+    if (AspDataGetRangeHasEnd(range))
+    {
+        endEntry = AspValueEntry
+            (engine, AspDataGetRangeEndIndex(range));
+        AspAssert(engine, AspDataGetType(endEntry) == DataType_Integer);
+    }
+    if (AspDataGetRangeHasStep(range))
+    {
+        stepEntry = AspValueEntry
+            (engine, AspDataGetRangeStepIndex(range));
+        AspAssert(engine, AspDataGetType(stepEntry) == DataType_Integer);
+    }
+    int32_t localStepValue =
+        stepEntry != 0 ? AspDataGetInteger(stepEntry) : 1;
+    int32_t localStartValue =
+        startEntry != 0 ? AspDataGetInteger(startEntry) :
+        localStepValue < 0 ? -1 : 0;
+    bool localBounded = endEntry != 0;
+    int32_t localEndValue =
+        localBounded ? AspDataGetInteger(endEntry) :
+        localStepValue < 0 ? INT32_MIN : INT32_MAX;
+
+    /* Populate requested return values. */
     if (startValue != 0)
-    {
-        AspDataEntry *start = 0;
-        if (AspDataGetRangeHasStart(range))
-        {
-            start = AspValueEntry
-                (engine, AspDataGetRangeStartIndex(range));
-            AspAssert(engine, AspDataGetType(start) == DataType_Integer);
-        }
-        *startValue = start == 0 ? 0 : AspDataGetInteger(start);
-    }
-
-    int32_t localStepValue;
-    if (endValue != 0 || stepValue != 0)
-    {
-        AspDataEntry *step = 0;
-        if (AspDataGetRangeHasStep(range))
-        {
-            step = AspValueEntry
-                (engine, AspDataGetRangeStepIndex(range));
-            AspAssert(engine, AspDataGetType(step) == DataType_Integer);
-        }
-        localStepValue = step == 0 ? 1 : AspDataGetInteger(step);
-        if (stepValue != 0)
-            *stepValue = localStepValue;
-    }
-
+        *startValue = localStartValue;
     if (endValue != 0)
-    {
-        AspDataEntry *end = 0;
-        if (AspDataGetRangeHasEnd(range))
-        {
-            end = AspValueEntry
-                (engine, AspDataGetRangeEndIndex(range));
-            AspAssert(engine, AspDataGetType(end) == DataType_Integer);
-        }
-        *endValue =
-            end == 0 ? localStepValue < 0 ? INT32_MIN : INT32_MAX :
-            AspDataGetInteger(end);
-    }
+        *endValue = localEndValue;
+    if (stepValue != 0)
+        *stepValue = localStepValue;
+    if (bounded != 0)
+        *bounded = localBounded;
 }
 
 AspRunResult AspRangeCount
@@ -75,10 +75,11 @@ AspRunResult AspRangeCount
         return 0;
 
     int32_t start, end, step;
-    AspGetRange(engine, range, &start, &end, &step);
+    bool bounded;
+    AspGetRange(engine, range, &start, &end, &step, &bounded);
 
     /* Deal with infinite ranges. */
-    if (step == 0)
+    if (step == 0 || !bounded)
         return AspRunResult_ValueOutOfRange;
 
     /* Check for an empty range. */
@@ -136,11 +137,12 @@ AspRangeResult AspRangeIndex
         return result;
 
     int32_t start, end, step;
-    AspGetRange(engine, range, &start, &end, &step);
+    bool bounded;
+    AspGetRange(engine, range, &start, &end, &step, &bounded);
 
     /* Ensure the index is in range. Note that since count is always
        non-negative, (-count) will always be representable. */
-    if (index < -count || index >= count)
+    if (bounded && (index < -count || index >= count))
     {
         result.result = AspRunResult_ValueOutOfRange;
         return result;
@@ -167,12 +169,12 @@ AspRangeResult AspRangeIndex
 }
 
 bool AspIsValueAtRangeEnd
-    (int32_t testValue, int32_t endValue, int32_t stepValue)
+    (int32_t testValue, int32_t endValue, int32_t stepValue, bool bounded)
 {
     return
-        stepValue == 0 ? testValue == endValue : stepValue > 0 ?
-        endValue != INT32_MAX && testValue >= endValue :
-        endValue != INT32_MIN && testValue <= endValue;
+        bounded &&
+        (stepValue == 0 ? testValue == endValue :
+         stepValue < 0 ? testValue <= endValue : testValue >= endValue);
 }
 
 /* Prepares for slice operations by limiting the components to valid indices
@@ -181,7 +183,8 @@ bool AspIsValueAtRangeEnd
    For range slicing, use AspRangeSlice, which deals with large numbers. */
 AspRunResult AspGetSliceRange
     (AspEngine *engine, const AspDataEntry *range, int32_t sequenceCount,
-     int32_t *startValue, int32_t *endValue, int32_t *stepValue)
+     int32_t *startValue, int32_t *endValue, int32_t *stepValue,
+     bool *bounded)
 {
     AspRunResult result = AspRunResult_OK;
 
@@ -192,7 +195,7 @@ AspRunResult AspGetSliceRange
     if (result != AspRunResult_OK)
         return result;
 
-    AspGetRange(engine, range, startValue, endValue, stepValue);
+    AspGetRange(engine, range, startValue, endValue, stepValue, bounded);
 
     /* Adjust the start and end values for the slice operation. */
     int32_t *indexValues[] = {startValue, endValue};
@@ -233,36 +236,78 @@ AspRangeResult AspRangeSlice
     if (result.result != AspRunResult_OK)
         return result;
 
-    int32_t start, end, step;
-    AspGetRange(engine, range, &start, &end, &step);
-    int32_t count;
-    result.result = AspRangeCount(engine, range, &count);
-    if (result.result != AspRunResult_OK)
-        return result;
+    int32_t rangeStart, rangeEnd, rangeStep;
+    bool rangeBounded;
+    AspGetRange
+        (engine, range, &rangeStart, &rangeEnd, &rangeStep, &rangeBounded);
+    int32_t rangeCount = 0;
     int32_t sliceStart, sliceEnd, sliceStep;
-    AspGetRange(engine, sliceRange, &sliceStart, &sliceEnd, &sliceStep);
+    bool sliceBounded;
+    AspGetRange
+        (engine, sliceRange,
+         &sliceStart, &sliceEnd, &sliceStep, &sliceBounded);
+
+    if (rangeBounded || sliceBounded)
+    {
+        result.result = AspRangeCount
+            (engine, rangeBounded ? range : sliceRange, &rangeCount);
+        if (result.result != AspRunResult_OK)
+            return result;
+    }
 
     /* Limit the slice indices with respect to the number of range elements. */
-    result.result = LimitIndex(&sliceStart, sliceStep, count);
-    if (result.result != AspRunResult_OK)
-        return result;
-    result.result = LimitIndex(&sliceEnd, sliceStep, count);
-    if (result.result != AspRunResult_OK)
-        return result;
+    if (rangeBounded)
+    {
+        result.result = LimitIndex(&sliceStart, sliceStep, rangeCount);
+        if (result.result != AspRunResult_OK)
+            return result;
+        result.result = LimitIndex(&sliceEnd, sliceStep, rangeCount);
+        if (result.result != AspRunResult_OK)
+            return result;
+    }
 
     /* Compute the new range as
-       (range[sliceStart], range[sliceEnd], step * sliceStep). */
-    int32_t newStart, newEnd, newStep;
+       (range[sliceStart], range[sliceEnd], rangeStep * sliceStep), ensuring
+       that for unbounded ranges, the slice contains no negative indexing
+       elements. */
+    int32_t newStart, newEnd = 0, newStep;
     result.result = UnboundedRangeIndex
-        (start, step, count, sliceStart, &newStart);
+        (rangeStart, rangeStep, rangeCount, sliceStart, &newStart);
     if (result.result != AspRunResult_OK)
         return result;
-    result.result = UnboundedRangeIndex
-        (start, step, count, sliceEnd, &newEnd);
-    if (result.result != AspRunResult_OK)
-        return result;
+    if (!rangeBounded)
+    {
+        bool sliceIndexIsNegative = sliceStart < 0;
+        if (!sliceIndexIsNegative)
+        {
+            if (!sliceBounded)
+                sliceIndexIsNegative = sliceStep < 0;
+            else if (rangeCount > 1)
+            {
+                int lastSliceIndex;
+                result.result = UnboundedRangeIndex
+                    (sliceStart, sliceStep, rangeCount, -1, &lastSliceIndex);
+                if (result.result != AspRunResult_OK)
+                    return result;
+                sliceIndexIsNegative = lastSliceIndex < 0;
+            }
+        }
+        if (sliceIndexIsNegative)
+        {
+            result.result = AspRunResult_ValueOutOfRange;
+            return result;
+        }
+    }
+    if (rangeBounded || sliceBounded)
+    {
+        result.result = UnboundedRangeIndex
+            (rangeStart, rangeStep,
+             rangeBounded ? rangeCount : 0, sliceEnd, &newEnd);
+        if (result.result != AspRunResult_OK)
+            return result;
+    }
     AspIntegerResult integerResult =
-        AspMultiplyIntegers(step, sliceStep, &newStep);
+        AspMultiplyIntegers(rangeStep, sliceStep, &newStep);
     if (integerResult != AspIntegerResult_OK)
     {
         result.result = AspTranslateIntegerResult(integerResult);
@@ -270,7 +315,9 @@ AspRangeResult AspRangeSlice
     }
 
     /* Create a new range object. */
-    result.value = AspNewRange(engine, newStart, newEnd, newStep);
+    result.value = rangeBounded || sliceBounded ?
+        AspNewRange(engine, newStart, newEnd, newStep) :
+        AspNewUnboundedRange(engine, newStart, newStep);
     if (result.value == 0)
     {
         result.result = AspRunResult_OutOfDataMemory;

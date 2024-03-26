@@ -22,19 +22,21 @@ typedef struct
 /* Normal range routines. */
 void AspGetRange
     (AspEngine *engine, const AspDataEntry *range,
-     int32_t *startValue, int32_t *endValue, int32_t *stepValue);
+     int32_t *startValue, int32_t *endValue, int32_t *stepValue,
+     bool *bounded);
 AspRunResult AspRangeCount
     (AspEngine *, const AspDataEntry *range, int32_t *count);
 AspRangeResult AspRangeIndex
     (AspEngine *, const AspDataEntry *range, int32_t index,
      bool createObject);
 bool AspIsValueAtRangeEnd
-    (int32_t testValue, int32_t endValue, int32_t stepValue);
+    (int32_t testValue, int32_t endValue, int32_t stepValue, bool bounded);
 
 /* Slice routines. */
 AspRunResult AspGetSliceRange
     (AspEngine *engine, const AspDataEntry *range, int32_t sequenceCount,
-     int32_t *startValue, int32_t *endValue, int32_t *stepValue);
+     int32_t *startValue, int32_t *endValue, int32_t *stepValue,
+     bool *bounded);
 AspRangeResult AspRangeSlice
     (AspEngine *, const AspDataEntry *range, AspDataEntry *sliceRange);
 

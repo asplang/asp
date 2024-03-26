@@ -55,7 +55,10 @@ static AspRunResult FillSequence
     if (AspIsRange(iterable))
     {
         int32_t start, end, step;
-        AspGetRange(engine, iterable, &start, &end, &step);
+        bool bounded;
+        AspGetRange(engine, iterable, &start, &end, &step, &bounded);
+        if (!bounded)
+            return AspRunResult_ValueOutOfRange;
         AspRunResult stepResult = AspRunResult_OK;
         for (int32_t i = start;
              stepResult == AspRunResult_OK && step < 0 ? i > end : i < end;

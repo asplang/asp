@@ -1284,12 +1284,15 @@ static AspOperationResult PerformMembershipOperation
 
             int32_t value = AspDataGetInteger(left);
             int32_t start, end, step;
-            AspGetRange(engine, right, &start, &end, &step);
+            bool bounded;
+            AspGetRange(engine, right, &start, &end, &step, &bounded);
 
             /* Check bounds. */
-            isIn = end < 0 ?
-                value <= start && value > end :
-                value >= start && value < end;
+            isIn =
+                !bounded ||
+                (end < 0 ?
+                 value <= start && value > end :
+                 value >= start && value < end);
 
             /* Determine membership if within bounds. */
             if (isIn)

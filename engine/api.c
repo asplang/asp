@@ -181,8 +181,11 @@ bool AspIsTrue(AspEngine *engine, const AspDataEntry *entry)
         case DataType_Range:
         {
             int32_t startValue, endValue, stepValue;
-            AspGetRange(engine, entry, &startValue, &endValue, &stepValue);
-            return !AspIsValueAtRangeEnd(startValue, endValue, stepValue);
+            bool bounded;
+            AspGetRange
+                (engine, entry, &startValue, &endValue, &stepValue, &bounded);
+            return !AspIsValueAtRangeEnd
+                (startValue, endValue, stepValue, bounded);
         }
 
         case DataType_String:
@@ -297,12 +300,12 @@ bool AspSymbolValue(const AspDataEntry *entry, int32_t *result)
 
 bool AspRangeValues
     (AspEngine *engine, const AspDataEntry *entry,
-     int32_t *start, int32_t *end, int32_t *step)
+     int32_t *start, int32_t *end, int32_t *step, bool *bounded)
 {
     if (!AspIsRange(entry))
         return false;
 
-    AspGetRange(engine, entry, start, end, step);
+    AspGetRange(engine, entry, start, end, step, bounded);
     return true;
 }
 
@@ -454,17 +457,15 @@ static AspDataEntry *ToString
             {
                 int count = 0;
                 int32_t start, end, step;
-                AspRangeValues(engine, entry, &start, &end, &step);
-                if (start != 0)
+                bool bounded;
+                AspRangeValues(engine, entry, &start, &end, &step, &bounded);
+                if (start != (step < 0 ? -1 : 0))
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
                          "%d", start);
                 count += snprintf
                     (buffer + count, sizeof buffer - count, "..");
-                bool unbounded =
-                    step < 0 && end == INT32_MIN ||
-                    step > 0 && end == INT32_MAX;
-                if (!unbounded)
+                if (bounded)
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
                          "%d", end);
@@ -1153,7 +1154,7 @@ static AspDataEntry *NewRange
     {
         bool error = false;
         AspDataEntry *start = 0, *end = 0, *step = 0;
-        if (!error && startValue != 0)
+        if (!error && startValue != (stepValue < 0 ? -1 : 0))
         {
             start = AspNewInteger(engine, startValue);
             if (start == 0)

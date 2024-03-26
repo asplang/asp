@@ -144,7 +144,7 @@ ASP_API bool AspFloatValue(const AspDataEntry *, double *);
 ASP_API bool AspSymbolValue(const AspDataEntry *, int32_t *);
 ASP_API bool AspRangeValues
     (AspEngine *, const AspDataEntry *,
-     int32_t *start, int32_t *end, int32_t *step);
+     int32_t *start, int32_t *end, int32_t *step, bool *bounded);
 ASP_API bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);

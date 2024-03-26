@@ -172,19 +172,22 @@ AspRunResult AspCompare
                         int32_t
                             leftStart, leftEnd, leftStep,
                             rightStart, rightEnd, rightStep;
+                        bool leftBounded, rightBounded;
                         AspGetRange
                             (engine, leftEntry,
-                             &leftStart, &leftEnd, &leftStep);
+                             &leftStart, &leftEnd, &leftStep, &leftBounded);
                         AspGetRange
                             (engine, rightEntry,
-                             &rightStart, &rightEnd, &rightStep);
+                             &rightStart, &rightEnd, &rightStep, &rightBounded);
                         comparison =
+                            leftBounded == rightBounded ?
                             leftStart == rightStart ?
                             leftEnd == rightEnd ?
                             leftStep == rightStep ? 0 :
                             leftStep < rightStep ? -1 : 1 :
                             leftEnd < rightEnd ? -1 : 1 :
-                            leftStart < rightStart ? -1 : 1;
+                            leftStart < rightStart ? -1 : 1 :
+                            leftBounded > rightBounded ? -1 : 1;
                         break;
                     }
 

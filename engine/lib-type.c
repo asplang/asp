@@ -37,7 +37,7 @@ ASP_LIB_API AspRunResult AspLib_len
 {
     AspRunResult result = AspRunResult_OK;
 
-    uint32_t count;
+    int32_t count;
     result = AspCount(engine, object, &count);
     if (result != AspRunResult_OK)
         return result;
