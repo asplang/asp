@@ -7,6 +7,48 @@ chronological order.
 Changes
 -------
 
+Version 1.1.0.0 (compiler 1.1.0.0, engine 1.1.0.0):
+- Compiler:
+  - Improved error reporting.
+- Engine:
+  - Changed the default value of the range start component (i.e., the value
+    assumed when a range's start value is left unspecified, e.g., ..5).
+    Previously it was always zero. Now, it is -1 if the step is negative, and
+    zero otherwise.
+  - Added allowing of Boolean values as range components, converting them to
+    integers in the usual way.
+  - Added missing range operations, all of which can be computed
+    mathematically:
+    - Length, i.e., the number of elements in a range.
+    - Element indexing.
+    - Membership test.
+    - Slicing, which produces a new range object.
+  - Added handling of unbounded ranges/slices.
+  - Added reversed iterators.
+  - Made the following API function changes:
+    - AspRangeValues: Added an extra parameter to indicate whether the range is
+      bounded.
+    - AspCount: Changed to return AspRunResult since it can now fail in certain
+      situations (e.g., unbounded ranges).
+    - AspNewIterator: Added an extra parameter to indicate the type of iterator
+      to create, normal (i.e., forward) or reversed.
+    - New functions:
+      - AspIsIterator, AspIsFunction, AspIsModule.
+      - AspRangeElement: Return the integer value at the specified index.
+      - AspTraceFile (only available in debug builds): Redirect trace output to
+        the specified file handle.
+  - Made the following changes to script-callable functions:
+    - iter: Now accepts an iterator argument and creates a copy of it (unlike
+      Python, which returns a reference to the same object). The iterator's
+      current position is retained in the copy.
+    - tuple and list: These functions no longer accept None as an argument,
+      making them more like their Python counterparts.
+    - New functions:
+      - range_values: Return a 3-tuple of the components of a range.
+      - reversed: Return a reversed iterator for a given collection or range.
+- Standalone application:
+  - Added extra options in debug builds for redirecting trace and dump outputs.
+
 Version 1.0.0.1 (compiler 1.0.0.1, engine 1.0.0.0):
 - Compiler:
   - Changed the way the compiler searches for import modules. Previously, the
