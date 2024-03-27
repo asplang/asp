@@ -1118,7 +1118,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Create an appropriate iterator. */
             AspIteratorResult iteratorResult = AspIteratorCreate
-                (engine, iterable);
+                (engine, iterable, false);
             if (iteratorResult.result != AspRunResult_OK)
                 return iteratorResult.result;
 

@@ -17,5 +17,8 @@ def float(x = 0.0) = AspLib_float
 def str(x = '') = AspLib_str
 def repr(x) = AspLib_repr
 
+# Range values.
+def range_values(x) = AspLib_range_values
+
 # Set/dictionary key conversion function.
 def key(object, stringize = True) = AspLib_key

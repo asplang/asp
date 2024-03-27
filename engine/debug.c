@@ -217,8 +217,11 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_Iterator:
-            fprintf(fp, " coll=0x%7.7X mem=0x%7.7X si=%d",
-                AspDataGetIteratorIterableIndex(entry),
+            fprintf(fp, " coll=0x%7.7X",
+                AspDataGetIteratorIterableIndex(entry));
+            if (AspDataGetIteratorIsReversed(entry))
+                fputs(" rev", fp);
+            fprintf(fp, " mem=0x%7.7X si=%d",
                 AspDataGetIteratorMemberIndex(entry),
                 AspDataGetIteratorStringIndex(entry));
             if (AspDataGetIteratorMemberNeedsCleanup(entry))
@@ -380,9 +383,9 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fprintf(fp, " dflt=0x%7.7X",
                     AspDataGetParameterDefaultIndex(entry));
             else if (AspDataGetParameterIsTupleGroup(entry))
-                fprintf(fp, " tgrp");
+                fputs(" tgrp", fp);
             else if (AspDataGetParameterIsDictionaryGroup(entry))
-                fprintf(fp, " dgrp");
+                fputs(" dgrp", fp);
             break;
 
         case DataType_Argument:
@@ -390,11 +393,11 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             if (AspDataGetArgumentHasName(entry))
                 fprintf(fp, " sym=%d", AspDataGetArgumentSymbol(entry));
             else if (AspDataGetArgumentIsIterableGroup(entry))
-                fprintf(fp, " igrp");
+                fputs(" igrp", fp);
             else if (AspDataGetArgumentIsDictionaryGroup(entry))
-                fprintf(fp, " dgrp");
+                fputs(" dgrp", fp);
             else
-                fprintf(fp, " pos");
+                fputs(" pos", fp);
             break;
 
         case DataType_AppIntegerObjectInfo:

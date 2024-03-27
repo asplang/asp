@@ -3,11 +3,9 @@
  */
 
 #include "asp.h"
-#include "range.h"
+#include "data.h"
 #include "sequence.h"
-#include "tree.h"
-#include "integer.h"
-#include "integer-result.h"
+#include "iterator.h"
 
 static AspRunResult FillSequence
     (AspEngine *, AspDataEntry *sequence, AspDataEntry *iterable);
@@ -52,119 +50,39 @@ ASP_LIB_API AspRunResult AspLib_list
 static AspRunResult FillSequence
     (AspEngine *engine, AspDataEntry *sequence, AspDataEntry *iterable)
 {
-    if (AspIsRange(iterable))
-    {
-        int32_t start, end, step;
-        bool bounded;
-        AspGetRange(engine, iterable, &start, &end, &step, &bounded);
-        if (!bounded)
-            return AspRunResult_ValueOutOfRange;
-        AspRunResult stepResult = AspRunResult_OK;
-        for (int32_t i = start;
-             stepResult == AspRunResult_OK && step < 0 ? i > end : i < end;
-             stepResult = AspTranslateIntegerResult
-                (AspAddIntegers(i, step, &i)))
-        {
-            AspDataEntry *value = AspNewInteger(engine, i);
-            if (value == 0)
-                return AspRunResult_OutOfDataMemory;
-            AspSequenceResult appendResult = AspSequenceAppend
-                (engine, sequence, value);
-            if (appendResult.result != AspRunResult_OK)
-                return appendResult.result;
-            AspUnref(engine, value);
-        }
-        if (stepResult != AspRunResult_OK)
-            return stepResult;
-    }
-    else if (AspIsString(iterable) || AspIsSequence(iterable))
-    {
-        uint32_t iterationCount = 0;
-        for (AspSequenceResult nextResult =
-             AspSequenceNext(engine, iterable, 0, true);
-             iterationCount < engine->cycleDetectionLimit &&
-             nextResult.element != 0;
-             iterationCount++,
-             nextResult = AspSequenceNext
-                (engine, iterable, nextResult.element, true))
-        {
-            if (AspIsString(iterable))
-            {
-                AspDataEntry *fragment = nextResult.value;
-                uint8_t fragmentSize =
-                    AspDataGetStringFragmentSize(fragment);
-                char *fragmentData =
-                    AspDataGetStringFragmentData(fragment);
+    uint8_t iterableType = AspDataGetType(iterable);
+    if (iterableType == DataType_None)
+        return AspRunResult_OK;
 
-                for (uint8_t fragmentIndex = 0;
-                     fragmentIndex < fragmentSize;
-                     fragmentIndex++)
-                {
-                    AspDataEntry *value = AspNewString
-                        (engine, fragmentData + fragmentIndex, 1);
-                    AspSequenceResult appendResult = AspSequenceAppend
-                        (engine, sequence, value);
-                    if (appendResult.result != AspRunResult_OK)
-                        return appendResult.result;
-                    AspUnref(engine, value);
-                }
-            }
-            else
-            {
-                AspSequenceResult appendResult = AspSequenceAppend
-                    (engine, sequence, nextResult.value);
-                if (appendResult.result != AspRunResult_OK)
-                    return appendResult.result;
-            }
-        }
-        if (iterationCount >= engine->cycleDetectionLimit)
-            return AspRunResult_CycleDetected;
-    }
-    else if (AspIsSet(iterable) || AspIsDictionary(iterable))
+    AspIteratorResult iteratorResult = AspIteratorCreate
+        (engine, iterable, false);
+    if (iteratorResult.result != AspRunResult_OK)
+        return iteratorResult.result;
+    AspDataEntry *iterator = iteratorResult.value;
+
+    uint32_t iterationCount = 0;
+    for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
-        uint32_t iterationCount = 0;
-        for (AspTreeResult nextResult =
-             AspTreeNext(engine, iterable, 0, true);
-             iterationCount < engine->cycleDetectionLimit &&
-             nextResult.node != 0;
-             iterationCount++,
-             nextResult = AspTreeNext
-                (engine, iterable, nextResult.node, true))
-        {
-            if (AspIsSet(iterable))
-            {
-                AspSequenceResult appendResult = AspSequenceAppend
-                    (engine, sequence, nextResult.key);
-                if (appendResult.result != AspRunResult_OK)
-                    return appendResult.result;
-            }
-            else
-            {
-                AspDataEntry *value = AspNewTuple(engine);
-                if (value == 0)
-                    return AspRunResult_OutOfDataMemory;
+        iteratorResult = AspIteratorDereference(engine, iterator);
+        if (iteratorResult.result == AspRunResult_IteratorAtEnd)
+            break;
+        if (iteratorResult.result != AspRunResult_OK)
+            return iteratorResult.result;
 
-                AspSequenceResult addKeyResult = AspSequenceAppend
-                    (engine, value, nextResult.key);
-                if (addKeyResult.result != AspRunResult_OK)
-                    return addKeyResult.result;
-                AspSequenceResult addValueResult = AspSequenceAppend
-                    (engine, value, nextResult.value);
-                if (addValueResult.result != AspRunResult_OK)
-                    return addValueResult.result;
+        AspSequenceResult appendResult = AspSequenceAppend
+            (engine, sequence, iteratorResult.value);
+        if (appendResult.result != AspRunResult_OK)
+            return appendResult.result;
+        AspUnref(engine, iteratorResult.value);
 
-                AspSequenceResult appendResult = AspSequenceAppend
-                    (engine, sequence, value);
-                if (appendResult.result != AspRunResult_OK)
-                    return appendResult.result;
-                AspUnref(engine, value);
-            }
-        }
-        if (iterationCount >= engine->cycleDetectionLimit)
-            return AspRunResult_CycleDetected;
+        AspRunResult result = AspIteratorNext(engine, iterator);
+        if (result != AspRunResult_OK)
+            return iteratorResult.result;
     }
-    else if (!AspIsNone(iterable))
-        return AspRunResult_UnexpectedType;
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
+
+    AspUnref(engine, iterator);
 
     return AspRunResult_OK;
 }

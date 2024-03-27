@@ -135,6 +135,21 @@ bool AspIsDictionary(const AspDataEntry *entry)
     return entry != 0 && AspDataGetType(entry) == DataType_Dictionary;
 }
 
+bool AspIsIterator(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Iterator;
+}
+
+bool AspIsFunction(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Function;
+}
+
+bool AspIsModule(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Module;
+}
+
 bool AspIsAppIntegerObject(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_AppIntegerObject;
@@ -730,7 +745,10 @@ static AspDataEntry *ToString
                     AspDataGetIteratorIterableIndex(entry);
                 AspDataEntry *iterable = AspValueEntry
                     (engine, iterableIndex);
-                strcpy(buffer, "<iter:");
+                strcpy(buffer, "<iter");
+                if (AspDataGetIteratorIsReversed(entry))
+                    strcat(buffer, "-rev");
+                strcat(buffer, ":");
                 if (iterable == 0)
                     strcat(buffer, "?");
                 else
@@ -806,7 +824,7 @@ static AspDataEntry *ToString
 
             case DataType_Type:
             {
-                strcpy(buffer, "<type ");
+                strcpy(buffer, "<type:");
                 strcat(buffer, TypeString(AspDataGetTypeValue(entry)));
                 strcat(buffer, ">");
                 break;
@@ -1236,9 +1254,11 @@ AspDataEntry *AspNewDictionary(AspEngine *engine)
     return NewObject(engine, DataType_Dictionary);
 }
 
-AspDataEntry *AspNewIterator(AspEngine *engine, AspDataEntry *iterable)
+AspDataEntry *AspNewIterator
+    (AspEngine *engine, AspDataEntry *iterable, bool reversed)
 {
-    AspIteratorResult result = AspIteratorCreate(engine, iterable);
+    AspIteratorResult result = AspIteratorCreate
+        (engine, iterable, reversed);
     return result.result != AspRunResult_OK ? 0 : result.value;
 }
 

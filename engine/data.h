@@ -246,6 +246,10 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord0((eptr), (value)))
 #define AspDataGetIteratorIterableIndex(eptr) \
     (AspDataGetWord0((eptr)))
+#define AspDataSetIteratorIsReversed(eptr, value) \
+    (AspDataSetBit1((eptr), (unsigned)(value)))
+#define AspDataGetIteratorIsReversed(eptr) \
+    ((bool)(AspDataGetBit1((eptr))))
 #define AspDataSetIteratorMemberIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetIteratorMemberIndex(eptr) \

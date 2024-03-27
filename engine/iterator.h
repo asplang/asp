@@ -7,6 +7,7 @@
 
 #include "asp-priv.h"
 #include "data.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +20,7 @@ typedef struct
 } AspIteratorResult;
 
 AspIteratorResult AspIteratorCreate
-    (AspEngine *, AspDataEntry *iterable);
+    (AspEngine *, AspDataEntry *iterable, bool reversed);
 AspRunResult AspIteratorNext
     (AspEngine *, AspDataEntry *iterator);
 AspIteratorResult AspIteratorDereference

@@ -9,8 +9,12 @@
 #include "integer.h"
 #include "integer-result.h"
 
+static bool ReversedRangeIteratorAtEnd
+    (int32_t testValue,
+     int32_t startValue, int32_t endValue, int32_t stepValue);
+
 AspIteratorResult AspIteratorCreate
-    (AspEngine *engine, AspDataEntry *iterable)
+    (AspEngine *engine, AspDataEntry *iterable, bool reversed)
 {
     AspIteratorResult result = {AspRunResult_OK, 0};
 
@@ -34,6 +38,14 @@ AspIteratorResult AspIteratorCreate
     uint8_t iterableType = AspDataGetType(iterable);
     if (iterableType == DataType_Iterator)
     {
+        /* Ensure we're not attempting to reverse direction. */
+        if (reversed)
+        {
+            result.result = AspRunResult_UnexpectedType;
+            return result;
+        }
+
+        /* Make a copy of the iterator. */
         *iterator = *iterable;
         result.value = iterator;
         return result;
@@ -41,7 +53,7 @@ AspIteratorResult AspIteratorCreate
 
     /* Set the iterator specifics based on the iterable. */
     AspDataEntry *member = 0;
-    switch (AspDataGetType(iterable))
+    switch (iterableType)
     {
         default:
             result.result = AspRunResult_UnexpectedType;
@@ -49,14 +61,47 @@ AspIteratorResult AspIteratorCreate
 
         case DataType_Range:
         {
-            /* Determine a start value. */
+            /* Determine the start value. */
             int32_t startValue, endValue, stepValue;
             bool bounded;
             AspGetRange
                 (engine, iterable,
                  &startValue, &endValue, &stepValue, &bounded);
-            bool atEnd = AspIsValueAtRangeEnd
-                (startValue, endValue, stepValue, bounded);
+            int32_t initialValue;
+            bool atEnd;
+            if (reversed)
+            {
+                int32_t count;
+                result.result = AspRangeCount(engine, iterable, &count);
+                if (result.result != AspRunResult_OK)
+                    return result;
+                atEnd = startValue == endValue;
+                if (!atEnd && count > 0)
+                {
+                    /* Compute the start value as (start + (count - 1) * step).
+                       Note that because count is always non-negative,
+                       (count - 1) will never result in arithmetic overflow. */
+                    AspIntegerResult integerResult = AspMultiplyIntegers
+                        (count - 1, stepValue, &initialValue);
+                    if (integerResult == AspIntegerResult_OK)
+                        integerResult = AspAddIntegers
+                            (startValue, initialValue, &initialValue);
+                    if (integerResult != AspIntegerResult_OK)
+                    {
+                        result.result =
+                            AspTranslateIntegerResult(integerResult);
+                        return result;
+                    }
+                    atEnd = ReversedRangeIteratorAtEnd
+                        (initialValue, startValue, endValue, stepValue);
+                }
+            }
+            else
+            {
+                initialValue = startValue;
+                atEnd = AspIsValueAtRangeEnd
+                    (startValue, endValue, stepValue, bounded);
+            }
 
             /* Create an integer set to the start value. */
             if (!atEnd)
@@ -68,7 +113,7 @@ AspIteratorResult AspIteratorCreate
                     result.result = AspRunResult_OutOfDataMemory;
                     break;
                 }
-                AspDataSetInteger(value, startValue);
+                AspDataSetInteger(value, initialValue);
                 AspDataSetIteratorMemberNeedsCleanup(iterator, true);
                 member = value;
             }
@@ -81,13 +126,20 @@ AspIteratorResult AspIteratorCreate
         case DataType_List:
         {
             AspSequenceResult startResult = AspSequenceNext
-                (engine, iterable, 0, true);
+                (engine, iterable, 0, !reversed);
             if (startResult.result != AspRunResult_OK)
             {
                 result.result = startResult.result;
                 break;
             }
             member = startResult.element;
+
+            if (iterableType == DataType_String && reversed)
+            {
+                AspDataSetIteratorStringIndex
+                    (iterator,
+                     AspDataGetStringFragmentSize(startResult.value) - 1U);
+            }
 
             break;
         }
@@ -96,7 +148,7 @@ AspIteratorResult AspIteratorCreate
         case DataType_Dictionary:
         {
             AspTreeResult startResult = AspTreeNext
-                (engine, iterable, 0, true);
+                (engine, iterable, 0, !reversed);
             if (startResult.result != AspRunResult_OK)
             {
                 result.result = startResult.result;
@@ -108,6 +160,7 @@ AspIteratorResult AspIteratorCreate
         }
     }
     AspDataSetIteratorMemberIndex(iterator, AspIndex(engine, member));
+    AspDataSetIteratorIsReversed(iterator, reversed);
 
     if (result.result != AspRunResult_OK)
     {
@@ -139,8 +192,12 @@ AspRunResult AspIteratorNext
     if (member == 0)
         return AspRunResult_IteratorAtEnd;
 
+    /* Determine the direction of iteration. */
+    bool reversed = AspDataGetIteratorIsReversed(iterator);
+
     /* Advance the iterator. */
-    switch (AspDataGetType(iterable))
+    uint8_t iterableType = AspDataGetType(iterable);
+    switch (iterableType)
     {
         default:
             return AspRunResult_UnexpectedType;
@@ -150,20 +207,25 @@ AspRunResult AspIteratorNext
             if (AspDataGetType(member) != DataType_Integer)
                 return AspRunResult_UnexpectedType;
 
-            int32_t endValue, stepValue;
+            int32_t startValue, endValue, stepValue;
             bool bounded;
-            AspGetRange(engine, iterable, 0, &endValue, &stepValue, &bounded);
+            AspGetRange
+                (engine, iterable,
+                 &startValue, &endValue, &stepValue, &bounded);
             int32_t newValue;
-            AspRunResult addResult = AspTranslateIntegerResult
-                (AspAddIntegers
-                    (AspDataGetInteger(member), stepValue, &newValue));
-            if (addResult != AspRunResult_OK)
-                return addResult;
+            AspIntegerResult integerResult =
+                (reversed ? AspSubtractIntegers : AspAddIntegers)
+                    (AspDataGetInteger(member), stepValue, &newValue);
+            if (integerResult != AspIntegerResult_OK)
+                return AspTranslateIntegerResult(integerResult);
             AspUnref(engine, member);
             if (engine->runResult != AspRunResult_OK)
                 return engine->runResult;
-            bool atEnd = AspIsValueAtRangeEnd
-                (newValue, endValue, stepValue, bounded);
+            bool atEnd = reversed ?
+                ReversedRangeIteratorAtEnd
+                    (newValue, startValue, endValue, stepValue) :
+                AspIsValueAtRangeEnd
+                    (newValue, endValue, stepValue, bounded);
             if (atEnd)
             {
                 AspDataSetIteratorMemberNeedsCleanup(iterator, false);
@@ -190,19 +252,29 @@ AspRunResult AspIteratorNext
                 (engine, AspDataGetElementValueIndex(member));
             if (AspDataGetType(fragment) != DataType_StringFragment)
                 return AspRunResult_UnexpectedType;
-            uint8_t fragmentSize =
-                AspDataGetStringFragmentSize(fragment);
 
             uint8_t stringIndex =
                 AspDataGetIteratorStringIndex(iterator);
-            if (stringIndex + 1 < fragmentSize)
+            if (reversed)
             {
-                AspDataSetIteratorStringIndex
-                    (iterator, stringIndex + 1);
-                break;
+                if (stringIndex > 0)
+                {
+                    AspDataSetIteratorStringIndex
+                        (iterator, stringIndex - 1);
+                    break;
+                }
             }
-
-            AspDataSetIteratorStringIndex(iterator, 0);
+            else
+            {
+                uint8_t fragmentSize =
+                    AspDataGetStringFragmentSize(fragment);
+                if (stringIndex + 1 < fragmentSize)
+                {
+                    AspDataSetIteratorStringIndex
+                        (iterator, stringIndex + 1);
+                    break;
+                }
+            }
 
             /* Fall through... */
         }
@@ -213,10 +285,24 @@ AspRunResult AspIteratorNext
             if (AspDataGetType(member) != DataType_Element)
                 return AspRunResult_UnexpectedType;
             AspSequenceResult nextResult = AspSequenceNext
-                (engine, iterable, member, true);
+                (engine, iterable, member, !reversed);
             if (nextResult.result != AspRunResult_OK)
                 return nextResult.result;
             member = nextResult.element;
+
+            if (member != 0 && iterableType == DataType_String)
+            {
+                if (reversed)
+                {
+                    AspDataSetIteratorStringIndex
+                        (iterator,
+                         AspDataGetStringFragmentSize(nextResult.value) - 1U);
+                }
+                else
+                {
+                    AspDataSetIteratorStringIndex(iterator, 0);
+                }
+            }
 
             break;
         }
@@ -229,7 +315,7 @@ AspRunResult AspIteratorNext
                 memberType != DataType_DictionaryNode)
                 return AspRunResult_UnexpectedType;
             AspTreeResult nextResult = AspTreeNext
-                (engine, iterable, member, true);
+                (engine, iterable, member, !reversed);
             if (nextResult.result != AspRunResult_OK)
                 return nextResult.result;
             member = nextResult.node;
@@ -390,4 +476,13 @@ AspIteratorResult AspIteratorDereference
 
     result.value = value;
     return result;
+}
+
+static bool ReversedRangeIteratorAtEnd
+    (int32_t testValue,
+     int32_t startValue, int32_t endValue, int32_t stepValue)
+{
+    return
+        stepValue == 0 ? testValue == endValue :
+        stepValue < 0 ? testValue > startValue : testValue < startValue;
 }

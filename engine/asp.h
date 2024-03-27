@@ -134,6 +134,9 @@ ASP_API bool AspIsList(const AspDataEntry *);
 ASP_API bool AspIsSequence(const AspDataEntry *);
 ASP_API bool AspIsSet(const AspDataEntry *);
 ASP_API bool AspIsDictionary(const AspDataEntry *);
+ASP_API bool AspIsIterator(const AspDataEntry *);
+ASP_API bool AspIsFunction(const AspDataEntry *);
+ASP_API bool AspIsModule(const AspDataEntry *);
 ASP_API bool AspIsAppIntegerObject(const AspDataEntry *);
 ASP_API bool AspIsAppPointerObject(const AspDataEntry *);
 ASP_API bool AspIsAppObject(const AspDataEntry *);
@@ -183,7 +186,8 @@ ASP_API AspDataEntry *AspNewTuple(AspEngine *);
 ASP_API AspDataEntry *AspNewList(AspEngine *);
 ASP_API AspDataEntry *AspNewSet(AspEngine *);
 ASP_API AspDataEntry *AspNewDictionary(AspEngine *);
-ASP_API AspDataEntry *AspNewIterator(AspEngine *, AspDataEntry *iterable);
+ASP_API AspDataEntry *AspNewIterator
+    (AspEngine *, AspDataEntry *iterable, bool reversed);
 ASP_API AspDataEntry *AspNewAppIntegerObject
     (AspEngine *, int16_t appType, int32_t value,
      void (*destructor)(AspEngine *, int16_t appType, int32_t value));

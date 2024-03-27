@@ -4,9 +4,16 @@
 
 lib
 
-# Iterator creation function.
-# The iterator is positioned on the first item, if applicable.
+# Iterator creation functions.
+# The iter function creates a new iterator positioned on the first item of the
+# given collection, if applicable. If the argument is already an iterator, a
+# copy of it is returned. The current position is retained in the copy.
+# The reversed function creates a reverse iterator positioned on the last item
+# of the given collection. The reversed function does not accept an iterator.
+# Note that the iter function will accept a reverse iterator, copying it as
+# described above.
 def iter(iterable) = AspLib_iter
+def reversed(iterable) = AspLib_reversed
 
 # Iterator advance.
 # Returns the referenced value, advancing the iterator in the process.

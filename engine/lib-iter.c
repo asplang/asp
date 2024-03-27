@@ -6,14 +6,28 @@
 #include "iterator.h"
 
 /* iter(iterable)
- * Return an iterator for a given iterable.
+ * Return an iterator for the given iterable.
  */
 ASP_LIB_API AspRunResult AspLib_iter
     (AspEngine *engine,
      AspDataEntry *iterable,
      AspDataEntry **returnValue)
 {
-    AspIteratorResult result = AspIteratorCreate(engine, iterable);
+    AspIteratorResult result = AspIteratorCreate(engine, iterable, false);
+    if (result.result == AspRunResult_OK)
+        *returnValue = result.value;
+    return result.result;
+}
+
+/* reversed(iterator)
+ * Return a reversed iterator for the given iterable.
+ */
+ASP_LIB_API AspRunResult AspLib_reversed
+    (AspEngine *engine,
+     AspDataEntry *iterable,
+     AspDataEntry **returnValue)
+{
+    AspIteratorResult result = AspIteratorCreate(engine, iterable, true);
     if (result.result == AspRunResult_OK)
         *returnValue = result.value;
     return result.result;

@@ -4,6 +4,8 @@
 
 #include "asp.h"
 #include "data.h"
+#include "range.h"
+#include "sequence.h"
 #include <errno.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -204,6 +206,62 @@ ASP_LIB_API AspRunResult AspLib_repr
     return
         (*returnValue = AspToRepr(engine, x)) == 0 ?
         AspRunResult_OutOfDataMemory : AspRunResult_OK;
+}
+
+/* range_values(x)
+ * Return a tuple containing the range components.
+ */
+ASP_LIB_API AspRunResult AspLib_range_values
+    (AspEngine *engine,
+     AspDataEntry *x,
+     AspDataEntry **returnValue)
+{
+    if (!AspIsRange(x))
+        return AspRunResult_UnexpectedType;
+
+    *returnValue = AspNewTuple(engine);
+    if (*returnValue == 0)
+        return AspRunResult_OutOfDataMemory;
+
+    int32_t startValue, endValue, stepValue;
+    AspGetRange(engine, x, &startValue, &endValue, &stepValue, 0);
+
+    bool appendSuccess = true;
+
+    bool startPresent = AspDataGetRangeHasStart(x);
+    AspDataEntry *startEntry = startPresent ?
+        AspValueEntry(engine, AspDataGetRangeStartIndex(x)) :
+        AspNewInteger(engine, startValue);
+    if (startEntry == 0)
+        return AspRunResult_OutOfDataMemory;
+    appendSuccess = AspTupleAppend
+        (engine, *returnValue, startEntry, !startPresent);
+    if (!appendSuccess)
+        return AspRunResult_OutOfDataMemory;
+
+    bool endPresent = AspDataGetRangeHasEnd(x);
+    AspDataEntry *endEntry = endPresent ?
+        AspValueEntry(engine, AspDataGetRangeEndIndex(x)) :
+        AspNewNone(engine);
+    if (endEntry == 0)
+        return AspRunResult_OutOfDataMemory;
+    appendSuccess = AspTupleAppend
+        (engine, *returnValue, endEntry, !endPresent);
+    if (!appendSuccess)
+        return AspRunResult_OutOfDataMemory;
+
+    bool stepPresent = AspDataGetRangeHasStep(x);
+    AspDataEntry *stepEntry = stepPresent ?
+        AspValueEntry(engine, AspDataGetRangeStepIndex(x)) :
+        AspNewInteger(engine, stepValue);
+    if (stepEntry == 0)
+        return AspRunResult_OutOfDataMemory;
+    appendSuccess = AspTupleAppend
+        (engine, *returnValue, stepEntry, !stepPresent);
+    if (!appendSuccess)
+        return AspRunResult_OutOfDataMemory;
+
+    return AspRunResult_OK;
 }
 
 /* key(object, stringize)
