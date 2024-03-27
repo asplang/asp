@@ -5,5 +5,9 @@
 lib
 
 # Sequence conversion functions.
-def tuple(iterable = None) = AspLib_tuple
-def list(iterable = None) = AspLib_list
+# If no argument is given, an empty sequence is returned. Otherwise, both
+# functions accept a single argument and convert it as appropriate. In the case
+# of a tuple being passed to the tuple function, no new tuple is created; the
+# given tuple object is simply returned.
+def tuple(*args) = AspLib_tuple
+def list(*args) = AspLib_list

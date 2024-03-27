@@ -15,9 +15,15 @@ static AspRunResult FillSequence
  */
 ASP_LIB_API AspRunResult AspLib_tuple
     (AspEngine *engine,
-     AspDataEntry *iterable,
+     AspDataEntry *args, /* iterable group */
      AspDataEntry **returnValue)
 {
+    int32_t argCount;
+    AspCount(engine, args, &argCount);
+    if (argCount > 1)
+        return AspRunResult_MalformedFunctionCall;
+    AspDataEntry *iterable = argCount == 0 ? 0 : AspElement(engine, args, 0);
+
     if (AspIsTuple(iterable))
     {
         AspRef(engine, iterable);
@@ -37,9 +43,15 @@ ASP_LIB_API AspRunResult AspLib_tuple
  */
 ASP_LIB_API AspRunResult AspLib_list
     (AspEngine *engine,
-     AspDataEntry *iterable,
+     AspDataEntry *args, /* iterable group */
      AspDataEntry **returnValue)
 {
+    int32_t argCount;
+    AspCount(engine, args, &argCount);
+    if (argCount > 1)
+        return AspRunResult_MalformedFunctionCall;
+    AspDataEntry *iterable = argCount == 0 ? 0 : AspElement(engine, args, 0);
+
     *returnValue = AspNewList(engine);
     if (*returnValue == 0)
         return AspRunResult_OutOfDataMemory;
@@ -50,8 +62,7 @@ ASP_LIB_API AspRunResult AspLib_list
 static AspRunResult FillSequence
     (AspEngine *engine, AspDataEntry *sequence, AspDataEntry *iterable)
 {
-    uint8_t iterableType = AspDataGetType(iterable);
-    if (iterableType == DataType_None)
+    if (iterable == 0)
         return AspRunResult_OK;
 
     AspIteratorResult iteratorResult = AspIteratorCreate
