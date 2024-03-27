@@ -6,6 +6,7 @@
 #define GRAMMAR_HPP
 
 #include <string>
+#include <utility>
 
 class SourceLocation
 {
@@ -22,6 +23,11 @@ class SourceLocation
             fileName(fileName),
             line(line), column(column)
         {
+        }
+
+        bool Defined() const
+        {
+            return !fileName.empty();
         }
 
         std::string fileName;
@@ -44,6 +50,12 @@ class SourceElement
         bool HasSourceLocation() const
         {
             return sourceLocation.line != 0;
+        }
+
+        [[noreturn]]
+        void ThrowError(const std::string &error) const
+        {
+            throw make_pair(*this, error);
         }
 
         SourceLocation sourceLocation;

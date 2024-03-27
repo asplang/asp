@@ -12,7 +12,7 @@ Literal::Literal(const Token &token)
     switch (token.type)
     {
         default:
-            throw string("Invalid token");
+            ThrowError("Invalid token");
 
         case TOKEN_NONE:
             type = AppSpecValueType_None;
@@ -34,7 +34,7 @@ Literal::Literal(const Token &token)
 
         case TOKEN_INTEGER:
             if (token.negatedMinInteger)
-                throw string("Integer constant out of range");
+                ThrowError("Integer constant out of range");
             type = AppSpecValueType_Integer;
             i = token.i;
             break;

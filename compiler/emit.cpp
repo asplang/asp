@@ -69,7 +69,7 @@ void AssignmentStatement::Emit1(Executable &executable, bool top) const
                 << "Internal error:"
                    " Cannot find op code for augmented assignment "
                 << assignmentTokenType;
-            throw oss.str();
+            ThrowError(oss.str());
         }
         ostringstream oss;
         oss
@@ -117,7 +117,7 @@ void BreakStatement::Emit(Executable &executable) const
 {
     auto loopStatement = ParentLoop();
     if (loopStatement == nullptr)
-        throw string("break outside loop");
+        ThrowError("break outside loop");
 
     executable.Insert
         (new JumpInstruction
@@ -129,7 +129,7 @@ void ContinueStatement::Emit(Executable &executable) const
 {
     auto loopStatement = ParentLoop();
     if (loopStatement == nullptr)
-        throw string("continue outside loop");
+        ThrowError("continue outside loop");
 
     executable.Insert
         (new JumpInstruction
@@ -192,8 +192,7 @@ void ImportStatement::Emit(Executable &executable) const
                 auto asNameSymbol = executable.Symbol(asName);
 
                 if (name == "*")
-                    throw string
-                        ("Wildcard form of from...import not permitted");
+                    ThrowError("Wildcard form of from...import not permitted");
 
                 {
                     ostringstream oss;
@@ -226,7 +225,7 @@ void GlobalStatement::Emit(Executable &executable) const
 {
     bool isLocal = ParentDef() != nullptr;
     if (!isLocal)
-        throw string("global outside function");
+        ThrowError("global outside function");
 
     for (auto iter = variableList->NamesBegin();
          iter != variableList->NamesEnd(); iter++)
@@ -246,7 +245,7 @@ void LocalStatement::Emit(Executable &executable) const
 {
     bool isLocal = ParentDef() != nullptr;
     if (!isLocal)
-        throw string("local outside function");
+        ThrowError("local outside function");
 
     for (auto iter = variableList->NamesBegin();
          iter != variableList->NamesEnd(); iter++)
@@ -299,7 +298,7 @@ void DelStatement::Emit1(Executable &executable, Expression *expression) const
     else if (variableExpression != nullptr)
     {
         if (variableExpression->HasSymbol())
-            throw string("Cannot delete temporary variable");
+            ThrowError("Cannot delete temporary variable");
 
         auto name = variableExpression->Name();
         auto symbol = executable.Symbol(name);
@@ -311,7 +310,7 @@ void DelStatement::Emit1(Executable &executable, Expression *expression) const
              sourceLocation);
     }
     else
-        throw string("Invalid type for del");
+        ThrowError("Invalid type for del");
 }
 
 void ReturnStatement::Emit(Executable &executable) const
@@ -319,7 +318,7 @@ void ReturnStatement::Emit(Executable &executable) const
     // Ensure the return statement is within a function definition.
     auto isLocal = ParentDef() != nullptr;
     if (!isLocal)
-        throw string("return outside function");
+        ThrowError("return outside function");
 
     if (expression != nullptr)
         expression->Emit(executable);
@@ -665,9 +664,9 @@ void ConditionalExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of value expression");
+        ThrowError("Cannot take address of value expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete value expression");
+        ThrowError("Cannot delete value expression");
 
     conditionExpression->Emit(executable);
 
@@ -696,9 +695,9 @@ void ShortCircuitLogicalExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of value expression");
+        ThrowError("Cannot take address of value expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete value expression");
+        ThrowError("Cannot delete value expression");
 
     auto expressionIter = expressions.begin();
     auto leftExpression = *expressionIter;
@@ -720,7 +719,7 @@ void ShortCircuitLogicalExpression::Emit
         oss
             << "Internal error: Cannot find op code for binary operator "
             << operatorTokenType;
-        throw oss.str();
+        ThrowError(oss.str());
     }
     ostringstream oss;
     oss
@@ -745,9 +744,9 @@ void BinaryExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of value expression");
+        ThrowError("Cannot take address of value expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete value expression");
+        ThrowError("Cannot delete value expression");
 
     leftExpression->Emit(executable);
     rightExpression->Emit(executable);
@@ -784,7 +783,7 @@ void BinaryExpression::Emit
         oss
             << "Internal error: Cannot find op code for binary operator "
             << operatorTokenType;
-        throw oss.str();
+        ThrowError(oss.str());
     }
     ostringstream oss;
     oss
@@ -800,9 +799,9 @@ void UnaryExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of value expression");
+        ThrowError("Cannot take address of value expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete value expression");
+        ThrowError("Cannot delete value expression");
 
     expression->Emit(executable);
 
@@ -820,7 +819,7 @@ void UnaryExpression::Emit
         oss
             << "Internal error: Cannot find op code for unary operator "
             << operatorTokenType;
-        throw oss.str();
+        ThrowError(oss.str());
     }
     ostringstream oss;
     oss
@@ -836,12 +835,12 @@ void TargetExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType != EmitType::Address)
-        throw string("Unexpected use of target expression");
+        ThrowError("Unexpected use of target expression");
 
     if (!name.empty())
     {
         if (!targetExpressions.empty())
-            throw string("Internal error: Invalid target expression");
+            ThrowError("Internal error: Invalid target expression");
 
         auto symbol = executable.Symbol(name);
         ostringstream oss;
@@ -926,9 +925,9 @@ void CallExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of function call");
+        ThrowError("Cannot take address of function call");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete function call");
+        ThrowError("Cannot delete function call");
 
     argumentList->Emit(executable);
     functionExpression->Emit(executable);
@@ -1001,9 +1000,9 @@ void SymbolExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of symbol expression");
+        ThrowError("Cannot take address of symbol expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete symbol expression");
+        ThrowError("Cannot delete symbol expression");
 
     auto nameSymbol = executable.Symbol(name);
 
@@ -1025,9 +1024,9 @@ void DictionaryExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of dictionary expression");
+        ThrowError("Cannot take address of dictionary expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete dictionary expression");
+        ThrowError("Cannot delete dictionary expression");
 
     executable.Insert
         (new PushDictionaryInstruction("Create empty dictionary"),
@@ -1046,9 +1045,9 @@ void SetExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of set expression");
+        ThrowError("Cannot take address of set expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete set expression");
+        ThrowError("Cannot delete set expression");
 
     executable.Insert
         (new PushSetInstruction("Create empty set"),
@@ -1067,7 +1066,7 @@ void ListExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Delete)
-        throw string("Cannot delete list expression");
+        ThrowError("Cannot delete list expression");
 
     executable.Insert
         (new PushListInstruction("Create empty list"),
@@ -1086,7 +1085,7 @@ void TupleExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Delete)
-        throw string("Cannot delete tuple expression");
+        ThrowError("Cannot delete tuple expression");
 
     executable.Insert
         (new PushTupleInstruction("Create empty tuple"),
@@ -1105,9 +1104,9 @@ void RangeExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of range expression");
+        ThrowError("Cannot take address of range expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete range expression");
+        ThrowError("Cannot delete range expression");
 
     list<Expression *> partExpressions =
     {
@@ -1143,9 +1142,9 @@ void ConstantExpression::Emit
     (Executable &executable, EmitType emitType) const
 {
     if (emitType == EmitType::Address)
-        throw string("Cannot take address of constant expression");
+        ThrowError("Cannot take address of constant expression");
     else if (emitType == EmitType::Delete)
-        throw string("Cannot delete constant expression");
+        ThrowError("Cannot delete constant expression");
 
     switch (type)
     {
@@ -1162,7 +1161,7 @@ void ConstantExpression::Emit
             executable.Insert(new PushIntegerInstruction(i), sourceLocation);
             break;
         case Type::NegatedMinInteger:
-            throw string("Integer constant out of range");
+            ThrowError("Integer constant out of range");
         case Type::Float:
             executable.Insert(new PushFloatInstruction(f), sourceLocation);
             break;

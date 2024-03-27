@@ -337,10 +337,11 @@ void Generator::ReportError
 void Generator::ReportError
     (const string &error, const SourceLocation &sourceLocation)
 {
-    errorStream
-        << sourceLocation.fileName << ':'
-        << sourceLocation.line << ':'
-        << sourceLocation.column << ": Error: "
-        << error << endl;
+    if (sourceLocation.Defined())
+        errorStream
+            << sourceLocation.fileName << ':'
+            << sourceLocation.line << ':'
+            << sourceLocation.column << ": ";
+    errorStream << "Error: " << error << endl;
     errorCount++;
 }

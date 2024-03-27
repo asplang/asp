@@ -243,6 +243,7 @@ DEFINE_ACTION(MakeModule, NonTerminal *, Block *, module)
         }
         executable.PopLocation();
 
+        currentSourceLocation = NoSourceLocation;
         module->Emit(executable);
 
         const SourceElement *finalSourceElement = module->FinalStatement();
@@ -251,6 +252,10 @@ DEFINE_ACTION(MakeModule, NonTerminal *, Block *, module)
         executable.Insert
             (new ExitModuleInstruction("Exit module"),
              finalSourceElement->sourceLocation);
+    }
+    catch (const pair<SourceElement, string> &e)
+    {
+        ReportError(e.second, e.first);
     }
     catch (const string &e)
     {
@@ -1142,10 +1147,11 @@ void Compiler::ReportError
 void Compiler::ReportError
     (const string &error, const SourceLocation &sourceLocation)
 {
-    errorStream
-        << sourceLocation.fileName << ':'
-        << sourceLocation.line << ':'
-        << sourceLocation.column << ": Error: "
-        << error << endl;
+    if (sourceLocation.Defined())
+        errorStream
+            << sourceLocation.fileName << ':'
+            << sourceLocation.line << ':'
+            << sourceLocation.column << ": ";
+    errorStream << "Error: " << error << endl;
     errorCount++;
 }
