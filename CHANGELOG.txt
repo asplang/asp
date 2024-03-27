@@ -49,6 +49,15 @@ Version 1.1.0.0 (compiler 1.1.0.0, engine 1.1.0.0):
 - Standalone application:
   - Added extra options in debug builds for redirecting trace and dump outputs.
 
+Version 1.0.0.2 (compiler 1.0.0.2, engine 1.0.0.0):
+- Compiler:
+  - Reverted lexical analysis treatment of negative integers due to problems
+    scanning, for example, binary subtraction expressions with no intervening
+    spaces. Decimal number tokens are now always positive and a preceding unary
+    minus sign invokes constant expression folding, as it was prior to compiler
+    version 0.7.2.0 (Asp version 0.7.4.0). New logic has been added to allow
+    expression of the constant integer value -2147483648 (INT32_MIN).
+
 Version 1.0.0.1 (compiler 1.0.0.1, engine 1.0.0.0):
 - Compiler:
   - Changed the way the compiler searches for import modules. Previously, the

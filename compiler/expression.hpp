@@ -472,6 +472,7 @@ class ConstantExpression : public Expression
             Ellipsis,
             Boolean,
             Integer,
+            NegatedMinInteger,
             Float,
             String,
         };

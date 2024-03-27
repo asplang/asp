@@ -18,10 +18,11 @@ Token::Token
 }
 
 Token::Token
-    (const SourceLocation &sourceLocation, int value, int,
+    (const SourceLocation &sourceLocation, int32_t value, bool negatedMin,
      const string &s) :
     SourceElement(sourceLocation),
     type(TOKEN_INTEGER),
+    negatedMinInteger(negatedMin),
     i(value),
     s(s)
 {
