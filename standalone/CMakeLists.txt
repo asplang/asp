@@ -75,5 +75,16 @@ install(TARGETS asps
 install(FILES
     "${PROJECT_BINARY_DIR}/standalone.aspec"
     DESTINATION etc/asp
+    RENAME standalone-${ABI_VERSION}.aspec
+    COMPONENT Runtime
+    )
+
+install(
+    CODE
+        "execute_process(
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+        \"standalone-${ABI_VERSION}.aspec\"
+        \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/etc/asp/standalone.aspec\"
+        )"
     COMPONENT Runtime
     )
