@@ -4,7 +4,16 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(asps VERSION 0.2.0.1)
+set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+
+project(asps VERSION 1.0.0.0)
+
+set(ABI_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
+    message(FATAL_ERROR
+        "${PROJECT_NAME} version not compatible with project version"
+        )
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -36,6 +45,10 @@ add_executable(asps
     standalone.c
     functions-print.cpp
     functions-sleep.cpp
+    )
+
+set_property(TARGET asps
+    PROPERTY VERSION ${ABI_VERSION}
     )
 
 target_link_libraries(asps

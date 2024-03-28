@@ -9,7 +9,7 @@ project(asp
     # major and minor components of the top-level version. Therefore, the
     # version of the engine (aspe) and compiler (aspc) projects must be
     # compatible with this version (major and minor components must match).
-    VERSION 1.0.0.2
+    VERSION 1.0.0.3
     )
 
 option(BUILD_FOR_HOST

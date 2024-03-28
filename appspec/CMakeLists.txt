@@ -4,8 +4,16 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-# The project version should match the version encoded in the app spec header.
-project(aspg VERSION 1)
+set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+
+project(aspg VERSION 1.0.0.0)
+
+set(ABI_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
+if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
+    message(FATAL_ERROR
+        "${PROJECT_NAME} version not compatible with project version"
+        )
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -39,6 +47,10 @@ add_executable(aspg
     "${aspc_SOURCE_DIR}/search-path.cpp"
     "${aspc_SOURCE_DIR}/symbol.cpp"
     crc.c
+    )
+
+set_property(TARGET aspg
+    PROPERTY VERSION ${ABI_VERSION}
     )
 
 target_compile_definitions(aspg PRIVATE

@@ -6,9 +6,7 @@ cmake_minimum_required(VERSION 3.5)
 
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
-project(aspc
-    VERSION 1.0.0.2
-    )
+project(aspc VERSION 1.0.0.2)
 
 set(ABI_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
@@ -51,6 +49,10 @@ add_executable(aspc
     emit.cpp
     executable.cpp
     instruction.cpp
+    )
+
+set_property(TARGET aspc
+    PROPERTY VERSION ${ABI_VERSION}
     )
 
 target_compile_definitions(aspc PRIVATE
