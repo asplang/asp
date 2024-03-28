@@ -353,6 +353,8 @@ AspRunResult AspCompare
                         comparison =
                             AspDataGetIteratorIterableIndex(leftEntry) ==
                             AspDataGetIteratorIterableIndex(rightEntry) &&
+                            AspDataGetIteratorIsReversed(leftEntry) ==
+                            AspDataGetIteratorIsReversed(rightEntry) &&
                             AspDataGetIteratorMemberIndex(leftEntry) ==
                             AspDataGetIteratorMemberIndex(rightEntry) &&
                             AspDataGetIteratorStringIndex(leftEntry) ==
