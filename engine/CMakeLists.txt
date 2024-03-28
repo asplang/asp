@@ -61,10 +61,12 @@ if(BUILD_FOR_TARGET)
         )
 
     set_property(TARGET aspe
-        PROPERTY VERSION ${ABI_VERSION})
+        PROPERTY VERSION ${ABI_VERSION}
+        )
     if(BUILD_SHARED_LIBS)
         set_property(TARGET aspe
-            PROPERTY C_VISIBILITY_PRESET hidden)
+            PROPERTY C_VISIBILITY_PRESET hidden
+            )
     endif()
 
     target_compile_definitions(aspe PRIVATE

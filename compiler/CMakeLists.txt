@@ -53,6 +53,10 @@ add_executable(aspc
     instruction.cpp
     )
 
+set_property(TARGET aspc
+    PROPERTY VERSION ${ABI_VERSION}
+    )
+
 target_compile_definitions(aspc PRIVATE
     ASP_COMPILER_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
     ASP_COMPILER_VERSION_MINOR=${PROJECT_VERSION_MINOR}

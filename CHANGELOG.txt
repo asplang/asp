@@ -49,6 +49,12 @@ Version 1.1.0.0 (compiler 1.1.0.0, engine 1.1.0.0):
 - Standalone application:
   - Added extra options in debug builds for redirecting trace and dump outputs.
 
+Version 1.0.0.3 (compiler 1.0.0.2, engine 1.0.0.0):
+- Build:
+  - Added the VERSION property to several of the targets to support
+    installation of multiple versions of the tools on a given host. The
+    versions of all installed libraries and executables are now aligned.
+
 Version 1.0.0.2 (compiler 1.0.0.2, engine 1.0.0.0):
 - Compiler:
   - Reverted lexical analysis treatment of negative integers due to problems
