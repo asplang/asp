@@ -30,28 +30,23 @@ AspIteratorResult AspIteratorCreate
         result.result = AspRunResult_OutOfDataMemory;
         return result;
     }
-    AspRef(engine, iterable);
-    AspDataSetIteratorIterableIndex
-        (iterator, AspIndex(engine, iterable));
 
     /* Check if the argument is already an iterator. */
     uint8_t iterableType = AspDataGetType(iterable);
+    const AspDataEntry *oldIterator = 0;
     if (iterableType == DataType_Iterator)
     {
-        /* Ensure we're not attempting to reverse direction. */
-        if (reversed)
-        {
-            result.result = AspRunResult_UnexpectedType;
-            return result;
-        }
-
-        /* Make a copy of the iterator. */
-        *iterator = *iterable;
-        result.value = iterator;
-        return result;
+        /* Access the underlying iterable. */
+        oldIterator = iterable;
+        iterable = AspValueEntry
+            (engine, AspDataGetIteratorIterableIndex(iterable));
     }
 
-    /* Set the iterator specifics based on the iterable. */
+    /* Point the iterator to its iterable. */
+    AspRef(engine, iterable);
+    AspDataSetIteratorIterableIndex(iterator, AspIndex(engine, iterable));
+
+    /* Set the iterator specifics based on the type of iterable. */
     AspDataEntry *member = 0;
     switch (iterableType)
     {
@@ -158,6 +153,25 @@ AspIteratorResult AspIteratorCreate
 
             break;
         }
+
+        case DataType_Iterator:
+        {
+            /* Copy the iterator. */
+            AspDataSetIteratorIterableIndex
+                (iterator, AspIndex(engine, iterable));
+            member = AspValueEntry
+                (engine, AspDataGetIteratorMemberIndex(oldIterator));
+            bool needsCleanup = AspDataGetIteratorMemberNeedsCleanup
+                (oldIterator);
+            AspDataSetIteratorMemberNeedsCleanup(iterator, needsCleanup);
+            if (needsCleanup)
+                AspRef(engine, member);
+            reversed =
+                 AspDataGetIteratorIsReversed(oldIterator) != reversed;
+            if (AspDataGetType(iterable) == DataType_String)
+                AspDataSetIteratorStringIndex
+                    (iterator, AspDataGetIteratorStringIndex(oldIterator));
+        }
     }
     AspDataSetIteratorMemberIndex(iterator, AspIndex(engine, member));
     AspDataSetIteratorIsReversed(iterator, reversed);
@@ -259,8 +273,7 @@ AspRunResult AspIteratorNext
             {
                 if (stringIndex > 0)
                 {
-                    AspDataSetIteratorStringIndex
-                        (iterator, stringIndex - 1);
+                    AspDataSetIteratorStringIndex(iterator, stringIndex - 1);
                     break;
                 }
             }
@@ -270,8 +283,7 @@ AspRunResult AspIteratorNext
                     AspDataGetStringFragmentSize(fragment);
                 if (stringIndex + 1 < fragmentSize)
                 {
-                    AspDataSetIteratorStringIndex
-                        (iterator, stringIndex + 1);
+                    AspDataSetIteratorStringIndex(iterator, stringIndex + 1);
                     break;
                 }
             }
