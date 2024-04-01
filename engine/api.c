@@ -1192,8 +1192,14 @@ static AspDataEntry *NewRange
         }
         if (error)
         {
+            if (start)
+                AspUnref(engine, start);
+            if (end)
+                AspUnref(engine, end);
+            if (step)
+                AspUnref(engine, step);
             AspUnref(engine, entry);
-            entry = 0;
+            return 0;
         }
 
         if (start != 0)
