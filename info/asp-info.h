@@ -32,7 +32,7 @@ ASP_API AspSourceInfo *AspLoadSourceInfo
     (const char *data, size_t size);
 ASP_API void AspUnloadSourceInfo(AspSourceInfo *);
 ASP_API AspSourceLocation AspGetSourceLocation
-    (const AspSourceInfo *, uint32_t pc);
+    (const AspSourceInfo *, size_t pc);
 ASP_API const char *AspGetSourceFileName
     (const AspSourceInfo *, unsigned index);
 ASP_API const char *AspGetSymbolName

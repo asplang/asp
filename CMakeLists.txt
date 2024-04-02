@@ -67,6 +67,7 @@ if(WIN32)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
             # Unsupported option when using clang-cl
             add_compile_options(/Zc:preprocessor)
+            add_compile_options(/wd4554)
         endif()
     endif()
 else()

@@ -339,9 +339,9 @@ int main(int argc, char **argv)
         rewind(executableFile);
 
         // Read the entire executable into memory.
-        int readResult = fread
-            (externalCode, externalCodeSize, 1, executableFile);
-        if (readResult != 1 || feof(executableFile) || ferror(executableFile))
+        size_t readResult = fread
+            (externalCode, externalCodeSize, 1U, executableFile);
+        if (readResult != 1U || feof(executableFile) || ferror(executableFile))
         {
             cerr
                 << "Error reading " << executableFileName
