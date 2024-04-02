@@ -135,9 +135,23 @@ bool AspIsDictionary(const AspDataEntry *entry)
     return entry != 0 && AspDataGetType(entry) == DataType_Dictionary;
 }
 
+bool AspIsForwardIterator(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_ForwardIterator;
+}
+
+bool AspIsReverseIterator(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_ReverseIterator;
+}
+
 bool AspIsIterator(const AspDataEntry *entry)
 {
-    return entry != 0 && AspDataGetType(entry) == DataType_Iterator;
+    uint8_t type = AspDataGetType(entry);
+    return
+        entry != 0 &&
+        (type == DataType_ForwardIterator ||
+         type == DataType_ReverseIterator);
 }
 
 bool AspIsFunction(const AspDataEntry *entry)
@@ -212,7 +226,8 @@ bool AspIsTrue(AspEngine *engine, const AspDataEntry *entry)
         case DataType_Dictionary:
             return AspDataGetTreeCount(entry) != 0;
 
-        case DataType_Iterator:
+        case DataType_ForwardIterator:
+        case DataType_ReverseIterator:
             return AspDataGetIteratorMemberIndex(entry) != 0;
 
         case DataType_Type:
@@ -739,22 +754,19 @@ static AspDataEntry *ToString
                 break;
             }
 
-            case DataType_Iterator:
+            case DataType_ForwardIterator:
+            case DataType_ReverseIterator:
             {
                 uint32_t iterableIndex =
                     AspDataGetIteratorIterableIndex(entry);
                 AspDataEntry *iterable = AspValueEntry
                     (engine, iterableIndex);
-                strcpy(buffer, "<iter");
-                if (AspDataGetIteratorIsReversed(entry))
-                    strcat(buffer, "-rev");
-                strcat(buffer, ":");
+                snprintf(buffer, sizeof buffer, "<%s:", TypeString(type));
                 if (iterable == 0)
                     strcat(buffer, "?");
                 else
                     strcat(buffer, TypeString(AspDataGetType(iterable)));
-                uint32_t memberIndex =
-                    AspDataGetIteratorMemberIndex(entry);
+                uint32_t memberIndex = AspDataGetIteratorMemberIndex(entry);
                 if (memberIndex == 0)
                     strcat(buffer, " @end");
                 strcat(buffer, ">");
@@ -907,8 +919,10 @@ static const char *TypeString(DataType type)
             return "set";
         case DataType_Dictionary:
             return "dict";
-        case DataType_Iterator:
+        case DataType_ForwardIterator:
             return "iter";
+        case DataType_ReverseIterator:
+            return "iter-rev";
         case DataType_Function:
             return "func";
         case DataType_Module:

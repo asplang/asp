@@ -134,6 +134,8 @@ ASP_API bool AspIsList(const AspDataEntry *);
 ASP_API bool AspIsSequence(const AspDataEntry *);
 ASP_API bool AspIsSet(const AspDataEntry *);
 ASP_API bool AspIsDictionary(const AspDataEntry *);
+ASP_API bool AspIsForwardIterator(const AspDataEntry *);
+ASP_API bool AspIsReverseIterator(const AspDataEntry *);
 ASP_API bool AspIsIterator(const AspDataEntry *);
 ASP_API bool AspIsFunction(const AspDataEntry *);
 ASP_API bool AspIsModule(const AspDataEntry *);

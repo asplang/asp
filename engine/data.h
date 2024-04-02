@@ -33,11 +33,12 @@ typedef enum
     DataType_List = 0x0A,
     DataType_Set = 0x0B,
     DataType_Dictionary = 0x0D,
-    DataType_Iterator = 0x0E,
+    DataType_ForwardIterator = 0x0E,
     DataType_Function = 0x0F,
     DataType_Module = 0x10,
     DataType_AppIntegerObject = 0x1A,
     DataType_AppPointerObject = 0x1B,
+    DataType_ReverseIterator = 0x1E,
     DataType_Type = 0x1F,
     DataType_ObjectMask = 0x3F,
 
@@ -246,10 +247,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord0((eptr), (value)))
 #define AspDataGetIteratorIterableIndex(eptr) \
     (AspDataGetWord0((eptr)))
-#define AspDataSetIteratorIsReversed(eptr, value) \
-    (AspDataSetBit1((eptr), (unsigned)(value)))
-#define AspDataGetIteratorIsReversed(eptr) \
-    ((bool)(AspDataGetBit1((eptr))))
 #define AspDataSetIteratorMemberIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetIteratorMemberIndex(eptr) \

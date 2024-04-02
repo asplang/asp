@@ -1140,7 +1140,7 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *iterator = AspTopValue(engine);
             if (iterator == 0)
                 return AspRunResult_StackUnderflow;
-            if (AspDataGetType(iterator) != DataType_Iterator)
+            if (!AspIsIterator(iterator))
                 return AspRunResult_UnexpectedType;
 
             /* Test the iterator and push the test result onto the stack. */
@@ -1166,7 +1166,7 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *iterator = AspTopValue(engine);
             if (iterator == 0)
                 return AspRunResult_StackUnderflow;
-            if (AspDataGetType(iterator) != DataType_Iterator)
+            if (!AspIsIterator(iterator))
                 return AspRunResult_UnexpectedType;
 
             /* Advance the iterator on the top of the stack. */
@@ -1188,7 +1188,7 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *iterator = AspTopValue(engine);
             if (iterator == 0)
                 return AspRunResult_StackUnderflow;
-            if (AspDataGetType(iterator) != DataType_Iterator)
+            if (!AspIsIterator(iterator))
                 return AspRunResult_UnexpectedType;
 
             AspIteratorResult iteratorResult = AspIteratorDereference

@@ -143,7 +143,8 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     break;
                 }
             }
-            else if (t == DataType_Iterator)
+            else if (t == DataType_ForwardIterator ||
+                     t == DataType_ReverseIterator)
             {
                 AspDataEntry *iterable = AspValueEntry
                     (engine, AspDataGetIteratorIterableIndex(entry));

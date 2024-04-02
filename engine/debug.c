@@ -121,7 +121,8 @@ static TypeName gTypeNames[] =
     {DataType_List, "list"},
     {DataType_Set, "set"},
     {DataType_Dictionary, "dict"},
-    {DataType_Iterator, "iter"},
+    {DataType_ForwardIterator, "iter"},
+    {DataType_ReverseIterator, "iter-rev"},
     {DataType_Function, "func"},
     {DataType_Module, "mod"},
     {DataType_AppIntegerObject, "app-int"},
@@ -216,11 +217,10 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetTreeRootIndex(entry));
             break;
 
-        case DataType_Iterator:
+        case DataType_ForwardIterator:
+        case DataType_ReverseIterator:
             fprintf(fp, " coll=0x%7.7X",
                 AspDataGetIteratorIterableIndex(entry));
-            if (AspDataGetIteratorIsReversed(entry))
-                fputs(" rev", fp);
             fprintf(fp, " mem=0x%7.7X si=%d",
                 AspDataGetIteratorMemberIndex(entry),
                 AspDataGetIteratorStringIndex(entry));

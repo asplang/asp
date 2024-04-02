@@ -22,9 +22,9 @@ AspIteratorResult AspIteratorCreate
     if (result.result != AspRunResult_OK)
         return result;
 
-    /* Create an iterator entry. */
-    AspDataEntry *iterator = AspAllocEntry
-        (engine, DataType_Iterator);
+    /* Create an iterator entry. Note that the type may be changed later if
+       it turns out the new iterator is reversed. */
+    AspDataEntry *iterator = AspAllocEntry(engine, DataType_ForwardIterator);
     if (iterator == 0)
     {
         result.result = AspRunResult_OutOfDataMemory;
@@ -34,7 +34,7 @@ AspIteratorResult AspIteratorCreate
     /* Check if the argument is already an iterator. */
     uint8_t iterableType = AspDataGetType(iterable);
     const AspDataEntry *oldIterator = 0;
-    if (iterableType == DataType_Iterator)
+    if (AspIsIterator(iterable))
     {
         /* Access the underlying iterable. */
         oldIterator = iterable;
@@ -154,7 +154,8 @@ AspIteratorResult AspIteratorCreate
             break;
         }
 
-        case DataType_Iterator:
+        case DataType_ForwardIterator:
+        case DataType_ReverseIterator:
         {
             /* Copy the iterator. */
             AspDataSetIteratorIterableIndex
@@ -166,15 +167,16 @@ AspIteratorResult AspIteratorCreate
             AspDataSetIteratorMemberNeedsCleanup(iterator, needsCleanup);
             if (needsCleanup)
                 AspRef(engine, member);
-            reversed =
-                 AspDataGetIteratorIsReversed(oldIterator) != reversed;
+            reversed = (iterableType == DataType_ReverseIterator) != reversed;
             if (AspDataGetType(iterable) == DataType_String)
                 AspDataSetIteratorStringIndex
                     (iterator, AspDataGetIteratorStringIndex(oldIterator));
         }
     }
     AspDataSetIteratorMemberIndex(iterator, AspIndex(engine, member));
-    AspDataSetIteratorIsReversed(iterator, reversed);
+    AspDataSetType
+        (iterator,
+         reversed ? DataType_ReverseIterator : DataType_ForwardIterator);
 
     if (result.result != AspRunResult_OK)
     {
@@ -193,7 +195,7 @@ AspRunResult AspIteratorNext
     if (assertResult != AspRunResult_OK)
         return assertResult;
 
-    if (AspDataGetType(iterator) != DataType_Iterator)
+    if (!AspIsIterator(iterator))
         return AspRunResult_UnexpectedType;
 
     /* Gain access to the underlying iterable. */
@@ -207,7 +209,7 @@ AspRunResult AspIteratorNext
         return AspRunResult_IteratorAtEnd;
 
     /* Determine the direction of iteration. */
-    bool reversed = AspDataGetIteratorIsReversed(iterator);
+    bool reversed = AspIsReverseIterator(iterator);
 
     /* Advance the iterator. */
     uint8_t iterableType = AspDataGetType(iterable);
@@ -350,7 +352,7 @@ AspIteratorResult AspIteratorDereference
     if (result.result != AspRunResult_OK)
         return result;
 
-    if (AspDataGetType(iterator) != DataType_Iterator)
+    if (!AspIsIterator(iterator))
     {
         result.result = AspRunResult_UnexpectedType;
         return result;

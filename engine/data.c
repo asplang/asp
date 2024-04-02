@@ -196,7 +196,8 @@ static bool IsSimpleImmutableObject(const AspDataEntry *entry)
         type != DataType_List &&
         type != DataType_Set &&
         type != DataType_Dictionary &&
-        type != DataType_Iterator;
+        type != DataType_ForwardIterator &&
+        type != DataType_ReverseIterator;
 }
 
 AspDataEntry *AspAllocEntry(AspEngine *engine, DataType type)

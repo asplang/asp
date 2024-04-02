@@ -11,6 +11,7 @@
 #include <string.h>
 
 static int CompareFloats(double, double, AspCompareType, bool *nanDetected);
+static int CompareIterators(const AspDataEntry *, const AspDataEntry *);
 
 AspRunResult AspCompare
     (AspEngine *engine,
@@ -77,7 +78,19 @@ AspRunResult AspCompare
                          compareType, &localNanDetected);
             }
             else if (compareType == AspCompareType_Equality)
-                comparison = 1;
+            {
+                if ((leftType == DataType_ForwardIterator ||
+                     rightType == DataType_ForwardIterator) &&
+                    (leftType == DataType_ReverseIterator ||
+                     rightType == DataType_ReverseIterator))
+                {
+                    /* Compare iterators of different types (forward and
+                       reverse). They are only ever tested for equality. */
+                    comparison = CompareIterators(leftEntry, rightEntry);
+                }
+                else
+                    comparison = 1;
+            }
             else
                 return AspRunResult_UnexpectedType;
         }
@@ -95,7 +108,8 @@ AspRunResult AspCompare
                         type == DataType_Range ||
                         type == DataType_Set ||
                         type == DataType_Dictionary ||
-                        type == DataType_Iterator ||
+                        type == DataType_ForwardIterator ||
+                        type == DataType_ReverseIterator ||
                         type == DataType_Function ||
                         type == DataType_Module ||
                         type == DataType_AppIntegerObject ||
@@ -108,7 +122,8 @@ AspRunResult AspCompare
                     if (type == DataType_List ||
                         type == DataType_Set ||
                         type == DataType_Dictionary ||
-                        type == DataType_Iterator)
+                        type == DataType_ForwardIterator ||
+                        type == DataType_ReverseIterator)
                         return AspRunResult_UnexpectedType;
                     break;
             }
@@ -347,19 +362,11 @@ AspRunResult AspCompare
                         break;
                     }
 
-                    case DataType_Iterator:
+                    case DataType_ForwardIterator:
+                    case DataType_ReverseIterator:
                     {
                         /* Iterators are only ever tested for equality. */
-                        comparison =
-                            AspDataGetIteratorIterableIndex(leftEntry) ==
-                            AspDataGetIteratorIterableIndex(rightEntry) &&
-                            AspDataGetIteratorIsReversed(leftEntry) ==
-                            AspDataGetIteratorIsReversed(rightEntry) &&
-                            AspDataGetIteratorMemberIndex(leftEntry) ==
-                            AspDataGetIteratorMemberIndex(rightEntry) &&
-                            AspDataGetIteratorStringIndex(leftEntry) ==
-                            AspDataGetIteratorStringIndex(rightEntry) ?
-                            0 : 1;
+                        comparison = CompareIterators(leftEntry, rightEntry);
                         break;
                     }
 
@@ -593,4 +600,17 @@ static int CompareFloats
         }
         return memcmp(leftBytes, rightBytes, sizeof(double));
     }
+}
+
+static int CompareIterators
+    (const AspDataEntry *leftEntry, const AspDataEntry *rightEntry)
+{
+    return
+        AspDataGetIteratorIterableIndex(leftEntry) ==
+        AspDataGetIteratorIterableIndex(rightEntry) &&
+        AspDataGetIteratorMemberIndex(leftEntry) ==
+        AspDataGetIteratorMemberIndex(rightEntry) &&
+        AspDataGetIteratorStringIndex(leftEntry) ==
+        AspDataGetIteratorStringIndex(rightEntry) ?
+        0 : 1;
 }
