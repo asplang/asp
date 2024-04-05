@@ -3,6 +3,7 @@
 //
 
 #include "compiler.h"
+#include "asp.h"
 #include "grammar.hpp"
 #include "expression.hpp"
 #include "statement.hpp"
@@ -820,6 +821,32 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeJuxtaposeConstantExpression, ConstantExpression *,
+     ConstantExpression *, leftExpression,
+     ConstantExpression *, rightExpression)
+{
+    // Only strings can be juxtaposed.
+    if (leftExpression->GetType() != ConstantExpression::Type::String ||
+        rightExpression->GetType() != ConstantExpression::Type::String)
+        throw string("Syntax error");
+
+    // Fold the juxtaposed expression using addition.
+    Expression *resultExpression = FoldBinaryExpression
+        (TOKEN_PLUS, leftExpression, rightExpression);
+    if (resultExpression == nullptr)
+        throw string("Internal error: Error folding juxtaposed strings");
+    if (leftExpression != resultExpression)
+        delete leftExpression;
+    if (rightExpression != resultExpression)
+        delete rightExpression;
+    auto result = dynamic_cast<ConstantExpression *>(resultExpression);
+    if (result == nullptr)
+        throw string("Internal error: Error folding juxtaposed strings");
+
+    return result;
+}
+
+DEFINE_ACTION
     (MakeEnclosedExpression, Expression *, Expression *, expression)
 {
     // Enclose the expression in parentheses. This prevents tuples in
@@ -832,6 +859,13 @@ DEFINE_ACTION
     (AssignExpression, Expression *, Expression *, expression)
 {
     return expression;
+}
+
+DEFINE_ACTION
+    (AssignConstantExpression, ConstantExpression *,
+     ConstantExpression *, constantExpression)
+{
+    return constantExpression;
 }
 
 DEFINE_ACTION

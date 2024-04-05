@@ -561,6 +561,8 @@ Expression *FoldBinaryExpression
     (int operatorTokenType,
      Expression *leftExpression, Expression *rightExpression)
 {
+    typedef ConstantExpression::Type Type;
+
     auto *leftConstExpression = dynamic_cast<ConstantExpression *>
         (leftExpression);
     auto *rightConstExpression = dynamic_cast<ConstantExpression *>
@@ -652,6 +654,11 @@ Expression *FoldBinaryExpression
                 leftConstExpression == nullptr ||
                 rightConstExpression == nullptr ?
                 nullptr :
+                leftConstExpression->type == Type::String &&
+                rightConstExpression->type == Type::String ?
+                FoldStringConcatenationOperation
+                    (operatorTokenType,
+                     leftConstExpression, rightConstExpression) :
                 FoldArithmeticOperation
                     (operatorTokenType,
                      leftConstExpression, rightConstExpression);
@@ -959,7 +966,7 @@ Expression *FoldBitwiseOperation
 
     if (leftExpression->type == Type::NegatedMinInteger ||
         rightExpression->type == Type::NegatedMinInteger)
-        throw string("Integer constant out of range BIT");
+        throw string("Integer constant out of range");
 
     int32_t leftValue = 0, rightValue = 0;
     if (leftExpression->type == Type::Boolean)
@@ -1039,6 +1046,25 @@ Expression *FoldBitwiseOperation
         (Token(leftExpression->sourceLocation, intResult, false));
 }
 
+Expression *FoldStringConcatenationOperation
+    (int operatorTokenType,
+     ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+{
+    typedef ConstantExpression::Type Type;
+
+    if (leftExpression->type != Type::String ||
+        rightExpression->type != Type::String)
+        return nullptr;
+
+    if (rightExpression->s.empty())
+        return leftExpression;
+    if (leftExpression->s.empty())
+        return rightExpression;
+
+    return new ConstantExpression(Token(leftExpression->sourceLocation,
+        leftExpression->s + rightExpression->s));
+}
+
 Expression *FoldArithmeticOperation
     (int operatorTokenType,
      ConstantExpression *leftExpression, ConstantExpression *rightExpression)
@@ -1047,7 +1073,7 @@ Expression *FoldArithmeticOperation
 
     if (leftExpression->type == Type::NegatedMinInteger ||
         rightExpression->type == Type::NegatedMinInteger)
-        throw string("Integer constant out of range ARITH");
+        throw string("Integer constant out of range");
 
     // Fold only numeric operands. Do not fold, for example, string
     // multiplication.
@@ -1220,7 +1246,7 @@ Expression *FoldConditional
         leftConstExpression->type == Type::NegatedMinInteger ||
         rightConstExpression != nullptr &&
         rightConstExpression->type == Type::NegatedMinInteger)
-        throw string("Integer constant out of range COND");
+        throw string("Integer constant out of range");
 
     return conditionExpression->IsTrue() ? leftExpression : rightExpression;
 }

@@ -1221,7 +1221,22 @@ literal(result) ::= FLOAT(token).
     result = ACTION(MakeConstantExpression, token);
 }
 
-literal(result) ::= STRING(token).
+literal(result) ::= string_literal(literal).
+{
+    result = ACTION(AssignConstantExpression, literal);
+}
+
+%type string_literal {ConstantExpression *}
+
+string_literal(result) ::= string_literal(literal) STRING(token).
+{
+    result = ACTION
+        (MakeJuxtaposeConstantExpression,
+         literal,
+         ACTION(MakeConstantExpression, token));
+}
+
+string_literal(result) ::= STRING(token).
 {
     result = ACTION(MakeConstantExpression, token);
 }

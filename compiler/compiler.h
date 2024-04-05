@@ -207,9 +207,14 @@ class Compiler
         (MakeConstantExpression, ConstantExpression *,
          Token *)
     DECLARE_METHOD
+        (MakeJuxtaposeConstantExpression, ConstantExpression *,
+         ConstantExpression *, ConstantExpression *)
+    DECLARE_METHOD
         (MakeEnclosedExpression, Expression *, Expression *)
     DECLARE_METHOD
         (AssignExpression, Expression *, Expression *)
+    DECLARE_METHOD
+        (AssignConstantExpression, ConstantExpression *, ConstantExpression *)
 
     /* Target expressions. */
     DECLARE_METHOD

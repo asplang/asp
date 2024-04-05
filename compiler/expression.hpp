@@ -422,6 +422,22 @@ class ConstantExpression : public Expression
 
         explicit ConstantExpression(const Token &);
 
+        enum class Type
+        {
+            None,
+            Ellipsis,
+            Boolean,
+            Integer,
+            NegatedMinInteger,
+            Float,
+            String,
+        };
+
+        Type GetType() const
+        {
+            return type;
+        }
+
         friend Expression *FoldUnaryExpression
             (int operatorTokenType, Expression *);
         friend Expression *FoldBinaryExpression
@@ -461,21 +477,12 @@ class ConstantExpression : public Expression
             (ConstantExpression *, ConstantExpression *);
         friend Expression *FoldBitwiseOperation
             (int operatorTypeType, ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldStringConcatenationOperation
+            (int operatorTypeType, ConstantExpression *, ConstantExpression *);
         friend Expression *FoldArithmeticOperation
             (int operatorTypeType, ConstantExpression *, ConstantExpression *);
         friend Expression *FoldConditional
             (ConstantExpression *, Expression *, Expression *);
-
-        enum class Type
-        {
-            None,
-            Ellipsis,
-            Boolean,
-            Integer,
-            NegatedMinInteger,
-            Float,
-            String,
-        };
 
         Type type;
         union
