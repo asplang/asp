@@ -9,6 +9,8 @@ Changes
 
 Version 1.1.0.0 (compiler 1.1.0.0, engine 1.1.0.0):
 - Compiler:
+  - Added string literal folding for explicit concatenation (+ operator) and
+    juxtaposition.
   - Improved error reporting.
 - Engine:
   - Changed the default value of the range start component (i.e., the value
@@ -38,14 +40,15 @@ Version 1.1.0.0 (compiler 1.1.0.0, engine 1.1.0.0):
       - AspTraceFile (only available in debug builds): Redirect trace output to
         the specified file handle.
   - Made the following changes to script-callable functions:
-    - iter: Now accepts an iterator argument and creates a copy of it (unlike
-      Python, which returns a reference to the same object). The iterator's
-      current position is retained in the copy.
+    - iter: Now accepts an iterator for the argument and creates a copy of it
+      (unlike Python, which returns a reference to the same object). The
+      iterator's current position is retained in the copy.
     - tuple and list: These functions no longer accept None as an argument,
       making them more like their Python counterparts.
     - New functions:
       - range_values: Return a 3-tuple of the components of a range.
       - reversed: Return a reversed iterator for a given collection or range.
+        Passing an existing iterator makes a copy and reverses its direction.
 - Standalone application:
   - Added extra options in debug builds for redirecting trace and dump outputs.
 
