@@ -129,7 +129,7 @@ AspIteratorResult AspIteratorCreate
             }
             member = startResult.element;
 
-            if (iterableType == DataType_String && reversed)
+            if (member != 0 && iterableType == DataType_String && reversed)
             {
                 AspDataSetIteratorStringIndex
                     (iterator,
