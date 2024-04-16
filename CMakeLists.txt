@@ -94,3 +94,6 @@ endif()
 if(BUILD_TEST_TARGETS)
     add_subdirectory(test)
 endif()
+
+# Package specifications.
+include(package.cmake)

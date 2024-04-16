@@ -16,6 +16,9 @@ dist/
 # Log files
 *.log
 
+# Generic build directory.
+build/
+
 # CMake files
 CMakeCache.txt
 CMakeFiles

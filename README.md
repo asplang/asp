@@ -58,6 +58,14 @@ Build instructions
     - ${PREFIX}/include/asp-X.Y/asp*.h - Headers for application development.
     - ${PREFIX}/include/asps/X.Y/*.asps - Application spec include files.
 
+Packaging instructions
+----------------------
+
+Asp packages are built using CPack. A Python script, `package.py`, is provided
+that builds a standard set of packages for use on various platforms. A package
+may be used to install the software (source or binaries) instead of building
+and installing as described above.
+
 Using the standalone application
 --------------------------------
 
@@ -68,7 +76,7 @@ environment variable to the standalone application specification file.
 $ export ASP_SPEC_FILE=/usr/etc/asp/standalone.aspec
 ```
 
-Alternatively, you can specify it on the compile command line, or copy the
+Alternatively, you can specify it on the compile command line, or copy/link the
 file to the local directory and rename it to app.aspec.
 
 Now you can compile your script and run it under the standalone application.
