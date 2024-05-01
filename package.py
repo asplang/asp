@@ -52,30 +52,46 @@ os.chdir(build_dir)
 # Make packages for the current platform.
 if sys.platform.startswith('linux'):
 
-    subprocess.run(['echo', 'Building Linux packages'])
+    print('Building Linux packages')
 
+    print('Configuring')
     subprocess.check_call \
         (['cmake', '-DBUILD_SHARED_LIBS=ON', '-DINSTALL_DEV=ON',
           '-DCMAKE_INSTALL_PREFIX=/usr',
           '-DCMAKE_BUILD_TYPE=Release', '..'])
 
+    print('Packaging source')
     subprocess.check_call \
         (['cpack', '--config', 'CPackSourceConfig.cmake',
           '-G', 'TBZ2;TGZ'])
 
+    print('Packaging installer')
     subprocess.check_call \
         (['cpack', '--config', 'CPackConfig.cmake',
           '-G', 'TBZ2;TGZ'])
 
 elif sys.platform.startswith('win'):
 
-    subprocess.run(['echo', 'Building Windows packages'])
+    print('Building Windows packages')
 
+    print('Configuring')
     subprocess.check_call \
-        (['cmake', '-DBUILD_SHARED_LIBS=ON', '-DINSTALL_DEV=ON',
-          '-DCMAKE_BUILD_TYPE=Release', '..'])
+        (['cmake', '-DBUILD_SHARED_LIBS=ON', '-DINSTALL_DEV=ON', '..'])
 
-    # TODO: Add applicable cpack commands.
+    print('Packaging source')
+    subprocess.check_call \
+        (['cpack', '--config', 'CPackSourceConfig.cmake',
+          '-G', 'ZIP'])
+
+    print('Building')
+    subprocess.check_call \
+        (['cmake', '--build', '.', '--config', 'Release'])
+
+    print('Packaging installer')
+    subprocess.check_call \
+        (['cpack', '--config', 'CPackConfig.cmake',
+          '-G', 'NSIS'])
+
 
 else:
     print('Unrecognized system')
