@@ -88,14 +88,19 @@ if(BUILD_FOR_TARGET)
     if(WIN32)
 
         install(TARGETS aspe
+            RUNTIME
             COMPONENT Runtime
+            )
+
+        install(TARGETS aspe
+            ARCHIVE
+            COMPONENT Development
             )
 
     else()
 
         if(BUILD_SHARED_LIBS)
             install(TARGETS aspe
-                DESTINATION lib
                 COMPONENT Runtime
                 )
         endif()

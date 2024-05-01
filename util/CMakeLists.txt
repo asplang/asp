@@ -38,6 +38,5 @@ target_compile_definitions(aspinfo PRIVATE
     )
 
 install(TARGETS aspinfo
-    DESTINATION bin
     COMPONENT Runtime
     )

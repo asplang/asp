@@ -47,47 +47,76 @@ target_include_directories(aspd PUBLIC
     "${PROJECT_SOURCE_DIR}"
     )
 
-if(BUILD_SHARED_LIBS)
+if(WIN32)
+
     install(TARGETS aspd
-        DESTINATION lib
+        RUNTIME
         COMPONENT Runtime
         )
+
+    install(TARGETS aspd
+        ARCHIVE
+        COMPONENT Development
+        )
+
+else()
+
+    if(BUILD_SHARED_LIBS)
+        install(TARGETS aspd
+            COMPONENT Runtime
+            )
+    endif()
+
+    if(INSTALL_DEV)
+
+        if(NOT BUILD_SHARED_LIBS)
+            install(TARGETS aspd
+                DESTINATION lib/asp-${ABI_VERSION}
+                COMPONENT Development
+                )
+
+            install(
+                CODE
+                    "execute_process(COMMAND
+                    ${CMAKE_COMMAND} -E create_symlink
+                    \"asp-${ABI_VERSION}/libaspd.a\"
+                    \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libaspd.a\"
+                    )"
+                COMPONENT Development
+                )
+
+        endif()
+
+    endif()
+
 endif()
 
 if(INSTALL_DEV)
 
-    if(NOT BUILD_SHARED_LIBS)
-        install(TARGETS aspd
-            DESTINATION lib/asp-${ABI_VERSION}
+    if(WIN32)
+
+        install(FILES asp-info.h
+            DESTINATION include
+            COMPONENT Development
+            )
+
+    else()
+
+        install(FILES asp-info.h
+            DESTINATION include/asp-${ABI_VERSION}
             COMPONENT Development
             )
 
         install(
             CODE
-                "execute_process(COMMAND
-                ${CMAKE_COMMAND} -E create_symlink
-                \"asp-${ABI_VERSION}/libaspd.a\"
-                \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libaspd.a\"
+                "execute_process(
+                COMMAND ${CMAKE_COMMAND} -E create_symlink
+                \"asp-${ABI_VERSION}/asp-info.h\"
+                \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/asp-info.h\"
                 )"
             COMPONENT Development
             )
 
     endif()
-
-    install(FILES
-        asp-info.h
-        DESTINATION include/asp-${ABI_VERSION}
-        COMPONENT Development
-        )
-
-    install(
-        CODE
-            "execute_process(
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-            \"asp-${ABI_VERSION}/asp-info.h\"
-            \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/include/asp-info.h\"
-            )"
-        COMPONENT Development
-        )
 
 endif()
