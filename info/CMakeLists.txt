@@ -17,6 +17,7 @@ if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
         "${PROJECT_NAME} version not compatible with project version"
         )
 endif()
+set(TARGET_VERSION ${ABI_VERSION}.${PROJECT_VERSION_PATCH})
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
@@ -27,7 +28,7 @@ add_library(aspd
     )
 
 set_property(TARGET aspd
-    PROPERTY VERSION ${PROJECT_VERSION}
+    PROPERTY VERSION ${TARGET_VERSION}
     )
 if(BUILD_SHARED_LIBS)
     set_property(TARGET aspd

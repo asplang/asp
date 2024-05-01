@@ -65,7 +65,7 @@ if sys.platform.startswith('linux'):
         (['cpack', '--config', 'CPackSourceConfig.cmake',
           '-G', 'TBZ2;TGZ'])
 
-    print('Packaging installer')
+    print('Packaging binary tar balls')
     subprocess.check_call \
         (['cpack', '--config', 'CPackConfig.cmake',
           '-G', 'TBZ2;TGZ'])
