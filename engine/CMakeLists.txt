@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.5)
 set(PARENT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 project(aspe
-    VERSION 1.1.0.0
+    VERSION 1.1.1.0
     LANGUAGES C
     )
 
@@ -18,11 +18,16 @@ if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
         )
 endif()
 
+project(aspm
+    VERSION ${aspe_VERSION}
+    LANGUAGES C
+    )
+
 math(EXPR VERSION_VALUE
-    "(${PROJECT_VERSION_MAJOR} << 24) +
-     (${PROJECT_VERSION_MINOR} << 16) +
-     (${PROJECT_VERSION_PATCH} << 8) +
-     ${PROJECT_VERSION_TWEAK}"
+    "(${aspe_VERSION_MAJOR} << 24) +
+     (${aspe_VERSION_MINOR} << 16) +
+     (${aspe_VERSION_PATCH} << 8) +
+     ${aspe_VERSION_TWEAK}"
     )
 
 # The template file references the VERSION_VALUE variable.
@@ -54,7 +59,6 @@ if(BUILD_FOR_TARGET)
         lib-type.c
         lib-collect.c
         lib-iter.c
-        lib-math.c
         integer.c
         integer-result.c
         $<$<BOOL:${ENABLE_ENGINE_DEBUG}>:debug.c>
@@ -72,29 +76,56 @@ if(BUILD_FOR_TARGET)
     target_compile_definitions(aspe PRIVATE
         $<$<BOOL:${ENABLE_ENGINE_DEBUG}>:ASP_DEBUG>
         $<$<BOOL:${BUILD_TEST_TARGETS}>:ASP_TEST>
-        ASP_ENGINE_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-        ASP_ENGINE_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-        ASP_ENGINE_VERSION_PATCH=${PROJECT_VERSION_PATCH}
-        ASP_ENGINE_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
+        ASP_ENGINE_VERSION_MAJOR=${aspe_VERSION_MAJOR}
+        ASP_ENGINE_VERSION_MINOR=${aspe_VERSION_MINOR}
+        ASP_ENGINE_VERSION_PATCH=${aspe_VERSION_PATCH}
+        ASP_ENGINE_VERSION_TWEAK=${aspe_VERSION_TWEAK}
         $<$<BOOL:${BUILD_SHARED_LIBS}>:USING_SHARED_LIBS>
         ASP_EXPORT_API ASP_EXPORT_LIB_API
         )
 
     target_include_directories(aspe PUBLIC
-        "${PROJECT_BINARY_DIR}"
-        "${PROJECT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_BINARY_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        )
+
+    add_library(aspm
+        lib-math.c
+        )
+
+    set_property(TARGET aspm
+        PROPERTY VERSION ${ABI_VERSION}
+        )
+    if(BUILD_SHARED_LIBS)
+        set_property(TARGET aspm
+            PROPERTY C_VISIBILITY_PRESET hidden
+            )
+    endif()
+
+    target_compile_definitions(aspm PRIVATE
+        $<$<BOOL:${BUILD_SHARED_LIBS}>:USING_SHARED_LIBS>
+        ASP_EXPORT_API ASP_EXPORT_LIB_API
+        )
+
+    target_link_libraries(aspm PUBLIC
+        aspe
+        )
+
+    set(LIBS
+        aspe
+        aspm
         )
 
     if(WIN32)
 
-        install(TARGETS aspe
+        install(TARGETS ${LIBS}
             COMPONENT Runtime
             )
 
     else()
 
         if(BUILD_SHARED_LIBS)
-            install(TARGETS aspe
+            install(TARGETS ${LIBS}
                 DESTINATION lib
                 COMPONENT Runtime
                 )
@@ -103,7 +134,7 @@ if(BUILD_FOR_TARGET)
         if(INSTALL_DEV)
 
             if(NOT BUILD_SHARED_LIBS)
-                install(TARGETS aspe
+                install(TARGETS ${LIBS}
                     DESTINATION lib/asp-${ABI_VERSION}
                     COMPONENT Development
                     )
@@ -114,15 +145,17 @@ if(BUILD_FOR_TARGET)
             # CMake 3.14, but to support older versions, we hard-code the
             # library file name instead.
             if(NOT BUILD_SHARED_LIBS)
-                install(
-                    CODE
-                        "execute_process(COMMAND
-                        ${CMAKE_COMMAND} -E create_symlink
-                        \"asp-${ABI_VERSION}/libaspe.a\"
-                        \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/libaspe.a\"
-                        )"
-                    COMPONENT Development
-                    )
+                foreach(lib ${LIBS})
+                    install(
+                        CODE
+                            "execute_process(COMMAND
+                            ${CMAKE_COMMAND} -E create_symlink
+                            \"asp-${ABI_VERSION}/lib${lib}.a\"
+                            \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib/lib${lib}.a\"
+                            )"
+                        COMPONENT Development
+                        )
+                endforeach()
             endif()
 
         endif()
@@ -137,7 +170,7 @@ if(INSTALL_DEV)
         asp.h
         asp-api.h
         asp-priv.h
-        "${PROJECT_BINARY_DIR}/asp-ver.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/asp-ver.h"
         )
     set(ASPS_FILES
         sys.asps
