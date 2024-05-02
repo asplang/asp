@@ -28,13 +28,13 @@ set_property(TARGET aspinfo
     PROPERTY VERSION ${ABI_VERSION}
     )
 
-target_link_libraries(aspinfo
-    aspd
-    )
-
 target_compile_definitions(aspinfo PRIVATE
     $<$<NOT:$<STREQUAL:${C_COMMAND_OPTION_PREFIXES},>>:
         COMMAND_OPTION_PREFIXES=${C_COMMAND_OPTION_PREFIXES}>
+    )
+
+target_link_libraries(aspinfo
+    aspd
     )
 
 install(TARGETS aspinfo

@@ -51,11 +51,6 @@ set_property(TARGET asps
     PROPERTY VERSION ${ABI_VERSION}
     )
 
-target_link_libraries(asps
-    aspe
-    aspd
-    )
-
 target_compile_definitions(asps PRIVATE
     $<$<BOOL:${ENABLE_ASPS_DEBUG}>:ASP_DEBUG>
     $<$<NOT:$<STREQUAL:${C_COMMAND_OPTION_PREFIXES},>>:
@@ -65,6 +60,12 @@ target_compile_definitions(asps PRIVATE
 target_include_directories(asps PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
+    )
+
+target_link_libraries(asps
+    aspe
+    aspm
+    aspd
     )
 
 install(TARGETS asps

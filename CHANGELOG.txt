@@ -7,6 +7,12 @@ chronological order.
 Changes
 -------
 
+Version 1.1.1.0 (compiler 1.1.0.0, engine 1.1.1.0):
+- Engine:
+  - Separated the script math function definitions into their own library for
+    the benefit of applications that don't need them, and therefore don't need
+    their dependencies (i.e., various C math routines).
+
 Version 1.1.0.0 (compiler 1.1.0.0, engine 1.1.0.0):
 - Compiler:
   - Added string literal folding for explicit concatenation (+ operator) and

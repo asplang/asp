@@ -15,10 +15,10 @@ add_executable(test-tree
     main-test-tree.cpp
     )
 
-target_link_libraries(test-tree
-    aspe
-    )
-
 target_compile_definitions(test-tree PRIVATE
     ASP_TEST
+    )
+
+target_link_libraries(test-tree
+    aspe
     )
