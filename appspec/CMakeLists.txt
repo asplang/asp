@@ -69,5 +69,6 @@ target_include_directories(aspg PRIVATE
     )
 
 install(TARGETS aspg
+    DESTINATION bin
     COMPONENT Development
     )

@@ -38,5 +38,6 @@ target_link_libraries(aspinfo
     )
 
 install(TARGETS aspinfo
+    DESTINATION bin
     COMPONENT Runtime
     )

@@ -69,6 +69,7 @@ target_link_libraries(asps
     )
 
 install(TARGETS asps
+    DESTINATION bin
     COMPONENT Runtime
     )
 

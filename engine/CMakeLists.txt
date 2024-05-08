@@ -132,6 +132,7 @@ if(BUILD_FOR_TARGET)
 
         if(BUILD_SHARED_LIBS)
             install(TARGETS ${LIBS}
+                DESTINATION lib
                 COMPONENT Runtime
                 )
         endif()

@@ -64,6 +64,7 @@ else()
 
     if(BUILD_SHARED_LIBS)
         install(TARGETS aspd
+            DESTINATION lib
             COMPONENT Runtime
             )
     endif()
