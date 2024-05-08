@@ -4,7 +4,13 @@
 # Asp package builder.
 #
 
-import sys, os, subprocess, shutil, pathlib
+import sys
+
+min_version = (3, 7)
+if sys.version_info < min_version:
+    sys.exit('Python %s.%s or later is required' % min_version)
+
+import os, subprocess, shutil, pathlib
 
 # Change directory to the root of the repository.
 try:
