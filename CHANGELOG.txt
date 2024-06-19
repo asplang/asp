@@ -7,6 +7,14 @@ chronological order.
 Changes
 -------
 
+Version 1.1.1.1 (compiler 1.1.0.0, engine 1.1.1.0):
+- Unit tests:
+  - Updated the unit test driver for testing the red-black tree implementation.
+    This code is normally not compiled (as it does not contribute to the
+    installed components), but if enabled in recent versions, it was failing to
+    compile because of the changes to the AspCount function signature
+    introduced in version 1.1.0.0.
+
 Version 1.1.1.0 (compiler 1.1.0.0, engine 1.1.1.0):
 - Engine:
   - Separated the script math function definitions into their own library for

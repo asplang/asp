@@ -76,7 +76,9 @@ int main(int argc, char **argv)
             AspUnref(&engine, keys[j]);
 
             unsigned tally = AspTreeTally(&engine, set);
-            if (tally != AspCount(set))
+            int32_t count;
+            AspCount(&engine, set, &count);
+            if (tally != (unsigned)count)
             {
                 PrintTree(&engine, set, cerr);
                 cerr << "Dump:" << endl;
@@ -132,7 +134,9 @@ int main(int argc, char **argv)
             }
 
             unsigned tally = AspTreeTally(&engine, set);
-            if (tally != AspCount(set))
+            int32_t count;
+            AspCount(&engine, set, &count);
+            if (tally != (unsigned)count)
             {
                 PrintTree(&engine, set, cerr);
                 cerr << "Dump:" << endl;
@@ -151,7 +155,9 @@ int main(int argc, char **argv)
         }
 
         // Ensure tree is empty.
-        if (AspCount(set) != 0)
+        int32_t count;
+        AspCount(&engine, set, &count);
+        if (count != 0)
         {
             PrintTree(&engine, set, cerr);
             cerr << "Dump:" << endl;
@@ -174,7 +180,9 @@ int main(int argc, char **argv)
 
 static void PrintTree(AspEngine *engine, AspDataEntry *tree, ostream &os)
 {
-    os << "Tree: count=" << AspCount(tree) << '\n';
+    int32_t count;
+    AspCount(engine, tree, &count);
+    os << "Tree: count=" << count << '\n';
     uint32_t rootIndex = AspDataGetTreeRootIndex(tree);
     unsigned depth = 0;
     PrintNode(engine, AspEntry(engine, rootIndex), 0, 0, &depth, os);
