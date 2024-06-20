@@ -25,6 +25,7 @@
 %left AND.
 %right NOT.
 %left EQ NE LT LE GT GE IN NOT_IN IS IS_NOT.
+%left ORDER.
 %left BAR. // Bitwise OR.
 %left CARET. // Bitwise XOR.
 %left AMPERSAND. // Bitwise AND.
@@ -675,6 +676,15 @@ expression1(result) ::=
 
 expression1(result) ::=
     expression1(leftExpression) NOT_IN(operatorToken)
+    expression1(rightExpression).
+{
+    result = ACTION
+        (MakeBinaryExpression, operatorToken,
+         leftExpression, rightExpression);
+}
+
+expression1(result) ::=
+    expression1(leftExpression) ORDER(operatorToken)
     expression1(rightExpression).
 {
     result = ACTION

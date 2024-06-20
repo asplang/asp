@@ -39,7 +39,8 @@ AspRunResult AspCompare
             rightType = AspDataGetType(rightEntry);
         if (leftType != rightType)
         {
-            if (compareType == AspCompareType_Key)
+            if (compareType == AspCompareType_Key ||
+                compareType == AspCompareType_Order)
                 comparison = leftType < rightType ? -1 : 1;
             else if ((leftType == DataType_Boolean ||
                       leftType == DataType_Integer ||
@@ -235,9 +236,10 @@ AspRunResult AspCompare
                     case DataType_Tuple:
                     case DataType_List:
                     {
-                        /* For key comparison, compare counts first for
-                           efficiency. */
-                        if (compareType == AspCompareType_Key)
+                        /* For key or order comparison, compare counts first
+                           for efficiency. */
+                        if (compareType == AspCompareType_Key ||
+                            compareType == AspCompareType_Order)
                         {
                             int32_t
                                 leftCount = AspDataGetSequenceCount
@@ -302,6 +304,20 @@ AspRunResult AspCompare
                     case DataType_Set:
                     case DataType_Dictionary:
                     {
+                        /* For order comparison, compare counts first for
+                           efficiency. */
+                        if (compareType == AspCompareType_Order)
+                        {
+                            int32_t
+                                leftCount = AspDataGetTreeCount(leftEntry),
+                                rightCount = AspDataGetTreeCount(rightEntry);
+                            if (leftCount != rightCount)
+                            {
+                                comparison = leftCount < rightCount ? -1 : 1;
+                                break;
+                            }
+                        }
+
                         /* Examine the next node of each tree. */
                         AspDataEntry
                             *mutableLeftEntry = (AspDataEntry *)leftEntry,
@@ -549,7 +565,9 @@ static int CompareFloats
        involved, the result will be nonintuitive, but standardized. */
     bool leftIsNaN = isnan(leftValue), rightIsNaN = isnan(rightValue);
     bool localNanDetected = leftIsNaN || rightIsNaN;
-    if (compareType != AspCompareType_Key || !localNanDetected)
+    if ((compareType != AspCompareType_Key &&
+         compareType != AspCompareType_Order) ||
+        !localNanDetected)
     {
         /* Update whether a NaN has been detected, if applicable. */
         *nanDetected = *nanDetected || localNanDetected;

@@ -163,6 +163,8 @@ Token *Lexer::ProcessSpecial()
     else if (c != '\0' && strchr(eq2, c) != nullptr && c2 == '=')
     {
         lex += static_cast<char>(Get());
+        if (Peek() == '>')
+            lex += static_cast<char>(Get());
     }
 
     static const map<string, int> keywords =
@@ -203,6 +205,7 @@ Token *Lexer::ProcessSpecial()
         {"<=", TOKEN_LE},
         {">=", TOKEN_GE},
         {"==", TOKEN_EQ},
+        {"<=>", TOKEN_ORDER},
         {"&=", TOKEN_BIT_AND_ASSIGN},
         {"^=", TOKEN_BIT_XOR_ASSIGN},
         {"|=", TOKEN_BIT_OR_ASSIGN},

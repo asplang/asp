@@ -7,6 +7,10 @@ chronological order.
 Changes
 -------
 
+Version 1.2.0.0 (compiler 1.2.0.0, engine 1.2.0.0):
+- Compiler and engine:
+  - Added a new object order operator, <=>.
+
 Version 1.1.1.1 (compiler 1.1.0.0, engine 1.1.1.0):
 - Unit tests:
   - Updated the unit test driver for testing the red-black tree implementation.

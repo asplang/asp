@@ -46,6 +46,9 @@ static AspOperationResult PerformMembershipOperation
 static AspOperationResult PerformIdentityOperation
     (AspEngine *, uint8_t opCode,
      AspDataEntry *left, AspDataEntry *right);
+static AspOperationResult PerformObjectOrderOperation
+    (AspEngine *, uint8_t opCode,
+     AspDataEntry *left, AspDataEntry *right);
 
 AspOperationResult AspPerformUnaryOperation
     (AspEngine *engine, uint8_t opCode, AspDataEntry *operand)
@@ -315,6 +318,11 @@ AspOperationResult AspPerformBinaryOperation
         case OpCode_NIS:
         case OpCode_IS:
             result = PerformIdentityOperation
+                (engine, opCode, left, right);
+            break;
+
+        case OpCode_ORDER:
+            result = PerformObjectOrderOperation
                 (engine, opCode, left, right);
             break;
     }
@@ -1486,6 +1494,25 @@ static AspOperationResult PerformIdentityOperation
         if (result.value == 0)
             result.result = AspRunResult_OutOfDataMemory;
     }
+
+    return result;
+}
+
+static AspOperationResult PerformObjectOrderOperation
+    (AspEngine *engine, uint8_t opCode,
+     AspDataEntry *left, AspDataEntry *right)
+{
+    AspOperationResult result = {AspRunResult_OK, 0};
+
+    int comparison = 0;
+    result.result = AspCompare
+        (engine, left, right, AspCompareType_Order, &comparison, 0);
+    if (result.result != AspRunResult_OK)
+        return result;
+
+    result.value = AspNewInteger(engine, (int32_t)comparison);
+    if (result.value == 0)
+        result.result = AspRunResult_OutOfDataMemory;
 
     return result;
 }

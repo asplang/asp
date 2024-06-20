@@ -544,6 +544,7 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_IN:
         case OpCode_NIS:
         case OpCode_IS:
+        case OpCode_ORDER:
         {
             #ifdef ASP_DEBUG
             fputs("Binary op\n", engine->traceFile);
