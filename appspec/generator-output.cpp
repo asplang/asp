@@ -63,10 +63,9 @@ void Generator::WriteCompilerSpec(ostream &os)
     for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
     {
         auto &name = iter->first;
-        auto &definition = iter->second;
 
         bool wasDefined = symbolTable.IsDefined(name);
-        auto symbol = symbolTable.Symbol(name);
+        symbolTable.Symbol(name);
 
         if (!wasDefined)
             os << name << '\n';
@@ -89,7 +88,7 @@ void Generator::WriteCompilerSpec(ostream &os)
             const auto &parameterName = parameter.Name();
 
             bool wasDefined = symbolTable.IsDefined(parameterName);
-            auto parameterSymbol = symbolTable.Symbol(parameterName);
+            symbolTable.Symbol(parameterName);
 
             if (!wasDefined)
                 os << parameterName << '\n';

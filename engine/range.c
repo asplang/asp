@@ -284,7 +284,7 @@ AspRangeResult AspRangeSlice
                 sliceIndexIsNegative = sliceStep < 0;
             else if (rangeCount > 1)
             {
-                int lastSliceIndex;
+                int32_t lastSliceIndex;
                 result.result = UnboundedRangeIndex
                     (sliceStart, sliceStep, rangeCount, -1, &lastSliceIndex);
                 if (result.result != AspRunResult_OK)
@@ -343,8 +343,6 @@ static AspRunResult UnboundedRangeIndex
     (int32_t start, int32_t step, int32_t count, int32_t index,
      int32_t *rangeIndex)
 {
-    AspRangeResult result = {AspRunResult_OK, 0, 0};
-
     /* Deal with negative index. Note that since count is always non-negative,
        adding any negative value to it will be representable. */
     if (index < 0)

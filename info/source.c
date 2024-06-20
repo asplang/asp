@@ -163,9 +163,6 @@ AspSourceInfo *AspLoadSourceInfo(const char *data, size_t size)
 
 static bool FinishLoad(AspSourceInfo *info)
 {
-    static const uint16_t word = 1;
-    bool be = *(const char *)&word == 0;
-
     /* Locate the end of the list of source file names. */
     unsigned long offset = ScanSourceFileNames(info, UINT_MAX, true);
     if (offset == ULONG_MAX)

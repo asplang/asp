@@ -131,10 +131,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                                 (entry, AspIndex(engine, nextResult.value));
                         }
                         else
-                        {
-                            AspDataEntry *entry = AspPushNoUse
-                                (engine, nextResult.value);
-                        }
+                            AspPushNoUse(engine, nextResult.value);
                     }
                 }
                 if (iterationCount >= engine->cycleDetectionLimit)

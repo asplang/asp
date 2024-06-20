@@ -1084,14 +1084,12 @@ Expression *FoldArithmeticOperation
         leftInt = leftExpression->i;
     else if (leftExpression->type != Type::Float)
         return nullptr;
-    uint32_t leftUnsigned = *reinterpret_cast<uint32_t *>(&leftInt);
     if (rightExpression->type == Type::Boolean)
         rightInt = rightExpression->b ? 1 : 0;
     else if (rightExpression->type == Type::Integer)
         rightInt = rightExpression->i;
     else if (rightExpression->type != Type::Float)
         return nullptr;
-    uint32_t rightUnsigned = *reinterpret_cast<uint32_t *>(&rightInt);
     Type resultType = Type::Integer;
     double leftFloat = 0.0, rightFloat = 0.0;
     if (leftExpression->type == Type::Float ||

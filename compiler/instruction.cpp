@@ -16,8 +16,8 @@ static inline char Byte(uint64_t value, unsigned index)
 }
 
 Instruction::Instruction(uint8_t opCode, const string &comment) :
-    offset(0), targetOffset(0),
     opCode(opCode),
+    offset(0), targetOffset(0),
     comment(comment),
     targetLocationDefined(false),
     fixed(true)
@@ -27,8 +27,8 @@ Instruction::Instruction(uint8_t opCode, const string &comment) :
 Instruction::Instruction
     (uint8_t opCode, const Executable::Location &targetLocation,
      const string &comment) :
-    offset(0), targetOffset(0),
     opCode(opCode),
+    offset(0), targetOffset(0),
     comment(comment),
     targetLocationDefined(true), fixed(false),
     targetLocation(targetLocation)

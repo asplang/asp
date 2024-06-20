@@ -376,7 +376,7 @@ int main(int argc, char **argv)
                 return 2;
             }
         }
-        AspAddCodeResult sealResult = AspSeal(&engine);
+        sealResult = AspSeal(&engine);
     }
     fclose(executableFile);
     if (sealResult != AspAddCodeResult_OK)

@@ -624,12 +624,10 @@ static AspOperationResult PerformArithmeticBinaryOperation
         leftInt = (uint32_t)AspDataGetBoolean(left);
     else if (leftType == DataType_Integer)
         leftInt = (uint32_t)AspDataGetInteger(left);
-    uint32_t leftUnsigned = *(uint32_t *)&leftInt;
     if (rightType == DataType_Boolean)
         rightInt = (uint32_t)AspDataGetBoolean(right);
     else if (rightType == DataType_Integer)
         rightInt = (uint32_t)AspDataGetInteger(right);
-    uint32_t rightUnsigned = *(uint32_t *)&rightInt;
     DataType resultType = DataType_Integer;
     double leftFloat = 0.0, rightFloat = 0.0;
     if (leftType == DataType_Float || rightType == DataType_Float)

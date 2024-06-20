@@ -257,6 +257,8 @@ AspRunResult AspLoadArguments
         (engine,
          ns != 0 &&
          AspDataGetType(ns) == DataType_Namespace);
+    if (assertResult != AspRunResult_OK)
+        return assertResult;
 
     AspDataEntry *tupleGroup = 0;
 

@@ -34,7 +34,7 @@ int32_t AspBitGetSignedField
 }
 
 void AspBitSet
-    (uint32_t *word, unsigned shift, unsigned value)
+    (uint32_t *word, unsigned shift, uint32_t value)
 {
     AspBitSetField(word, shift, 1, value);
 }

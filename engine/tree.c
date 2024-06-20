@@ -631,6 +631,8 @@ static AspRunResult Insert
         int comparison;
         AspRunResult compareResult = CompareKeys
             (engine, tree, node, parentNode, &comparison);
+        if (compareResult != AspRunResult_OK)
+            return compareResult;
         result = SetChildIndex
             (engine, parentNode, comparison > 0,
              nodeIndex);

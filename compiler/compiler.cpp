@@ -72,7 +72,7 @@ void Compiler::LoadApplicationSpec(istream &specStream)
         specStream >> name;
         if (specStream.eof())
             break;
-        int32_t symbol = symbolTable.Symbol(name);
+        symbolTable.Symbol(name);
     }
 }
 
@@ -91,7 +91,7 @@ void Compiler::AddModule(const string &moduleName)
     auto iter = moduleNames.find(moduleName);
     if (iter == moduleNames.end())
     {
-        int32_t moduleSymbol = symbolTable.Symbol(moduleName);
+        symbolTable.Symbol(moduleName);
         moduleNames.insert(moduleName);
         moduleNamesToImport.push_back(moduleName);
     }
