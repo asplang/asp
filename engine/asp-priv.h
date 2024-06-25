@@ -74,8 +74,9 @@ struct AspEngine
     uint8_t version[4]; /* major, minor, patch, tweak */
 
     /* Code space. */
-    uint8_t *codeArea, *code, *pc;
+    uint8_t *codeArea, *code;
     size_t maxCodeSize, codeEndIndex;
+    uint32_t pc;
 
     /* Data space. */
     AspDataEntry *data;

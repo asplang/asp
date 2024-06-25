@@ -171,12 +171,12 @@ AspAddCodeResult AspSealCode
         engine->loadResult = AspAddCodeResult_InvalidFormat;
         return engine->loadResult;
     }
-    engine->pc = engine->code = (uint8_t *)code;
+    engine->code = (uint8_t *)code;
     ProcessCodeHeader(engine);
     if (engine->loadResult != AspAddCodeResult_OK)
         return engine->loadResult;
 
-    engine->pc = engine->code += HeaderSize;
+    engine->code += HeaderSize;
     engine->codeEndIndex = codeSize - HeaderSize;
     engine->state = AspEngineState_LoadingCode;
     return AspSeal(engine);
@@ -195,8 +195,9 @@ AspRunResult AspReset(AspEngine *engine)
     memset(engine->version, 0, sizeof engine->version);
     if (engine->codeArea != 0)
         memset(engine->codeArea, 0, engine->maxCodeSize);
-    engine->pc = engine->code = engine->codeArea;
+    engine->code = engine->codeArea;
     engine->codeEndIndex = 0;
+    engine->pc = 0;
     engine->appFunctionSymbol = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
@@ -229,7 +230,7 @@ AspRunResult AspRestart(AspEngine *engine)
     engine->state = AspEngineState_Ready;
     engine->again = false;
     engine->runResult = AspRunResult_OK;
-    engine->pc = engine->code;
+    engine->pc = 0;
     engine->appFunctionSymbol = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
@@ -570,7 +571,7 @@ bool AspIsRunnable(const AspEngine *engine)
 
 size_t AspProgramCounter(const AspEngine *engine)
 {
-    return (size_t)(engine->pc - engine->code);
+    return (size_t)engine->pc;
 }
 
 size_t AspLowFreeCount(const AspEngine *engine)
