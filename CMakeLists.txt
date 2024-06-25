@@ -4,12 +4,14 @@
 
 cmake_minimum_required(VERSION 3.5)
 
+file(STRINGS version.txt VERSION)
+
 project(asp
     # The engine ABI version (used in compatibility checking) consists of the
     # major and minor components of the top-level version. Therefore, the
     # version of the engine (aspe) and compiler (aspc) projects must be
     # compatible with this version (major and minor components must match).
-    VERSION 1.1.1.0
+    VERSION ${VERSION}
     )
 
 option(BUILD_FOR_HOST

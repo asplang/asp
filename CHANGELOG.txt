@@ -14,6 +14,9 @@ Version 1.1.1.1 (compiler 1.1.0.0, engine 1.1.1.0):
     installed components), but if enabled in recent versions, it was failing to
     compile because of the changes to the AspCount function signature
     introduced in version 1.1.0.0.
+- Build:
+  - Separated component versions out of the CMakeLists.txt files into separate
+    text files where they can be maintained independently from the build specs.
 
 Version 1.1.1.0 (compiler 1.1.0.0, engine 1.1.1.0):
 - Engine:
