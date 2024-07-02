@@ -3,6 +3,7 @@
  */
 
 #include "asp-priv.h"
+#include "code.h"
 #include "data.h"
 #include "sequence.h"
 #include "tree.h"
@@ -47,13 +48,17 @@ AspRunResult AspInitializeEx
      const AspAppSpec *appSpec, void *context,
      AspFloatConverter floatConverter)
 {
-    if (data == 0 || codeSize > MaxCodeSize)
+    if ((codeSize != 0 && codeSize < HeaderSize) || codeSize > MaxCodeSize ||
+        data == 0)
         return AspRunResult_InitializationError;
 
     engine->context = context;
     engine->floatConverter = floatConverter;
     engine->codeArea = code;
     engine->maxCodeSize = codeSize;
+    engine->cachedCodePageCount = 0;
+    engine->codePageSize = 0;
+    engine->codeReader = 0;
     engine->data = data;
     engine->dataEndIndex = dataSize / AspDataEntrySize();
     engine->cycleDetectionLimit = (uint32_t)(engine->dataEndIndex / 2);
@@ -65,6 +70,34 @@ AspRunResult AspInitializeEx
     #endif
 
     return AspReset(engine);
+}
+
+AspRunResult AspSetCodePaging
+    (AspEngine *engine, uint8_t pageCount, size_t pageSize,
+     AspCodeReader reader)
+{
+    if (pageCount != 0 && (pageSize < HeaderSize || reader == 0))
+        return AspRunResult_ValueOutOfRange;
+    if (engine->state != AspEngineState_Reset)
+        return AspRunResult_InvalidState;
+    if (engine->codeArea == 0)
+        return AspRunResult_InitializationError;
+
+    if (pageSize == 0)
+        pageCount = 0;
+    size_t requiredSize = pageCount * pageSize;
+    if (requiredSize > engine->maxCodeSize)
+        return AspRunResult_InitializationError;
+    const size_t maxPageCount =
+        sizeof engine->cachedCodePages / sizeof *engine->cachedCodePages;
+    if (pageCount > maxPageCount)
+        pageCount = maxPageCount;
+
+    engine->cachedCodePageCount = pageCount;
+    engine->codePageSize = pageSize;
+    engine->codeReader = reader;
+
+    return AspRunResult_OK;
 }
 
 void AspCodeVersion
@@ -94,7 +127,8 @@ AspAddCodeResult AspAddCode
         engine->headerIndex = 0;
     }
     else if (engine->state != AspEngineState_LoadingHeader &&
-             engine->state != AspEngineState_LoadingCode)
+             engine->state != AspEngineState_LoadingCode ||
+             engine->code == 0)
         return AspAddCodeResult_InvalidState;
 
     const uint8_t *codePtr = (const uint8_t *)code;
@@ -151,6 +185,7 @@ AspAddCodeResult AspSeal(AspEngine *engine)
         return engine->loadResult;
     }
 
+    engine->codeEndKnown = true;
     engine->state = AspEngineState_Ready;
     engine->runResult = AspRunResult_OK;
     return engine->loadResult;
@@ -171,6 +206,7 @@ AspAddCodeResult AspSealCode
         engine->loadResult = AspAddCodeResult_InvalidFormat;
         return engine->loadResult;
     }
+    engine->headerIndex = HeaderSize;
     engine->code = (uint8_t *)code;
     ProcessCodeHeader(engine);
     if (engine->loadResult != AspAddCodeResult_OK)
@@ -178,8 +214,33 @@ AspAddCodeResult AspSealCode
 
     engine->code += HeaderSize;
     engine->codeEndIndex = codeSize - HeaderSize;
+    engine->codeEndKnown = true;
     engine->state = AspEngineState_LoadingCode;
     return AspSeal(engine);
+}
+
+AspAddCodeResult AspPageCode(AspEngine *engine, void *id)
+{
+    if (engine->state != AspEngineState_Reset ||
+        engine->codeArea == 0 || engine->cachedCodePageCount == 0)
+        return AspAddCodeResult_InvalidState;
+
+    /* Load the first page, which contains the header, and then ensure the
+       header is valid. */
+    engine->pagedCodeId = id;
+    engine->headerIndex = HeaderSize;
+    AspRunResult pageResult = AspLoadCodePage(engine, 0);
+    if (pageResult != AspRunResult_OK)
+        return AspAddCodeResult_InvalidFormat;
+    engine->code = engine->codeArea;
+    ProcessCodeHeader(engine);
+    if (engine->loadResult != AspAddCodeResult_OK)
+        return engine->loadResult;
+
+    engine->code = 0;
+    engine->state = AspEngineState_Ready;
+    engine->runResult = AspRunResult_OK;
+    return engine->loadResult = AspAddCodeResult_OK;
 }
 
 AspRunResult AspReset(AspEngine *engine)
@@ -198,6 +259,17 @@ AspRunResult AspReset(AspEngine *engine)
     engine->code = engine->codeArea;
     engine->codeEndIndex = 0;
     engine->pc = 0;
+    engine->cachedCodePageIndex = 0;
+    engine->codeEndKnown = false;
+    engine->pagedCodeId = 0;
+    for (size_t i = 0;
+         i < sizeof engine->cachedCodePages / sizeof *engine->cachedCodePages;
+         i++)
+    {
+        AspCodePageEntry *entry = engine->cachedCodePages + i;
+        entry->offset = 0;
+        entry->age = -1;
+    }
     engine->appFunctionSymbol = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;

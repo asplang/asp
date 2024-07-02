@@ -23,6 +23,9 @@ using namespace std;
 
 static const size_t DEFAULT_DATA_ENTRY_COUNT = 2048;
 
+static AspRunResult LoadCodePage
+    (void *, uint32_t offset, size_t *size, void *codePage);
+
 static void Usage()
 {
     cerr
@@ -66,6 +69,11 @@ static void Usage()
         << "d n        Data entry count, where each entry is "
         << AspDataEntrySize() << " bytes."
         << " Default is " << DEFAULT_DATA_ENTRY_COUNT << ".\n"
+        << COMMAND_OPTION_PREFIXES[0]
+        << "p n        Code page size, in bytes. The default is 0, which"
+        << " disables paging\n"
+        << "            mode. The number of pages is this value divided by the"
+        << " code size.\n"
         #ifdef ASP_DEBUG
         << COMMAND_OPTION_PREFIXES[0]
         << "n n        Number of instructions to execute before exiting."
@@ -106,7 +114,7 @@ int main(int argc, char **argv)
 {
     // Process command line options.
     bool verbose = false;
-    size_t codeByteCount = 0;
+    size_t codeByteCount = 0, codePageByteCount = 0;
     size_t dataEntryCount = DEFAULT_DATA_ENTRY_COUNT;
     #ifdef ASP_DEBUG
     unsigned stepCountLimit = UINT_MAX;
@@ -144,6 +152,12 @@ int main(int argc, char **argv)
             string value = (++argv)[1];
             argc--;
             dataEntryCount = static_cast<size_t>(atoi(value.c_str()));
+        }
+        else if (option == "p")
+        {
+            string value = (++argv)[1];
+            argc--;
+            codePageByteCount = static_cast<size_t>(atoi(value.c_str()));
         }
         #ifdef ASP_DEBUG
         else if (option == "n")
@@ -312,11 +326,13 @@ int main(int argc, char **argv)
     AspTraceFile(&engine, traceFile);
     #endif
 
-    // Load the executable using one of two methods.
+    // Load the executable using one of three methods.
     char *externalCode = nullptr;
-    AspAddCodeResult sealResult = AspAddCodeResult_OK;
     if (codeByteCount == 0)
     {
+        if (codePageByteCount != 0)
+            cerr << "WARNING: Code page size ignored" << endl;
+
         // Determine the size of the executable file.
         int seekResult = fseek(executableFile, 0, SEEK_END);
         long tellResult = 0;
@@ -348,11 +364,21 @@ int main(int argc, char **argv)
                 << ": " << strerror(errno) << endl;
             return 2;
         }
+        fclose(executableFile);
+        executableFile = nullptr;
 
-        sealResult = AspSealCode
+        AspAddCodeResult sealResult = AspSealCode
             (&engine, externalCode, externalCodeSize);
+        if (sealResult != AspAddCodeResult_OK)
+        {
+            cerr
+                << "Seal error 0x" << hex << uppercase << setfill('0')
+                << setw(2) << sealResult << ": "
+                << AspAddCodeResultToString((int)sealResult) << endl;
+            return 2;
+        }
     }
-    else
+    else if (codePageByteCount == 0)
     {
         while (true)
         {
@@ -376,16 +402,55 @@ int main(int argc, char **argv)
                 return 2;
             }
         }
-        sealResult = AspSeal(&engine);
+        fclose(executableFile);
+        executableFile = nullptr;
+
+        AspAddCodeResult sealResult = AspSeal(&engine);
+        if (sealResult != AspAddCodeResult_OK)
+        {
+            cerr
+                << "Seal error 0x" << hex << uppercase << setfill('0')
+                << setw(2) << sealResult << ": "
+                << AspAddCodeResultToString((int)sealResult) << endl;
+            return 2;
+        }
     }
-    fclose(executableFile);
-    if (sealResult != AspAddCodeResult_OK)
+    else
     {
-        cerr
-            << "Seal error 0x" << hex << uppercase << setfill('0')
-            << setw(2) << sealResult << ": "
-            << AspAddCodeResultToString((int)sealResult) << endl;
-        return 2;
+        size_t computedCodePageCount = codeByteCount / codePageByteCount;
+        if (computedCodePageCount == 0)
+        {
+            cerr
+                << "Code page size is larger than available code area."
+                << endl;
+            return 2;
+        }
+        uint8_t codePageCount = (uint8_t)computedCodePageCount;
+        if (codePageCount != computedCodePageCount)
+            cerr
+                << "WARNING: Number of code pages limited to "
+                << codePageCount << endl;
+
+        AspRunResult setPagingResult = AspSetCodePaging
+            (&engine, codePageCount, codePageByteCount, LoadCodePage);
+        if (setPagingResult != AspRunResult_OK)
+        {
+            cerr
+                << "Error 0x" << hex << uppercase << setfill('0')
+                << setw(2) << setPagingResult << " initializing code paging: "
+                << AspRunResultToString((int)setPagingResult) << endl;
+            return 2;
+        }
+
+        AspAddCodeResult pageResult = AspPageCode(&engine, executableFile);
+        if (pageResult != AspAddCodeResult_OK)
+        {
+            cerr
+                << "Error 0x" << hex << uppercase << setfill('0')
+                << setw(2) << pageResult << " loading paged code: "
+                << AspAddCodeResultToString((int)pageResult) << endl;
+            return 2;
+        }
     }
 
     // Report version information.
@@ -445,6 +510,13 @@ int main(int argc, char **argv)
          ; stepCount++)
     {
         runResult = AspStep(&engine);
+    }
+
+    // Close the executable if not already done (e.g., in code paging mode).
+    if (executableFile != nullptr)
+    {
+        fclose(executableFile);
+        executableFile = nullptr;
     }
 
     // Dump data area in debug mode.
@@ -520,4 +592,22 @@ int main(int argc, char **argv)
     delete [] data;
 
     return runResult == AspRunResult_Complete ? 0 : 2;
+}
+
+static AspRunResult LoadCodePage
+    (void *id, uint32_t offset, size_t *size, void *codePage)
+{
+    FILE *executableFile = (FILE *)id;
+
+    int result = fseek(executableFile, (long)offset, SEEK_SET);
+    if (result != 0)
+        return ferror(executableFile) != 0 ?
+            AspRunResult_Application : AspRunResult_BeyondEndOfCode;
+
+    size_t readCount = fread(codePage, 1, *size, executableFile);
+    if (ferror(executableFile) != 0)
+        return AspRunResult_Application;
+    *size = readCount;
+
+    return AspRunResult_OK;
 }

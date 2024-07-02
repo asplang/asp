@@ -3,6 +3,7 @@
  */
 
 #include "asp.h"
+#include "code.h"
 #include "data.h"
 #include "stack.h"
 #include "opcode.h"
@@ -34,7 +35,6 @@ static AspRunResult LoadSignedOperand
     (AspEngine *, unsigned operandSize, int32_t *operand);
 static AspRunResult LoadFloatOperand
     (AspEngine *, double *operand);
-static AspRunResult LoadCodeByte(AspEngine *, uint8_t *byte);
 
 AspRunResult AspStep(AspEngine *engine)
 {
@@ -71,7 +71,7 @@ static AspRunResult Step(AspEngine *engine)
 
     uint32_t pc = engine->pc;
     uint8_t opCode;
-    AspRunResult opCodeResult = LoadCodeByte(engine, &opCode);
+    AspRunResult opCodeResult = AspLoadCodeBytes(engine, &opCode, 1);
     if (opCodeResult != AspRunResult_OK)
         return opCodeResult;
     #ifdef ASP_DEBUG
@@ -279,11 +279,14 @@ static AspRunResult Step(AspEngine *engine)
             #ifdef ASP_DEBUG
             fputc('\'', engine->traceFile);
             #endif
-            const char *s = (const char *)(engine->code + engine->pc);
+            AspDataEntry *stringEntry = AspNewString(engine, 0, 0);
+            if (stringEntry == 0)
+                return AspRunResult_OutOfDataMemory;
             for (uint32_t i = 0; i < size; i++)
             {
-                uint8_t c;
-                AspRunResult byteResult = LoadCodeByte(engine, &c);
+                char c;
+                AspRunResult byteResult = AspLoadCodeBytes
+                    (engine, (uint8_t *)&c, 1);
                 if (byteResult != AspRunResult_OK)
                 {
                     #ifdef ASP_DEBUG
@@ -291,6 +294,10 @@ static AspRunResult Step(AspEngine *engine)
                     #endif
                     return byteResult;
                 }
+                AspRunResult appendResult = AspStringAppendBuffer
+                    (engine, stringEntry, &c, 1);
+                if (appendResult != AspRunResult_OK)
+                    return appendResult;
 
                 #ifdef ASP_DEBUG
                 if (c == '\'')
@@ -301,11 +308,6 @@ static AspRunResult Step(AspEngine *engine)
             #ifdef ASP_DEBUG
             fputs("'\n", engine->traceFile);
             #endif
-
-            AspDataEntry *stringEntry = AspNewString
-                (engine, s, (size_t)size);
-            if (stringEntry == 0)
-                return AspRunResult_OutOfDataMemory;
 
             AspDataEntry *stackEntry = AspPush(engine, stringEntry);
             if (stackEntry == 0)
@@ -411,8 +413,10 @@ static AspRunResult Step(AspEngine *engine)
             #ifdef ASP_DEBUG
             fprintf(engine->traceFile, "@0x%7.7X\n", codeAddressOperand);
             #endif
-            if (codeAddressOperand >= engine->codeEndIndex)
-                return AspRunResult_BeyondEndOfCode;
+            AspRunResult validateResult = AspValidateCodeAddress
+                (engine, codeAddressOperand);
+            if (validateResult != AspRunResult_OK)
+                return validateResult;
 
             AspDataEntry *codeAddressEntry = AspAllocEntry
                 (engine, DataType_CodeAddress);
@@ -1244,8 +1248,10 @@ static AspRunResult Step(AspEngine *engine)
             #ifdef ASP_DEBUG
             fprintf(engine->traceFile, "@0x%7.7X\n", codeAddress);
             #endif
-            if (codeAddress >= engine->codeEndIndex)
-                return AspRunResult_BeyondEndOfCode;
+            AspRunResult validateResult = AspValidateCodeAddress
+                (engine, codeAddress);
+            if (validateResult != AspRunResult_OK)
+                return validateResult;
 
             /* Determine condition if applicable. */
             bool condition = true;
@@ -1382,8 +1388,10 @@ static AspRunResult Step(AspEngine *engine)
             {
                 /* Obtain the code address of the script-defined function. */
                 uint32_t codeAddress = AspDataGetFunctionCodeAddress(function);
-                if (codeAddress >= engine->codeEndIndex)
-                    return AspRunResult_BeyondEndOfCode;
+                AspRunResult validateResult = AspValidateCodeAddress
+                    (engine, codeAddress);
+                if (validateResult != AspRunResult_OK)
+                    return validateResult;
 
                 /* Create a new frame and push it onto the stack. */
                 AspDataEntry *frame = AspAllocEntry(engine, DataType_Frame);
@@ -1527,8 +1535,10 @@ static AspRunResult Step(AspEngine *engine)
             #ifdef ASP_DEBUG
             fprintf(engine->traceFile, "0x%7.7X\n", codeAddress);
             #endif
-            if (codeAddress >= engine->codeEndIndex)
-                return AspRunResult_BeyondEndOfCode;
+            AspRunResult validateResult = AspValidateCodeAddress
+                (engine, codeAddress);
+            if (validateResult != AspRunResult_OK)
+                return validateResult;
 
             /* Create a namespace for the module. */
             AspDataEntry *ns = AspAllocEntry(engine, DataType_Namespace);
@@ -1906,8 +1916,10 @@ static AspRunResult Step(AspEngine *engine)
             #ifdef ASP_DEBUG
             fprintf(engine->traceFile, "0x%7.7X\n", codeAddress);
             #endif
-            if (codeAddress >= engine->codeEndIndex)
-                return AspRunResult_BeyondEndOfCode;
+            AspRunResult validateResult = AspValidateCodeAddress
+                (engine, codeAddress);
+            if (validateResult != AspRunResult_OK)
+                return validateResult;
             AspPop(engine);
             AspUnref(engine, codeAddressEntry);
             if (engine->runResult != AspRunResult_OK)
@@ -2839,7 +2851,7 @@ static AspRunResult LoadUnsignedOperand
     for (i = 0; i < operandSize; i++)
     {
         uint8_t c;
-        AspRunResult byteResult = LoadCodeByte(engine, &c);
+        AspRunResult byteResult = AspLoadCodeBytes(engine, &c, 1);
         if (byteResult != AspRunResult_OK)
             return byteResult;
         *operand <<= 8;
@@ -2851,23 +2863,29 @@ static AspRunResult LoadUnsignedOperand
 static AspRunResult LoadSignedOperand
     (AspEngine *engine, unsigned operandSize, int32_t *operand)
 {
-    uint8_t c;
-    AspRunResult byteResult = LoadCodeByte(engine, &c);
-    if (byteResult != AspRunResult_OK)
-        return byteResult;
-    bool negative = operandSize != 0 && (c & 0x80) != 0;
-    engine->pc--;
     uint32_t unsignedOperand = 0;
-    AspRunResult loadResult = LoadUnsignedOperand
-        (engine, operandSize, &unsignedOperand);
-    if (loadResult != AspRunResult_OK)
-        return loadResult;
-
-    if (negative)
+    if (operandSize != 0)
     {
-        unsigned i = operandSize;
-        for (; i < 4; i++)
-            unsignedOperand |= 0xFFU << (i << 3);
+        /* Peek at the most significant byte to determine the sign. */
+        uint8_t c;
+        AspRunResult byteResult = AspLoadCodeBytes(engine, &c, 1);
+        if (byteResult != AspRunResult_OK)
+            return byteResult;
+        bool negative = operandSize != 0 && (c & 0x80) != 0;
+        engine->pc--;
+
+        AspRunResult loadResult = LoadUnsignedOperand
+            (engine, operandSize, &unsignedOperand);
+        if (loadResult != AspRunResult_OK)
+            return loadResult;
+
+        /* Sign extend if applicable. */
+        if (negative)
+        {
+            unsigned i = operandSize;
+            for (; i < 4; i++)
+                unsignedOperand |= 0xFFU << (i << 3);
+        }
     }
 
     *operand = *(int32_t *)&unsignedOperand;
@@ -2881,25 +2899,21 @@ static AspRunResult LoadFloatOperand
     bool be = *(const char *)&word == 0;
 
     uint8_t data[8];
-    for (unsigned i = 0; i < 8; i++)
+    AspRunResult loadResult = AspLoadCodeBytes(engine, data, sizeof data);
+    if (loadResult != AspRunResult_OK)
+        return loadResult;
+    if (!be)
     {
-        AspRunResult byteResult = LoadCodeByte
-            (engine, data + (be ? i : 7 - i));
-        if (byteResult != AspRunResult_OK)
-            return byteResult;
+        for (unsigned i = 0; i < 4; i++)
+        {
+            data[i] ^= data[7 - i];
+            data[7 - i] ^= data[i];
+            data[i] ^= data[7 - i];
+        }
     }
 
     /* Convert IEEE 754 binary64 to the native format. */
     *operand = engine->floatConverter != 0 ?
         engine->floatConverter(data) : *(double *)data;
-    return AspRunResult_OK;
-}
-
-static AspRunResult LoadCodeByte(AspEngine *engine, uint8_t *byte)
-{
-    if (engine->pc >= engine->codeEndIndex)
-        return AspRunResult_BeyondEndOfCode;
-
-    *byte = *(engine->code + engine->pc++);
     return AspRunResult_OK;
 }
