@@ -45,6 +45,7 @@ if(BUILD_FOR_TARGET)
         step.c
         bits.c
         api.c
+        code.c
         data.c
         ref.c
         range.c

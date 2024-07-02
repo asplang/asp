@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-/* Result returned from AspAddCode, AspSeal, and AspSealCode. */
+/* Result returned from AspAddCode, AspSeal, AspSealCode, and AspPageCode. */
 typedef enum
 {
     AspAddCodeResult_OK = 0x00,
@@ -70,6 +70,10 @@ typedef enum
 /* Floating-point translator type. */
 typedef double (*AspFloatConverter)(uint8_t ieee754_binary64[8]);
 
+/* Code reader type. */
+typedef AspRunResult (*AspCodeReader)
+    (void *id, uint32_t offset, size_t *size, void *codePage);
+
 #ifdef __cplusplus
 }
 #endif
@@ -90,6 +94,8 @@ ASP_API AspRunResult AspInitialize
 ASP_API AspRunResult AspInitializeEx
     (AspEngine *, void *code, size_t codeSize, void *data, size_t dataSize,
      const AspAppSpec *, void *context, AspFloatConverter);
+ASP_API AspRunResult AspSetCodePaging
+    (AspEngine *, uint8_t pageCount, size_t pageSize, AspCodeReader);
 ASP_API void AspCodeVersion(const AspEngine *, uint8_t version[4]);
 ASP_API size_t AspMaxCodeSize(const AspEngine *);
 ASP_API size_t AspMaxDataSize(const AspEngine *);
@@ -98,6 +104,7 @@ ASP_API AspAddCodeResult AspAddCode
 ASP_API AspAddCodeResult AspSeal(AspEngine *);
 ASP_API AspAddCodeResult AspSealCode
     (AspEngine *, const void *code, size_t codeSize);
+ASP_API AspAddCodeResult AspPageCode(AspEngine *, void *id);
 ASP_API AspRunResult AspReset(AspEngine *);
 ASP_API AspRunResult AspSetArguments(AspEngine *, const char * const *);
 ASP_API AspRunResult AspSetArgumentsString(AspEngine *, const char *);

@@ -19,6 +19,7 @@ extern "C" {
 
 typedef struct AspEngine AspEngine;
 typedef union AspDataEntry AspDataEntry;
+typedef struct AspCodePageEntry AspCodePageEntry;
 typedef struct AspAppSpec AspAppSpec;
 
 #ifdef __cplusplus
@@ -34,6 +35,12 @@ extern "C" {
 typedef AspRunResult (AspDispatchFunction)
     (AspEngine *, int32_t symbol, AspDataEntry *ns,
      AspDataEntry **returnValue);
+
+struct AspCodePageEntry
+{
+    uint32_t offset;
+    int8_t age;
+};
 
 struct AspAppSpec
 {
@@ -55,6 +62,13 @@ typedef enum AspEngineState
     AspEngineState_Ended,
 } AspEngineState;
 
+#ifndef MAX_CACHED_CODE_PAGE_COUNT
+#define MAX_CACHED_CODE_PAGE_COUNT 8
+#endif
+#if MAX_CACHED_CODE_PAGE_COUNT < 0 || MAX_CACHED_CODE_PAGE_COUNT >= 128
+#error MAX_CACHED_CODE_PAGE_COUNT is out of range
+#endif
+
 struct AspEngine
 {
     /* Application context. */
@@ -74,8 +88,17 @@ struct AspEngine
     uint8_t version[4]; /* major, minor, patch, tweak */
 
     /* Code space. */
-    uint8_t *codeArea, *code, *pc;
+    uint8_t *codeArea, *code;
     size_t maxCodeSize, codeEndIndex;
+    uint32_t pc;
+
+    /* Code paging data. */
+    uint8_t cachedCodePageCount, cachedCodePageIndex;
+    bool codeEndKnown;
+    size_t codePageSize;
+    AspCodeReader codeReader;
+    void *pagedCodeId;
+    AspCodePageEntry cachedCodePages[MAX_CACHED_CODE_PAGE_COUNT];
 
     /* Data space. */
     AspDataEntry *data;

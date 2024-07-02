@@ -7,6 +7,14 @@ chronological order.
 Changes
 -------
 
+Version 1.1.2.0 (compiler 1.1.0.0, engine 1.1.2.0):
+- Special thanks to Oleh Hordiichuk for suggesting this change.
+- Engine:
+  - Added a code paging feature to allow script executable code that is larger
+    than the engine's code area to be paged in from secondary storage as
+    needed. Use the new API functions AspSetCodePaging and AspPageCode to make
+    use of this new feature.
+
 Version 1.1.1.1 (compiler 1.1.0.0, engine 1.1.1.0):
 - Unit tests:
   - Updated the unit test driver for testing the red-black tree implementation.
