@@ -38,7 +38,7 @@ typedef AspRunResult (AspDispatchFunction)
 
 struct AspCodePageEntry
 {
-    uint32_t offset;
+    uint8_t index;
     int8_t age;
 };
 

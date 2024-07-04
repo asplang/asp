@@ -48,11 +48,13 @@ AspRunResult AspValidateCodeAddress(AspEngine *engine, uint32_t address)
     }
     else
     {
+        /* Load the applicable code page. */
         uint32_t offset = engine->headerIndex + address;
         const AspCodePageEntry *entry =
             engine->cachedCodePages + engine->cachedCodePageIndex;
-        if (offset < entry->offset ||
-            offset >= entry->offset + engine->codePageSize)
+        uint32_t codePageOffset = entry->index * engine->codePageSize;
+        if (offset < codePageOffset ||
+            offset >= codePageOffset + engine->codePageSize)
         {
             AspRunResult loadResult = AspLoadCodePage(engine, offset);
             if (loadResult != AspRunResult_OK)
@@ -61,7 +63,7 @@ AspRunResult AspValidateCodeAddress(AspEngine *engine, uint32_t address)
 
         /* Ensure the program counter is in bounds if possible (i.e., if the
            last page has been loaded). */
-        if (engine->codeEndKnown && engine->pc >= engine->codeEndIndex)
+        if (engine->codeEndKnown && address >= engine->codeEndIndex)
             return AspRunResult_BeyondEndOfCode;
     }
 
@@ -78,9 +80,10 @@ AspRunResult AspLoadCodePage(AspEngine *engine, uint32_t offset)
     {
         const AspCodePageEntry *entry = engine->cachedCodePages + i;
 
+        uint32_t codePageOffset = entry->index * engine->codePageSize;
         if (entry->age >= 0 &&
-            offset >= entry->offset &&
-            offset < entry->offset + engine->codePageSize)
+            offset >= codePageOffset &&
+            offset < codePageOffset + engine->codePageSize)
         {
             if (engine->cachedCodePageIndex != i)
             {
@@ -110,28 +113,28 @@ AspRunResult AspLoadCodePage(AspEngine *engine, uint32_t offset)
             engine->cachedCodePageIndex = i;
         }
     }
-    uint32_t codeOffset = codePageIndex * engine->codePageSize;
-    engine->cachedCodePages[engine->cachedCodePageIndex].offset = codeOffset;
+    engine->cachedCodePages[engine->cachedCodePageIndex].index = codePageIndex;
     UpdateAges(engine);
 
     /* Read the page from offline storage into the least recently used cache
        page. */
+    uint32_t codePageOffset = codePageIndex * engine->codePageSize;
     size_t pageSize = engine->codePageSize;
     if (engine->codePageReadCount < SIZE_MAX)
         engine->codePageReadCount++;
     AspRunResult readResult = engine->codeReader
-        (engine->pagedCodeId, codeOffset, &pageSize,
+        (engine->pagedCodeId, codePageOffset, &pageSize,
          engine->codeArea +
          engine->cachedCodePageIndex * engine->codePageSize);
     if (readResult != AspRunResult_OK)
         return readResult;
-    if (codeOffset == 0 && pageSize < engine->headerIndex)
+    if (codePageOffset == 0 && pageSize < engine->headerIndex)
         return AspRunResult_BeyondEndOfCode;
 
     /* Determine the entire code size if possible. */
     if (pageSize != engine->codePageSize)
     {
-        size_t endIndex = codeOffset + pageSize - engine->headerIndex;
+        size_t endIndex = codePageOffset + pageSize - engine->headerIndex;
         if (!engine->codeEndKnown || endIndex < engine->codeEndIndex)
         {
             engine->codeEndIndex = endIndex;

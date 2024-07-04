@@ -276,7 +276,7 @@ AspRunResult AspReset(AspEngine *engine)
         for (size_t i = 0; i < engine->cachedCodePageCount; i++)
         {
             AspCodePageEntry *entry = engine->cachedCodePages + i;
-            entry->offset = 0;
+            entry->index = 0;
             entry->age = -1;
         }
     }
