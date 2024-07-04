@@ -119,6 +119,7 @@ ASP_API bool AspIsRunning(const AspEngine *);
 ASP_API bool AspIsRunnable(const AspEngine *);
 ASP_API size_t AspProgramCounter(const AspEngine *);
 ASP_API size_t AspLowFreeCount(const AspEngine *);
+ASP_API size_t AspCodePageReadCount(AspEngine *, bool reset);
 #ifdef ASP_DEBUG
 ASP_API void AspTraceFile(AspEngine *, FILE *);
 ASP_API void AspDump(const AspEngine *, FILE *);

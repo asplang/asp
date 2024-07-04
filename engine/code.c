@@ -3,6 +3,7 @@
  */
 
 #include "code.h"
+#include <stdint.h>
 
 static void UpdateAges(AspEngine *);
 
@@ -116,6 +117,8 @@ AspRunResult AspLoadCodePage(AspEngine *engine, uint32_t offset)
     /* Read the page from offline storage into the least recently used cache
        page. */
     size_t pageSize = engine->codePageSize;
+    if (engine->codePageReadCount < SIZE_MAX)
+        engine->codePageReadCount++;
     AspRunResult readResult = engine->codeReader
         (engine->pagedCodeId, codeOffset, &pageSize,
          engine->codeArea +

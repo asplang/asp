@@ -331,7 +331,10 @@ int main(int argc, char **argv)
     if (codeByteCount == 0)
     {
         if (codePageByteCount != 0)
+        {
             cerr << "WARNING: Code page size ignored" << endl;
+            codePageByteCount = 0;
+        }
 
         // Determine the size of the executable file.
         int seekResult = fseek(executableFile, 0, SEEK_END);
@@ -585,6 +588,12 @@ int main(int argc, char **argv)
         fprintf
             (reportFile, "Low free count: %zu (max %zu)\n",
              AspLowFreeCount(&engine), AspMaxDataSize(&engine));
+        if (codePageByteCount != 0)
+        {
+            fprintf
+                (reportFile, "Code page read count: %zu\n",
+                 AspCodePageReadCount(&engine, false));
+        }
     }
 
     delete [] code;

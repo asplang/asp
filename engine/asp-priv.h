@@ -99,6 +99,7 @@ struct AspEngine
     AspCodeReader codeReader;
     void *pagedCodeId;
     AspCodePageEntry cachedCodePages[ASP_CACHED_CODE_PAGE_COUNT];
+    size_t codePageReadCount;
 
     /* Data space. */
     AspDataEntry *data;

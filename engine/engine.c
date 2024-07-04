@@ -262,6 +262,7 @@ AspRunResult AspReset(AspEngine *engine)
     engine->cachedCodePageIndex = 0;
     engine->codeEndKnown = false;
     engine->pagedCodeId = 0;
+    engine->codePageReadCount = 0;
     for (size_t i = 0;
          i < sizeof engine->cachedCodePages / sizeof *engine->cachedCodePages;
          i++)
@@ -303,6 +304,7 @@ AspRunResult AspRestart(AspEngine *engine)
     engine->again = false;
     engine->runResult = AspRunResult_OK;
     engine->pc = 0;
+    engine->codePageReadCount = 0;
     engine->appFunctionSymbol = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
@@ -649,4 +651,12 @@ size_t AspProgramCounter(const AspEngine *engine)
 size_t AspLowFreeCount(const AspEngine *engine)
 {
     return engine->lowFreeCount;
+}
+
+size_t AspCodePageReadCount(AspEngine *engine, bool reset)
+{
+    size_t count = engine->codePageReadCount;
+    if (reset)
+        engine->codePageReadCount = 0;
+    return count;
 }
