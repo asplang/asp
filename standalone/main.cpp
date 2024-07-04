@@ -432,7 +432,7 @@ int main(int argc, char **argv)
         if (codePageCount != computedCodePageCount)
             cerr
                 << "WARNING: Number of code pages limited to "
-                << codePageCount << endl;
+                << (unsigned)codePageCount << endl;
 
         AspRunResult setPagingResult = AspSetCodePaging
             (&engine, codePageCount, codePageByteCount, LoadCodePage);

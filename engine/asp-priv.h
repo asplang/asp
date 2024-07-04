@@ -62,13 +62,6 @@ typedef enum AspEngineState
     AspEngineState_Ended,
 } AspEngineState;
 
-#ifndef ASP_CACHED_CODE_PAGE_COUNT
-#define ASP_CACHED_CODE_PAGE_COUNT 8
-#endif
-#if ASP_CACHED_CODE_PAGE_COUNT < 0 || ASP_CACHED_CODE_PAGE_COUNT >= 128
-#error ASP_CACHED_CODE_PAGE_COUNT is out of range
-#endif
-
 struct AspEngine
 {
     /* Application context. */
@@ -96,14 +89,14 @@ struct AspEngine
     uint8_t cachedCodePageCount, cachedCodePageIndex;
     bool codeEndKnown;
     size_t codePageSize;
+    AspCodePageEntry *cachedCodePages;
     AspCodeReader codeReader;
     void *pagedCodeId;
-    AspCodePageEntry cachedCodePages[ASP_CACHED_CODE_PAGE_COUNT];
     size_t codePageReadCount;
 
     /* Data space. */
     AspDataEntry *data;
-    size_t dataEndIndex;
+    size_t maxDataSize, dataEndIndex;
     size_t freeCount, lowFreeCount;
     uint32_t freeListIndex;
 

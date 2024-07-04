@@ -58,8 +58,10 @@ AspRunResult AspInitializeEx
     engine->maxCodeSize = codeSize;
     engine->cachedCodePageCount = 0;
     engine->codePageSize = 0;
+    engine->cachedCodePages = 0;
     engine->codeReader = 0;
     engine->data = data;
+    engine->maxDataSize = dataSize;
     engine->dataEndIndex = dataSize / AspDataEntrySize();
     engine->cycleDetectionLimit = (uint32_t)(engine->dataEndIndex / 2);
     engine->appSpec = appSpec;
@@ -76,6 +78,9 @@ AspRunResult AspSetCodePaging
     (AspEngine *engine, uint8_t pageCount, size_t pageSize,
      AspCodeReader reader)
 {
+    if (engine->inApp || engine->state != AspEngineState_Reset)
+        return AspRunResult_InvalidState;
+
     if (pageCount != 0 && (pageSize < HeaderSize || reader == 0))
         return AspRunResult_ValueOutOfRange;
     if (engine->state != AspEngineState_Reset)
@@ -88,16 +93,19 @@ AspRunResult AspSetCodePaging
     size_t requiredSize = pageCount * pageSize;
     if (requiredSize > engine->maxCodeSize)
         return AspRunResult_InitializationError;
-    const size_t maxPageCount =
-        sizeof engine->cachedCodePages / sizeof *engine->cachedCodePages;
-    if (pageCount > maxPageCount)
-        pageCount = maxPageCount;
+    size_t pageEntriesSize = pageCount * sizeof(AspCodePageEntry);
+    if (pageEntriesSize >= engine->maxDataSize)
+        return AspRunResult_OutOfDataMemory;
 
+    engine->dataEndIndex =
+        (engine->maxDataSize - pageEntriesSize) / AspDataEntrySize();
     engine->cachedCodePageCount = pageCount;
     engine->codePageSize = pageSize;
     engine->codeReader = reader;
+    engine->cachedCodePages = (AspCodePageEntry *)(pageCount == 0 ? 0 :
+        (uint8_t *)engine->data + engine->maxDataSize - pageEntriesSize);
 
-    return AspRunResult_OK;
+    return AspReset(engine);
 }
 
 void AspCodeVersion
@@ -263,13 +271,14 @@ AspRunResult AspReset(AspEngine *engine)
     engine->codeEndKnown = false;
     engine->pagedCodeId = 0;
     engine->codePageReadCount = 0;
-    for (size_t i = 0;
-         i < sizeof engine->cachedCodePages / sizeof *engine->cachedCodePages;
-         i++)
+    if (engine->cachedCodePages != 0)
     {
-        AspCodePageEntry *entry = engine->cachedCodePages + i;
-        entry->offset = 0;
-        entry->age = -1;
+        for (size_t i = 0; i < engine->cachedCodePageCount; i++)
+        {
+            AspCodePageEntry *entry = engine->cachedCodePages + i;
+            entry->offset = 0;
+            entry->age = -1;
+        }
     }
     engine->appFunctionSymbol = 0;
     engine->appFunctionNamespace = 0;
