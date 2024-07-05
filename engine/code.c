@@ -52,7 +52,8 @@ AspRunResult AspValidateCodeAddress(AspEngine *engine, uint32_t address)
         uint32_t offset = engine->headerIndex + address;
         const AspCodePageEntry *entry =
             engine->cachedCodePages + engine->cachedCodePageIndex;
-        uint32_t codePageOffset = entry->index * engine->codePageSize;
+        uint32_t codePageOffset =
+            entry->index * (uint32_t)engine->codePageSize;
         if (offset < codePageOffset ||
             offset >= codePageOffset + engine->codePageSize)
         {
@@ -73,14 +74,15 @@ AspRunResult AspValidateCodeAddress(AspEngine *engine, uint32_t address)
 AspRunResult AspLoadCodePage(AspEngine *engine, uint32_t offset)
 {
     /* Determine which page to load. */
-    uint8_t codePageIndex = offset / engine->codePageSize;
+    uint8_t codePageIndex = offset / (uint32_t)engine->codePageSize;
 
     /* Determine whether the page is already cached. */
     for (uint8_t i = 0; i < engine->cachedCodePageCount; i++)
     {
         const AspCodePageEntry *entry = engine->cachedCodePages + i;
 
-        uint32_t codePageOffset = entry->index * engine->codePageSize;
+        uint32_t codePageOffset =
+            entry->index * (uint32_t)engine->codePageSize;
         if (entry->age >= 0 &&
             offset >= codePageOffset &&
             offset < codePageOffset + engine->codePageSize)
@@ -118,7 +120,8 @@ AspRunResult AspLoadCodePage(AspEngine *engine, uint32_t offset)
 
     /* Read the page from offline storage into the least recently used cache
        page. */
-    uint32_t codePageOffset = codePageIndex * engine->codePageSize;
+    uint32_t codePageOffset =
+        codePageIndex * (uint32_t)engine->codePageSize;
     size_t pageSize = engine->codePageSize;
     if (engine->codePageReadCount < SIZE_MAX)
         engine->codePageReadCount++;
