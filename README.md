@@ -1,8 +1,30 @@
-Asp scripting platform
-======================
+# The Asp Scripting Platform for Embedded Systems
 
-Build instructions
-------------------
+## Description
+
+### Asp is for Script Writers
+
+The Asp language resembles basic Python (with some small differences), making
+it easy to learn for those who are already familiar with Python. It supports
+conditionals (if/elif/else), loops (while, for), and functions. It supports
+basic data types plus tuples, lists, sets, dictionaries, and ranges/slices. To
+keep things small, Asp does not support classes, exception handling, and many
+other advanced features.
+
+### Asp is Designed for Embedded Systems
+
+Scripts are compiled to compact byte-code, which is checked for compatibility
+with the application before being allowed to run in the engine.
+
+The Asp engine has a small code memory footprint (less than 100 KB when
+compiled optimizing for space). It avoids use of dynamic memory allocation and
+recursion, resulting in very little impact on the memory of the host
+application. Applications run scripts one instruction at a time, retaining a
+high frequency of control of the CPU. The engine supports blocking script
+functions without blocking the application. It works with bare-metal or
+OS-based applications. The engine is implemented entirely in C.
+
+## Build instructions
 
 1.  Asp is built using CMake. Issue the following commands to build the
     compiler, engine library, and standalone application for the host
@@ -53,21 +75,21 @@ Build instructions
     - ${PREFIX}/etc/asp/standalone.aspec - Standalone application spec.
     - ${PREFIX}/lib/libaspe.so - Asp engine library (shared build).
     - ${PREFIX}/lib/libaspe.a - Asp engine library (static build).
+    - ${PREFIX}/lib/libaspm.so - Asp engine math library (shared build).
+    - ${PREFIX}/lib/libaspm.a - Asp engine math library (static build).
     - ${PREFIX}/lib/libaspd.so - Asp info library (shared build).
     - ${PREFIX}/lib/libaspd.a - Asp info library (static build).
     - ${PREFIX}/include/asp-X.Y/asp*.h - Headers for application development.
     - ${PREFIX}/include/asps/X.Y/*.asps - Application spec include files.
 
-Packaging instructions
-----------------------
+## Packaging instructions
 
 Asp packages are built using CPack. A Python script, `package.py`, is provided
 that builds a standard set of packages for use on various platforms. A package
 may be used to install the software (source or binaries) instead of building
 and installing as described above.
 
-Using the standalone application
---------------------------------
+## Using the standalone application
 
 Before running a script in the standalone application, set the ASP_SPEC_FILE
 environment variable to the standalone application specification file.
@@ -95,8 +117,7 @@ option.
 $ asps -h
 ```
 
-More information
-----------------
+## More information
 
 - Web site: https://www.asplang.org/
 - E-mail: info@asplang.org

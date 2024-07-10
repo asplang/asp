@@ -7,6 +7,11 @@ chronological order.
 Changes
 -------
 
+Version 1.1.2.1 (compiler 1.1.0.1, engine 1.1.2.0):
+- Compiler:
+  - Fixed a code generation issue with return statements enclosed inside for
+    loops.
+
 Version 1.1.2.0 (compiler 1.1.0.0, engine 1.1.2.0):
 - Special thanks to Oleh Hordiichuk for suggesting this change.
 - Engine:
