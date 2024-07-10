@@ -7,6 +7,11 @@ chronological order.
 Changes
 -------
 
+Version 1.1.1.2 (compiler 1.1.0.1, engine 1.1.1.0):
+- Compiler:
+  - Fixed a code generation issue with return statements enclosed inside for
+    loops.
+
 Version 1.1.1.1 (compiler 1.1.0.0, engine 1.1.1.0):
 - Unit tests:
   - Updated the unit test driver for testing the red-black tree implementation.

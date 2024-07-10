@@ -25,6 +25,7 @@ class Statement : public NonTerminal
 
         virtual void Parent(const Block *);
         const Block *Parent() const;
+        virtual unsigned StackUsage() const;
 
         virtual void Emit(Executable &) const = 0;
 
@@ -361,6 +362,8 @@ class ForStatement : public LoopStatement
             (TargetExpression *, Expression *,
              Block *, Block *);
         ~ForStatement();
+
+        virtual unsigned StackUsage() const;
 
         virtual void Emit(Executable &) const;
 

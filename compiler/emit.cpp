@@ -316,9 +316,19 @@ void DelStatement::Emit1(Executable &executable, Expression *expression) const
 void ReturnStatement::Emit(Executable &executable) const
 {
     // Ensure the return statement is within a function definition.
-    auto isLocal = ParentDef() != nullptr;
+    const auto *parentDef = ParentDef();
+    auto isLocal = parentDef != nullptr;
     if (!isLocal)
         ThrowError("return outside function");
+
+    // Emit pop instructions for each applicable enclosing control statement.
+    for (auto parentStatement = Parent()->Parent();
+         parentStatement != parentDef;
+         parentStatement = parentStatement->Parent()->Parent())
+    {
+        for (unsigned i = 0; i < parentStatement->StackUsage(); i++)
+            executable.Insert(new PopInstruction, sourceLocation);
+    }
 
     if (expression != nullptr)
         expression->Emit(executable);
