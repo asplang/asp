@@ -1284,7 +1284,7 @@ static AspRunResult Step(AspEngine *engine)
             fputs("CALL\n", engine->traceFile);
             #endif
 
-            AspDataEntry *function = 0, *ns = 0;
+            AspDataEntry *function = 0, *arguments = 0;
             if (!engine->again)
             {
                 /* Pop the function off the stack. */
@@ -1297,132 +1297,18 @@ static AspRunResult Step(AspEngine *engine)
                 AspPop(engine);
 
                 /* Pop argument list off the stack. */
-                AspDataEntry *arguments = AspTopValue(engine);
+                arguments = AspTopValue(engine);
                 if (arguments == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(arguments) != DataType_ArgumentList)
                     return AspRunResult_UnexpectedType;
                 AspPop(engine);
-
-                /* Gain access to the parameter list within the function. */
-                AspDataEntry *parameters = AspEntry
-                    (engine, AspDataGetFunctionParametersIndex(function));
-                if (AspDataGetType(parameters) != DataType_ParameterList)
-                    return AspRunResult_UnexpectedType;
-
-                /* Create a local namespace for the call. */
-                ns = AspAllocEntry(engine, DataType_Namespace);
-                if (ns == 0)
-                    return AspRunResult_OutOfDataMemory;
-                AspRunResult loadArgumentsResult = AspLoadArguments
-                    (engine, arguments, parameters, ns);
-                if (loadArgumentsResult != AspRunResult_OK)
-                    return loadArgumentsResult;
-                AspUnref(engine, arguments);
-                if (engine->runResult != AspRunResult_OK)
-                    return engine->runResult;
             }
 
-            /* Call the function. */
-            if (engine->again || AspDataGetFunctionIsApp(function))
-            {
-                if (!engine->again)
-                {
-                    engine->appFunctionSymbol = AspDataGetFunctionSymbol
-                        (function);
-                    engine->appFunctionNamespace = ns;
-                    engine->appFunctionReturnValue = 0;
-                }
-
-                /* Call the application function. */
-                engine->inApp = true;
-                AspRunResult callResult = engine->appSpec->dispatch
-                    (engine,
-                     engine->appFunctionSymbol, engine->appFunctionNamespace,
-                     &engine->appFunctionReturnValue);
-                engine->inApp = false;
-                if (callResult == AspRunResult_OK)
-                    engine->again = false;
-                else if (callResult == AspRunResult_Again)
-                {
-                    /* Cause this instruction to execute again. */
-                    engine->pc = pc;
-                    engine->again = true;
-                    callResult = AspRunResult_OK;
-                }
-                if (callResult != AspRunResult_OK)
-                {
-                    if (callResult == AspRunResult_Complete)
-                        callResult = AspRunResult_InvalidAppFunction;
-                    return callResult;
-                }
-
-                if (!engine->again)
-                {
-                    /* We're now done with the local namespace. */
-                    AspUnref(engine, engine->appFunctionNamespace);
-                    if (engine->runResult != AspRunResult_OK)
-                        return engine->runResult;
-                    engine->appFunctionSymbol = 0;
-                    engine->appFunctionNamespace = 0;
-
-                    /* Ensure there's a return value and push it onto the
-                       stack. */
-                    AspDataEntry *returnValue = engine->appFunctionReturnValue;
-                    engine->appFunctionReturnValue = 0;
-                    if (returnValue == 0)
-                    {
-                        returnValue = AspAllocEntry(engine, DataType_None);
-                        if (returnValue == 0)
-                            return AspRunResult_OutOfDataMemory;
-                    }
-                    AspDataEntry *stackEntry = AspPush(engine, returnValue);
-                    if (stackEntry == 0)
-                        return AspRunResult_OutOfDataMemory;
-                    AspUnref(engine, returnValue);
-                    if (engine->runResult != AspRunResult_OK)
-                        return engine->runResult;
-                }
-            }
-            else
-            {
-                /* Obtain the code address of the script-defined function. */
-                uint32_t codeAddress = AspDataGetFunctionCodeAddress(function);
-                AspRunResult validateResult = AspValidateCodeAddress
-                    (engine, codeAddress);
-                if (validateResult != AspRunResult_OK)
-                    return validateResult;
-
-                /* Create a new frame and push it onto the stack. */
-                AspDataEntry *frame = AspAllocEntry(engine, DataType_Frame);
-                if (frame == 0)
-                    return AspRunResult_OutOfDataMemory;
-                AspDataSetFrameReturnAddress
-                    (frame, (uint32_t)AspProgramCounter(engine));
-                AspRef(engine, engine->module);
-                AspDataSetFrameModuleIndex
-                    (frame, AspIndex(engine, engine->module));
-                AspDataSetFrameLocalNamespaceIndex
-                    (frame, AspIndex(engine, engine->localNamespace));
-                AspDataEntry *newTop = AspPush(engine, frame);
-                if (newTop == 0)
-                    return AspRunResult_OutOfDataMemory;
-
-                /* Replace the current module and global namespace with
-                   those of the function. */
-                AspDataEntry *functionModule = AspValueEntry
-                    (engine, AspDataGetFunctionModuleIndex(function));
-                engine->module = functionModule;
-                engine->globalNamespace = AspEntry
-                    (engine, AspDataGetModuleNamespaceIndex(functionModule));
-
-                /* Replace the current local namespace with function's new
-                   namespace. */
-                engine->localNamespace = ns;
-
-                /* Transfer control to the function's code. */
-                engine->pc = codeAddress;
-            }
+            AspRunResult callResult = AspCall
+                (engine, function, arguments, pc);
+            if (callResult != AspRunResult_OK)
+                return callResult;
 
             if (function != 0)
                 AspUnref(engine, function);
