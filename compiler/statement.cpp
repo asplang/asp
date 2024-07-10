@@ -21,6 +21,41 @@ const Block *Statement::Parent() const
     return parentBlock;
 }
 
+unsigned Statement::StackUsage() const
+{
+    return 0;
+}
+
+const LoopStatement *Statement::ParentLoop() const
+{
+    // Search for parent loop statement, ending the search if we reach a
+    // function definition or the top level first.
+    const LoopStatement *loopStatement = nullptr;
+    for (auto parentStatement = Parent()->Parent();
+         parentStatement != nullptr && loopStatement == nullptr;
+         loopStatement = dynamic_cast<const LoopStatement *>(parentStatement),
+         parentStatement = parentStatement->Parent()->Parent())
+    {
+        auto defStatement =
+            dynamic_cast<const DefStatement *>(parentStatement);
+        if (defStatement != nullptr)
+            break;
+    }
+    return loopStatement;
+}
+
+const DefStatement *Statement::ParentDef() const
+{
+    // Search for parent function definition statement, ending the search
+    // if we reach the top level first.
+    const DefStatement *defStatement = nullptr;
+    for (auto parentStatement = Parent()->Parent();
+         parentStatement != nullptr && defStatement == nullptr;
+         defStatement = dynamic_cast<const DefStatement *>(parentStatement),
+         parentStatement = parentStatement->Parent()->Parent()) ;
+    return defStatement;
+}
+
 Block::Block()
 {
 }
@@ -52,36 +87,6 @@ const Statement *Block::Parent() const
 const Statement *Block::FinalStatement() const
 {
     return statements.empty() ? nullptr : statements.back();
-}
-
-const LoopStatement *Statement::ParentLoop() const
-{
-    // Search for parent loop statement, ending the search if we reach a
-    // function definition or the top level first.
-    const LoopStatement *loopStatement = nullptr;
-    for (auto parentStatement = Parent()->Parent();
-         parentStatement != nullptr && loopStatement == nullptr;
-         loopStatement = dynamic_cast<const LoopStatement *>(parentStatement),
-         parentStatement = parentStatement->Parent()->Parent())
-    {
-        auto defStatement =
-            dynamic_cast<const DefStatement *>(parentStatement);
-        if (defStatement != nullptr)
-            break;
-    }
-    return loopStatement;
-}
-
-const DefStatement *Statement::ParentDef() const
-{
-    // Search for parent function definition statement, ending the search
-    // if we reach a the top level first.
-    const DefStatement *defStatement = nullptr;
-    for (auto parentStatement = Parent()->Parent();
-         parentStatement != nullptr && defStatement == nullptr;
-         defStatement = dynamic_cast<const DefStatement *>(parentStatement),
-         parentStatement = parentStatement->Parent()->Parent()) ;
-    return defStatement;
 }
 
 ExpressionStatement::ExpressionStatement(Expression *expression) :
@@ -421,6 +426,11 @@ ForStatement::~ForStatement()
     delete iterableExpression;
     delete trueBlock;
     delete falseBlock;
+}
+
+unsigned ForStatement::StackUsage() const
+{
+    return 1;
 }
 
 Parameter::Parameter
