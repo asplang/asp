@@ -259,14 +259,13 @@ AspRunResult AspReset(AspEngine *engine)
     engine->state = AspEngineState_Reset;
     engine->headerIndex = 0;
     engine->loadResult = AspAddCodeResult_OK;
-    engine->again = false;
     engine->runResult = AspRunResult_OK;
     memset(engine->version, 0, sizeof engine->version);
     if (engine->codeArea != 0)
         memset(engine->codeArea, 0, engine->maxCodeSize);
     engine->code = engine->codeArea;
     engine->codeEndIndex = 0;
-    engine->pc = 0;
+    engine->pc = engine->instructionAddress = 0;
     engine->cachedCodePageIndex = 0;
     engine->codeEndKnown = false;
     engine->pagedCodeId = 0;
@@ -280,7 +279,9 @@ AspRunResult AspReset(AspEngine *engine)
             entry->age = -1;
         }
     }
-    engine->appFunctionSymbol = 0;
+    engine->again = false;
+    engine->callFromApp = false;
+    engine->appFunction = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
 
@@ -310,11 +311,12 @@ AspRunResult AspRestart(AspEngine *engine)
         return AspRunResult_InvalidState;
 
     engine->state = AspEngineState_Ready;
-    engine->again = false;
     engine->runResult = AspRunResult_OK;
-    engine->pc = 0;
+    engine->pc = engine->instructionAddress = 0;
     engine->codePageReadCount = 0;
-    engine->appFunctionSymbol = 0;
+    engine->again = false;
+    engine->callFromApp = false;
+    engine->appFunction = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
 

@@ -46,6 +46,7 @@ typedef enum
     DataType_CodeAddress = 0x40,
     DataType_StackEntry = 0x50,
     DataType_Frame = 0x52,
+    DataType_AppFrame = 0x54,
     DataType_Element = 0x62,
     DataType_StringFragment = 0x64,
     DataType_KeyValuePair = 0x66,
@@ -375,6 +376,24 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataSetFrameLocalNamespaceIndex(eptr, value) \
     (AspDataSetWord2((eptr), (value)))
 #define AspDataGetFrameLocalNamespaceIndex(eptr) \
+    (AspDataGetWord2((eptr)))
+
+/* Application function frame entry field access. */
+#define AspDataSetAppFrameFunctionIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetAppFrameFunctionIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetAppFrameLocalNamespaceIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetAppFrameLocalNamespaceIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+#define AspDataSetAppFrameReturnValueDefined(eptr, value) \
+    (AspDataSetBit0((eptr), (unsigned)(value)))
+#define AspDataGetAppFrameReturnValueDefined(eptr) \
+    ((bool)(AspDataGetBit0((eptr))))
+#define AspDataSetAppFrameReturnValueIndex(eptr, value) \
+    (AspDataSetWord2((eptr), (value)))
+#define AspDataGetAppFrameReturnValueIndex(eptr) \
     (AspDataGetWord2((eptr)))
 
 /* Common element entry field access. */

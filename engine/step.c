@@ -69,7 +69,7 @@ static AspRunResult Step(AspEngine *engine)
          AspProgramCounter(engine));
     #endif
 
-    uint32_t pc = engine->pc;
+    engine->instructionAddress = engine->pc;
     uint8_t opCode;
     AspRunResult opCodeResult = AspLoadCodeBytes(engine, &opCode, 1);
     if (opCodeResult != AspRunResult_OK)
@@ -1306,7 +1306,7 @@ static AspRunResult Step(AspEngine *engine)
             }
 
             AspRunResult callResult = AspCall
-                (engine, function, arguments, pc);
+                (engine, function, arguments, engine->callFromApp);
             if (callResult != AspRunResult_OK)
                 return callResult;
 
@@ -1340,32 +1340,10 @@ static AspRunResult Step(AspEngine *engine)
             if (engine->runResult != AspRunResult_OK)
                 return engine->runResult;
 
-            /* Access the frame on top of the stack. */
-            AspDataEntry *frame = AspTopValue(engine);
-            if (frame == 0)
-                return AspRunResult_StackUnderflow;
-            if (AspDataGetType(frame) != DataType_Frame)
-                return AspRunResult_UnexpectedType;
-
-            /* Restore the caller's local namespace. */
-            engine->localNamespace = AspEntry
-                (engine, AspDataGetFrameLocalNamespaceIndex(frame));
-
-            /* Restore the caller's global namespace and module. */
-            AspDataEntry *module = AspEntry
-                (engine, AspDataGetFrameModuleIndex(frame));
-            engine->globalNamespace = AspValueEntry
-                (engine, AspDataGetModuleNamespaceIndex(module));
-            engine->module = module;
-
-            /* Save the return address. */
-            uint32_t returnAddress = AspDataGetFrameReturnAddress(frame);
-
-            /* Pop the frame off the stack. */
-            AspPop(engine);
-            AspUnref(engine, frame);
-            if (engine->runResult != AspRunResult_OK)
-                return engine->runResult;
+            /* Return control back to the caller. */
+            AspRunResult restoreFrameResult = AspReturn(engine);
+            if (restoreFrameResult != AspRunResult_OK)
+                return restoreFrameResult;
 
             /* Push the return value onto the stack. There is no need to check
                for success because we just popped things off the stack. */
@@ -1373,9 +1351,6 @@ static AspRunResult Step(AspEngine *engine)
             AspUnref(engine, returnValue);
             if (engine->runResult != AspRunResult_OK)
                 return engine->runResult;
-
-            /* Return control back to the caller. */
-            engine->pc = returnAddress;
 
             break;
         }

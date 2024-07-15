@@ -17,11 +17,12 @@ AspRunResult AspExpandDictionaryGroupArgument
     (AspEngine *, AspDataEntry *argumentList, AspDataEntry *dictionary);
 AspRunResult AspCall
     (AspEngine *, AspDataEntry *function, AspDataEntry *argumentList,
-     uint32_t pc);
+     bool fromApp);
 AspRunResult AspLoadArguments
     (AspEngine *,
      AspDataEntry *argumentList, AspDataEntry *parameterList,
      AspDataEntry *ns);
+AspRunResult AspReturn(AspEngine *);
 
 #ifdef __cplusplus
 }
