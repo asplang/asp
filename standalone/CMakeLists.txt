@@ -54,7 +54,7 @@ set_property(TARGET asps
     )
 
 target_compile_definitions(asps PRIVATE
-    $<$<BOOL:${ENABLE_ASPS_DEBUG}>:ASP_DEBUG>
+    $<$<BOOL:${ENABLE_DEBUG}>:ASP_DEBUG>
     $<$<NOT:$<STREQUAL:${C_COMMAND_OPTION_PREFIXES},>>:
         COMMAND_OPTION_PREFIXES=${C_COMMAND_OPTION_PREFIXES}>
     )
