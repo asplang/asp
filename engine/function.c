@@ -250,6 +250,13 @@ AspRunResult AspCallFunction
        control. */
     if (engine->inApp)
     {
+        if (function == 0)
+        {
+            #ifdef ASP_DEBUG
+            puts("Null function entry");
+            #endif
+            return AspRunResult_InvalidAppFunction;
+        }
         AspDataEntry *argumentListEntry = AspPush(engine, argumentList);
         AspDataEntry *functionEntry = AspPush(engine, function);
         if (argumentListEntry == 0 || functionEntry == 0)
@@ -267,6 +274,13 @@ AspRunResult AspCallFunction
     AspDataEntry *ns = 0;
     if (!callerAgain)
     {
+        if (function == 0)
+        {
+            #ifdef ASP_DEBUG
+            puts("Unexpected null function entry");
+            #endif
+            return AspRunResult_InvalidAppFunction;
+        }
         if (AspDataGetType(function) != DataType_Function)
             return AspRunResult_UnexpectedType;
 
@@ -361,29 +375,40 @@ AspRunResult AspCallFunction
              appFunctionSymbol, engine->appFunctionNamespace,
              &engine->appFunctionReturnValue);
         engine->inApp = false;
+        if (callResult != AspRunResult_OK &&
+            callResult != AspRunResult_Again &&
+            callResult != AspRunResult_Call)
+        {
+            if (callResult == AspRunResult_Complete)
+            {
+                #ifdef ASP_DEBUG
+                puts("Application returned AspRunResult_Complete");
+                #endif
+                callResult = AspRunResult_InvalidAppFunction;
+            }
+            return callResult;
+        }
 
-        /* Ensure that the application did not create an argument list that
-           will not be used. */
-        if (engine->argumentList != 0 &&
-            (callResult == AspRunResult_OK ||
-             callResult == AspRunResult_Again))
+        /* Ensure that the application did not leave a called function's return
+           value unfetched or create an argument list that will not be used. */
+        if (engine->callReturning ||
+            engine->argumentList != 0 && callResult != AspRunResult_Call)
+        {
+            #ifdef ASP_DEBUG
+            if (engine->callReturning)
+                puts("Return value not consumed");
+            else
+                puts("Unused function arguments");
+            #endif
             return AspRunResult_InvalidAppFunction;
+        }
 
         /* Cause this instruction to execute again if applicable. */
-        if (callResult == AspRunResult_Again ||
-            callResult == AspRunResult_Call)
+        if (callResult != AspRunResult_OK)
         {
             engine->pc = engine->instructionAddress;
             engine->again = callResult == AspRunResult_Again;
             return AspRunResult_OK;
-        }
-
-        /* Ensure the application function call was successful. */
-        if (callResult != AspRunResult_OK)
-        {
-            if (callResult == AspRunResult_Complete)
-                callResult = AspRunResult_InvalidAppFunction;
-            return callResult;
         }
 
         /* We're now done with the local namespace. */
@@ -751,6 +776,7 @@ AspRunResult AspReturnToCaller(AspEngine *engine)
             !AspDataGetAppFrameReturnValueDefined(frame) ? 0 :
             AspEntry(engine, AspDataGetAppFrameReturnValueIndex(frame));
         engine->again = true;
+        engine->callReturning = true;
 
         /* Pop the frame off the stack. */
         AspPop(engine);

@@ -126,7 +126,7 @@ struct AspEngine
     const AspAppSpec *appSpec;
 
     /* Application function call state. */
-    bool inApp, again, callFromApp;
+    bool inApp, again, callFromApp, callReturning;
     AspDataEntry *argumentList;
     AspDataEntry *appFunction, *appFunctionNamespace, *appFunctionReturnValue;
 

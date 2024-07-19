@@ -1570,10 +1570,21 @@ AspRunResult AspCall
 
 AspRunResult AspReturnValue(AspEngine *engine, AspDataEntry **returnValue)
 {
+    /* Ensure that we've returned from a function call (i.e., a return value
+       has been generated. */
+    if (!engine->callReturning)
+    {
+        #ifdef ASP_DEBUG
+        printf("No return value present\n");
+        #endif
+        return AspRunResult_InvalidAppFunction;
+    }
+
     AspDataEntry *value = AspTopValue(engine);
     if (value == 0)
         return AspRunResult_StackUnderflow;
     AspPopNoErase(engine);
+    engine->callReturning = false;
 
     if (returnValue != 0)
         *returnValue = value;
