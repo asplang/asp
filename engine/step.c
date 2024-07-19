@@ -1305,7 +1305,7 @@ static AspRunResult Step(AspEngine *engine)
                 AspPop(engine);
             }
 
-            AspRunResult callResult = AspCall
+            AspRunResult callResult = AspCallFunction
                 (engine, function, arguments, engine->callFromApp);
             if (callResult != AspRunResult_OK)
                 return callResult;
@@ -1340,8 +1340,8 @@ static AspRunResult Step(AspEngine *engine)
             if (engine->runResult != AspRunResult_OK)
                 return engine->runResult;
 
-            /* Return control back to the caller. */
-            AspRunResult restoreFrameResult = AspReturn(engine);
+            /* Restore the caller's context. */
+            AspRunResult restoreFrameResult = AspReturnToCaller(engine);
             if (restoreFrameResult != AspRunResult_OK)
                 return restoreFrameResult;
 

@@ -281,6 +281,7 @@ AspRunResult AspReset(AspEngine *engine)
     }
     engine->again = false;
     engine->callFromApp = false;
+    engine->argumentList = 0;
     engine->appFunction = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
@@ -316,6 +317,7 @@ AspRunResult AspRestart(AspEngine *engine)
     engine->codePageReadCount = 0;
     engine->again = false;
     engine->callFromApp = false;
+    engine->argumentList = 0;
     engine->appFunction = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;

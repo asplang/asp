@@ -127,8 +127,8 @@ struct AspEngine
 
     /* Application function call state. */
     bool inApp, again, callFromApp;
-    AspDataEntry *appFunction;
-    AspDataEntry *appFunctionNamespace, *appFunctionReturnValue;
+    AspDataEntry *argumentList;
+    AspDataEntry *appFunction, *appFunctionNamespace, *appFunctionReturnValue;
 
     #ifdef ASP_DEBUG
     FILE *traceFile;

@@ -8,6 +8,7 @@
 #include "sequence.h"
 #include "tree.h"
 #include "iterator.h"
+#include "function.h"
 #include "symbols.h"
 #include <math.h>
 #include <stdio.h>
@@ -28,6 +29,7 @@ static const char *TypeString(DataType);
 static AspDataEntry *NewRange
     (AspEngine *, int32_t start, int32_t *end, int32_t step);
 static AspDataEntry *NewObject(AspEngine *, DataType);
+static AspRunResult AddToArgumentList(AspEngine *, AspDataEntry *argument);
 
 void AspEngineVersion(uint8_t version[4])
 {
@@ -1520,6 +1522,63 @@ bool AspDictionaryErase
     AspRunResult result = AspTreeEraseNode
         (engine, dictionary, findResult.node, true, true);
     return result == AspRunResult_OK;
+}
+
+bool AspAddPositionalArgument
+    (AspEngine *engine, AspDataEntry *value, bool take)
+{
+    AspDataEntry *argument = NewObject(engine, DataType_Argument);
+    if (argument == 0)
+        return false;
+    AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
+    if (take)
+        AspUnref(engine, value);
+
+    return AddToArgumentList(engine, argument) == AspRunResult_OK;
+}
+
+static AspRunResult AddToArgumentList
+    (AspEngine *engine, AspDataEntry *argument)
+{
+    if (engine->argumentList == 0)
+    {
+        engine->argumentList = NewObject(engine, DataType_ArgumentList);
+        if (engine->argumentList == 0)
+            return AspRunResult_OutOfDataMemory;
+    }
+
+    AspSequenceResult result = AspSequenceAppend
+        (engine, engine->argumentList, argument);
+    return result.result;
+}
+
+AspRunResult AspCall
+    (AspEngine *engine, AspDataEntry *function)
+{
+    /* Ensure an argument list has been prepared. */
+    AspDataEntry *argumentList = engine->argumentList;
+    engine->argumentList = 0;
+    if (argumentList == 0)
+    {
+        argumentList = NewObject(engine, DataType_ArgumentList);
+        if (argumentList == 0)
+            return AspRunResult_OutOfDataMemory;
+    }
+
+    return AspCallFunction(engine, function, argumentList, true);
+}
+
+AspRunResult AspReturnValue(AspEngine *engine, AspDataEntry **returnValue)
+{
+    AspDataEntry *value = AspTopValue(engine);
+    if (value == 0)
+        return AspRunResult_StackUnderflow;
+    AspPopNoErase(engine);
+
+    if (returnValue != 0)
+        *returnValue = value;
+
+    return AspRunResult_OK;
 }
 
 AspDataEntry *AspArguments(AspEngine *engine)

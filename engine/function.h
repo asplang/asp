@@ -15,14 +15,14 @@ AspRunResult AspExpandIterableGroupArgument
     (AspEngine *, AspDataEntry *argumentList, AspDataEntry *iterable);
 AspRunResult AspExpandDictionaryGroupArgument
     (AspEngine *, AspDataEntry *argumentList, AspDataEntry *dictionary);
-AspRunResult AspCall
+AspRunResult AspCallFunction
     (AspEngine *, AspDataEntry *function, AspDataEntry *argumentList,
      bool fromApp);
 AspRunResult AspLoadArguments
     (AspEngine *,
      AspDataEntry *argumentList, AspDataEntry *parameterList,
      AspDataEntry *ns);
-AspRunResult AspReturn(AspEngine *);
+AspRunResult AspReturnToCaller(AspEngine *);
 
 #ifdef __cplusplus
 }
