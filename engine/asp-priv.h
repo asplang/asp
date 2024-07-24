@@ -129,6 +129,7 @@ struct AspEngine
     bool inApp, again, callFromApp, callReturning;
     AspDataEntry *argumentList;
     AspDataEntry *appFunction, *appFunctionNamespace, *appFunctionReturnValue;
+    int32_t nextSymbol;
 
     #ifdef ASP_DEBUG
     FILE *traceFile;

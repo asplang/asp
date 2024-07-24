@@ -8,6 +8,7 @@
 #include "sequence.h"
 #include "tree.h"
 #include "iterator.h"
+#include "assign.h"
 #include "function.h"
 #include "symbols.h"
 #include <math.h>
@@ -1530,9 +1531,9 @@ bool AspAddPositionalArgument
     AspDataEntry *argument = NewObject(engine, DataType_Argument);
     if (argument == 0)
         return false;
+    if (!take)
+        AspRef(engine, value);
     AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
-    if (take)
-        AspUnref(engine, value);
 
     return AddToArgumentList(engine, argument) == AspRunResult_OK;
 }
@@ -1550,6 +1551,15 @@ static AspRunResult AddToArgumentList
     AspSequenceResult result = AspSequenceAppend
         (engine, engine->argumentList, argument);
     return result.result;
+}
+
+void AspClearFunctionArguments(AspEngine *engine)
+{
+    if (engine->argumentList != 0)
+    {
+        AspUnref(engine, engine->argumentList);
+        engine->argumentList = 0;
+    }
 }
 
 AspRunResult AspCall
@@ -1588,6 +1598,39 @@ AspRunResult AspReturnValue(AspEngine *engine, AspDataEntry **returnValue)
 
     if (returnValue != 0)
         *returnValue = value;
+
+    return AspRunResult_OK;
+}
+
+int32_t AspNextSymbol(AspEngine *engine)
+{
+    return engine->nextSymbol--;
+}
+
+AspDataEntry *AspLoadLocal(AspEngine *engine, int32_t symbol)
+{
+    AspTreeResult findResult = AspFindSymbol
+        (engine, engine->appFunctionNamespace, symbol);
+    return findResult.value;
+}
+
+AspRunResult AspStoreLocal
+    (AspEngine *engine, int32_t symbol, AspDataEntry *value, bool take)
+{
+    AspTreeResult insertResult = AspTreeTryInsertBySymbol
+        (engine, engine->appFunctionNamespace, symbol, value);
+    if (insertResult.result != AspRunResult_OK)
+        return insertResult.result;
+    if (!insertResult.inserted)
+    {
+        AspRunResult assignResult = AspAssignSimple
+            (engine, insertResult.node, value);
+        if (assignResult != AspRunResult_OK)
+            return assignResult;
+    }
+
+    if (take)
+        AspUnref(engine, value);
 
     return AspRunResult_OK;
 }

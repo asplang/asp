@@ -285,6 +285,7 @@ AspRunResult AspReset(AspEngine *engine)
     engine->appFunction = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
+    engine->nextSymbol = -1;
 
     return ResetData(engine);
 }
@@ -321,6 +322,7 @@ AspRunResult AspRestart(AspEngine *engine)
     engine->appFunction = 0;
     engine->appFunctionNamespace = 0;
     engine->appFunctionReturnValue = 0;
+    engine->nextSymbol = -1;
 
     return ResetData(engine);
 }

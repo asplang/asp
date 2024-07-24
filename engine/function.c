@@ -369,6 +369,7 @@ AspRunResult AspCallFunction
         /* Call the application function. */
         int32_t appFunctionSymbol = AspDataGetFunctionSymbol
             (engine->appFunction);
+        engine->nextSymbol = -1;
         engine->inApp = true;
         AspRunResult callResult = engine->appSpec->dispatch
             (engine,

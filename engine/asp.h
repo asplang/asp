@@ -227,9 +227,13 @@ ASP_API bool AspDictionaryErase
     (AspEngine *, AspDataEntry *dictionary, AspDataEntry *key);
 ASP_API bool AspAddPositionalArgument
     (AspEngine *, AspDataEntry *value, bool take);
-ASP_API AspRunResult AspCall
-    (AspEngine *, AspDataEntry *function);
+ASP_API void AspClearFunctionArguments(AspEngine *);
+ASP_API AspRunResult AspCall(AspEngine *, AspDataEntry *function);
 ASP_API AspRunResult AspReturnValue(AspEngine *, AspDataEntry **);
+ASP_API int32_t AspNextSymbol(AspEngine *);
+ASP_API AspDataEntry *AspLoadLocal(AspEngine *, int32_t symbol);
+ASP_API AspRunResult AspStoreLocal
+    (AspEngine *, int32_t symbol, AspDataEntry *value, bool take);
 ASP_API void AspRef(AspEngine *, AspDataEntry *);
 ASP_API void AspUnref(AspEngine *, AspDataEntry *);
 ASP_API AspDataEntry *AspArguments(AspEngine *);
