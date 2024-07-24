@@ -1538,6 +1538,21 @@ bool AspAddPositionalArgument
     return AddToArgumentList(engine, argument) == AspRunResult_OK;
 }
 
+bool AspAddNamedArgument
+    (AspEngine *engine, int32_t symbol, AspDataEntry *value, bool take)
+{
+    AspDataEntry *argument = NewObject(engine, DataType_Argument);
+    if (argument == 0)
+        return false;
+    if (!take)
+        AspRef(engine, value);
+    AspDataSetArgumentHasName(argument, true);
+    AspDataSetArgumentSymbol(argument, symbol);
+    AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
+
+    return AddToArgumentList(engine, argument) == AspRunResult_OK;
+}
+
 static AspRunResult AddToArgumentList
     (AspEngine *engine, AspDataEntry *argument)
 {

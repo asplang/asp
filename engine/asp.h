@@ -227,6 +227,8 @@ ASP_API bool AspDictionaryErase
     (AspEngine *, AspDataEntry *dictionary, AspDataEntry *key);
 ASP_API bool AspAddPositionalArgument
     (AspEngine *, AspDataEntry *value, bool take);
+ASP_API bool AspAddNamedArgument
+    (AspEngine *, int32_t symbol, AspDataEntry *value, bool take);
 ASP_API void AspClearFunctionArguments(AspEngine *);
 ASP_API AspRunResult AspCall(AspEngine *, AspDataEntry *function);
 ASP_API AspRunResult AspReturnValue(AspEngine *, AspDataEntry **);
