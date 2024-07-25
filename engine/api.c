@@ -8,6 +8,8 @@
 #include "sequence.h"
 #include "tree.h"
 #include "iterator.h"
+#include "assign.h"
+#include "function.h"
 #include "symbols.h"
 #include <math.h>
 #include <stdio.h>
@@ -28,6 +30,7 @@ static const char *TypeString(DataType);
 static AspDataEntry *NewRange
     (AspEngine *, int32_t start, int32_t *end, int32_t step);
 static AspDataEntry *NewObject(AspEngine *, DataType);
+static bool PrepareArgumentList(AspEngine *);
 
 void AspEngineVersion(uint8_t version[4])
 {
@@ -1520,6 +1523,160 @@ bool AspDictionaryErase
     AspRunResult result = AspTreeEraseNode
         (engine, dictionary, findResult.node, true, true);
     return result == AspRunResult_OK;
+}
+
+bool AspAddPositionalArgument
+    (AspEngine *engine, AspDataEntry *value, bool take)
+{
+    if (!PrepareArgumentList(engine))
+        return false;
+
+    AspDataEntry *argument = NewObject(engine, DataType_Argument);
+    if (argument == 0)
+        return false;
+    if (!take)
+        AspRef(engine, value);
+    AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
+
+    AspSequenceResult result = AspSequenceAppend
+        (engine, engine->argumentList, argument);
+    return result.result == AspRunResult_OK;
+}
+
+bool AspAddNamedArgument
+    (AspEngine *engine, int32_t symbol, AspDataEntry *value, bool take)
+{
+    if (!PrepareArgumentList(engine))
+        return false;
+
+    AspDataEntry *argument = NewObject(engine, DataType_Argument);
+    if (argument == 0)
+        return false;
+    if (!take)
+        AspRef(engine, value);
+    AspDataSetArgumentHasName(argument, true);
+    AspDataSetArgumentSymbol(argument, symbol);
+    AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
+
+    AspSequenceResult result = AspSequenceAppend
+        (engine, engine->argumentList, argument);
+    return result.result == AspRunResult_OK;
+}
+
+bool AspAddIterableGroupArgument
+    (AspEngine *engine, AspDataEntry *value, bool take)
+{
+    if (!PrepareArgumentList(engine))
+        return false;
+
+    AspRunResult result = AspExpandIterableGroupArgument
+        (engine, engine->argumentList, value);
+    if (result != AspRunResult_OK)
+        return false;
+    if (take)
+        AspUnref(engine, value);
+    return true;
+}
+
+bool AspAddDictionaryGroupArgument
+    (AspEngine *engine, AspDataEntry *value, bool take)
+{
+    if (!PrepareArgumentList(engine))
+        return false;
+
+    AspRunResult result = AspExpandDictionaryGroupArgument
+        (engine, engine->argumentList, value);
+    if (result != AspRunResult_OK)
+        return false;
+    if (take)
+        AspUnref(engine, value);
+    return true;
+}
+
+static bool PrepareArgumentList(AspEngine *engine)
+{
+    if (engine->argumentList == 0)
+        engine->argumentList = NewObject(engine, DataType_ArgumentList);
+    return engine->argumentList != 0;
+}
+
+void AspClearFunctionArguments(AspEngine *engine)
+{
+    if (engine->argumentList != 0)
+    {
+        AspUnref(engine, engine->argumentList);
+        engine->argumentList = 0;
+    }
+}
+
+AspRunResult AspCall
+    (AspEngine *engine, AspDataEntry *function)
+{
+    /* Ensure an argument list has been prepared. */
+    if (!PrepareArgumentList(engine))
+        return AspRunResult_OutOfDataMemory;
+
+    /* Consume the argument list and call the function. */
+    AspDataEntry *argumentList = engine->argumentList;
+    engine->argumentList = 0;
+    return AspCallFunction(engine, function, argumentList, true);
+}
+
+AspRunResult AspReturnValue(AspEngine *engine, AspDataEntry **returnValue)
+{
+    /* Ensure that we've returned from a function call (i.e., a return value
+       has been generated. */
+    if (!engine->callReturning)
+    {
+        #ifdef ASP_DEBUG
+        printf("No return value present\n");
+        #endif
+        return AspRunResult_InvalidAppFunction;
+    }
+
+    AspDataEntry *value = AspTopValue(engine);
+    if (value == 0)
+        return AspRunResult_StackUnderflow;
+    AspPopNoErase(engine);
+    engine->callReturning = false;
+
+    if (returnValue != 0)
+        *returnValue = value;
+
+    return AspRunResult_OK;
+}
+
+int32_t AspNextSymbol(AspEngine *engine)
+{
+    return engine->nextSymbol--;
+}
+
+AspDataEntry *AspLoadLocal(AspEngine *engine, int32_t symbol)
+{
+    AspTreeResult findResult = AspFindSymbol
+        (engine, engine->appFunctionNamespace, symbol);
+    return findResult.value;
+}
+
+AspRunResult AspStoreLocal
+    (AspEngine *engine, int32_t symbol, AspDataEntry *value, bool take)
+{
+    AspTreeResult insertResult = AspTreeTryInsertBySymbol
+        (engine, engine->appFunctionNamespace, symbol, value);
+    if (insertResult.result != AspRunResult_OK)
+        return insertResult.result;
+    if (!insertResult.inserted)
+    {
+        AspRunResult assignResult = AspAssignSimple
+            (engine, insertResult.node, value);
+        if (assignResult != AspRunResult_OK)
+            return assignResult;
+    }
+
+    if (take)
+        AspUnref(engine, value);
+
+    return AspRunResult_OK;
 }
 
 AspDataEntry *AspArguments(AspEngine *engine)
