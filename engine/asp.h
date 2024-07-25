@@ -229,6 +229,10 @@ ASP_API bool AspAddPositionalArgument
     (AspEngine *, AspDataEntry *value, bool take);
 ASP_API bool AspAddNamedArgument
     (AspEngine *, int32_t symbol, AspDataEntry *value, bool take);
+ASP_API bool AspAddIterableGroupArgument
+    (AspEngine *, AspDataEntry *value, bool take);
+ASP_API bool AspAddDictionaryGroupArgument
+    (AspEngine *, AspDataEntry *value, bool take);
 ASP_API void AspClearFunctionArguments(AspEngine *);
 ASP_API AspRunResult AspCall(AspEngine *, AspDataEntry *function);
 ASP_API AspRunResult AspReturnValue(AspEngine *, AspDataEntry **);

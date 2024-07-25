@@ -30,7 +30,7 @@ static const char *TypeString(DataType);
 static AspDataEntry *NewRange
     (AspEngine *, int32_t start, int32_t *end, int32_t step);
 static AspDataEntry *NewObject(AspEngine *, DataType);
-static AspRunResult AddToArgumentList(AspEngine *, AspDataEntry *argument);
+static bool PrepareArgumentList(AspEngine *);
 
 void AspEngineVersion(uint8_t version[4])
 {
@@ -1528,6 +1528,9 @@ bool AspDictionaryErase
 bool AspAddPositionalArgument
     (AspEngine *engine, AspDataEntry *value, bool take)
 {
+    if (!PrepareArgumentList(engine))
+        return false;
+
     AspDataEntry *argument = NewObject(engine, DataType_Argument);
     if (argument == 0)
         return false;
@@ -1535,12 +1538,17 @@ bool AspAddPositionalArgument
         AspRef(engine, value);
     AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
 
-    return AddToArgumentList(engine, argument) == AspRunResult_OK;
+    AspSequenceResult result = AspSequenceAppend
+        (engine, engine->argumentList, argument);
+    return result.result == AspRunResult_OK;
 }
 
 bool AspAddNamedArgument
     (AspEngine *engine, int32_t symbol, AspDataEntry *value, bool take)
 {
+    if (!PrepareArgumentList(engine))
+        return false;
+
     AspDataEntry *argument = NewObject(engine, DataType_Argument);
     if (argument == 0)
         return false;
@@ -1550,22 +1558,46 @@ bool AspAddNamedArgument
     AspDataSetArgumentSymbol(argument, symbol);
     AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
 
-    return AddToArgumentList(engine, argument) == AspRunResult_OK;
-}
-
-static AspRunResult AddToArgumentList
-    (AspEngine *engine, AspDataEntry *argument)
-{
-    if (engine->argumentList == 0)
-    {
-        engine->argumentList = NewObject(engine, DataType_ArgumentList);
-        if (engine->argumentList == 0)
-            return AspRunResult_OutOfDataMemory;
-    }
-
     AspSequenceResult result = AspSequenceAppend
         (engine, engine->argumentList, argument);
-    return result.result;
+    return result.result == AspRunResult_OK;
+}
+
+bool AspAddIterableGroupArgument
+    (AspEngine *engine, AspDataEntry *value, bool take)
+{
+    if (!PrepareArgumentList(engine))
+        return false;
+
+    AspRunResult result = AspExpandIterableGroupArgument
+        (engine, engine->argumentList, value);
+    if (result != AspRunResult_OK)
+        return false;
+    if (take)
+        AspUnref(engine, value);
+    return true;
+}
+
+bool AspAddDictionaryGroupArgument
+    (AspEngine *engine, AspDataEntry *value, bool take)
+{
+    if (!PrepareArgumentList(engine))
+        return false;
+
+    AspRunResult result = AspExpandDictionaryGroupArgument
+        (engine, engine->argumentList, value);
+    if (result != AspRunResult_OK)
+        return false;
+    if (take)
+        AspUnref(engine, value);
+    return true;
+}
+
+static bool PrepareArgumentList(AspEngine *engine)
+{
+    if (engine->argumentList == 0)
+        engine->argumentList = NewObject(engine, DataType_ArgumentList);
+    return engine->argumentList != 0;
 }
 
 void AspClearFunctionArguments(AspEngine *engine)
@@ -1581,15 +1613,12 @@ AspRunResult AspCall
     (AspEngine *engine, AspDataEntry *function)
 {
     /* Ensure an argument list has been prepared. */
+    if (!PrepareArgumentList(engine))
+        return AspRunResult_OutOfDataMemory;
+
+    /* Consume the argument list and call the function. */
     AspDataEntry *argumentList = engine->argumentList;
     engine->argumentList = 0;
-    if (argumentList == 0)
-    {
-        argumentList = NewObject(engine, DataType_ArgumentList);
-        if (argumentList == 0)
-            return AspRunResult_OutOfDataMemory;
-    }
-
     return AspCallFunction(engine, function, argumentList, true);
 }
 
