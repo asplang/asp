@@ -23,11 +23,11 @@ void AspDump(const AspEngine *engine, FILE *fp)
     fputs("---\n", fp);
 
     fprintf
-        (fp, "Program counter: 0x%7.7X\n",
+        (fp, "Program counter: 0x%07X\n",
          (uint32_t)AspProgramCounter(engine));
 
     fprintf
-        (fp, "Free count: %d; next free entry: 0x%7.7X\n",
+        (fp, "Free count: %d; next free entry: 0x%07X\n",
          (uint32_t)engine->freeCount, (uint32_t)engine->freeListIndex);
     fprintf
         (fp, "Free count low water mark: %d\n",
@@ -38,25 +38,25 @@ void AspDump(const AspEngine *engine, FILE *fp)
         fputs("empty", fp);
     else
     {
-        fprintf(fp, "top=0x%7.7X", AspIndex(engine, engine->stackTop));
+        fprintf(fp, "top=0x%07X", AspIndex(engine, engine->stackTop));
         fprintf(fp, ", count=%d", engine->stackCount);
     }
     fputc('\n', fp);
 
     fprintf
-        (fp, "Modules: 0x%7.7X\n",
+        (fp, "Modules: 0x%07X\n",
          AspIndex(engine, engine->modules));
     fprintf
-        (fp, "Current module: 0x%7.7X\n",
+        (fp, "Current module: 0x%07X\n",
          AspIndex(engine, engine->module));
     fprintf
-        (fp, "System namespace: 0x%7.7X\n",
+        (fp, "System namespace: 0x%07X\n",
          AspIndex(engine, engine->systemNamespace));
     fprintf
-        (fp, "Current global namespace: 0x%7.7X\n",
+        (fp, "Current global namespace: 0x%07X\n",
          AspIndex(engine, engine->globalNamespace));
     fprintf
-        (fp, "Current local namespace: 0x%7.7X\n",
+        (fp, "Current local namespace: 0x%07X\n",
          AspIndex(engine, engine->localNamespace));
 }
 
@@ -73,8 +73,8 @@ static void DumpData(const AspEngine *engine, FILE *fp)
             if (t != DataType_Free)
             {
                 if (freeRangeStart != i - 1)
-                    fprintf(fp, "0x%7.7X...", freeRangeStart);
-                fprintf(fp, "0x%7.7X: t=0x%2.2X(free)\n",
+                    fprintf(fp, "0x%07X...", freeRangeStart);
+                fprintf(fp, "0x%07X: t=0x%02X(free)\n",
                     i - 1, DataType_Free);
                 inFree = false;
                 DumpDataEntry(i, data + i, fp);
@@ -94,8 +94,8 @@ static void DumpData(const AspEngine *engine, FILE *fp)
     if (inFree)
     {
         if (freeRangeStart != engine->dataEndIndex - 1)
-            fprintf(fp, "0x%7.7X...", freeRangeStart);
-        fprintf(fp, "0x%7.7X: t=0x%2.2X(free)\n",
+            fprintf(fp, "0x%07X...", freeRangeStart);
+        fprintf(fp, "0x%07X: t=0x%02X(free)\n",
             (uint32_t)engine->dataEndIndex - 1, DataType_Free);
     }
 }
@@ -163,7 +163,7 @@ static int CompareTypeNames(const void *key, const void *element)
 static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
 {
     uint8_t t = AspDataGetType(entry);
-    fprintf(fp, "0x%7.7X: t=0x%2.2X", index, t);
+    fprintf(fp, "0x%07X: t=0x%02X", index, t);
     TypeName keyTypeName = {t, ""};
     TypeName *nameEntry = (TypeName *)bsearch
         (&keyTypeName, gTypeNames,
@@ -193,7 +193,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_Range:
-            fprintf(fp, " start=0x%7.7X end=0x%7.7X step=0x%7.7X",
+            fprintf(fp, " start=0x%07X end=0x%07X step=0x%07X",
                 AspDataGetRangeStartIndex(entry),
                 AspDataGetRangeEndIndex(entry),
                 AspDataGetRangeStepIndex(entry));
@@ -204,7 +204,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         case DataType_List:
         case DataType_ParameterList:
         case DataType_ArgumentList:
-            fprintf(fp, " count=%u head=0x%7.7X tail=0x%7.7X",
+            fprintf(fp, " count=%u head=0x%07X tail=0x%07X",
                 AspDataGetSequenceCount(entry),
                 AspDataGetSequenceHeadIndex(entry),
                 AspDataGetSequenceTailIndex(entry));
@@ -213,16 +213,16 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         case DataType_Set:
         case DataType_Dictionary:
         case DataType_Namespace:
-            fprintf(fp, " count=%u root=0x%7.7X",
+            fprintf(fp, " count=%u root=0x%07X",
                 AspDataGetTreeCount(entry),
                 AspDataGetTreeRootIndex(entry));
             break;
 
         case DataType_ForwardIterator:
         case DataType_ReverseIterator:
-            fprintf(fp, " coll=0x%7.7X",
+            fprintf(fp, " coll=0x%07X",
                 AspDataGetIteratorIterableIndex(entry));
-            fprintf(fp, " mem=0x%7.7X si=%d",
+            fprintf(fp, " mem=0x%07X si=%d",
                 AspDataGetIteratorMemberIndex(entry),
                 AspDataGetIteratorStringIndex(entry));
             if (AspDataGetIteratorMemberNeedsCleanup(entry))
@@ -233,15 +233,15 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             if (AspDataGetFunctionIsApp(entry))
                 fprintf(fp, " s=%d", AspDataGetFunctionSymbol(entry));
             else
-                fprintf(fp, " code=0x%7.7X",
+                fprintf(fp, " code=0x%07X",
                     AspDataGetFunctionCodeAddress(entry));
-            fprintf(fp, " mod=0x%7.7X params=0x%7.7X",
+            fprintf(fp, " mod=0x%07X params=0x%07X",
                 AspDataGetFunctionModuleIndex(entry),
                 AspDataGetFunctionParametersIndex(entry));
             break;
 
         case DataType_Module:
-            fprintf(fp, " code=0x%7.7X ns=0x%7.7X ld=%d",
+            fprintf(fp, " code=0x%07X ns=0x%07X ld=%d",
                 AspDataGetModuleCodeAddress(entry),
                 AspDataGetModuleNamespaceIndex(entry),
                 AspDataGetModuleIsLoaded(entry));
@@ -250,7 +250,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         case DataType_AppIntegerObject:
         case DataType_AppPointerObject:
             #ifdef ASP_WIDE_PTR
-            fprintf(fp, " info=0x%7.7X",
+            fprintf(fp, " info=0x%07X",
                 AspDataGetAppObjectInfoIndex(entry));
             #else
             fprintf(fp, " type=%d",
@@ -282,44 +282,44 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_Type:
-            fprintf(fp, " type=0x%2.2X",
+            fprintf(fp, " type=0x%02X",
                 AspDataGetTypeValue(entry));
             break;
 
         case DataType_CodeAddress:
-            fprintf(fp, " addr=0x%7.7X",
+            fprintf(fp, " addr=0x%07X",
                 AspDataGetCodeAddress(entry));
             break;
 
         case DataType_StackEntry:
-            fprintf(fp, " prev=0x%7.7X val=0x%7.7X",
+            fprintf(fp, " prev=0x%07X val=0x%07X",
                 AspDataGetStackEntryPreviousIndex(entry),
                 AspDataGetStackEntryValueIndex(entry));
             if (AspDataGetStackEntryHasValue2(entry))
-                fprintf(fp, " val2=0x%7.7X",
+                fprintf(fp, " val2=0x%07X",
                     AspDataGetStackEntryValue2Index(entry));
             if (AspDataGetStackEntryFlag(entry))
                 fputs(" fl", fp);
             break;
 
         case DataType_Frame:
-            fprintf(fp, " ra=0x%7.7X mod=0x%7.7X locns=0x%7.7X",
+            fprintf(fp, " ra=0x%07X mod=0x%07X locns=0x%07X",
                 AspDataGetFrameReturnAddress(entry),
                 AspDataGetFrameModuleIndex(entry),
                 AspDataGetFrameLocalNamespaceIndex(entry));
             break;
 
         case DataType_AppFrame:
-            fprintf(fp, " func=0x%7.7X locns=0x%7.7X",
+            fprintf(fp, " func=0x%07X locns=0x%07X",
                 AspDataGetAppFrameFunctionIndex(entry),
                 AspDataGetAppFrameLocalNamespaceIndex(entry));
             if (AspDataGetAppFrameReturnValueDefined(entry))
-                fprintf(fp, " rv=0x%7.7X",
+                fprintf(fp, " rv=0x%07X",
                     AspDataGetAppFrameReturnValueIndex(entry));
             break;
 
         case DataType_Element:
-            fprintf(fp, " prev=0x%7.7X next=0x%7.7X val=0x%7.7X",
+            fprintf(fp, " prev=0x%07X next=0x%07X val=0x%07X",
                 AspDataGetElementPreviousIndex(entry),
                 AspDataGetElementNextIndex(entry),
                 AspDataGetElementValueIndex(entry));
@@ -346,13 +346,13 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         }
 
         case DataType_KeyValuePair:
-            fprintf(fp, " key=0x%7.7X val=0x%7.7X",
+            fprintf(fp, " key=0x%07X val=0x%07X",
                 AspDataGetKeyValuePairKeyIndex(entry),
                 AspDataGetKeyValuePairValueIndex(entry));
             break;
 
         case DataType_SetNode:
-            fprintf(fp, " key=0x%7.7X p=0x%7.7X l=0x%7.7X r=0x%7.7X clr=%c",
+            fprintf(fp, " key=0x%07X p=0x%07X l=0x%07X r=0x%07X clr=%c",
                 AspDataGetTreeNodeKeyIndex(entry),
                 AspDataGetTreeNodeParentIndex(entry),
                 AspDataGetSetNodeLeftIndex(entry),
@@ -361,7 +361,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_DictionaryNode:
-            fprintf(fp, " key=0x%7.7X p=0x%7.7X lr=0x%7.7X val=0x%7.7X clr=%c",
+            fprintf(fp, " key=0x%07X p=0x%07X lr=0x%07X val=0x%07X clr=%c",
                 AspDataGetTreeNodeKeyIndex(entry),
                 AspDataGetTreeNodeParentIndex(entry),
                 AspDataGetTreeNodeLinksIndex(entry),
@@ -371,7 +371,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
 
         case DataType_NamespaceNode:
             fprintf(fp,
-                " sym=%d p=0x%7.7X lr=0x%7.7X val=0x%7.7X clr=%c gl=%d loc=%d",
+                " sym=%d p=0x%07X lr=0x%07X val=0x%07X clr=%c gl=%d loc=%d",
                 AspDataGetNamespaceNodeSymbol(entry),
                 AspDataGetTreeNodeParentIndex(entry),
                 AspDataGetTreeNodeLinksIndex(entry),
@@ -382,7 +382,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_TreeLinksNode:
-            fprintf(fp, " l=0x%7.7X r=0x%7.7X",
+            fprintf(fp, " l=0x%07X r=0x%07X",
                 AspDataGetTreeLinksNodeLeftIndex(entry),
                 AspDataGetTreeLinksNodeRightIndex(entry));
             break;
@@ -390,7 +390,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         case DataType_Parameter:
             fprintf(fp, " s=%u", AspDataGetParameterSymbol(entry));
             if (AspDataGetParameterHasDefault(entry))
-                fprintf(fp, " dflt=0x%7.7X",
+                fprintf(fp, " dflt=0x%07X",
                     AspDataGetParameterDefaultIndex(entry));
             else if (AspDataGetParameterIsTupleGroup(entry))
                 fputs(" tgrp", fp);
@@ -399,7 +399,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_Argument:
-            fprintf(fp, " val=0x%7.7X", AspDataGetArgumentValueIndex(entry));
+            fprintf(fp, " val=0x%07X", AspDataGetArgumentValueIndex(entry));
             if (AspDataGetArgumentHasName(entry))
                 fprintf(fp, " sym=%d", AspDataGetArgumentSymbol(entry));
             else if (AspDataGetArgumentIsIterableGroup(entry))
@@ -423,7 +423,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_Free:
-            fprintf(fp, " next=0x%7.7X", AspDataGetFreeNext(entry));
+            fprintf(fp, " next=0x%07X", AspDataGetFreeNext(entry));
             break;
     }
     fputc('\n', fp);

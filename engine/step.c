@@ -65,7 +65,7 @@ static AspRunResult Step(AspEngine *engine)
 {
     #ifdef ASP_DEBUG
     fprintf
-        (engine->traceFile, "@0x%7.7zX: ",
+        (engine->traceFile, "@0x%07zX: ",
          AspProgramCounter(engine));
     #endif
 
@@ -75,7 +75,7 @@ static AspRunResult Step(AspEngine *engine)
     if (opCodeResult != AspRunResult_OK)
         return opCodeResult;
     #ifdef ASP_DEBUG
-    fprintf(engine->traceFile, "0x%2.2X ", opCode);
+    fprintf(engine->traceFile, "0x%02X ", opCode);
     #endif
 
     unsigned operandSize = 0;
@@ -411,7 +411,7 @@ static AspRunResult Step(AspEngine *engine)
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "@0x%7.7X\n", codeAddressOperand);
+            fprintf(engine->traceFile, "@0x%07X\n", codeAddressOperand);
             #endif
             AspRunResult validateResult = AspValidateCodeAddress
                 (engine, codeAddressOperand);
@@ -1246,7 +1246,7 @@ static AspRunResult Step(AspEngine *engine)
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "@0x%7.7X\n", codeAddress);
+            fprintf(engine->traceFile, "@0x%07X\n", codeAddress);
             #endif
             AspRunResult validateResult = AspValidateCodeAddress
                 (engine, codeAddress);
@@ -1394,7 +1394,7 @@ static AspRunResult Step(AspEngine *engine)
                 return operandLoadResult;
             }
             #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "0x%7.7X\n", codeAddress);
+            fprintf(engine->traceFile, "0x%07X\n", codeAddress);
             #endif
             AspRunResult validateResult = AspValidateCodeAddress
                 (engine, codeAddress);
@@ -1775,7 +1775,7 @@ static AspRunResult Step(AspEngine *engine)
             }
             uint32_t codeAddress = AspDataGetCodeAddress(codeAddressEntry);
             #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "0x%7.7X\n", codeAddress);
+            fprintf(engine->traceFile, "0x%07X\n", codeAddress);
             #endif
             AspRunResult validateResult = AspValidateCodeAddress
                 (engine, codeAddress);

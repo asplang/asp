@@ -790,7 +790,7 @@ static AspDataEntry *ToString
                 else
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "@%7.7X",
+                         "@%07X",
                          AspDataGetFunctionCodeAddress(entry));
                 count += snprintf
                     (buffer + count, sizeof buffer - count,
@@ -800,7 +800,7 @@ static AspDataEntry *ToString
 
             case DataType_Module:
                 snprintf
-                    (buffer, sizeof buffer, "<mod:@%7.7X>",
+                    (buffer, sizeof buffer, "<mod:@%07X>",
                      AspDataGetModuleCodeAddress(entry));
                 break;
 
