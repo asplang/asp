@@ -74,7 +74,6 @@ struct AspEngine
     AspEngineState state;
     uint8_t headerIndex;
     AspAddCodeResult loadResult;
-    bool again;
     AspRunResult runResult;
 
     /* Version information. */
@@ -83,7 +82,7 @@ struct AspEngine
     /* Code space. */
     uint8_t *codeArea, *code;
     size_t maxCodeSize, codeEndIndex;
-    uint32_t pc;
+    uint32_t pc, instructionAddress;
 
     /* Code paging data. */
     uint8_t cachedCodePageCount, cachedCodePageIndex;
@@ -127,9 +126,10 @@ struct AspEngine
     const AspAppSpec *appSpec;
 
     /* Application function call state. */
-    bool inApp;
-    int32_t appFunctionSymbol;
-    AspDataEntry *appFunctionNamespace, *appFunctionReturnValue;
+    bool inApp, again, callFromApp, callReturning;
+    AspDataEntry *argumentList;
+    AspDataEntry *appFunction, *appFunctionNamespace, *appFunctionReturnValue;
+    int32_t nextSymbol;
 
     #ifdef ASP_DEBUG
     FILE *traceFile;

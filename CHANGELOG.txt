@@ -7,6 +7,17 @@ chronological order.
 Changes
 -------
 
+Version 1.1.3.0 (compiler 1.1.0.1, engine 1.1.3.0):
+- Engine:
+  - Added several API functions to support the ability for application
+    functions to call other functions defined within the running script.
+- Build:
+  - Merged the ENABLE_ENGINE_DEBUG and ENABLE_ASPS_DEBUG options into a single
+    ENABLE_DEBUG option since the previous two depended on each other anyway.
+- Standalone application:
+  - Improved CPU utilization by ceasing to execute script instructions while
+    the script is sleeping.
+
 Version 1.1.2.1 (compiler 1.1.0.1, engine 1.1.2.0):
 - Compiler:
   - Fixed a code generation issue with return statements enclosed inside for

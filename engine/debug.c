@@ -133,6 +133,7 @@ static TypeName gTypeNames[] =
     {DataType_CodeAddress, "caddr"},
     {DataType_StackEntry, "stkent"},
     {DataType_Frame, "frame"},
+    {DataType_AppFrame, "appframe"},
     {DataType_Element, "elem"},
     {DataType_StringFragment, "strfrag"},
     {DataType_KeyValuePair, "kvp"},
@@ -306,6 +307,15 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetFrameReturnAddress(entry),
                 AspDataGetFrameModuleIndex(entry),
                 AspDataGetFrameLocalNamespaceIndex(entry));
+            break;
+
+        case DataType_AppFrame:
+            fprintf(fp, " func=0x%7.7X locns=0x%7.7X",
+                AspDataGetAppFrameFunctionIndex(entry),
+                AspDataGetAppFrameLocalNamespaceIndex(entry));
+            if (AspDataGetAppFrameReturnValueDefined(entry))
+                fprintf(fp, " rv=0x%7.7X",
+                    AspDataGetAppFrameReturnValueIndex(entry));
             break;
 
         case DataType_Element:

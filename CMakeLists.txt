@@ -37,12 +37,9 @@ option(BUILD_TEST_TARGETS
     "Enable/disable building of tests"
     FALSE)
 
-# Debug options.
-option(ENABLE_ENGINE_DEBUG
-    "Enable/disable debug output for the engine"
-    FALSE)
-option(ENABLE_ASPS_DEBUG
-    "Enable/disable debug output for the standalone application"
+# Debug option.
+option(ENABLE_DEBUG
+    "Enable/disable debug output for the engine and standalone application"
     FALSE)
 
 # Test targets use some internal functions which are not made public when
@@ -50,12 +47,6 @@ option(ENABLE_ASPS_DEBUG
 # building the test targets.
 if(BUILD_TEST_TARGETS)
     set(BUILD_SHARED_LIBS FALSE)
-endif()
-
-# Debug output for the standalone application requires debug output for the
-# engine.
-if(${ENABLE_ASPS_DEBUG})
-    set(ENABLE_ENGINE_DEBUG TRUE)
 endif()
 
 if(WIN32)

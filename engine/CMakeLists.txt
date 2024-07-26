@@ -64,7 +64,7 @@ if(BUILD_FOR_TARGET)
         lib-iter.c
         integer.c
         integer-result.c
-        $<$<BOOL:${ENABLE_ENGINE_DEBUG}>:debug.c>
+        $<$<BOOL:${ENABLE_DEBUG}>:debug.c>
         )
 
     set_property(TARGET aspe
@@ -77,7 +77,7 @@ if(BUILD_FOR_TARGET)
     endif()
 
     target_compile_definitions(aspe PRIVATE
-        $<$<BOOL:${ENABLE_ENGINE_DEBUG}>:ASP_DEBUG>
+        $<$<BOOL:${ENABLE_DEBUG}>:ASP_DEBUG>
         $<$<BOOL:${BUILD_TEST_TARGETS}>:ASP_TEST>
         ASP_ENGINE_VERSION_MAJOR=${aspe_VERSION_MAJOR}
         ASP_ENGINE_VERSION_MINOR=${aspe_VERSION_MINOR}

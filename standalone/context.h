@@ -9,6 +9,7 @@
 
 typedef struct
 {
+    bool sleeping;
     clock_t expiry;
 } StandaloneAspContext;
 

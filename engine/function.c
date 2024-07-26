@@ -5,10 +5,12 @@
 #include "function.h"
 #include "asp-priv.h"
 #include "range.h"
+#include "stack.h"
 #include "sequence.h"
 #include "tree.h"
 #include "integer.h"
 #include "integer-result.h"
+#include "code.h"
 #include "data.h"
 
 #ifdef ASP_DEBUG
@@ -235,6 +237,221 @@ AspRunResult AspExpandDictionaryGroupArgument
     }
     if (iterationCount >= engine->cycleDetectionLimit)
         return AspRunResult_CycleDetected;
+
+    return AspRunResult_OK;
+}
+
+AspRunResult AspCallFunction
+    (AspEngine *engine, AspDataEntry *function, AspDataEntry *argumentList,
+     bool fromApp)
+{
+    /* Redirect any direct calls from the application through the CALL
+       instruction in order to keep the application's stack usage under
+       control. */
+    if (engine->inApp)
+    {
+        if (function == 0)
+        {
+            #ifdef ASP_DEBUG
+            puts("Null function entry");
+            #endif
+            return AspRunResult_InvalidAppFunction;
+        }
+        AspDataEntry *argumentListEntry = AspPush(engine, argumentList);
+        AspDataEntry *functionEntry = AspPush(engine, function);
+        if (argumentListEntry == 0 || functionEntry == 0)
+            return AspRunResult_OutOfDataMemory;
+        engine->callFromApp = true;
+        return AspRunResult_Call;
+    }
+    bool callerAgain = engine->again;
+    if (engine->callFromApp)
+    {
+        callerAgain = false;
+        engine->callFromApp = false;
+    }
+
+    AspDataEntry *ns = 0;
+    if (!callerAgain)
+    {
+        if (function == 0)
+        {
+            #ifdef ASP_DEBUG
+            puts("Unexpected null function entry");
+            #endif
+            return AspRunResult_InvalidAppFunction;
+        }
+        if (AspDataGetType(function) != DataType_Function)
+            return AspRunResult_UnexpectedType;
+
+        /* Gain access to the parameter list within the function. */
+        AspDataEntry *parameters = AspEntry
+            (engine, AspDataGetFunctionParametersIndex(function));
+        if (AspDataGetType(parameters) != DataType_ParameterList)
+            return AspRunResult_UnexpectedType;
+
+        /* Create a local namespace for the call. */
+        ns = AspAllocEntry(engine, DataType_Namespace);
+        if (ns == 0)
+            return AspRunResult_OutOfDataMemory;
+        AspRunResult loadArgumentsResult = AspLoadArguments
+            (engine, argumentList, parameters, ns);
+        if (loadArgumentsResult != AspRunResult_OK)
+            return loadArgumentsResult;
+        AspUnref(engine, argumentList);
+        if (engine->runResult != AspRunResult_OK)
+            return engine->runResult;
+
+        /* Create a new frame and push it onto the stack. */
+        AspDataEntry *frame = AspAllocEntry(engine, DataType_Frame);
+        if (frame == 0)
+            return AspRunResult_OutOfDataMemory;
+        AspDataSetFrameReturnAddress
+            (frame, fromApp ? engine->instructionAddress : engine->pc);
+        AspRef(engine, engine->module);
+        AspDataSetFrameModuleIndex
+            (frame, AspIndex(engine, engine->module));
+        AspDataSetFrameLocalNamespaceIndex
+            (frame, AspIndex(engine, engine->localNamespace));
+        AspDataEntry *newTop = AspPush(engine, frame);
+        if (newTop == 0)
+            return AspRunResult_OutOfDataMemory;
+        if (fromApp)
+        {
+            AspDataEntry *appFrame = AspAllocEntry(engine, DataType_AppFrame);
+            if (appFrame == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspDataSetAppFrameFunctionIndex
+                (appFrame, AspIndex(engine, engine->appFunction));
+            AspDataSetAppFrameReturnValueDefined
+                (appFrame, engine->appFunctionReturnValue != 0);
+            AspDataSetAppFrameReturnValueIndex
+                (appFrame, AspIndex(engine, engine->appFunctionReturnValue));
+            AspDataSetAppFrameLocalNamespaceIndex
+                (appFrame, AspIndex(engine, engine->appFunctionNamespace));
+            newTop = AspPush(engine, appFrame);
+            if (newTop == 0)
+                return AspRunResult_OutOfDataMemory;
+        }
+
+        /* Switch to the new function context. */
+        if (AspDataGetFunctionIsApp(function))
+        {
+            /* Identify the application function's context, keeping access to
+               the last script caller's context as well. */
+            engine->appFunction = function;
+            engine->appFunctionNamespace = ns;
+            engine->appFunctionReturnValue = 0;
+        }
+        else
+        {
+            /* Replace the current module and global namespace with those of
+               the function. */
+            AspDataEntry *functionModule = AspValueEntry
+                (engine, AspDataGetFunctionModuleIndex(function));
+            engine->module = functionModule;
+            engine->globalNamespace = AspEntry
+                (engine, AspDataGetModuleNamespaceIndex(functionModule));
+
+            /* Replace the current local namespace with function's new
+               namespace. */
+            engine->localNamespace = ns;
+
+            engine->appFunction = 0;
+            engine->appFunctionNamespace = 0;
+            engine->appFunctionReturnValue = 0;
+        }
+    }
+
+    /* Call the function. */
+    if (callerAgain || AspDataGetFunctionIsApp(function))
+    {
+        /* Call the application function. */
+        int32_t appFunctionSymbol = AspDataGetFunctionSymbol
+            (engine->appFunction);
+        engine->nextSymbol = -1;
+        engine->inApp = true;
+        AspRunResult callResult = engine->appSpec->dispatch
+            (engine,
+             appFunctionSymbol, engine->appFunctionNamespace,
+             &engine->appFunctionReturnValue);
+        engine->inApp = false;
+        if (callResult != AspRunResult_OK &&
+            callResult != AspRunResult_Again &&
+            callResult != AspRunResult_Call)
+        {
+            if (callResult == AspRunResult_Complete)
+            {
+                #ifdef ASP_DEBUG
+                puts("Application returned AspRunResult_Complete");
+                #endif
+                callResult = AspRunResult_InvalidAppFunction;
+            }
+            return callResult;
+        }
+
+        /* Ensure that the application did not leave a called function's return
+           value unfetched or create an argument list that will not be used. */
+        if (engine->callReturning ||
+            engine->argumentList != 0 && callResult != AspRunResult_Call)
+        {
+            #ifdef ASP_DEBUG
+            if (engine->callReturning)
+                puts("Return value not consumed");
+            else
+                puts("Unused function arguments");
+            #endif
+            return AspRunResult_InvalidAppFunction;
+        }
+
+        /* Cause this instruction to execute again if applicable. */
+        if (callResult != AspRunResult_OK)
+        {
+            engine->pc = engine->instructionAddress;
+            engine->again = callResult == AspRunResult_Again;
+            return AspRunResult_OK;
+        }
+
+        /* We're now done with the local namespace. */
+        AspUnref(engine, engine->appFunctionNamespace);
+        if (engine->runResult != AspRunResult_OK)
+            return engine->runResult;
+
+        /* Save any return value generated by the application. */
+        AspDataEntry *returnValue = engine->appFunctionReturnValue;
+
+        /* Restore the caller's context. */
+        AspRunResult restoreFrameResult = AspReturnToCaller(engine);
+        if (restoreFrameResult != AspRunResult_OK)
+            return restoreFrameResult;
+
+        /* Ensure there's a return value and push it onto the stack. */
+        if (returnValue == 0)
+        {
+            returnValue = AspAllocEntry(engine, DataType_None);
+            if (returnValue == 0)
+                return AspRunResult_OutOfDataMemory;
+        }
+        AspDataEntry *stackEntry = AspPush(engine, returnValue);
+        if (stackEntry == 0)
+            return AspRunResult_OutOfDataMemory;
+        AspUnref(engine, returnValue);
+        if (engine->runResult != AspRunResult_OK)
+            return engine->runResult;
+    }
+    else
+    {
+        /* Obtain the code address of the script-defined function. */
+        uint32_t codeAddress = AspDataGetFunctionCodeAddress(function);
+        AspRunResult validateResult = AspValidateCodeAddress
+            (engine, codeAddress);
+        if (validateResult != AspRunResult_OK)
+            return validateResult;
+
+        /* Transfer control to the function's code. */
+        engine->again = false;
+        engine->pc = codeAddress;
+    }
 
     return AspRunResult_OK;
 }
@@ -539,6 +756,66 @@ AspRunResult AspLoadArguments
         #endif
         return AspRunResult_MalformedFunctionCall;
     }
+
+    return AspRunResult_OK;
+}
+
+AspRunResult AspReturnToCaller(AspEngine *engine)
+{
+    /* Access the frame on top of the stack. */
+    AspDataEntry *frame = AspTopValue(engine);
+    if (frame == 0)
+        return AspRunResult_StackUnderflow;
+    if (AspDataGetType(frame) == DataType_AppFrame)
+    {
+        /* Restore context from the application function frame. */
+        engine->appFunction = AspEntry
+            (engine, AspDataGetAppFrameFunctionIndex(frame));
+        engine->appFunctionNamespace = AspEntry
+            (engine, AspDataGetAppFrameLocalNamespaceIndex(frame));
+        engine->appFunctionReturnValue =
+            !AspDataGetAppFrameReturnValueDefined(frame) ? 0 :
+            AspEntry(engine, AspDataGetAppFrameReturnValueIndex(frame));
+        engine->again = true;
+        engine->callReturning = true;
+
+        /* Pop the frame off the stack. */
+        AspPop(engine);
+        AspUnref(engine, frame);
+        if (engine->runResult != AspRunResult_OK)
+            return engine->runResult;
+
+        /* Access the frame on top of the stack. */
+        frame = AspTopValue(engine);
+        if (frame == 0)
+            return AspRunResult_StackUnderflow;
+    }
+    else
+    {
+        engine->again = false;
+        engine->appFunction = 0;
+        engine->appFunctionNamespace = 0;
+        engine->appFunctionReturnValue = 0;
+    }
+    if (AspDataGetType(frame) != DataType_Frame)
+        return AspRunResult_UnexpectedType;
+
+    /* Restore context from the standard frame. */
+    engine->localNamespace = AspEntry
+        (engine, AspDataGetFrameLocalNamespaceIndex(frame));
+    engine->module = AspEntry
+        (engine, AspDataGetFrameModuleIndex(frame));
+    engine->globalNamespace = AspValueEntry
+        (engine, AspDataGetModuleNamespaceIndex(engine->module));
+
+    /* Return control back to the caller. */
+    engine->pc = AspDataGetFrameReturnAddress(frame);
+
+    /* Pop the frame off the stack. */
+    AspPop(engine);
+    AspUnref(engine, frame);
+    if (engine->runResult != AspRunResult_OK)
+        return engine->runResult;
 
     return AspRunResult_OK;
 }

@@ -62,6 +62,7 @@ typedef enum
     AspRunResult_OutOfDataMemory = 0x20,
     AspRunResult_Again = 0xFA,
     AspRunResult_Abort = 0xFB,
+    AspRunResult_Call = 0xFC,
     AspRunResult_InternalError = 0xFE,
     AspRunResult_NotImplemented = 0xFF,
     AspRunResult_Application = 0x100,
@@ -224,6 +225,21 @@ ASP_API bool AspDictionaryInsert
      AspDataEntry *key, AspDataEntry *value, bool take);
 ASP_API bool AspDictionaryErase
     (AspEngine *, AspDataEntry *dictionary, AspDataEntry *key);
+ASP_API bool AspAddPositionalArgument
+    (AspEngine *, AspDataEntry *value, bool take);
+ASP_API bool AspAddNamedArgument
+    (AspEngine *, int32_t symbol, AspDataEntry *value, bool take);
+ASP_API bool AspAddIterableGroupArgument
+    (AspEngine *, AspDataEntry *value, bool take);
+ASP_API bool AspAddDictionaryGroupArgument
+    (AspEngine *, AspDataEntry *value, bool take);
+ASP_API void AspClearFunctionArguments(AspEngine *);
+ASP_API AspRunResult AspCall(AspEngine *, AspDataEntry *function);
+ASP_API AspRunResult AspReturnValue(AspEngine *, AspDataEntry **);
+ASP_API int32_t AspNextSymbol(AspEngine *);
+ASP_API AspDataEntry *AspLoadLocal(AspEngine *, int32_t symbol);
+ASP_API AspRunResult AspStoreLocal
+    (AspEngine *, int32_t symbol, AspDataEntry *value, bool take);
 ASP_API void AspRef(AspEngine *, AspDataEntry *);
 ASP_API void AspUnref(AspEngine *, AspDataEntry *);
 ASP_API AspDataEntry *AspArguments(AspEngine *);

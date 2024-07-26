@@ -18,14 +18,19 @@ extern "C" AspRunResult asp_sleep
 {
     auto context = reinterpret_cast<StandaloneAspContext *>
         (AspContext(engine));
+
+    clock_t ticks = clock();
+
     if (!AspAgain(engine))
     {
         double secValue;
         if (!AspFloatValue(sec, &secValue))
             return AspRunResult_UnexpectedType;
         context->expiry =
-            clock() + static_cast<clock_t>(round(CLOCKS_PER_SEC * secValue));
+            ticks + static_cast<clock_t>(round(CLOCKS_PER_SEC * secValue));
+        context->sleeping = true;
+        return AspRunResult_Again;
     }
 
-    return clock() < context->expiry ? AspRunResult_Again : AspRunResult_OK;
+    return ticks < context->expiry ? AspRunResult_Again : AspRunResult_OK;
 }

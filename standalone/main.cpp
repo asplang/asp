@@ -6,6 +6,7 @@
 #include "asp-info.h"
 #include "standalone.h"
 #include "context.h"
+#include <ctime>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -497,6 +498,7 @@ int main(int argc, char **argv)
     }
 
     // Run the code.
+    context.sleeping = false;
     AspRunResult runResult = AspRunResult_OK;
     unsigned stepCount = 0;
     #ifdef ASP_DEBUG
@@ -513,6 +515,11 @@ int main(int argc, char **argv)
          ; stepCount++)
     {
         runResult = AspStep(&engine);
+        if (context.sleeping)
+        {
+            while (clock() < context.expiry) ;
+            context.sleeping = false;
+        }
     }
 
     // Close the executable if not already done (e.g., in code paging mode).
