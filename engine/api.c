@@ -463,7 +463,7 @@ static AspDataEntry *ToString
             {
                 int32_t i;
                 AspIntegerValue(entry, &i);
-                snprintf(buffer, sizeof buffer, "%d", i);
+                snprintf(buffer, sizeof buffer, "%d", (int)i);
                 break;
             }
 
