@@ -1065,6 +1065,9 @@ static AspOperationResult PerformFormatBinaryOperation
                                         AspRunResult_StringFormattingError;
                                     return result;
                                 }
+                                #if INT_MAX < INT32_MAX
+                                #error int must be at least 32 bits
+                                #endif
                                 value = (int)i32;
                             }
                             else if (isCharacter)
