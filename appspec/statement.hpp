@@ -112,7 +112,7 @@ class ParameterList : public NonTerminal
         std::list<Parameter *> parameters;
 };
 
-struct FunctionDefinition : public NonTerminal
+class FunctionDefinition : public NonTerminal
 {
     public:
 
@@ -146,5 +146,25 @@ struct FunctionDefinition : public NonTerminal
         ParameterList *parameterList;
 };
 
+class NameList : public NonTerminal
+{
+    public:
+
+        void Add(Token &name);
+
+        typedef std::list<std::string>::const_iterator ConstNameIterator;
+        ConstNameIterator NamesBegin() const
+        {
+            return names.begin();
+        }
+        ConstNameIterator NamesEnd() const
+        {
+            return names.end();
+        }
+
+    private:
+
+        std::list<std::string> names;
+};
 
 #endif

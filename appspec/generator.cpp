@@ -241,6 +241,31 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (DeleteDefinition, NonTerminal *, NameList *, nameList)
+{
+    for (auto iter = nameList->NamesBegin();
+         iter != nameList->NamesEnd();
+         iter++)
+    {
+        const auto &name = *iter;
+
+        auto findIter = definitions.find(name);
+        if (findIter == definitions.end())
+        {
+            ostringstream oss;
+            oss << "Cannot delete '" << name << '\'' << "; not found";
+            ReportError(oss.str());
+            continue;
+        }
+
+        delete findIter->second;
+        definitions.erase(findIter);
+    }
+
+    return nullptr;
+}
+
+DEFINE_ACTION
     (MakeEmptyParameterList, ParameterList *, int, _)
 {
     return new ParameterList;
@@ -285,6 +310,20 @@ DEFINE_ACTION
     auto result = new Parameter(*nameToken, Parameter::Type::DictionaryGroup);
     delete nameToken;
     return result;
+}
+
+DEFINE_ACTION
+    (MakeEmptyNameList, NameList *, int, _)
+{
+    return new NameList;
+}
+
+DEFINE_ACTION
+    (AddNameToList, NameList *, NameList *, nameList, Token *, nameToken)
+{
+    nameList->Add(*nameToken);
+    delete nameToken;
+    return nameList;
 }
 
 DEFINE_ACTION

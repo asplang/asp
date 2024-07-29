@@ -75,23 +75,28 @@ statement(result) ::= INCLUDE NAME(includeName) STATEMENT_END.
 }
 
 statement(result) ::=
-    NAME(nameToken) ASSIGN literal(value).
+    NAME(nameToken) ASSIGN literal(value) STATEMENT_END.
 {
     result = ACTION(MakeAssignment, nameToken, value);
 }
 
 statement(result) ::=
     DEF NAME(nameToken) LEFT_PAREN parameters(parameterList) RIGHT_PAREN
-    ASSIGN NAME(internalName).
+    ASSIGN NAME(internalName) STATEMENT_END.
 {
     result = ACTION
         (MakeFunction, nameToken, parameterList,
          internalName);
 }
 
-statement(result) ::= NAME(nameToken).
+statement(result) ::= NAME(nameToken) STATEMENT_END.
 {
     result = ACTION(MakeAssignment, nameToken, 0);
+}
+
+statement(result) ::= DEL names(nameList) STATEMENT_END.
+{
+    result = ACTION(DeleteDefinition, nameList);
 }
 
 %type parameters {ParameterList *}
@@ -136,6 +141,21 @@ parameter(result) ::= ASTERISK NAME(nameToken).
 parameter(result) ::= DOUBLE_ASTERISK NAME(nameToken).
 {
     result = ACTION(MakeDictionaryGroupParameter, nameToken);
+}
+
+%type names {NameList *}
+
+names(result) ::= names(nameList) COMMA NAME(name).
+{
+    result = ACTION(AddNameToList, nameList, name);
+}
+
+names(result) ::= NAME(name).
+{
+    result = ACTION
+        (AddNameToList,
+         ACTION(MakeEmptyNameList, 0),
+         name);
 }
 
 %type literal {Literal *}

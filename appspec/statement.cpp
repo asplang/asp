@@ -70,3 +70,10 @@ FunctionDefinition::~FunctionDefinition()
 {
     delete parameterList;
 }
+
+void NameList::Add(Token &nameToken)
+{
+    if (names.empty())
+        (SourceElement &)*this = nameToken;
+    names.push_back(nameToken.s);
+}

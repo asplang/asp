@@ -35,6 +35,7 @@ DECLARE_TYPE(Literal)
 DECLARE_TYPE(Statement)
 DECLARE_TYPE(ParameterList)
 DECLARE_TYPE(Parameter)
+DECLARE_TYPE(NameList)
 
 #ifndef __cplusplus
 DECLARE_TYPE(Generator)
@@ -79,6 +80,8 @@ class Generator
         (MakeAssignment, NonTerminal *, Token *, Literal *)
     DECLARE_METHOD
         (MakeFunction, NonTerminal *, Token *, ParameterList *, Token *)
+    DECLARE_METHOD
+        (DeleteDefinition, NonTerminal *, NameList *)
 
     /* Parameters. */
     DECLARE_METHOD
@@ -94,6 +97,12 @@ class Generator
         (MakeTupleGroupParameter, Parameter *, Token *)
     DECLARE_METHOD
         (MakeDictionaryGroupParameter, Parameter *, Token *)
+
+    /* Names. */
+    DECLARE_METHOD
+        (MakeEmptyNameList, NameList *, int)
+    DECLARE_METHOD
+        (AddNameToList, NameList *, NameList *, Token *)
 
     /* Literals. */
     DECLARE_METHOD
