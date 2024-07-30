@@ -54,8 +54,12 @@ AspRunResult AspStep(AspEngine *engine)
         AspRunResult stepResult = Step(engine);
         if (engine->runResult == AspRunResult_OK)
             engine->runResult = stepResult;
-        if (engine->runResult != AspRunResult_OK)
+        if (engine->runResult != AspRunResult_OK &&
+            engine->state != AspEngineState_Ended)
+        {
+            engine->pc = engine->instructionAddress;
             engine->state = AspEngineState_RunError;
+        }
     }
 
     return engine->runResult;
