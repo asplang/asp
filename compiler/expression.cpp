@@ -630,6 +630,14 @@ Expression *FoldBinaryExpression
         case TOKEN_IS_NOT:
             return nullptr;
 
+        case TOKEN_ORDER:
+            return
+                leftConstExpression == nullptr ||
+                rightConstExpression == nullptr ?
+                nullptr :
+                FoldObjectOrder
+                    (leftConstExpression, rightConstExpression);
+
         case TOKEN_BAR:
         case TOKEN_CARET:
         case TOKEN_AMPERSAND:
@@ -779,14 +787,14 @@ int ConstantExpression::NumericCompare(const ConstantExpression &right) const
         leftInt = b ? 1 : 0;
     else if (type == Type::Integer)
         leftInt = i;
-    else
+    else if (type != Type::Float)
         throw string
             ("Internal error: Invalid type in numeric comparison expression");
     if (right.type == Type::Boolean)
         rightInt = right.b ? 1 : 0;
     else if (right.type == Type::Integer)
         rightInt = right.i;
-    else
+    else if (right.type != Type::Float)
         throw string
             ("Internal error: Invalid type in numeric comparison expression");
     Type resultType = Type::Integer;
@@ -794,14 +802,10 @@ int ConstantExpression::NumericCompare(const ConstantExpression &right) const
     if (type == Type::Float || right.type == Type::Float)
     {
         resultType = Type::Float;
-        if (type != Type::Float)
-            leftFloat = static_cast<double>(leftInt);
-        else
-            leftFloat = f;
-        if (right.type != Type::Float)
-            rightFloat = static_cast<double>(rightInt);
-        else
-            rightFloat = right.f;
+        leftFloat = type == Type::Float ?
+            f : static_cast<double>(leftInt);
+        rightFloat = right.type == Type::Float ?
+            right.f : static_cast<double>(rightInt);
     }
 
     return
@@ -956,6 +960,16 @@ Expression *FoldGreaterOrEqual
     return new ConstantExpression(Token(leftExpression->sourceLocation,
         leftExpression->Compare(*rightExpression) >= 0 ?
         TOKEN_TRUE : TOKEN_FALSE));
+}
+
+Expression *FoldObjectOrder
+    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+{
+    return new ConstantExpression(Token(leftExpression->sourceLocation,
+        leftExpression->type != rightExpression->type ?
+        (int)(leftExpression->type) < (int)(rightExpression->type) ? -1 : 1 :
+        (int32_t)leftExpression->Compare(*rightExpression),
+        false));
 }
 
 Expression *FoldBitwiseOperation

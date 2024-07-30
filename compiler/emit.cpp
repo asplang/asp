@@ -785,6 +785,7 @@ void BinaryExpression::Emit
         {TOKEN_IN, OpCode_IN},
         {TOKEN_IS_NOT, OpCode_NIS},
         {TOKEN_IS, OpCode_IS},
+        {TOKEN_ORDER, OpCode_ORDER},
     };
     auto iter = opCodes.find(operatorTokenType);
     if (iter == opCodes.end())

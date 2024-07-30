@@ -72,6 +72,7 @@ typedef enum OpCode
     OpCode_IN = 0x67, /* in */
     OpCode_NIS = 0x68, /* is not */
     OpCode_IS = 0x69, /* is */
+    OpCode_ORDER = 0x6C, /* object order */
 
     /* Load operations. */
     OpCode_LD1 = 0x81, /* load variable's value with 1-byte symbol */

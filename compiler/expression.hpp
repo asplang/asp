@@ -475,6 +475,8 @@ class ConstantExpression : public Expression
             (ConstantExpression *, ConstantExpression *);
         friend Expression *FoldGreaterOrEqual
             (ConstantExpression *, ConstantExpression *);
+        friend Expression *FoldObjectOrder
+            (ConstantExpression *, ConstantExpression *);
         friend Expression *FoldBitwiseOperation
             (int operatorTypeType, ConstantExpression *, ConstantExpression *);
         friend Expression *FoldStringConcatenationOperation

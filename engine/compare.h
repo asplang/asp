@@ -18,6 +18,7 @@ typedef enum
     AspCompareType_Equality,
     AspCompareType_Relational,
     AspCompareType_Key,
+    AspCompareType_Order,
 } AspCompareType;
 
 AspRunResult AspCompare
