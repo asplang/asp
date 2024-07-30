@@ -7,6 +7,17 @@ chronological order.
 Changes
 -------
 
+Version 1.1.4.0 (compiler 1.1.0.1, engine 1.1.4.0):
+- Engine:
+  - Corrected the program counter reported when a script ends in error.
+    Previously, the next instruction was always reported, regardless of whether
+    an error occurred. Now, if an error is encountered, the address of the
+    offending instruction is reported by AspProgramCounter instead of the next
+    instruction. This results in more accurately identifying the location of
+    the matching statement within the source file.
+- Application specification generator:
+  - Added the del statement for removing previous definitions.
+
 Version 1.1.3.0 (compiler 1.1.0.1, engine 1.1.3.0):
 - Engine:
   - Added several API functions to support the ability for application
