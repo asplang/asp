@@ -219,8 +219,9 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHY2:
             operandSize++;
         case OpCode_PUSHY1:
-            operandSize++;
         {
+            operandSize++;
+
             #ifdef ASP_DEBUG
             fputs("PUSHY ", engine->traceFile);
             #endif
@@ -480,18 +481,44 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
+        case OpCode_POP1:
+            operandSize++;
         case OpCode_POP:
         {
             #ifdef ASP_DEBUG
-            fputs("POP\n", engine->traceFile);
+            fputs("POP", engine->traceFile);
             #endif
 
-            AspDataEntry *operand = AspTopValue(engine);
-            if (operand == 0)
-                return AspRunResult_StackUnderflow;
-            if (!AspIsObject(operand))
-                return AspRunResult_UnexpectedType;
-            AspPop(engine);
+            uint32_t count = 1;
+            if (operandSize > 0)
+            {
+                /* Fetch the count from the operand. */
+                AspRunResult operandLoadResult = LoadUnsignedOperand
+                    (engine, operandSize, &count);
+                if (operandLoadResult != AspRunResult_OK)
+                {
+                    #ifdef ASP_DEBUG
+                    fputs(" ?\n", engine->traceFile);
+                    #endif
+                    return operandLoadResult;
+                }
+                #ifdef ASP_DEBUG
+                fprintf(engine->traceFile, " %d", count);
+                #endif
+            }
+            #ifdef ASP_DEBUG
+            fputc('\n', engine->traceFile);
+            #endif
+
+            while (count--)
+            {
+                AspDataEntry *operand = AspTopValue(engine);
+                if (operand == 0)
+                    return AspRunResult_StackUnderflow;
+                if (!AspIsObject(operand))
+                    return AspRunResult_UnexpectedType;
+                AspPop(engine);
+            }
 
             break;
         }

@@ -10,6 +10,10 @@ Changes
 Version 1.2.0.0 (compiler 1.2.0.0, engine 1.2.0.0):
 - Compiler and engine:
   - Added a new object order operator, <=>.
+  - Added a new flavour of the POP instruction that accepts a number of entries
+    to pop. This is used when emitting code for a return statement within
+    multiple nested for loops instead of emitting multiple single POP
+    instructions.
 
 Version 1.1.4.0 (compiler 1.1.0.1, engine 1.1.4.0):
 - Engine:

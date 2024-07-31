@@ -39,7 +39,8 @@ typedef enum OpCode
     OpCode_PUSHM1 = 0x1D, /* 1-byte module symbol */
     OpCode_PUSHM2 = 0x1E, /* 2-byte module symbol */
     OpCode_PUSHM4 = 0x1F, /* 4-byte module symbol */
-    OpCode_POP = 0x20,
+    OpCode_POP = 0x20, /* pop single entry */
+    OpCode_POP1 = 0x21, /* pop N entries with 1-byte count */
 
     /* Unary operations. */
     OpCode_LNOT = 0x40, /* logical not */

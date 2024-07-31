@@ -262,11 +262,22 @@ class PushModuleInstruction : public Instruction
         std::int32_t symbol;
 };
 
-class PopInstruction : public SimpleInstruction
+class PopInstruction : public Instruction
 {
     public:
 
-        PopInstruction(const std::string &comment = "");
+        PopInstruction
+            (std::uint8_t count = 1, const std::string &comment = "");
+
+    protected:
+
+        virtual unsigned OperandsSize() const;
+        virtual void WriteOperands(std::ostream &) const;
+        virtual void PrintCode(std::ostream &) const;
+
+    private:
+
+        std::int8_t count;
 };
 
 class UnaryInstruction : public SimpleInstruction

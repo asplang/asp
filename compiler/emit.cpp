@@ -24,7 +24,7 @@ void ExpressionStatement::Emit(Executable &executable) const
 {
     expression->Emit(executable);
     executable.Insert
-        (new PopInstruction("Pop unused value"),
+        (new PopInstruction(1, "Pop unused value"),
          sourceLocation);
 }
 
@@ -321,14 +321,24 @@ void ReturnStatement::Emit(Executable &executable) const
     if (!isLocal)
         ThrowError("return outside function");
 
-    // Emit pop instructions for each applicable enclosing control statement.
+    // Emit pop instructions to pop stack entries for each applicable enclosing
+    // control statement.
+    uint32_t popCount = 0;
     for (auto parentStatement = Parent()->Parent();
          parentStatement != parentDef;
          parentStatement = parentStatement->Parent()->Parent())
     {
         for (unsigned i = 0; i < parentStatement->StackUsage(); i++)
-            executable.Insert(new PopInstruction, sourceLocation);
+            popCount++;
     }
+    const uint32_t maxPopCount = 0xFF;
+    while (popCount >= maxPopCount)
+    {
+        executable.Insert(new PopInstruction(maxPopCount), sourceLocation);
+        popCount -= maxPopCount;
+    }
+    if (popCount > 0)
+        executable.Insert(new PopInstruction(popCount), sourceLocation);
 
     if (expression != nullptr)
         expression->Emit(executable);

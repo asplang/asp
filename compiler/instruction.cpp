@@ -453,9 +453,28 @@ void PushModuleInstruction::PrintCode(ostream &os) const
 }
 
 PopInstruction::PopInstruction
-    (const string &comment) :
-    SimpleInstruction(OpCode_POP, comment)
+    (uint8_t count, const string &comment) :
+    Instruction(count == 1 ? OpCode_POP : OpCode_POP1, comment),
+    count(count)
 {
+}
+
+unsigned PopInstruction::OperandsSize() const
+{
+    return count == 1 ? 0 : 1;
+}
+
+void PopInstruction::WriteOperands(ostream &os) const
+{
+    if (count != 1)
+        WriteField(os, count, 1);
+}
+
+void PopInstruction::PrintCode(ostream &os) const
+{
+    os << "POP";
+    if (count != 1)
+        os << ' ' << (unsigned)count;
 }
 
 UnaryInstruction::UnaryInstruction
