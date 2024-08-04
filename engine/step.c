@@ -2179,15 +2179,39 @@ static AspRunResult Step(AspEngine *engine)
                     }
                     else
                     {
-                        /* Ensure the index is an integer. */
-                        if (!AspIsIntegral(key))
-                            return AspRunResult_UnexpectedType;
-                        int32_t index;
-                        AspIntegerValue(key, &index);
+                        if (AspIsIntegral(key))
+                        {
+                            int32_t index;
+                            AspIntegerValue(key, &index);
 
-                        /* Insert the value at the given index. */
-                        insertResult = AspSequenceInsertByIndex
-                            (engine, container, index, value);
+                            /* Insert the value at the given index. */
+                            insertResult = AspSequenceInsertByIndex
+                                (engine, container, index, value);
+                        }
+                        else if (AspIsIterator(key))
+                        {
+                            /* Ensure the iterator belongs to the container. */
+                            AspDataEntry *iterable = AspEntry
+                                (engine, AspDataGetIteratorIterableIndex(key));
+                            if (iterable != container)
+                                return AspRunResult_ValueOutOfRange;
+
+                            /* Determine where to insert the value. */
+                            AspDataEntry *element = AspEntry
+                                (engine, AspDataGetIteratorMemberIndex(key));
+                            if (AspIsReverseIterator(key))
+                            {
+                                AspSequenceResult nextResult = AspSequenceNext
+                                    (engine, container, element, true);
+                                element = nextResult.element;
+                            }
+
+                            /* Insert the value at the determined position. */
+                            insertResult = AspSequenceInsert
+                                (engine, container, element, value);
+                        }
+                        else
+                            return AspRunResult_UnexpectedType;
                     }
 
                     if (insertResult.result != AspRunResult_OK)
@@ -2540,7 +2564,10 @@ static AspRunResult Step(AspEngine *engine)
                                 AspDataEntry *value =
                                     opCode == OpCode_IDX ?
                                     nextResult.value : nextResult.element;
-                                AspSequenceAppend(engine, result, value);
+                                AspSequenceResult appendResult =
+                                    AspSequenceAppend(engine, result, value);
+                                if (appendResult.result != AspRunResult_OK)
+                                    return appendResult.result;
 
                                 /* Prepare to identify the next element. */
                                 select = stepValue;

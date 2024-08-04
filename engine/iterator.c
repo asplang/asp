@@ -306,16 +306,10 @@ AspRunResult AspIteratorNext
 
             if (member != 0 && iterableType == DataType_String)
             {
-                if (reversed)
-                {
-                    AspDataSetIteratorStringIndex
-                        (iterator,
-                         AspDataGetStringFragmentSize(nextResult.value) - 1U);
-                }
-                else
-                {
-                    AspDataSetIteratorStringIndex(iterator, 0);
-                }
+                AspDataSetIteratorStringIndex
+                    (iterator,
+                     !reversed ? 0 :
+                     AspDataGetStringFragmentSize(nextResult.value) - 1U);
             }
 
             break;

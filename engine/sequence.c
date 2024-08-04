@@ -5,9 +5,6 @@
 #include "sequence.h"
 #include "data.h"
 
-static AspSequenceResult AspSequenceInsert
-    (AspEngine *, AspDataEntry *sequence,
-     AspDataEntry *element, AspDataEntry *value);
 static bool IsSequenceType(DataType);
 static bool IsElementType(DataType);
 
@@ -81,7 +78,7 @@ AspSequenceResult AspSequenceInsertByIndex
     return AspSequenceInsert(engine, sequence, result.element, value);
 }
 
-static AspSequenceResult AspSequenceInsert
+AspSequenceResult AspSequenceInsert
     (AspEngine *engine, AspDataEntry *sequence,
      AspDataEntry *element, AspDataEntry *value)
 {
@@ -90,10 +87,14 @@ static AspSequenceResult AspSequenceInsert
     AspAssert
         (engine, sequence != 0 && IsSequenceType(AspDataGetType(sequence)));
     AspAssert
-        (engine, element != 0 && IsElementType(AspDataGetType(element)));
+        (engine, element == 0 || IsElementType(AspDataGetType(element)));
     result.result = AspAssert(engine, value != 0);
     if (result.result != AspRunResult_OK)
         return result;
+
+    /* Append if no element is given. */
+    if (element == 0)
+        return AspSequenceAppend(engine, sequence, value);
 
     /* Allocate an element entry and link it to the given value entry. */
     result.element = AspAllocEntry(engine, DataType_Element);
