@@ -7,6 +7,11 @@ chronological order.
 Changes
 -------
 
+Version 1.1.4.1 (compiler 1.1.0.1, engine 1.1.4.1):
+- Engine:
+  - Fixed a data memory area leak that occurs when inserting into a list using
+    the index/value pair syntax.
+
 Version 1.1.4.0 (compiler 1.1.0.1, engine 1.1.4.0):
 - Engine:
   - Corrected the program counter reported when a script ends in error.

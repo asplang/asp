@@ -2160,6 +2160,8 @@ static AspRunResult Step(AspEngine *engine)
                         /* Insert the value at the given index. */
                         insertResult = AspSequenceInsertByIndex
                             (engine, container, index, value);
+
+                        AspUnref(engine, item);
                     }
 
                     if (insertResult.result != AspRunResult_OK)
