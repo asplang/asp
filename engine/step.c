@@ -2122,6 +2122,19 @@ static AspRunResult Step(AspEngine *engine)
                     value = AspValueEntry
                         (engine, AspDataGetKeyValuePairValueIndex(item));
                     break;
+
+                case DataType_ForwardIterator:
+                case DataType_ReverseIterator:
+                    if (opCode == OpCode_BLD || !AspIsObject(item))
+                        return AspRunResult_UnexpectedType;
+                    key = container;
+                    container = AspValueEntry
+                        (engine, AspDataGetIteratorIterableIndex(container));
+                    containerType = AspDataGetType(container);
+                    if (containerType != DataType_List)
+                        return AspRunResult_UnexpectedType;
+                    value = item;
+                    break;
             }
 
             /* Add the item into the container. */
@@ -2212,6 +2225,9 @@ static AspRunResult Step(AspEngine *engine)
                         }
                         else
                             return AspRunResult_UnexpectedType;
+
+                        if (itemType == DataType_KeyValuePair)
+                            AspUnref(engine, item);
                     }
 
                     if (insertResult.result != AspRunResult_OK)
