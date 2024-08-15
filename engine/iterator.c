@@ -139,6 +139,16 @@ AspIteratorResult AspIteratorCreate
             break;
         }
 
+        case DataType_Ellipsis:
+        case DataType_Module:
+            iterable =
+                iterableType == DataType_Module ?
+                AspValueEntry
+                    (engine, AspDataGetModuleNamespaceIndex(iterable)) :
+                engine->localNamespace;
+
+            /* Fall through... */
+
         case DataType_Set:
         case DataType_Dictionary:
         {
@@ -315,12 +325,23 @@ AspRunResult AspIteratorNext
             break;
         }
 
+        case DataType_Ellipsis:
+        case DataType_Module:
+            iterable =
+                iterableType == DataType_Module ?
+                AspValueEntry
+                    (engine, AspDataGetModuleNamespaceIndex(iterable)) :
+                engine->localNamespace;
+
+            /* Fall through... */
+
         case DataType_Set:
         case DataType_Dictionary:
         {
             uint8_t memberType = AspDataGetType(member);
             if (memberType != DataType_SetNode &&
-                memberType != DataType_DictionaryNode)
+                memberType != DataType_DictionaryNode &&
+                memberType != DataType_NamespaceNode)
                 return AspRunResult_UnexpectedType;
             AspTreeResult nextResult = AspTreeNext
                 (engine, iterable, member, !reversed);
@@ -364,8 +385,9 @@ AspIteratorResult AspIteratorDereference
     }
 
     /* Dereference the iterator, creating a new value object. */
+    uint8_t iterableType = AspDataGetType(iterable);
     AspDataEntry *value = 0;
-    switch (AspDataGetType(iterable))
+    switch (iterableType)
     {
         default:
             result.result = AspRunResult_UnexpectedType;
@@ -444,10 +466,35 @@ AspIteratorResult AspIteratorDereference
             AspRef(engine, value);
             break;
 
+        case DataType_Ellipsis:
+        case DataType_Module:
+            iterable =
+                iterableType == DataType_Module ?
+                AspValueEntry
+                    (engine, AspDataGetModuleNamespaceIndex(iterable)) :
+                engine->localNamespace;
+
+            /* Fall through... */
+
         case DataType_Dictionary:
         {
-            AspDataEntry *key = AspValueEntry
-                (engine, AspDataGetTreeNodeKeyIndex(member));
+            AspDataEntry *key;
+            if (AspDataGetType(iterable) == DataType_Namespace)
+            {
+                int32_t symbol = AspDataGetNamespaceNodeSymbol(member);
+                key = AspAllocEntry(engine, DataType_Symbol);
+                if (key == 0)
+                {
+                    result.result = AspRunResult_OutOfDataMemory;
+                    break;
+                }
+                AspDataSetSymbol(key, symbol);
+            }
+            else
+            {
+                key = AspValueEntry
+                    (engine, AspDataGetTreeNodeKeyIndex(member));
+            }
             AspDataEntry *entryValue = AspValueEntry
                 (engine, AspDataGetTreeNodeValueIndex(member));
 
@@ -461,6 +508,8 @@ AspIteratorResult AspIteratorDereference
 
             AspSequenceResult keyAppendResult = AspSequenceAppend
                 (engine, tuple, key);
+            if (AspDataGetType(iterable) == DataType_Namespace)
+                AspUnref(engine, key);
             AspSequenceResult valueAppendResult = AspSequenceAppend
                 (engine, tuple, entryValue);
             if (keyAppendResult.result != AspRunResult_OK)
