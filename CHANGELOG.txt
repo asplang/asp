@@ -10,10 +10,19 @@ Changes
 Version 1.2.0.0 (compiler 1.2.0.0, engine 1.2.0.0):
 - Compiler and engine:
   - Added a new object order operator, <=>.
+    - Added the ORDER instruction to support the object order operator.
   - Added a new flavour of the POP instruction that accepts a number of entries
     to pop. This is used when emitting code for a return statement within
     multiple nested for loops instead of emitting multiple single POP
     instructions.
+  - Added support for the "from module import *" form of import statement.
+    - Made modules iterable.
+    - Added new versions of the LD, LDA, MEM, and MEMA instructions that obtain
+      the symbol from the stack instead of an immediate operand.
+Engine:
+  - Added iterator support for list insertions:
+    - The key of a key/value pair can be an iterator into the target list.
+    - The target of a value insertion can be a list iterator.
 
 Version 1.1.4.0 (compiler 1.1.0.1, engine 1.1.4.0):
 - Engine:
