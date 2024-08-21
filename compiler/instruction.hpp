@@ -310,6 +310,8 @@ class LoadInstruction : public Instruction
     public:
 
         LoadInstruction
+            (bool address, const std::string &comment = "");
+        LoadInstruction
             (std::int32_t symbol, bool address,
              const std::string &comment = "");
 
@@ -599,6 +601,8 @@ class MemberInstruction : public Instruction
 {
     public:
 
+        explicit MemberInstruction
+            (bool address, const std::string &comment = "");
         MemberInstruction
             (std::int32_t symbol, bool address,
              const std::string &comment = "");

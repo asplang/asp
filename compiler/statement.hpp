@@ -183,7 +183,10 @@ class ImportNameList : public NonTerminal
         void Add(ImportName *);
 
         typedef std::list<ImportName *>::const_iterator ConstNameIterator;
-
+        std::size_t NamesSize() const
+        {
+            return names.size();
+        }
         ConstNameIterator NamesBegin() const
         {
             return names.begin();

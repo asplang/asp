@@ -182,40 +182,141 @@ void ImportStatement::Emit(Executable &executable) const
         }
         else
         {
-            for (auto iter = memberNameList->NamesBegin();
-                 iter != memberNameList->NamesEnd(); iter++)
+            if (memberNameList->NamesSize() == 1U &&
+                (*memberNameList->NamesBegin())->Name() == "*")
             {
-                auto memberName = *iter;
-                auto name = memberName->Name();
-                auto nameSymbol = executable.Symbol(name);
-                auto asName = memberName->AsName();
-                auto asNameSymbol = executable.Symbol(asName);
+                auto nameSymbol = executable.TemporarySymbol();
+                auto valueSymbol = executable.TemporarySymbol();
 
-                if (name == "*")
-                    ThrowError("Wildcard form of from...import not permitted");
-
+                /* Start iteration over the module's symbols. */
                 {
                     ostringstream oss;
                     oss << "Push module " << moduleName;
                     executable.Insert
-                        (new PushModuleInstruction(moduleSymbol, oss.str()),
+                        (new PushModuleInstruction
+                            (moduleSymbol, oss.str()),
                          sourceLocation);
                 }
+                executable.Insert
+                    (new StartIteratorInstruction, sourceLocation);
+
+                /* Check for the end of the iteration. */
+                auto testLocation = executable.Insert
+                    (new NullInstruction, sourceLocation);
+                auto endLocation = executable.Insert
+                    (new NullInstruction, sourceLocation);
+
+                executable.PushLocation(endLocation);
+                executable.Insert
+                    (new TestIteratorInstruction, sourceLocation);
+                executable.Insert
+                    (new ConditionalJumpInstruction
+                        (false, endLocation, "Jump if false to end"),
+                     sourceLocation);
+
+                /* Dereference the iterator into temporary symbol and value
+                   variables. */
+                executable.Insert
+                    (new DereferenceIteratorInstruction, sourceLocation);
+                executable.Insert
+                    (new PushTupleInstruction, sourceLocation);
+                executable.Insert
+                    (new LoadInstruction
+                        (nameSymbol, true,
+                         "Push address of temporary symbol variable"),
+                     sourceLocation);
+                executable.Insert
+                    (new BuildInstruction, sourceLocation);
+                executable.Insert
+                    (new LoadInstruction
+                        (valueSymbol, true,
+                         "Push address of temporary value variable"),
+                     sourceLocation);
+                executable.Insert
+                    (new BuildInstruction, sourceLocation);
+                executable.Insert
+                    (new SetInstruction(true), sourceLocation);
+                executable.Insert
+                    (new DeleteInstruction
+                        (valueSymbol,
+                         "Delete temporary value variable"),
+                     sourceLocation);
+
+                /* Copy the member in the imported module to the local
+                   scope. */
+                executable.Insert
+                    (new PushModuleInstruction(moduleSymbol), sourceLocation);
+                executable.Insert
+                    (new LoadInstruction(nameSymbol, false), sourceLocation);
+                executable.Insert
+                    (new MemberInstruction
+                        (false,
+                         string("Lookup value of member with symbol")),
+                     sourceLocation);
+                executable.Insert
+                    (new LoadInstruction(nameSymbol, false), sourceLocation);
+                executable.Insert
+                    (new LoadInstruction
+                        (true,
+                         string("Load address of symbol in local scope")),
+                     sourceLocation);
+                executable.Insert
+                    (new SetInstruction(true), sourceLocation);
+                executable.Insert
+                    (new DeleteInstruction
+                        (nameSymbol,
+                         "Delete temporary symbol variable"),
+                     sourceLocation);
+
+                /* Prepare for next iteration. */
+                executable.Insert
+                    (new AdvanceIteratorInstruction, sourceLocation);
+                executable.Insert
+                    (new JumpInstruction(testLocation, "Jump to test"),
+                     sourceLocation);
+
+                /* Finish the iteration. */
+                executable.PopLocation();
+                executable.Insert(new PopInstruction, sourceLocation);
+            }
+            else
+            {
+                for (auto iter = memberNameList->NamesBegin();
+                     iter != memberNameList->NamesEnd(); iter++)
                 {
-                    ostringstream oss;
-                    oss << "Look up member variable " << name;
+                    auto memberName = *iter;
+                    auto name = memberName->Name();
+                    auto nameSymbol = executable.Symbol(name);
+                    auto asName = memberName->AsName();
+                    auto asNameSymbol = executable.Symbol(asName);
+
+                    {
+                        ostringstream oss;
+                        oss << "Push module " << moduleName;
+                        executable.Insert
+                            (new PushModuleInstruction
+                                (moduleSymbol, oss.str()),
+                             sourceLocation);
+                    }
+                    {
+                        ostringstream oss;
+                        oss << "Look up member variable " << name;
+                        executable.Insert
+                            (new MemberInstruction
+                                (nameSymbol, false, oss.str()),
+                             sourceLocation);
+                    }
+                    {
+                        ostringstream oss;
+                        oss << "Load address of variable " << asName;
+                        executable.Insert
+                            (new LoadInstruction
+                                (asNameSymbol, true, oss.str()),
+                             sourceLocation);
+                    }
                     executable.Insert
-                        (new MemberInstruction(nameSymbol, false, oss.str()),
-                         sourceLocation);
+                        (new SetInstruction(true), sourceLocation);
                 }
-                {
-                    ostringstream oss;
-                    oss << "Load address of variable " << asName;
-                    executable.Insert
-                        (new LoadInstruction(asNameSymbol, true, oss.str()),
-                         sourceLocation);
-                }
-                executable.Insert(new SetInstruction(true), sourceLocation);
             }
         }
     }
@@ -555,7 +656,6 @@ void ForStatement::Emit(Executable &executable) const
          sourceLocation);
     executable.PopLocation();
 
-    executable.PushLocation(endLocation);
     if (falseBlock != nullptr)
     {
         executable.PushLocation(endLocation);
@@ -580,7 +680,6 @@ void ForStatement::Emit(Executable &executable) const
         falseBlock->Emit(executable);
         executable.PopLocation();
     }
-    executable.PopLocation();
 
     executable.Insert(new PopInstruction, sourceLocation);
 }

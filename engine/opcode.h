@@ -76,9 +76,11 @@ typedef enum OpCode
     OpCode_ORDER = 0x6C, /* object order */
 
     /* Load operations. */
+    OpCode_LD = 0x80, /* load variable's value with symbol on the stack */
     OpCode_LD1 = 0x81, /* load variable's value with 1-byte symbol */
     OpCode_LD2 = 0x82, /* load variable's value with 2-byte symbol */
     OpCode_LD4 = 0x83, /* load variable's value with 4-byte symbol */
+    OpCode_LDA = 0x84, /* load variable's address with symbol on the stack */
     OpCode_LDA1 = 0x85, /* load variable's address with 1-byte symbol */
     OpCode_LDA2 = 0x86, /* load variable's address with 2-byte symbol */
     OpCode_LDA4 = 0x87, /* load variable's address with 4-byte symbol */
@@ -174,12 +176,14 @@ typedef enum OpCode
     OpCode_IDXA = 0xF1, /* index (or range) address */
 
     /* Member look-up operations. */
-    OpCode_MEM1 = 0xF4, /* 1-byte member lookup value by symbol */
-    OpCode_MEM2 = 0xF5, /* 2-byte member lookup value by symbol */
-    OpCode_MEM4 = 0xF6, /* 4-byte member lookup value by symbol */
-    OpCode_MEMA1 = 0xF8, /* 1-byte member lookup address by symbol */
-    OpCode_MEMA2 = 0xF9, /* 2-byte member lookup address by symbol */
-    OpCode_MEMA4 = 0xFA, /* 4-byte member lookup address by symbol */
+    OpCode_MEM = 0xF4, /* member lookup value by symbol on the stack */
+    OpCode_MEM1 = 0xF5, /* member lookup value by 1-byte symbol */
+    OpCode_MEM2 = 0xF6, /* member lookup value by 2-byte symbol */
+    OpCode_MEM4 = 0xF7, /* member lookup value by 4-byte symbol */
+    OpCode_MEMA = 0xF8, /* member lookup address by symbol on the stack */
+    OpCode_MEMA1 = 0xF9, /* member lookup address by 1-byte symbol */
+    OpCode_MEMA2 = 0xFA, /* member lookup address by 2-byte symbol */
+    OpCode_MEMA4 = 0xFB, /* member lookup address by 4-byte symbol */
 
     /* End operations. */
     OpCode_ABORT = 0xFE, /* abnormal exit (assertion failure) */

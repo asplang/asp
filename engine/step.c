@@ -219,9 +219,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHY2:
             operandSize++;
         case OpCode_PUSHY1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("PUSHY ", engine->traceFile);
             #endif
@@ -440,9 +439,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_PUSHM2:
             operandSize++;
         case OpCode_PUSHM1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("PUSHM ", engine->traceFile);
             #endif
@@ -631,26 +629,43 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_LD2:
             operandSize++;
         case OpCode_LD1:
-        {
             operandSize++;
-
+        case OpCode_LD:
+        {
             #ifdef ASP_DEBUG
             fputs("LD ", engine->traceFile);
             #endif
 
             /* Fetch the variable's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedWordOperand
-                (engine, operandSize, &variableSymbol);
-            if (operandLoadResult != AspRunResult_OK)
+            if (operandSize > 0)
             {
+                AspRunResult operandLoadResult = LoadSignedWordOperand
+                    (engine, operandSize, &variableSymbol);
+                if (operandLoadResult != AspRunResult_OK)
+                {
+                    #ifdef ASP_DEBUG
+                    fputs("?\n", engine->traceFile);
+                    #endif
+                    return operandLoadResult;
+                }
                 #ifdef ASP_DEBUG
-                fputs("?\n", engine->traceFile);
+                fprintf(engine->traceFile, "%d", variableSymbol);
                 #endif
-                return operandLoadResult;
+            }
+            else
+            {
+                /* Obtain the symbol from the stack. */
+                AspDataEntry *symbol = AspTopValue(engine);
+                if (symbol == 0)
+                    return AspRunResult_StackUnderflow;
+                if (AspDataGetType(symbol) != DataType_Symbol)
+                    return AspRunResult_UnexpectedType;
+                variableSymbol = AspDataGetSymbol(symbol);
+                AspPop(engine);
             }
             #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "%d\n", variableSymbol);
+            fputc('\n', engine->traceFile);
             #endif
 
             /* Look up the variable, trying first the local namespace, and
@@ -697,26 +712,44 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_LDA2:
             operandSize++;
         case OpCode_LDA1:
-        {
             operandSize++;
+        case OpCode_LDA:
+        {
 
             #ifdef ASP_DEBUG
             fputs("LDA ", engine->traceFile);
             #endif
 
-            /* Fetch the variable's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedWordOperand
-                (engine, operandSize, &variableSymbol);
-            if (operandLoadResult != AspRunResult_OK)
+            if (operandSize > 0)
             {
+                /* Fetch the variable's symbol from the operand. */
+                AspRunResult operandLoadResult = LoadSignedWordOperand
+                    (engine, operandSize, &variableSymbol);
+                if (operandLoadResult != AspRunResult_OK)
+                {
+                    #ifdef ASP_DEBUG
+                    fputs("?\n", engine->traceFile);
+                    #endif
+                    return operandLoadResult;
+                }
                 #ifdef ASP_DEBUG
-                fputs("?\n", engine->traceFile);
+                fprintf(engine->traceFile, "%d", variableSymbol);
                 #endif
-                return operandLoadResult;
+            }
+            else
+            {
+                /* Obtain the symbol from the stack. */
+                AspDataEntry *symbol = AspTopValue(engine);
+                if (symbol == 0)
+                    return AspRunResult_StackUnderflow;
+                if (AspDataGetType(symbol) != DataType_Symbol)
+                    return AspRunResult_UnexpectedType;
+                variableSymbol = AspDataGetSymbol(symbol);
+                AspPop(engine);
             }
             #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "%d\n", variableSymbol);
+            fputc('\n', engine->traceFile);
             #endif
 
             /* Look up the variable, creating it if it doesn't exist. */
@@ -727,7 +760,7 @@ static AspRunResult Step(AspEngine *engine)
                 return insertResult.result;
             AspDataEntry *node = insertResult.node;
 
-            /* Set the scope usage for the newly created variables. */
+            /* Set the scope usage for the newly created variable. */
             if (AspDataGetNamespaceNodeIsGlobal(node) &&
                 engine->localNamespace != engine->globalNamespace)
             {
@@ -739,7 +772,7 @@ static AspRunResult Step(AspEngine *engine)
                     return insertResult.result;
             }
 
-            /* Push variable's tree node to serve as an address. */
+            /* Push the variable's tree node to serve as an address. */
             AspDataEntry *stackEntry = AspPush(engine, insertResult.node);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
@@ -965,9 +998,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_DEL2:
             operandSize++;
         case OpCode_DEL1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("DEL ", engine->traceFile);
             #endif
@@ -1025,9 +1057,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_GLOB2:
             operandSize++;
         case OpCode_GLOB1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("GLOB ", engine->traceFile);
             #endif
@@ -1087,9 +1118,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_LOC2:
             operandSize++;
         case OpCode_LOC1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("LOC ", engine->traceFile);
             #endif
@@ -1392,9 +1422,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_ADDMOD2:
             operandSize++;
         case OpCode_ADDMOD1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("ADDMOD ", engine->traceFile);
             #endif
@@ -1509,9 +1538,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_LDMOD2:
             operandSize++;
         case OpCode_LDMOD1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("LDMOD ", engine->traceFile);
             #endif
@@ -1630,9 +1658,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_MKNARG2:
             operandSize++;
         case OpCode_MKNARG1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("MKNARG ", engine->traceFile);
             #endif
@@ -1683,9 +1710,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_MKPAR1:
         case OpCode_MKTGPAR1:
         case OpCode_MKDGPAR1:
-        {
             operandSize++;
-
+        {
             bool isTupleGroup =
                 opCode == OpCode_MKTGPAR1 ||
                 opCode == OpCode_MKTGPAR2 ||
@@ -1738,9 +1764,8 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_MKDPAR2:
             operandSize++;
         case OpCode_MKDPAR1:
-        {
             operandSize++;
-
+        {
             #ifdef ASP_DEBUG
             fputs("MKDPAR ", engine->traceFile);
             #endif
@@ -2666,10 +2691,12 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
         case OpCode_MEM1:
         case OpCode_MEMA1:
-        {
             operandSize++;
-
+        case OpCode_MEM:
+        case OpCode_MEMA:
+        {
             bool isAddressInstruction =
+                opCode == OpCode_MEMA ||
                 opCode == OpCode_MEMA1 ||
                 opCode == OpCode_MEMA2 ||
                 opCode == OpCode_MEMA4;
@@ -2679,19 +2706,36 @@ static AspRunResult Step(AspEngine *engine)
                  isAddressInstruction ? "A" : "");
             #endif
 
-            /* Fetch the member variables's symbol from the operand. */
             int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedWordOperand
-                (engine, operandSize, &variableSymbol);
-            if (operandLoadResult != AspRunResult_OK)
+            if (operandSize > 0)
             {
+                /* Fetch the member variables's symbol from the operand. */
+                AspRunResult operandLoadResult = LoadSignedWordOperand
+                    (engine, operandSize, &variableSymbol);
+                if (operandLoadResult != AspRunResult_OK)
+                {
+                    #ifdef ASP_DEBUG
+                    fputs("?\n", engine->traceFile);
+                    #endif
+                    return operandLoadResult;
+                }
                 #ifdef ASP_DEBUG
-                fputs("?\n", engine->traceFile);
+                fprintf(engine->traceFile, "%d", variableSymbol);
                 #endif
-                return operandLoadResult;
+            }
+            else
+            {
+                /* Obtain the symbol from the stack. */
+                AspDataEntry *symbol = AspTopValue(engine);
+                if (symbol == 0)
+                    return AspRunResult_StackUnderflow;
+                if (AspDataGetType(symbol) != DataType_Symbol)
+                    return AspRunResult_UnexpectedType;
+                variableSymbol = AspDataGetSymbol(symbol);
+                AspPop(engine);
             }
             #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "%d\n", variableSymbol);
+            fputc('\n', engine->traceFile);
             #endif
 
             /* Obtain the module from the stack. */

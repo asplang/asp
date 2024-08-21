@@ -294,7 +294,7 @@ unsigned PushIntegerInstruction::OperandsSize() const
 void PushIntegerInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uValue = *reinterpret_cast<const uint32_t *>(&value);
-    WriteField(os, uValue, OperandSize(value));
+    WriteField(os, uValue, OperandsSize());
 }
 
 void PushIntegerInstruction::PrintCode(ostream &os) const
@@ -317,7 +317,7 @@ unsigned PushFloatInstruction::OperandsSize() const
 void PushFloatInstruction::WriteOperands(ostream &os) const
 {
     uint64_t uValue = *reinterpret_cast<const uint64_t *>(&value);
-    WriteField(os, uValue, 8);
+    WriteField(os, uValue, OperandsSize());
 }
 
 void PushFloatInstruction::PrintCode(ostream &os) const
@@ -343,7 +343,7 @@ unsigned PushSymbolInstruction::OperandsSize() const
 void PushSymbolInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void PushSymbolInstruction::PrintCode(ostream &os) const
@@ -444,7 +444,7 @@ unsigned PushModuleInstruction::OperandsSize() const
 void PushModuleInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void PushModuleInstruction::PrintCode(ostream &os) const
@@ -466,8 +466,7 @@ unsigned PopInstruction::OperandsSize() const
 
 void PopInstruction::WriteOperands(ostream &os) const
 {
-    if (count != 1)
-        WriteField(os, count, 1);
+    WriteField(os, count, OperandsSize());
 }
 
 void PopInstruction::PrintCode(ostream &os) const
@@ -497,6 +496,13 @@ LogicalInstruction::LogicalInstruction
 }
 
 LoadInstruction::LoadInstruction
+    (bool address, const string &comment) :
+    Instruction(address ? OpCode_LDA : OpCode_LD, comment),
+    symbol(0)
+{
+}
+
+LoadInstruction::LoadInstruction
     (int32_t symbol, bool address, const string &comment) :
     Instruction
         (address ?
@@ -511,22 +517,27 @@ LoadInstruction::LoadInstruction
 
 unsigned LoadInstruction::OperandsSize() const
 {
-    return max(1U, OperandSize(symbol));
+    return
+        OpCode() == OpCode_LD || OpCode() == OpCode_LDA ? 0 :
+        max(1U, OperandSize(symbol));
 }
 
 void LoadInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void LoadInstruction::PrintCode(ostream &os) const
 {
     bool address =
+        OpCode() == OpCode_LDA ||
         OpCode() == OpCode_LDA1 ||
         OpCode() == OpCode_LDA2 ||
         OpCode() == OpCode_LDA4;
-    os << (address ? "LDA" : "LD") << ' ' << symbol;
+    os << (address ? "LDA" : "LD");
+    if (OpCode() != OpCode_LD && OpCode() != OpCode_LDA)
+        os << ' ' << symbol;
 }
 
 SetInstruction::SetInstruction(bool pop, const string &comment) :
@@ -552,7 +563,7 @@ unsigned DeleteInstruction::OperandsSize() const
 void DeleteInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void DeleteInstruction::PrintCode(ostream &os) const
@@ -586,7 +597,7 @@ unsigned GlobalInstruction::OperandsSize() const
 void GlobalInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void GlobalInstruction::PrintCode(ostream &os) const
@@ -668,7 +679,7 @@ unsigned AddModuleInstruction::OperandsSize() const
 void AddModuleInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void AddModuleInstruction::PrintCode(ostream &os) const
@@ -699,7 +710,7 @@ unsigned LoadModuleInstruction::OperandsSize() const
 void LoadModuleInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void LoadModuleInstruction::PrintCode(ostream &os) const
@@ -740,13 +751,8 @@ unsigned MakeArgumentInstruction::OperandsSize() const
 
 void MakeArgumentInstruction::WriteOperands(ostream &os) const
 {
-    if (OpCode() == OpCode_MKNARG1 ||
-        OpCode() == OpCode_MKNARG2 ||
-        OpCode() == OpCode_MKNARG4)
-    {
-        uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-        WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
-    }
+    uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void MakeArgumentInstruction::PrintCode(ostream &os) const
@@ -792,7 +798,7 @@ unsigned MakeParameterInstruction::OperandsSize() const
 void MakeParameterInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void MakeParameterInstruction::PrintCode(ostream &os) const
@@ -854,6 +860,13 @@ IndexInstruction::IndexInstruction
 }
 
 MemberInstruction::MemberInstruction
+    (bool address, const string &comment) :
+    Instruction(address ? OpCode_MEMA : OpCode_MEM, comment),
+    symbol(0)
+{
+}
+
+MemberInstruction::MemberInstruction
     (int32_t symbol, bool address, const string &comment) :
     Instruction
         (address ?
@@ -868,22 +881,27 @@ MemberInstruction::MemberInstruction
 
 unsigned MemberInstruction::OperandsSize() const
 {
-    return max(1U, OperandSize(symbol));
+    return
+        OpCode() == OpCode_MEM || OpCode() == OpCode_MEMA ? 0 :
+        max(1U, OperandSize(symbol));
 }
 
 void MemberInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
-    WriteField(os, uSymbol, max(1U, OperandSize(symbol)));
+    WriteField(os, uSymbol, OperandsSize());
 }
 
 void MemberInstruction::PrintCode(ostream &os) const
 {
     bool address =
+        OpCode() == OpCode_MEMA ||
         OpCode() == OpCode_MEMA1 ||
         OpCode() == OpCode_MEMA2 ||
         OpCode() == OpCode_MEMA4;
-    os << (address ? "MEMA" : "MEM") << ' ' << symbol;
+    os << (address ? "MEMA" : "MEM");
+    if (OpCode() != OpCode_MEM && OpCode() != OpCode_MEMA)
+        os << ' ' << symbol;
 }
 
 AbortInstruction::AbortInstruction(const string &comment) :
