@@ -230,7 +230,9 @@ void Generator::WriteApplicationCode(ostream &os)
                 os
                     << "            AspDataEntry *" << parameterName
                     << " = AspParameterValue(engine, ns, "
-                    << parameterSymbol << ");\n";
+                    << parameterSymbol << ");\n"
+                    << "            if (" << parameterName << " == 0)\n"
+                    << "                return AspRunResult_OutOfDataMemory;\n";
             }
         }
 
