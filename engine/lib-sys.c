@@ -88,6 +88,13 @@ ASP_LIB_API AspRunResult AspLib_exit
 {
     int32_t intCode = 0;
     bool isInt = AspIntegerValue(code, &intCode);
+    if (isInt)
+    {
+        const int32_t maxIntCode =
+            (int32_t)AspRunResult_Max - (int32_t)AspRunResult_Application;
+        if (intCode < 0 || intCode > maxIntCode)
+            intCode = maxIntCode;
+    }
     engine->runResult = isInt && intCode == 0 || AspIsNone(code) ?
         AspRunResult_Complete :
         (AspRunResult)((int)AspRunResult_Application + intCode);

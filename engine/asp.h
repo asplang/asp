@@ -66,6 +66,7 @@ typedef enum
     AspRunResult_InternalError = 0xFE,
     AspRunResult_NotImplemented = 0xFF,
     AspRunResult_Application = 0x100,
+    AspRunResult_Max = INT32_MAX,
 } AspRunResult;
 
 /* Floating-point translator type. */
