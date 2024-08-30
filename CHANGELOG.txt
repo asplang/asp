@@ -24,6 +24,11 @@ Engine:
     - The key of a key/value pair can be an iterator into the target list.
     - The target of a value insertion can be a list iterator.
 
+Version 1.1.4.3 (compiler 1.1.0.1, engine 1.1.4.3):
+- Engine:
+  - Fixed an undefined behaviour issue caused when a script supplies an out of
+    range integer value to the exit function.
+
 Version 1.1.4.2 (compiler 1.1.0.1, engine 1.1.4.2):
 - Fixed a couple of issues discovered during fuzz testing.
 
