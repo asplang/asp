@@ -7,6 +7,12 @@ chronological order.
 Changes
 -------
 
+Version 1.2.0.1 (compiler 1.2.0.0, engine 1.2.0.1):
+Engine:
+  - Fixed an undefined behaviour issue caused when a script supplies a
+    floating-point value that is outside range of an integer to the exit
+    function.
+
 Version 1.2.0.0 (compiler 1.2.0.0, engine 1.2.0.0):
 - Compiler and engine:
   - Added a new object order operator, <=>.
