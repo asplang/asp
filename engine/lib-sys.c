@@ -87,9 +87,10 @@ ASP_LIB_API AspRunResult AspLib_exit
      AspDataEntry **returnValue)
 {
     int32_t intCode = 0;
-    bool isInt = AspIntegerValue(code, &intCode);
+    bool isInt = AspIsInteger(code);
     if (isInt)
     {
+        AspIntegerValue(code, &intCode);
         const int32_t maxIntCode =
             (int32_t)AspRunResult_Max - (int32_t)AspRunResult_Application;
         if (intCode < 0 || intCode > maxIntCode)

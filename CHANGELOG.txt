@@ -7,10 +7,19 @@ chronological order.
 Changes
 -------
 
+Version 1.1.4.4 (compiler 1.1.0.1, engine 1.1.4.4):
+Engine:
+  - Fixed a bug in the script-callable exit function that was converting a
+    floating-point argument value to integer, and then using the converted
+    integer value for computing the run result. This unintended behaviour was
+    also causing undefined behaviour when the floating-point value was outside
+    the range of an integer. Floating-point values are now treated like all
+    other non-integer values, as originally intended.
+
 Version 1.1.4.3 (compiler 1.1.0.1, engine 1.1.4.3):
 - Engine:
   - Fixed an undefined behaviour issue caused when a script supplies an out of
-    range integer value to the exit function.
+    range integer value to the script-callable exit function.
 
 Version 1.1.4.2 (compiler 1.1.0.1, engine 1.1.4.2):
 - Fixed a couple of issues discovered during fuzz testing.
