@@ -98,6 +98,6 @@ ASP_LIB_API AspRunResult AspLib_exit
     }
     engine->runResult = isInt && intCode == 0 || AspIsNone(code) ?
         AspRunResult_Complete :
-        (AspRunResult)((int)AspRunResult_Application + intCode);
+        (AspRunResult)((int32_t)AspRunResult_Application + intCode);
     return AspRunResult_OK;
 }

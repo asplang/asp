@@ -26,7 +26,7 @@ void AspGetRange
         return;
 
     /* Extract values from the range object. */
-    AspDataEntry *startEntry = 0, *endEntry = 0, *stepEntry = 0;
+    const AspDataEntry *startEntry = 0, *endEntry = 0, *stepEntry = 0;
     if (AspDataGetRangeHasStart(range))
     {
         startEntry = AspValueEntry
@@ -223,7 +223,8 @@ AspRunResult AspGetSliceRange
 }
 
 AspRangeResult AspRangeSlice
-    (AspEngine *engine, const AspDataEntry *range, AspDataEntry *sliceRange)
+    (AspEngine *engine,
+     const AspDataEntry *range, const AspDataEntry *sliceRange)
 {
     AspRangeResult result = {AspRunResult_OK, 0, 0};
 

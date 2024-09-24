@@ -28,14 +28,15 @@ AspTreeResult AspTreeTryInsertBySymbol
     (AspEngine *, AspDataEntry *tree,
      int32_t symbol, AspDataEntry *value);
 AspRunResult AspTreeEraseNode
-    (AspEngine *, AspDataEntry *tree, AspDataEntry *keyNode,
+    (AspEngine *, AspDataEntry *tree, const AspDataEntry *keyNode,
      bool eraseKey, bool eraseValue);
 AspTreeResult AspTreeFind
-    (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
+    (AspEngine *, const AspDataEntry *tree, const AspDataEntry *key);
 AspTreeResult AspFindSymbol
-    (AspEngine *, AspDataEntry *tree, int32_t symbol);
+    (AspEngine *, const AspDataEntry *tree, int32_t symbol);
 AspTreeResult AspTreeNext
-    (AspEngine *, AspDataEntry *tree, AspDataEntry *node, bool right);
+    (AspEngine *, const AspDataEntry *tree,
+     const AspDataEntry *node, bool right);
 
 #ifdef ASP_TEST
 bool AspTreeIsRedBlack(AspEngine *, AspDataEntry *tree);

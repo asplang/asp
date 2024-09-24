@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 AspDataEntry *AspPush(AspEngine *, AspDataEntry *value);
-AspDataEntry *AspPushNoUse(AspEngine *, AspDataEntry *value);
+AspDataEntry *AspPushNoUse(AspEngine *, const AspDataEntry *value);
 AspDataEntry *AspTopValue(AspEngine *);
 AspDataEntry *AspTopValue2(AspEngine *);
 bool AspPop(AspEngine *);

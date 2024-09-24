@@ -76,7 +76,7 @@ AspRunResult AspAssignSequence
         return checkResult;
 
     /* Avoid recursion by using the engine's stack. */
-    AspDataEntry *startStackTop = engine->stackTop;
+    const AspDataEntry *startStackTop = engine->stackTop;
     uint32_t iterationCount = 0;
     for (bool unrefNewValue = false;
          iterationCount < engine->cycleDetectionLimit;
@@ -154,7 +154,7 @@ AspRunResult AspAssignSequence
     return AspRunResult_OK;
 }
 
-AspRunResult AspCheckSequenceMatch
+static AspRunResult AspCheckSequenceMatch
     (AspEngine *engine,
      const AspDataEntry *address, const AspDataEntry *value)
 {

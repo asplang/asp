@@ -21,34 +21,34 @@
 
 static AspOperationResult PerformBitwiseBinaryOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     const AspDataEntry *left, const AspDataEntry *right);
 static AspOperationResult PerformArithmeticBinaryOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     const AspDataEntry *left, const AspDataEntry *right);
 static AspOperationResult PerformConcatenationBinaryOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     const AspDataEntry *left, const AspDataEntry *right);
 static AspOperationResult PerformRepetitionBinaryOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *sequence, AspDataEntry *repeatCount);
+     AspDataEntry *sequence, const AspDataEntry *repeatCount);
 static AspOperationResult PerformFormatBinaryOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *sequence, AspDataEntry *repeatCount);
+     const AspDataEntry *format, const AspDataEntry *tuple);
 static AspOperationResult PerformEqualityOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     const AspDataEntry *left, const AspDataEntry *right);
 static AspOperationResult PerformRelationalOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     const AspDataEntry *left, const AspDataEntry *right);
 static AspOperationResult PerformMembershipOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     const AspDataEntry *left, const AspDataEntry *right);
 static AspOperationResult PerformIdentityOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     const AspDataEntry *left, const AspDataEntry *right);
 static AspOperationResult PerformObjectOrderOperation
     (AspEngine *, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right);
+     const AspDataEntry *left, const AspDataEntry *right);
 
 AspOperationResult AspPerformUnaryOperation
     (AspEngine *engine, uint8_t opCode, AspDataEntry *operand)
@@ -334,7 +334,7 @@ AspOperationResult AspPerformBinaryOperation
 
 static AspOperationResult PerformBitwiseBinaryOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     const AspDataEntry *left, const AspDataEntry *right)
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
@@ -348,14 +348,12 @@ static AspOperationResult PerformBitwiseBinaryOperation
         leftValue = AspDataGetInteger(left);
     else
         result.result = AspRunResult_UnexpectedType;
-    uint32_t leftBits = *(uint32_t *)&leftValue;
     if (rightType == DataType_Boolean)
         rightValue = (int32_t)AspDataGetBoolean(right);
     else if (rightType == DataType_Integer)
         rightValue = AspDataGetInteger(right);
     else
         result.result = AspRunResult_UnexpectedType;
-    uint32_t rightBits = *(uint32_t *)&rightValue;
 
     if (result.result != AspRunResult_OK)
         return result;
@@ -394,8 +392,6 @@ static AspOperationResult PerformBitwiseBinaryOperation
             resultBits = *(uint32_t *)&intResult;
             break;
         }
-            resultBits = leftBits & rightBits;
-            break;
 
         case OpCode_LSH:
         {
@@ -428,7 +424,7 @@ static AspOperationResult PerformBitwiseBinaryOperation
 
 static AspOperationResult PerformConcatenationBinaryOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     const AspDataEntry *left, const AspDataEntry *right)
 {
     uint8_t leftType = AspDataGetType(left);
     uint8_t rightType = AspDataGetType(right);
@@ -453,7 +449,7 @@ static AspOperationResult PerformConcatenationBinaryOperation
                 break;
 
             AspSequenceResult appendResult = {AspRunResult_OK, 0, 0};
-            AspDataEntry *operands[] = {left, right};
+            const AspDataEntry *operands[] = {left, right};
             for (unsigned i = 0; i < sizeof operands / sizeof *operands; i++)
             {
                 AspSequenceResult nextResult = AspSequenceNext
@@ -502,7 +498,7 @@ static AspOperationResult PerformConcatenationBinaryOperation
 
 static AspOperationResult PerformRepetitionBinaryOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *sequence, AspDataEntry *repeatCount)
+     AspDataEntry *sequence, const AspDataEntry *repeatCount)
 {
     uint8_t sequenceType = AspDataGetType(sequence);
     uint8_t repeatCountType = AspDataGetType(repeatCount);
@@ -605,7 +601,7 @@ static AspOperationResult PerformRepetitionBinaryOperation
 
 static AspOperationResult PerformArithmeticBinaryOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     const AspDataEntry *left, const AspDataEntry *right)
 {
     uint8_t leftType = AspDataGetType(left);
     uint8_t rightType = AspDataGetType(right);
@@ -773,7 +769,7 @@ static AspOperationResult PerformArithmeticBinaryOperation
 
 static AspOperationResult PerformFormatBinaryOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *format, AspDataEntry *tuple)
+     const AspDataEntry *format, const AspDataEntry *tuple)
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
@@ -796,10 +792,10 @@ static AspOperationResult PerformFormatBinaryOperation
          nextResult = AspSequenceNext
             (engine, format, nextResult.element, true))
     {
-        AspDataEntry *fragment = nextResult.value;
+        const AspDataEntry *fragment = nextResult.value;
         uint8_t fragmentSize =
             AspDataGetStringFragmentSize(fragment);
-        char *fragmentData =
+        const char *fragmentData =
             AspDataGetStringFragmentData(fragment);
 
         for (uint8_t fragmentIndex = 0;
@@ -993,10 +989,10 @@ static AspOperationResult PerformFormatBinaryOperation
                              strNextResult = AspSequenceNext
                                 (engine, str, strNextResult.element, true))
                         {
-                            AspDataEntry *fragment = strNextResult.value;
+                            const AspDataEntry *fragment = strNextResult.value;
                             uint8_t fragmentSize =
                                 AspDataGetStringFragmentSize(fragment);
-                            char *fragmentData =
+                            const char *fragmentData =
                                 AspDataGetStringFragmentData(fragment);
 
                             if (fragmentSize > remainingSize)
@@ -1182,7 +1178,7 @@ static AspOperationResult PerformFormatBinaryOperation
 
 static AspOperationResult PerformEqualityOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     const AspDataEntry *left, const AspDataEntry *right)
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
@@ -1221,7 +1217,7 @@ static AspOperationResult PerformEqualityOperation
 
 static AspOperationResult PerformRelationalOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     const AspDataEntry *left, const AspDataEntry *right)
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
@@ -1269,7 +1265,7 @@ static AspOperationResult PerformRelationalOperation
 
 static AspOperationResult PerformMembershipOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     const AspDataEntry *left, const AspDataEntry *right)
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
@@ -1374,7 +1370,7 @@ static AspOperationResult PerformMembershipOperation
                  nextResult = AspSequenceNext
                     (engine, right, nextResult.element, true))
             {
-                AspDataEntry *value = nextResult.value;
+                const AspDataEntry *value = nextResult.value;
                 int comparison;
                 result.result = AspCompare
                     (engine, left, value, AspCompareType_Equality,
@@ -1413,7 +1409,7 @@ static AspOperationResult PerformMembershipOperation
                 break;
             }
 
-            AspDataEntry *ns =
+            const AspDataEntry *ns =
                 rightType == DataType_Module ?
                 AspValueEntry
                     (engine, AspDataGetModuleNamespaceIndex(right)) :
@@ -1467,7 +1463,7 @@ static AspOperationResult PerformMembershipOperation
 
 static AspOperationResult PerformIdentityOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     const AspDataEntry *left, const AspDataEntry *right)
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 
@@ -1501,7 +1497,7 @@ static AspOperationResult PerformIdentityOperation
 
 static AspOperationResult PerformObjectOrderOperation
     (AspEngine *engine, uint8_t opCode,
-     AspDataEntry *left, AspDataEntry *right)
+     const AspDataEntry *left, const AspDataEntry *right)
 {
     AspOperationResult result = {AspRunResult_OK, 0};
 

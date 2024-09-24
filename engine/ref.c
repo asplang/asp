@@ -8,7 +8,7 @@
 #include "sequence.h"
 #include "tree.h"
 
-static bool IsTerminal(AspDataEntry *);
+static bool IsTerminal(const AspDataEntry *);
 
 void AspRef(AspEngine *engine, AspDataEntry *entry)
 {
@@ -23,7 +23,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
         return;
 
     /* Avoid recursion by using the engine's stack. */
-    AspDataEntry *startStackTop = engine->stackTop;
+    const AspDataEntry *startStackTop = engine->stackTop;
     uint32_t iterationCount = 0;
     for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
@@ -68,7 +68,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                         (engine, entry, 0, true)).element != 0;
                      iterationCount++)
                 {
-                    AspRunResult assertResult = AspAssert
+                    assertResult = AspAssert
                         (engine,
                          AspDataGetType(nextResult.element)
                          == DataType_Element);
@@ -125,10 +125,10 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     {
                         if (pushKey)
                         {
-                            AspDataEntry *entry = engine->stackTop;
-                            AspDataSetStackEntryHasValue2(entry, true);
+                            AspDataEntry *topEntry = engine->stackTop;
+                            AspDataSetStackEntryHasValue2(topEntry, true);
                             AspDataSetStackEntryValue2Index
-                                (entry, AspIndex(engine, nextResult.value));
+                                (topEntry, AspIndex(engine, nextResult.value));
                         }
                         else
                             AspPushNoUse(engine, nextResult.value);
@@ -274,7 +274,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
         engine->runResult = AspRunResult_CycleDetected;
 }
 
-static bool IsTerminal(AspDataEntry *entry)
+static bool IsTerminal(const AspDataEntry *entry)
 {
     static uint8_t terminalTypes[] =
     {

@@ -111,7 +111,7 @@ ASP_API AspRunResult AspReset(AspEngine *);
 ASP_API AspRunResult AspSetArguments(AspEngine *, const char * const *);
 ASP_API AspRunResult AspSetArgumentsString(AspEngine *, const char *);
 ASP_API AspRunResult AspSetCycleDetectionLimit(AspEngine *, uint32_t);
-ASP_API uint32_t AspGetCycleDetectionLimit(AspEngine *);
+ASP_API uint32_t AspGetCycleDetectionLimit(const AspEngine *);
 
 /* Execution control. */
 ASP_API AspRunResult AspRestart(AspEngine *);
@@ -168,13 +168,13 @@ ASP_API AspDataEntry *AspToRepr(AspEngine *, const AspDataEntry *);
 ASP_API AspRunResult AspCount
     (AspEngine *, const AspDataEntry *, int32_t *count);
 ASP_API AspDataEntry *AspElement
-    (AspEngine *, AspDataEntry *sequence, int32_t index);
+    (AspEngine *, const AspDataEntry *sequence, int32_t index);
 ASP_API int32_t AspRangeElement
     (AspEngine *, const AspDataEntry *range, int32_t index);
 ASP_API char AspStringElement
     (AspEngine *, const AspDataEntry *str, int32_t index);
 ASP_API AspDataEntry *AspFind
-    (AspEngine *, AspDataEntry *tree, const AspDataEntry *key);
+    (AspEngine *, const AspDataEntry *tree, const AspDataEntry *key);
 ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
 ASP_API bool AspAppObjectTypeValue
     (AspEngine *, const AspDataEntry *, int16_t *);
@@ -220,12 +220,13 @@ ASP_API bool AspStringAppend
      const char *buffer, size_t bufferSize);
 ASP_API bool AspSetInsert
     (AspEngine *, AspDataEntry *set, AspDataEntry *key, bool take);
-ASP_API bool AspSetErase(AspEngine *, AspDataEntry *set, AspDataEntry *key);
+ASP_API bool AspSetErase
+    (AspEngine *, AspDataEntry *set, const AspDataEntry *key);
 ASP_API bool AspDictionaryInsert
     (AspEngine *, AspDataEntry *dictionary,
      AspDataEntry *key, AspDataEntry *value, bool take);
 ASP_API bool AspDictionaryErase
-    (AspEngine *, AspDataEntry *dictionary, AspDataEntry *key);
+    (AspEngine *, AspDataEntry *dictionary, const AspDataEntry *key);
 ASP_API bool AspAddPositionalArgument
     (AspEngine *, AspDataEntry *value, bool take);
 ASP_API bool AspAddNamedArgument

@@ -27,9 +27,9 @@ AspRunResult AspCompare
     bool localNanDetected = false;
 
     /* Avoid recursion by using the engine's stack. */
-    AspDataEntry *startStackTop = engine->stackTop;
+    const AspDataEntry *startStackTop = engine->stackTop;
     int comparison = 0;
-    AspDataEntry *leftNext = 0, *rightNext = 0;
+    const AspDataEntry *leftNext = 0, *rightNext = 0;
     uint32_t iterationCount = 0;
     for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
@@ -254,14 +254,11 @@ AspRunResult AspCompare
                         }
 
                         /* Examine the next element of each sequence. */
-                        AspDataEntry
-                            *mutableLeftEntry = (AspDataEntry *)leftEntry,
-                            *mutableRightEntry = (AspDataEntry *)rightEntry;
                         AspSequenceResult
                             leftResult = AspSequenceNext
-                                (engine, mutableLeftEntry, leftNext, true),
+                                (engine, leftEntry, leftNext, true),
                             rightResult = AspSequenceNext
-                                (engine, mutableRightEntry, rightNext, true);
+                                (engine, rightEntry, rightNext, true);
                         leftNext = leftResult.element;
                         rightNext = rightResult.element;
                         if (leftNext == 0 || rightNext == 0)
@@ -274,7 +271,7 @@ AspRunResult AspCompare
                         /* Save state and defer element comparison to the
                            next iteration. */
                         AspDataEntry *entriesStackEntry = AspPushNoUse
-                            (engine, mutableLeftEntry);
+                            (engine, leftEntry);
                         AspDataEntry *nextsStackEntry = AspPushNoUse
                             (engine, leftNext);
                         AspDataEntry *valuesStackEntry = AspPushNoUse
@@ -287,7 +284,7 @@ AspRunResult AspCompare
                             (entriesStackEntry, true);
                         AspDataSetStackEntryValue2Index
                             (entriesStackEntry,
-                             AspIndex(engine, mutableRightEntry));
+                             AspIndex(engine, rightEntry));
                         AspDataSetStackEntryHasValue2
                             (nextsStackEntry, true);
                         AspDataSetStackEntryValue2Index
@@ -319,14 +316,11 @@ AspRunResult AspCompare
                         }
 
                         /* Examine the next node of each tree. */
-                        AspDataEntry
-                            *mutableLeftEntry = (AspDataEntry *)leftEntry,
-                            *mutableRightEntry = (AspDataEntry *)rightEntry;
                         AspTreeResult
                             leftResult = AspTreeNext
-                                (engine, mutableLeftEntry, leftNext, true),
+                                (engine, leftEntry, leftNext, true),
                             rightResult = AspTreeNext
-                                (engine, mutableRightEntry, rightNext, true);
+                                (engine, rightEntry, rightNext, true);
                         leftNext = leftResult.node;
                         rightNext = rightResult.node;
                         if (leftNext == 0 || rightNext == 0)
@@ -339,7 +333,7 @@ AspRunResult AspCompare
                         /* Save state and defer member comparison to the
                            next iteration. */
                         AspDataEntry *entriesStackEntry = AspPushNoUse
-                            (engine, mutableLeftEntry);
+                            (engine, leftEntry);
                         AspDataEntry *nextsStackEntry = AspPushNoUse
                             (engine, leftNext);
                         AspDataEntry *leftKeyStackEntry = AspPushNoUse
@@ -352,7 +346,7 @@ AspRunResult AspCompare
                             (entriesStackEntry, true);
                         AspDataSetStackEntryValue2Index
                             (entriesStackEntry,
-                             AspIndex(engine, mutableRightEntry));
+                             AspIndex(engine, rightEntry));
                         AspDataSetStackEntryHasValue2
                             (nextsStackEntry, true);
                         AspDataSetStackEntryValue2Index
@@ -455,7 +449,7 @@ AspRunResult AspCompare
                         int16_t
                             leftType = AspDataGetAppObjectType(leftEntry),
                             rightType = AspDataGetAppObjectType(rightEntry);
-                        void
+                        const void
                             *leftValue = AspDataGetAppPointerObjectValue
                                 (leftEntry),
                             *rightValue = AspDataGetAppPointerObjectValue
@@ -521,8 +515,8 @@ AspRunResult AspCompare
             {
                 /* The next pair is part of an iteration, so fetch the pair
                    of containers as well. */
-                rightNext = (AspDataEntry *)rightEntry;
-                leftNext = (AspDataEntry *)leftEntry;
+                rightNext = rightEntry;
+                leftNext = leftEntry;
                 rightEntry = AspTopValue2(engine);
                 assertResult = AspAssert(engine, rightEntry != 0);
                 if (assertResult != AspRunResult_OK)

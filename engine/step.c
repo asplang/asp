@@ -94,7 +94,7 @@ static AspRunResult Step(AspEngine *engine)
             fputs("PUSHN\n", engine->traceFile);
             #endif
 
-            AspDataEntry *stackEntry = AspPush
+            const AspDataEntry *stackEntry = AspPush
                 (engine, engine->noneSingleton);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
@@ -112,7 +112,7 @@ static AspRunResult Step(AspEngine *engine)
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
-            AspDataEntry *stackEntry = AspPush(engine, valueEntry);
+            const AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, valueEntry);
@@ -134,7 +134,7 @@ static AspRunResult Step(AspEngine *engine)
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
-            AspDataEntry *stackEntry = AspPush(engine, valueEntry);
+            const AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, valueEntry);
@@ -173,7 +173,7 @@ static AspRunResult Step(AspEngine *engine)
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
-            AspDataEntry *stackEntry = AspPush(engine, valueEntry);
+            const AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, valueEntry);
@@ -206,7 +206,7 @@ static AspRunResult Step(AspEngine *engine)
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
-            AspDataEntry *stackEntry = AspPush(engine, valueEntry);
+            const AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, valueEntry);
@@ -244,7 +244,7 @@ static AspRunResult Step(AspEngine *engine)
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
-            AspDataEntry *stackEntry = AspPush(engine, valueEntry);
+            const AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, valueEntry);
@@ -313,7 +313,7 @@ static AspRunResult Step(AspEngine *engine)
             fputs("'\n", engine->traceFile);
             #endif
 
-            AspDataEntry *stackEntry = AspPush(engine, stringEntry);
+            const AspDataEntry *stackEntry = AspPush(engine, stringEntry);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, stringEntry);
@@ -388,7 +388,7 @@ static AspRunResult Step(AspEngine *engine)
             if (valueEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
-            AspDataEntry *stackEntry = AspPush(engine, valueEntry);
+            const AspDataEntry *stackEntry = AspPush(engine, valueEntry);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             if (AspIsObject(valueEntry))
@@ -427,7 +427,7 @@ static AspRunResult Step(AspEngine *engine)
             if (codeAddressEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetCodeAddress(codeAddressEntry, codeAddressOperand);
-            AspDataEntry *stackEntry = AspPush(engine, codeAddressEntry);
+            const AspDataEntry *stackEntry = AspPush(engine, codeAddressEntry);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
@@ -472,7 +472,7 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_UnexpectedType;
 
             /* Push the module onto the stack. */
-            AspDataEntry *stackEntry = AspPush(engine, module);
+            const AspDataEntry *stackEntry = AspPush(engine, module);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
@@ -510,7 +510,7 @@ static AspRunResult Step(AspEngine *engine)
 
             while (count--)
             {
-                AspDataEntry *operand = AspTopValue(engine);
+                const AspDataEntry *operand = AspTopValue(engine);
                 if (operand == 0)
                     return AspRunResult_StackUnderflow;
                 if (!AspIsObject(operand))
@@ -546,7 +546,8 @@ static AspRunResult Step(AspEngine *engine)
                 return operationResult.result;
 
             /* Push the result onto the stack. */
-            AspDataEntry *stackEntry = AspPush(engine, operationResult.value);
+            const AspDataEntry *stackEntry = AspPush
+                (engine, operationResult.value);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, operationResult.value);
@@ -610,7 +611,8 @@ static AspRunResult Step(AspEngine *engine)
                 return operationResult.result;
 
             /* Push the result onto the stack. */
-            AspDataEntry *stackEntry = AspPush(engine, operationResult.value);
+            const AspDataEntry *stackEntry = AspPush
+                (engine, operationResult.value);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, operationResult.value);
@@ -656,7 +658,7 @@ static AspRunResult Step(AspEngine *engine)
             else
             {
                 /* Obtain the symbol from the stack. */
-                AspDataEntry *symbol = AspTopValue(engine);
+                const AspDataEntry *symbol = AspTopValue(engine);
                 if (symbol == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(symbol) != DataType_Symbol)
@@ -700,7 +702,7 @@ static AspRunResult Step(AspEngine *engine)
                 (engine, AspDataGetTreeNodeValueIndex(findResult.node));
             if (!AspIsObject(object))
                 return AspRunResult_UnexpectedType;
-            AspDataEntry *stackEntry = AspPush(engine, object);
+            const AspDataEntry *stackEntry = AspPush(engine, object);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
@@ -740,7 +742,7 @@ static AspRunResult Step(AspEngine *engine)
             else
             {
                 /* Obtain the symbol from the stack. */
-                AspDataEntry *symbol = AspTopValue(engine);
+                const AspDataEntry *symbol = AspTopValue(engine);
                 if (symbol == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(symbol) != DataType_Symbol)
@@ -758,7 +760,7 @@ static AspRunResult Step(AspEngine *engine)
                  variableSymbol, engine->noneSingleton);
             if (insertResult.result != AspRunResult_OK)
                 return insertResult.result;
-            AspDataEntry *node = insertResult.node;
+            const AspDataEntry *node = insertResult.node;
 
             /* Set the scope usage for the newly created variable. */
             if (AspDataGetNamespaceNodeIsGlobal(node) &&
@@ -773,7 +775,8 @@ static AspRunResult Step(AspEngine *engine)
             }
 
             /* Push the variable's tree node to serve as an address. */
-            AspDataEntry *stackEntry = AspPush(engine, insertResult.node);
+            const AspDataEntry *stackEntry = AspPush
+                (engine, insertResult.node);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
@@ -1025,7 +1028,7 @@ static AspRunResult Step(AspEngine *engine)
                 (engine, ns, variableSymbol);
             if (findResult.result != AspRunResult_OK)
                 return findResult.result;
-            AspDataEntry *node = findResult.node;
+            const AspDataEntry *node = findResult.node;
 
             /* Check whether there is a global override in place. */
             if (node != 0 && AspDataGetNamespaceNodeIsGlobal(node) &&
@@ -1205,7 +1208,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the iterator on top of the stack. */
-            AspDataEntry *iterator = AspTopValue(engine);
+            const AspDataEntry *iterator = AspTopValue(engine);
             if (iterator == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsIterator(iterator))
@@ -1216,7 +1219,7 @@ static AspRunResult Step(AspEngine *engine)
                 (engine, AspDataGetIteratorMemberIndex(iterator) != 0);
             if (testResult == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspDataEntry *stackEntry = AspPush(engine, testResult);
+            const AspDataEntry *stackEntry = AspPush(engine, testResult);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, testResult);
@@ -1253,7 +1256,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access the iterator on top of the stack. */
-            AspDataEntry *iterator = AspTopValue(engine);
+            const AspDataEntry *iterator = AspTopValue(engine);
             if (iterator == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsIterator(iterator))
@@ -1265,7 +1268,8 @@ static AspRunResult Step(AspEngine *engine)
                 return iteratorResult.result;
 
             /* Push the dereferenced value onto the stack. */
-            AspDataEntry *stackEntry = AspPush(engine, iteratorResult.value);
+            const AspDataEntry *stackEntry = AspPush
+                (engine, iteratorResult.value);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             if (AspIsObject(iteratorResult.value))
@@ -1319,7 +1323,7 @@ static AspRunResult Step(AspEngine *engine)
             bool condition = true;
             if (opCode != OpCode_JMP)
             {
-                AspDataEntry *value = AspTopValue(engine);
+                const AspDataEntry *value = AspTopValue(engine);
                 if (value == 0)
                     return AspRunResult_StackUnderflow;
                 if (!AspIsObject(value))
@@ -1593,7 +1597,7 @@ static AspRunResult Step(AspEngine *engine)
                 (frame, AspIndex(engine, engine->module));
             AspDataSetFrameLocalNamespaceIndex
                 (frame, AspIndex(engine, engine->localNamespace));
-            AspDataEntry *newTop = AspPush(engine, frame);
+            const AspDataEntry *newTop = AspPush(engine, frame);
             if (newTop == 0)
                 return AspRunResult_OutOfDataMemory;
 
@@ -1625,7 +1629,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access argument value on top of the stack. */
-            AspDataEntry *top = AspTopValue(engine);
+            const AspDataEntry *top = AspTopValue(engine);
             if (top == 0)
                 return AspRunResult_StackUnderflow;
 
@@ -1680,7 +1684,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access argument value on top of the stack. */
-            AspDataEntry *top = AspTopValue(engine);
+            const AspDataEntry *top = AspTopValue(engine);
             if (top == 0)
                 return AspRunResult_StackUnderflow;
 
@@ -1752,7 +1756,7 @@ static AspRunResult Step(AspEngine *engine)
             AspDataSetParameterIsDictionaryGroup(parameter, isDictionaryGroup);
 
             /* Push the parameter onto the stack. */
-            AspDataEntry *stackEntry = AspPush(engine, parameter);
+            const AspDataEntry *stackEntry = AspPush(engine, parameter);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
@@ -1786,7 +1790,7 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Access parameter default value on top of the stack. */
-            AspDataEntry *defaultValue = AspTopValue(engine);
+            const AspDataEntry *defaultValue = AspTopValue(engine);
             if (defaultValue == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(defaultValue))
@@ -1844,7 +1848,7 @@ static AspRunResult Step(AspEngine *engine)
                 return engine->runResult;
 
             /* Access parameter list on top of the stack. */
-            AspDataEntry *parameters = AspTopValue(engine);
+            const AspDataEntry *parameters = AspTopValue(engine);
             if (parameters == 0)
                 return AspRunResult_StackUnderflow;
             if (AspDataGetType(parameters) != DataType_ParameterList)
@@ -1884,7 +1888,7 @@ static AspRunResult Step(AspEngine *engine)
             AspPop(engine);
 
             /* Access the value on top of the stack. */
-            AspDataEntry *value = AspTopValue(engine);
+            const AspDataEntry *value = AspTopValue(engine);
             if (value == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(value))
@@ -2053,7 +2057,7 @@ static AspRunResult Step(AspEngine *engine)
             }
 
             /* Push the range onto the stack. */
-            AspDataEntry *stackEntry = AspPush(engine, range);
+            const AspDataEntry *stackEntry = AspPush(engine, range);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
             AspUnref(engine, range);
@@ -2173,7 +2177,7 @@ static AspRunResult Step(AspEngine *engine)
                     if (AspDataGetArgumentIsIterableGroup(item) ||
                         AspDataGetArgumentIsDictionaryGroup(item))
                     {
-                        AspDataEntry *iterable = AspValueEntry
+                        const AspDataEntry *iterable = AspValueEntry
                             (engine, AspDataGetArgumentValueIndex(item));
 
                         AspRunResult expandResult =
@@ -2229,7 +2233,7 @@ static AspRunResult Step(AspEngine *engine)
                         else if (AspIsIterator(key))
                         {
                             /* Ensure the iterator belongs to the container. */
-                            AspDataEntry *iterable = AspEntry
+                            const AspDataEntry *iterable = AspEntry
                                 (engine, AspDataGetIteratorIterableIndex(key));
                             if (iterable != container)
                                 return AspRunResult_ValueOutOfRange;
@@ -2355,7 +2359,7 @@ static AspRunResult Step(AspEngine *engine)
                                 return rangeResult.result;
 
                             /* Push the integer. */
-                            AspDataEntry *stackEntry = AspPush
+                            const AspDataEntry *stackEntry = AspPush
                                 (engine, rangeResult.value);
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
@@ -2375,7 +2379,7 @@ static AspRunResult Step(AspEngine *engine)
                                 return rangeResult.result;
 
                             /* Push the resulting range. */
-                            AspDataEntry *stackEntry = AspPush
+                            const AspDataEntry *stackEntry = AspPush
                                 (engine, rangeResult.value);
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
@@ -2425,7 +2429,8 @@ static AspRunResult Step(AspEngine *engine)
                                 return AspRunResult_OutOfDataMemory;
 
                             /* Push the single-character string. */
-                            AspDataEntry *stackEntry = AspPush(engine, element);
+                            const AspDataEntry *stackEntry = AspPush
+                                (engine, element);
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
                             AspUnref(engine, element);
@@ -2475,7 +2480,7 @@ static AspRunResult Step(AspEngine *engine)
                                 AspDataEntry *fragment = nextResult.value;
                                 uint8_t fragmentSize =
                                     AspDataGetStringFragmentSize(fragment);
-                                char *fragmentData =
+                                const char *fragmentData =
                                     AspDataGetStringFragmentData(fragment);
 
                                 for (uint8_t fragmentIndex = 0;
@@ -2508,7 +2513,8 @@ static AspRunResult Step(AspEngine *engine)
                                 return AspRunResult_CycleDetected;
 
                             /* Push the resulting sequence. */
-                            AspDataEntry *stackEntry = AspPush(engine, result);
+                            const AspDataEntry *stackEntry = AspPush
+                                (engine, result);
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
                             AspUnref(engine, result);
@@ -2550,7 +2556,7 @@ static AspRunResult Step(AspEngine *engine)
                                 return AspRunResult_ValueOutOfRange;
 
                             /* Push the value or address as applicable. */
-                            AspDataEntry *stackEntry = AspPush
+                            const AspDataEntry *stackEntry = AspPush
                                 (engine,
                                  opCode == OpCode_IDX ?
                                  indexResult.value : indexResult.element);
@@ -2617,7 +2623,8 @@ static AspRunResult Step(AspEngine *engine)
                                 return AspRunResult_CycleDetected;
 
                             /* Push the resulting sequence. */
-                            AspDataEntry *stackEntry = AspPush(engine, result);
+                            const AspDataEntry *stackEntry = AspPush
+                                (engine, result);
                             if (stackEntry == 0)
                                 return AspRunResult_OutOfDataMemory;
                             AspUnref(engine, result);
@@ -2646,7 +2653,7 @@ static AspRunResult Step(AspEngine *engine)
                             return AspRunResult_KeyNotFound;
 
                         /* Push the value onto the stack. */
-                        AspDataEntry *stackEntry = AspPush
+                        const AspDataEntry *stackEntry = AspPush
                             (engine, findResult.value);
                         if (stackEntry == 0)
                             return AspRunResult_OutOfDataMemory;
@@ -2666,7 +2673,7 @@ static AspRunResult Step(AspEngine *engine)
                         }
 
                         /* Push the address onto the stack. */
-                        AspDataEntry *stackEntry = AspPush(engine, node);
+                        const AspDataEntry *stackEntry = AspPush(engine, node);
                         if (stackEntry == 0)
                             return AspRunResult_OutOfDataMemory;
                     }
@@ -2726,7 +2733,7 @@ static AspRunResult Step(AspEngine *engine)
             else
             {
                 /* Obtain the symbol from the stack. */
-                AspDataEntry *symbol = AspTopValue(engine);
+                const AspDataEntry *symbol = AspTopValue(engine);
                 if (symbol == 0)
                     return AspRunResult_StackUnderflow;
                 if (AspDataGetType(symbol) != DataType_Symbol)
@@ -2768,7 +2775,7 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_NameNotFound;
 
             /* Push variable's value or address as applicable. */
-            AspDataEntry *stackEntry = AspPush
+            const AspDataEntry *stackEntry = AspPush
                 (engine,
                  isAddressInstruction ?
                  memberResult.node : memberResult.value);
@@ -2825,10 +2832,8 @@ static AspRunResult LoadSignedWordOperand
 static AspRunResult LoadUnsignedOperand
     (AspEngine *engine, unsigned operandSize, uint32_t *operand)
 {
-    unsigned i;
-
     *operand = 0;
-    for (i = 0; i < operandSize; i++)
+    for (unsigned i = 0; i < operandSize; i++)
     {
         uint8_t c;
         AspRunResult byteResult = AspLoadCodeBytes(engine, &c, 1);

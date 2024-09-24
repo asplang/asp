@@ -38,7 +38,7 @@ AspRunResult AspGetSliceRange
      int32_t *startValue, int32_t *endValue, int32_t *stepValue,
      bool *bounded);
 AspRangeResult AspRangeSlice
-    (AspEngine *, const AspDataEntry *range, AspDataEntry *sliceRange);
+    (AspEngine *, const AspDataEntry *range, const AspDataEntry *sliceRange);
 
 #ifdef __cplusplus
 }

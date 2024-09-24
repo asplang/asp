@@ -18,7 +18,8 @@
 #endif
 
 AspRunResult AspExpandIterableGroupArgument
-    (AspEngine *engine, AspDataEntry *argumentList, AspDataEntry *iterable)
+    (AspEngine *engine, AspDataEntry *argumentList,
+     const AspDataEntry *iterable)
 {
     switch (AspDataGetType(iterable))
     {
@@ -39,7 +40,7 @@ AspRunResult AspExpandIterableGroupArgument
                     (AspAddIntegers(i, step, &i)))
             {
                 /* Create an integer value from the range. */
-                AspDataEntry *value = AspNewInteger(engine, i);
+                const AspDataEntry *value = AspNewInteger(engine, i);
                 if (value == 0)
                     return AspRunResult_OutOfDataMemory;
 
@@ -73,14 +74,12 @@ AspRunResult AspExpandIterableGroupArgument
                  nextResult = AspSequenceNext
                     (engine, iterable, nextResult.element, true))
             {
-                AspDataEntry *value = nextResult.value;
-
                 if (AspDataGetType(iterable) == DataType_String)
                 {
                     AspDataEntry *fragment = nextResult.value;
                     uint8_t fragmentSize = AspDataGetStringFragmentSize
                         (fragment);
-                    char *fragmentData = AspDataGetStringFragmentData
+                    const char *fragmentData = AspDataGetStringFragmentData
                         (fragment);
 
                     for (uint8_t fragmentIndex = 0;
@@ -88,7 +87,7 @@ AspRunResult AspExpandIterableGroupArgument
                          fragmentIndex++)
                     {
                         /* Create a single-character string. */
-                        AspDataEntry *value = AspNewString
+                        const AspDataEntry *value = AspNewString
                             (engine, fragmentData + fragmentIndex, 1);
                         if (value == 0)
                             return AspRunResult_OutOfDataMemory;
@@ -111,6 +110,7 @@ AspRunResult AspExpandIterableGroupArgument
                 else
                 {
                     /* Use the sequence item as is. */
+                    AspDataEntry *value = nextResult.value;
                     AspRef(engine, value);
 
                     /* Create an argument. */
@@ -195,7 +195,8 @@ AspRunResult AspExpandIterableGroupArgument
 }
 
 AspRunResult AspExpandDictionaryGroupArgument
-    (AspEngine *engine, AspDataEntry *argumentList, AspDataEntry *dictionary)
+    (AspEngine *engine, AspDataEntry *argumentList,
+     const AspDataEntry *dictionary)
 {
     if (AspDataGetType(dictionary) != DataType_Dictionary)
         return AspRunResult_UnexpectedType;
@@ -209,7 +210,7 @@ AspRunResult AspExpandDictionaryGroupArgument
          nextResult = AspTreeNext
             (engine, dictionary, nextResult.node, true))
     {
-        AspDataEntry *key = nextResult.key;
+        const AspDataEntry *key = nextResult.key;
         AspDataEntry *value = nextResult.value;
 
         /* Ensure the key is a symbol. This will become the argument name. */
@@ -257,8 +258,8 @@ AspRunResult AspCallFunction
             #endif
             return AspRunResult_InvalidAppFunction;
         }
-        AspDataEntry *argumentListEntry = AspPush(engine, argumentList);
-        AspDataEntry *functionEntry = AspPush(engine, function);
+        const AspDataEntry *argumentListEntry = AspPush(engine, argumentList);
+        const AspDataEntry *functionEntry = AspPush(engine, function);
         if (argumentListEntry == 0 || functionEntry == 0)
             return AspRunResult_OutOfDataMemory;
         engine->callFromApp = true;
@@ -285,7 +286,7 @@ AspRunResult AspCallFunction
             return AspRunResult_UnexpectedType;
 
         /* Gain access to the parameter list within the function. */
-        AspDataEntry *parameters = AspEntry
+        const AspDataEntry *parameters = AspEntry
             (engine, AspDataGetFunctionParametersIndex(function));
         if (AspDataGetType(parameters) != DataType_ParameterList)
             return AspRunResult_UnexpectedType;
@@ -313,7 +314,7 @@ AspRunResult AspCallFunction
             (frame, AspIndex(engine, engine->module));
         AspDataSetFrameLocalNamespaceIndex
             (frame, AspIndex(engine, engine->localNamespace));
-        AspDataEntry *newTop = AspPush(engine, frame);
+        const AspDataEntry *newTop = AspPush(engine, frame);
         if (newTop == 0)
             return AspRunResult_OutOfDataMemory;
         if (fromApp)
@@ -432,7 +433,7 @@ AspRunResult AspCallFunction
             if (returnValue == 0)
                 return AspRunResult_OutOfDataMemory;
         }
-        AspDataEntry *stackEntry = AspPush(engine, returnValue);
+        const AspDataEntry *stackEntry = AspPush(engine, returnValue);
         if (stackEntry == 0)
             return AspRunResult_OutOfDataMemory;
         AspUnref(engine, returnValue);
@@ -459,7 +460,7 @@ AspRunResult AspCallFunction
 /* Builds a namespace based on arguments and parameters. */
 AspRunResult AspLoadArguments
     (AspEngine *engine,
-     AspDataEntry *argumentList, AspDataEntry *parameterList,
+     const AspDataEntry *argumentList, const AspDataEntry *parameterList,
      AspDataEntry *ns)
 {
     AspAssert
@@ -492,12 +493,12 @@ AspRunResult AspLoadArguments
          argumentResult = AspSequenceNext
             (engine, argumentList, argumentResult.element, true))
     {
-        AspDataEntry *argument = argumentResult.value;
+        const AspDataEntry *argument = argumentResult.value;
         if (AspDataGetArgumentHasName(argument) ||
             AspDataGetArgumentIsDictionaryGroup(argument))
             break;
 
-        AspDataEntry *parameter = 0;
+        const AspDataEntry *parameter = 0;
         if (tupleGroup == 0)
         {
             parameterResult = AspSequenceNext
@@ -554,7 +555,7 @@ AspRunResult AspLoadArguments
     if (lastParameterResult.element != 0 &&
         AspDataGetParameterIsDictionaryGroup(lastParameterResult.value))
     {
-        AspDataEntry *parameter = lastParameterResult.value;
+        const AspDataEntry *parameter = lastParameterResult.value;
         dictionaryGroup = AspAllocEntry(engine, DataType_Dictionary);
         if (dictionaryGroup == 0)
             return AspRunResult_OutOfDataMemory;
@@ -577,7 +578,7 @@ AspRunResult AspLoadArguments
          argumentResult = AspSequenceNext
             (engine, argumentList, argumentResult.element, true))
     {
-        AspDataEntry *argument = argumentResult.value;
+        const AspDataEntry *argument = argumentResult.value;
         AspDataEntry *value = AspValueEntry
             (engine, AspDataGetArgumentValueIndex(argument));
 
@@ -590,7 +591,7 @@ AspRunResult AspLoadArguments
         }
         int32_t argumentSymbol = AspDataGetArgumentSymbol(argument);
 
-        AspSequenceResult parameterResult = AspSequenceNext
+        parameterResult = AspSequenceNext
             (engine, parameterList, 0, true);
         bool parameterFound = false;
         uint32_t iterationCount = 0;
@@ -601,7 +602,7 @@ AspRunResult AspLoadArguments
              parameterResult = AspSequenceNext
                 (engine, parameterList, parameterResult.element, true))
         {
-            AspDataEntry *parameter = parameterResult.value;
+            const AspDataEntry *parameter = parameterResult.value;
 
             int32_t parameterSymbol = AspDataGetParameterSymbol(parameter);
             if (parameterSymbol == argumentSymbol)
@@ -699,7 +700,7 @@ AspRunResult AspLoadArguments
          parameterResult = AspSequenceNext
             (engine, parameterList, parameterResult.element, true))
     {
-        AspDataEntry *parameter = parameterResult.value;
+        const AspDataEntry *parameter = parameterResult.value;
         int32_t parameterSymbol = AspDataGetParameterSymbol(parameter);
 
         if (AspDataGetParameterIsTupleGroup(parameter))
@@ -821,13 +822,14 @@ AspRunResult AspReturnToCaller(AspEngine *engine)
 }
 
 AspDataEntry *AspParameterValue
-    (AspEngine *engine, AspDataEntry *ns, int32_t symbol)
+    (AspEngine *engine, const AspDataEntry *ns, int32_t symbol)
 {
     return AspFindSymbol(engine, ns, symbol).value;
 }
 
 AspParameterResult AspGroupParameterValue
-    (AspEngine *engine, AspDataEntry *ns, int32_t symbol, bool dictionary)
+    (AspEngine *engine, const AspDataEntry *ns,
+     int32_t symbol, bool dictionary)
 {
     AspParameterResult result = {AspRunResult_OK, 0};
 

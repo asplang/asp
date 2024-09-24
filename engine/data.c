@@ -23,10 +23,11 @@ void AspDataSetWord3(AspDataEntry *entry, uint32_t value)
 uint32_t AspDataGetWord3(const AspDataEntry *entry)
 {
     return (uint32_t)
-        (uint32_t)entry->s.s[11] |
-        (uint32_t)entry->s.s[12] << 8 |
-        (uint32_t)entry->s.s[13] << 16 |
-        AspBitGetField(entry->w.u2, AspWordBitSize, AspWordBitSize - 24U) << 24;
+        ((uint32_t)entry->s.s[11] |
+         (uint32_t)entry->s.s[12] << 8 |
+         (uint32_t)entry->s.s[13] << 16 |
+         AspBitGetField
+            (entry->w.u2, AspWordBitSize, AspWordBitSize - 24U) << 24);
 }
 
 void AspDataSetSignedWord3(AspDataEntry *entry, int32_t value)
@@ -125,20 +126,20 @@ AspRunResult AspCheckIsImmutableObject
     /* For tuples, we must examine the contents. Avoid recursion by using
        the engine's stack. */
     bool isImmutable = true;
-    AspDataEntry *startStackTop = engine->stackTop;
+    const AspDataEntry *startStackTop = engine->stackTop;
     uint32_t iterationCount = 0;
     for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
         uint32_t iterationCount = 0;
         for (AspSequenceResult nextResult = AspSequenceNext
-                (engine, (AspDataEntry *)entry, 0, true);
+                (engine, entry, 0, true);
              iterationCount < engine->cycleDetectionLimit &&
              nextResult.element != 0;
              iterationCount++,
              nextResult = AspSequenceNext
-                (engine, (AspDataEntry *)entry, nextResult.element, true))
+                (engine, entry, nextResult.element, true))
         {
-            AspDataEntry *value = nextResult.value;
+            const AspDataEntry *value = nextResult.value;
 
             if (AspDataGetType(value) == DataType_Tuple)
             {

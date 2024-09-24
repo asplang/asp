@@ -23,15 +23,15 @@ void AspDump(const AspEngine *engine, FILE *fp)
     fputs("---\n", fp);
 
     fprintf
-        (fp, "Program counter: 0x%07X\n",
-         (uint32_t)AspProgramCounter(engine));
+        (fp, "Program counter: 0x%07zX\n",
+         AspProgramCounter(engine));
 
     fprintf
-        (fp, "Free count: %d; next free entry: 0x%07X\n",
-         (uint32_t)engine->freeCount, (uint32_t)engine->freeListIndex);
+        (fp, "Free count: %zd; next free entry: 0x%07X\n",
+         engine->freeCount, (unsigned)engine->freeListIndex);
     fprintf
-        (fp, "Free count low water mark: %d\n",
-         (uint32_t)engine->lowFreeCount);
+        (fp, "Free count low water mark: %zd\n",
+         engine->lowFreeCount);
 
     fprintf(fp, "Stack: ");
     if (engine->stackTop == 0)
@@ -62,7 +62,7 @@ void AspDump(const AspEngine *engine, FILE *fp)
 
 static void DumpData(const AspEngine *engine, FILE *fp)
 {
-    AspDataEntry *data = engine->data;
+    const AspDataEntry *data = engine->data;
     bool inFree = false;
     unsigned freeRangeStart = 0;
     for (unsigned i = 0; i < engine->dataEndIndex; i++)
@@ -165,7 +165,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
     uint8_t t = AspDataGetType(entry);
     fprintf(fp, "0x%07X: t=0x%02X", index, t);
     TypeName keyTypeName = {t, ""};
-    TypeName *nameEntry = (TypeName *)bsearch
+    const TypeName *nameEntry = (TypeName *)bsearch
         (&keyTypeName, gTypeNames,
          sizeof gTypeNames / sizeof *gTypeNames, sizeof *gTypeNames,
          CompareTypeNames);

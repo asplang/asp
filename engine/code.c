@@ -28,7 +28,7 @@ AspRunResult AspLoadCodeBytes
         if (checkResult != AspRunResult_OK)
             return checkResult;
 
-        uint8_t *page =
+        const uint8_t *page =
             engine->codeArea +
             engine->cachedCodePageIndex * engine->codePageSize;
         uint32_t pageOffset = offset++ % engine->codePageSize;
@@ -74,7 +74,7 @@ AspRunResult AspValidateCodeAddress(AspEngine *engine, uint32_t address)
 AspRunResult AspLoadCodePage(AspEngine *engine, uint32_t offset)
 {
     /* Determine which page to load. */
-    uint8_t codePageIndex = offset / (uint32_t)engine->codePageSize;
+    uint8_t codePageIndex = (uint8_t)(offset / (uint32_t)engine->codePageSize);
 
     /* Determine whether the page is already cached. */
     for (uint8_t i = 0; i < engine->cachedCodePageCount; i++)
@@ -100,7 +100,7 @@ AspRunResult AspLoadCodePage(AspEngine *engine, uint32_t offset)
     int8_t oldestAge = 0;
     for (uint8_t i = 0; i < engine->cachedCodePageCount; i++)
     {
-        AspCodePageEntry *entry = engine->cachedCodePages + i;
+        const AspCodePageEntry *entry = engine->cachedCodePages + i;
 
         /* Check for a previously unused entry. */
         if (entry->age < 0)

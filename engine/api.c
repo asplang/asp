@@ -28,7 +28,7 @@ static AspDataEntry *ToString
     (AspEngine *, const AspDataEntry *entry, bool repr);
 static const char *TypeString(DataType);
 static AspDataEntry *NewRange
-    (AspEngine *, int32_t start, int32_t *end, int32_t step);
+    (AspEngine *, int32_t start, const int32_t *end, int32_t step);
 static AspDataEntry *NewObject(AspEngine *, DataType);
 static bool PrepareArgumentList(AspEngine *);
 
@@ -347,12 +347,11 @@ bool AspRangeValues
    null after the requested string content. If *size - index >= bufferSize,
    no null termination occurs. Negative indices are not supported. */
 bool AspStringValue
-    (AspEngine *engine, const AspDataEntry *const_entry,
+    (AspEngine *engine, const AspDataEntry *entry,
      size_t *size, char *buffer, size_t index, size_t bufferSize)
 {
-    if (!AspIsString(const_entry))
+    if (!AspIsString(entry))
         return false;
-    AspDataEntry *entry = (AspDataEntry *)const_entry;
 
     size_t localSize = (size_t)AspDataGetSequenceCount(entry);
     if (size != 0)
@@ -426,26 +425,26 @@ AspDataEntry *AspToRepr(AspEngine *engine, const AspDataEntry *entry)
 }
 
 static AspDataEntry *ToString
-    (AspEngine *engine, const AspDataEntry *const_entry, bool repr)
+    (AspEngine *engine, const AspDataEntry *entry, bool repr)
 {
     AspDataEntry *result = NewObject(engine, DataType_String);
     if (result == 0)
         return 0;
 
     /* Avoid recursion by using the engine's stack. */
-    AspDataEntry *entry = (AspDataEntry *)const_entry;
-    AspDataEntry *startStackTop = engine->stackTop;
-    AspDataEntry *next = 0;
+    const AspDataEntry *startStackTop = engine->stackTop;
+    const AspDataEntry *next = 0;
     bool flag = false;
     uint32_t iterationCount = 0;
     for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
         char buffer[100];
-        char type = (DataType)AspDataGetType(entry);
+        DataType type = (DataType)AspDataGetType(entry);
         switch (type)
         {
             default:
                 strcpy(buffer, "?");
+                break;
 
             case DataType_None:
                 strcpy(buffer, "None");
@@ -541,7 +540,7 @@ static AspDataEntry *ToString
                     AspDataEntry *fragment = nextResult.value;
                     uint8_t fragmentSize =
                         AspDataGetStringFragmentSize(fragment);
-                    char *fragmentData =
+                    const char *fragmentData =
                         AspDataGetStringFragmentData(fragment);
 
                     /* Decide how to treat strings. */
@@ -685,7 +684,7 @@ static AspDataEntry *ToString
 
                 /* Save state and defer the element to the next iteration. */
                 AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
-                AspDataEntry *valueStackEntry = AspPushNoUse
+                const AspDataEntry *valueStackEntry = AspPushNoUse
                     (engine, nextResult.value);
                 if (entryStackEntry == 0 || valueStackEntry == 0)
                 {
@@ -740,7 +739,8 @@ static AspDataEntry *ToString
                 /* Save state and defer the key or value to the next iteration
                    as appropriate. */
                 AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
-                AspDataEntry *valueStackEntry = AspPushNoUse(engine, value);
+                const AspDataEntry *valueStackEntry = AspPushNoUse
+                    (engine, value);
                 if (entryStackEntry == 0 || valueStackEntry == 0)
                 {
                     AspUnref(engine, result);
@@ -762,7 +762,7 @@ static AspDataEntry *ToString
             {
                 uint32_t iterableIndex =
                     AspDataGetIteratorIterableIndex(entry);
-                AspDataEntry *iterable = AspValueEntry
+                const AspDataEntry *iterable = AspValueEntry
                     (engine, iterableIndex);
                 snprintf(buffer, sizeof buffer, "<%s:", TypeString(type));
                 if (iterable == 0)
@@ -808,7 +808,7 @@ static AspDataEntry *ToString
             case DataType_AppPointerObject:
             {
                 const AspDataEntry *infoEntry = AspAppObjectInfoEntry
-                    (engine, entry);
+                    (engine, (AspDataEntry *)entry);
                 snprintf
                     (buffer, sizeof buffer, "<app-%s:%d:",
                      type == DataType_AppIntegerObject ? "int" : "ptr",
@@ -972,7 +972,7 @@ AspRunResult AspCount
 }
 
 AspDataEntry *AspElement
-    (AspEngine *engine, AspDataEntry *sequence, int32_t index)
+    (AspEngine *engine, const AspDataEntry *sequence, int32_t index)
 {
     uint8_t type = AspDataGetType(sequence);
     if (type != DataType_Tuple && type != DataType_List)
@@ -997,17 +997,15 @@ int32_t AspRangeElement
 }
 
 char AspStringElement
-    (AspEngine *engine, const AspDataEntry *strEntry, int32_t index)
+    (AspEngine *engine, const AspDataEntry *str, int32_t index)
 {
-    AspDataEntry *str = (AspDataEntry *)strEntry;
-
     if (AspDataGetType(str) != DataType_String)
         return '\0';
 
     /* Treat negative indices as counting backwards from the end. */
     if (index < 0)
     {
-        index += AspDataGetSequenceCount(strEntry);
+        index += AspDataGetSequenceCount(str);
         if (index < 0)
             return '\0';
     }
@@ -1044,7 +1042,7 @@ char AspStringElement
 }
 
 AspDataEntry *AspFind
-    (AspEngine *engine, AspDataEntry *tree, const AspDataEntry *key)
+    (AspEngine *engine, const AspDataEntry *tree, const AspDataEntry *key)
 {
     AspTreeResult result = AspTreeFind(engine, tree, key);
     if (result.result != AspRunResult_OK)
@@ -1182,7 +1180,7 @@ AspDataEntry *AspNewUnboundedRange
 
 static AspDataEntry *NewRange
     (AspEngine *engine,
-     int32_t startValue, int32_t *endValue, int32_t stepValue)
+     int32_t startValue, const int32_t *endValue, int32_t stepValue)
 {
     AspDataEntry *entry = NewObject(engine, DataType_Range);
     if (entry != 0)
@@ -1468,7 +1466,7 @@ bool AspSetInsert
     return true;
 }
 
-bool AspSetErase(AspEngine *engine, AspDataEntry *set, AspDataEntry *key)
+bool AspSetErase(AspEngine *engine, AspDataEntry *set, const AspDataEntry *key)
 {
     /* Ensure the container is a set. */
     AspRunResult assertResult = AspAssert
@@ -1509,7 +1507,7 @@ bool AspDictionaryInsert
 }
 
 bool AspDictionaryErase
-    (AspEngine *engine, AspDataEntry *dictionary, AspDataEntry *key)
+    (AspEngine *engine, AspDataEntry *dictionary, const AspDataEntry *key)
 {
     /* Ensure the container is a dictionary. */
     AspRunResult assertResult = AspAssert

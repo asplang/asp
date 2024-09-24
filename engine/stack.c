@@ -14,9 +14,9 @@ AspDataEntry *AspPush(AspEngine *engine, AspDataEntry *value)
     return AspPush1(engine, value, true);
 }
 
-AspDataEntry *AspPushNoUse(AspEngine *engine, AspDataEntry *value)
+AspDataEntry *AspPushNoUse(AspEngine *engine, const AspDataEntry *value)
 {
-    return AspPush1(engine, value, false);
+    return AspPush1(engine, (AspDataEntry *)value, false);
 }
 
 static AspDataEntry *AspPush1(AspEngine *engine, AspDataEntry *value, bool use)

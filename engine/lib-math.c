@@ -9,12 +9,12 @@ static double logn(double, double);
 static AspRunResult generic_function_1
     (AspEngine *engine,
      double (*function)(double),
-     AspDataEntry *a,
+     const AspDataEntry *a,
      AspDataEntry **returnValue);
 static AspRunResult generic_function_2
     (AspEngine *engine,
      double (*function)(double, double),
-     AspDataEntry *a, AspDataEntry *b,
+     const AspDataEntry *a, const AspDataEntry *b,
      AspDataEntry **returnValue);
 
 /* sin(x)
@@ -263,7 +263,7 @@ ASP_LIB_API AspRunResult AspLib_abs
 static AspRunResult generic_function_1
     (AspEngine *engine,
      double (*function)(double),
-     AspDataEntry *a,
+     const AspDataEntry *a,
      AspDataEntry **returnValue)
 {
     double aValue;
@@ -278,7 +278,7 @@ static AspRunResult generic_function_1
 static AspRunResult generic_function_2
     (AspEngine *engine,
      double (*function)(double, double),
-     AspDataEntry *a, AspDataEntry *b,
+     const AspDataEntry *a, const AspDataEntry *b,
      AspDataEntry **returnValue)
 {
     double aValue, bValue;

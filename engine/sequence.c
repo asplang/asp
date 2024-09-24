@@ -195,7 +195,7 @@ bool AspSequenceEraseElement
 }
 
 AspSequenceResult AspSequenceIndex
-    (AspEngine *engine, AspDataEntry *sequence, int32_t index)
+    (AspEngine *engine, const AspDataEntry *sequence, int32_t index)
 {
     AspSequenceResult result = {AspRunResult_OK, 0, 0};
 
@@ -248,8 +248,8 @@ AspSequenceResult AspSequenceIndex
 }
 
 AspSequenceResult AspSequenceNext
-    (AspEngine *engine, AspDataEntry *sequence,
-     AspDataEntry *element, bool right)
+    (AspEngine *engine, const AspDataEntry *sequence,
+     const AspDataEntry *element, bool right)
 {
     AspSequenceResult result = {AspRunResult_OK, 0, 0};
 
@@ -291,7 +291,7 @@ AspRunResult AspStringAppendBuffer
     uint32_t fragmentIndex = AspDataGetStringFragmentMaxSize();
     if (AspDataGetSequenceCount(str) != 0)
     {
-        AspDataEntry *tailElement = AspEntry
+        const AspDataEntry *tailElement = AspEntry
             (engine, AspDataGetSequenceTailIndex(str));
         if (tailElement == 0)
             return AspRunResult_InternalError;

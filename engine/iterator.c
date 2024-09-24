@@ -71,7 +71,7 @@ AspIteratorResult AspIteratorCreate
                 if (result.result != AspRunResult_OK)
                     return result;
                 atEnd = startValue == endValue;
-                if (!atEnd && count > 0)
+                if (!atEnd)
                 {
                     /* Compute the start value as (start + (count - 1) * step).
                        Note that because count is always non-negative,
@@ -209,7 +209,7 @@ AspRunResult AspIteratorNext
         return AspRunResult_UnexpectedType;
 
     /* Gain access to the underlying iterable. */
-    AspDataEntry *iterable = AspValueEntry
+    const AspDataEntry *iterable = AspValueEntry
         (engine, AspDataGetIteratorIterableIndex(iterator));
 
     /* Check if the iterator is already at its end. */
@@ -274,7 +274,7 @@ AspRunResult AspIteratorNext
         {
             if (AspDataGetType(member) != DataType_Element)
                 return AspRunResult_UnexpectedType;
-            AspDataEntry *fragment = AspEntry
+            const AspDataEntry *fragment = AspEntry
                 (engine, AspDataGetElementValueIndex(member));
             if (AspDataGetType(fragment) != DataType_StringFragment)
                 return AspRunResult_UnexpectedType;

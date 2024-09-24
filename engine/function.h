@@ -12,15 +12,15 @@ extern "C" {
 #endif
 
 AspRunResult AspExpandIterableGroupArgument
-    (AspEngine *, AspDataEntry *argumentList, AspDataEntry *iterable);
+    (AspEngine *, AspDataEntry *argumentList, const AspDataEntry *iterable);
 AspRunResult AspExpandDictionaryGroupArgument
-    (AspEngine *, AspDataEntry *argumentList, AspDataEntry *dictionary);
+    (AspEngine *, AspDataEntry *argumentList, const AspDataEntry *dictionary);
 AspRunResult AspCallFunction
     (AspEngine *, AspDataEntry *function, AspDataEntry *argumentList,
      bool fromApp);
 AspRunResult AspLoadArguments
     (AspEngine *,
-     AspDataEntry *argumentList, AspDataEntry *parameterList,
+     const AspDataEntry *argumentList, const AspDataEntry *parameterList,
      AspDataEntry *ns);
 AspRunResult AspReturnToCaller(AspEngine *);
 

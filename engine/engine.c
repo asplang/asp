@@ -297,7 +297,7 @@ AspRunResult AspSetCycleDetectionLimit(AspEngine *engine, uint32_t limit)
     return AspRunResult_OK;
 }
 
-uint32_t AspGetCycleDetectionLimit(AspEngine *engine)
+uint32_t AspGetCycleDetectionLimit(const AspEngine *engine)
 {
     return engine->cycleDetectionLimit;
 }
