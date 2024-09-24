@@ -143,7 +143,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             else if (t == DataType_ForwardIterator ||
                      t == DataType_ReverseIterator)
             {
-                AspDataEntry *iterable = AspValueEntry
+                const AspDataEntry *iterable = AspValueEntry
                     (engine, AspDataGetIteratorIterableIndex(entry));
                 AspPushNoUse(engine, iterable);
 
@@ -159,17 +159,17 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             }
             else if (t == DataType_Function)
             {
-                AspDataEntry *module = AspValueEntry
+                const AspDataEntry *module = AspValueEntry
                     (engine, AspDataGetFunctionModuleIndex(entry));
                 AspPushNoUse(engine, module);
 
-                AspDataEntry *parameters = AspValueEntry
+                const AspDataEntry *parameters = AspValueEntry
                     (engine, AspDataGetFunctionParametersIndex(entry));
                 AspPushNoUse(engine, parameters);
             }
             else if (t == DataType_Module)
             {
-                AspDataEntry *ns = AspValueEntry
+                const AspDataEntry *ns = AspValueEntry
                     (engine, AspDataGetModuleNamespaceIndex(entry));
                 AspPushNoUse(engine, ns);
             }
@@ -205,7 +205,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             }
             else if (t == DataType_Frame)
             {
-                AspDataEntry *module = AspValueEntry
+                const AspDataEntry *module = AspValueEntry
                     (engine, AspDataGetFrameModuleIndex(entry));
                 AspPushNoUse(engine, module);
             }

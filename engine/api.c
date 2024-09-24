@@ -709,7 +709,7 @@ static AspDataEntry *ToString
                 if (start)
                     strcpy(buffer, "{");
 
-                AspDataEntry *value = 0;
+                const AspDataEntry *value = 0;
                 if (flag)
                 {
                    value = AspValueEntry

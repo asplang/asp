@@ -45,6 +45,8 @@ void AspGetRange
             (engine, AspDataGetRangeStepIndex(range));
         AspAssert(engine, AspDataGetType(stepEntry) == DataType_Integer);
     }
+    if (engine->runResult != AspRunResult_OK)
+        return;
     int32_t localStepValue =
         stepEntry != 0 ? AspDataGetInteger(stepEntry) : 1;
     int32_t localStartValue =
@@ -77,6 +79,8 @@ AspRunResult AspRangeCount
     int32_t start, end, step;
     bool bounded;
     AspGetRange(engine, range, &start, &end, &step, &bounded);
+    if (engine->runResult != AspRunResult_OK)
+        return engine->runResult;
 
     /* Deal with infinite ranges. */
     if (step == 0 || !bounded)
@@ -139,6 +143,11 @@ AspRangeResult AspRangeIndex
     int32_t start, end, step;
     bool bounded;
     AspGetRange(engine, range, &start, &end, &step, &bounded);
+    if (engine->runResult != AspRunResult_OK)
+    {
+        result.result = engine->runResult;
+        return result;
+    }
 
     /* Ensure the index is in range. Note that since count is always
        non-negative, (-count) will always be representable. */
@@ -196,6 +205,8 @@ AspRunResult AspGetSliceRange
         return result;
 
     AspGetRange(engine, range, startValue, endValue, stepValue, bounded);
+    if (engine->runResult != AspRunResult_OK)
+        return engine->runResult;
 
     /* Adjust the start and end values for the slice operation. */
     int32_t *indexValues[] = {startValue, endValue};
@@ -241,12 +252,22 @@ AspRangeResult AspRangeSlice
     bool rangeBounded;
     AspGetRange
         (engine, range, &rangeStart, &rangeEnd, &rangeStep, &rangeBounded);
+    if (engine->runResult != AspRunResult_OK)
+    {
+        result.result = engine->runResult;
+        return result;
+    }
     int32_t rangeCount = 0;
     int32_t sliceStart, sliceEnd, sliceStep;
     bool sliceBounded;
     AspGetRange
         (engine, sliceRange,
          &sliceStart, &sliceEnd, &sliceStep, &sliceBounded);
+    if (engine->runResult != AspRunResult_OK)
+    {
+        result.result = engine->runResult;
+        return result;
+    }
 
     if (rangeBounded || sliceBounded)
     {
