@@ -7,13 +7,14 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 
 using namespace std;
 
 static void PrintTree
-    (AspEngine *engine, AspDataEntry *tree, ostream &);
+    (AspEngine *engine, const AspDataEntry *tree, ostream &);
 static void PrintNode
-    (AspEngine *, AspDataEntry *node,
+    (AspEngine *, const AspDataEntry *node,
      int side, unsigned level, unsigned *depth, ostream &);
 
 static const size_t DATA_ENTRY_COUNT = 2048;
@@ -28,10 +29,10 @@ int main(int argc, char **argv)
 
     // Initialize the Asp engine.
     AspEngine engine;
-    char *data = (char *)malloc(dataByteSize);
+    auto data = unique_ptr<char>(new char[dataByteSize]);
     AspRunResult initializeResult = AspInitialize
         (&engine,
-         nullptr, 0, data, dataByteSize,
+         nullptr, 0, data.get(), dataByteSize,
          nullptr, nullptr);
     if (initializeResult != AspRunResult_OK)
     {
@@ -46,7 +47,7 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    AspDataEntry *set = AspNewSet(&engine);
+    auto set = AspNewSet(&engine);
 
     for (unsigned k = 1; k <= MAX_TREE_SIZE; k++)
     {
@@ -105,7 +106,6 @@ int main(int argc, char **argv)
         }
 
         // Erase entries.
-        AspRunResult eraseResult;
         for (unsigned i = 0; i < k; i++)
         {
             // TODO: loop with all order permutations.
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-static void PrintTree(AspEngine *engine, AspDataEntry *tree, ostream &os)
+static void PrintTree(AspEngine *engine, const AspDataEntry *tree, ostream &os)
 {
     int32_t count;
     AspCount(engine, tree, &count);
@@ -190,7 +190,7 @@ static void PrintTree(AspEngine *engine, AspDataEntry *tree, ostream &os)
 }
 
 static void PrintNode
-    (AspEngine *engine, AspDataEntry *node, int side,
+    (AspEngine *engine, const AspDataEntry *node, int side,
      unsigned level, unsigned *depth, ostream &os)
 {
     if (level > *depth)
@@ -208,7 +208,7 @@ static void PrintNode
         return;
     }
 
-    AspDataEntry *key = AspValueEntry
+    auto key = AspValueEntry
         (engine, AspDataGetTreeNodeKeyIndex(node));
     int32_t keyValue;
     if (AspIntegerValue(key, &keyValue))
@@ -230,7 +230,7 @@ static void PrintNode
         if (linksNode != nullptr)
             leftIndex = AspDataGetTreeLinksNodeLeftIndex(linksNode);
     }
-    AspDataEntry *leftNode = AspEntry(engine, leftIndex);
+    auto leftNode = AspEntry(engine, leftIndex);
     PrintNode(engine, leftNode, -1, level + 1, depth, os);
 
     uint32_t rightIndex = 0;
@@ -242,6 +242,6 @@ static void PrintNode
         if (linksNode != nullptr)
             rightIndex = AspDataGetTreeLinksNodeRightIndex(linksNode);
     }
-    AspDataEntry *rightNode = AspEntry(engine, rightIndex);
+    auto rightNode = AspEntry(engine, rightIndex);
     PrintNode(engine, rightNode, +1, level + 1, depth, os);
 }

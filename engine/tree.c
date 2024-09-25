@@ -35,9 +35,10 @@ static AspRunResult NotFoundResult(const AspDataEntry *tree);
 
 #ifdef ASP_TEST
 static bool IsRedBlack
-    (AspEngine *, AspDataEntry *node, unsigned depth, unsigned *blackDepth);
+    (AspEngine *, const AspDataEntry *node,
+     unsigned depth, unsigned *blackDepth);
 static void Tally
-    (AspEngine *, AspDataEntry *node, unsigned *tally);
+    (AspEngine *, const AspDataEntry *node, unsigned *tally);
 #endif
 
 AspTreeResult AspTreeInsert
@@ -1008,13 +1009,13 @@ static AspRunResult NotFoundResult(const AspDataEntry *tree)
 
 #ifdef ASP_TEST
 
-bool AspTreeIsRedBlack(AspEngine *engine, AspDataEntry *tree)
+bool AspTreeIsRedBlack(AspEngine *engine, const AspDataEntry *tree)
 {
     uint32_t rootIndex = AspDataGetTreeRootIndex(tree);
     if (rootIndex == 0)
         return true;
 
-    AspDataEntry *rootNode = AspEntry(engine, rootIndex);
+    const AspDataEntry *rootNode = AspEntry(engine, rootIndex);
     if (!AspDataGetTreeNodeIsBlack(rootNode))
         return false;
 
@@ -1023,13 +1024,13 @@ bool AspTreeIsRedBlack(AspEngine *engine, AspDataEntry *tree)
 }
 
 static bool IsRedBlack
-    (AspEngine *engine, AspDataEntry *node,
+    (AspEngine *engine, const AspDataEntry *node,
      unsigned depth, unsigned *blackDepth)
 {
     uint32_t leftIndex = GetChildIndex(engine, node, false);
-    AspDataEntry *leftNode = AspEntry(engine, leftIndex);
+    const AspDataEntry *leftNode = AspEntry(engine, leftIndex);
     uint32_t rightIndex = GetChildIndex(engine, node, true);
-    AspDataEntry *rightNode = AspEntry(engine, rightIndex);
+    const AspDataEntry *rightNode = AspEntry(engine, rightIndex);
     if (!AspDataGetTreeNodeIsBlack(node) &&
         leftIndex != 0 && rightIndex != 0 &&
         (!AspDataGetTreeNodeIsBlack(leftNode) ||
@@ -1052,7 +1053,7 @@ static bool IsRedBlack
         (rightIndex == 0 || IsRedBlack(engine, rightNode, depth, blackDepth));
 }
 
-unsigned AspTreeTally(AspEngine *engine, AspDataEntry *tree)
+unsigned AspTreeTally(AspEngine *engine, const AspDataEntry *tree)
 {
     uint32_t rootIndex = AspDataGetTreeRootIndex(tree);
     if (rootIndex == 0)
@@ -1062,7 +1063,7 @@ unsigned AspTreeTally(AspEngine *engine, AspDataEntry *tree)
     return tally;
 }
 
-static void Tally(AspEngine *engine, AspDataEntry *node, unsigned *tally)
+static void Tally(AspEngine *engine, const AspDataEntry *node, unsigned *tally)
 {
     uint32_t leftIndex = GetChildIndex(engine, node, false);
     if (leftIndex != 0)

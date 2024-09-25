@@ -39,8 +39,8 @@ AspTreeResult AspTreeNext
      const AspDataEntry *node, bool right);
 
 #ifdef ASP_TEST
-bool AspTreeIsRedBlack(AspEngine *, AspDataEntry *tree);
-unsigned AspTreeTally(AspEngine *, AspDataEntry *tree);
+bool AspTreeIsRedBlack(AspEngine *, const AspDataEntry *tree);
+unsigned AspTreeTally(AspEngine *, const AspDataEntry *tree);
 #endif
 
 #ifdef __cplusplus
