@@ -67,7 +67,7 @@ AspSourceInfo *AspLoadSourceInfoFromFile(const char *fileName)
     }
 
     /* Determine the format version. */
-    char delimitorByte = getc(fp);
+    char delimitorByte = (char)getc(fp);
     if (feof(fp))
     {
         fclose(fp);
@@ -78,7 +78,7 @@ AspSourceInfo *AspLoadSourceInfoFromFile(const char *fileName)
         ungetc(delimitorByte, fp);
     else
     {
-        version = getc(fp);
+        version = (char)getc(fp);
         if (feof(fp))
         {
             fclose(fp);

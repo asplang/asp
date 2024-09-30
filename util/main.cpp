@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 
         if (option == "a" || option == "e" || option == "p" || option == "s")
         {
-            string optionArgument = string(argv[++optionIndex]);
+            auto optionArgument = string(argv[++optionIndex]);
             size_t scannedSize = 0;
             int value;
             try
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
                     cerr << "Invalid value for " << arg << endl;
                     break;
                 }
-                uint32_t pc = static_cast<uint32_t>(value);
+                auto pc = static_cast<uint32_t>(value);
                 auto sourceLocation = AspGetSourceLocation(sourceInfo, pc);
                 auto oldFlags = cout.flags();
                 auto oldFill = cout.fill();
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
             }
             else if (option == "s")
             {
-                int32_t symbol = static_cast<int32_t>(value);
+                auto symbol = static_cast<int32_t>(value);
                 auto name = AspGetSymbolName(sourceInfo, symbol);
                 cout << "Symbol " << symbol << ": ";
                 if (name == nullptr)
