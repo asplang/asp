@@ -65,9 +65,9 @@ class Generator
         SourceLocation CurrentSourceLocation() const;
 
         // Output methods.
-        void WriteCompilerSpec(std::ostream &);
-        void WriteApplicationHeader(std::ostream &);
-        void WriteApplicationCode(std::ostream &);
+        void WriteCompilerSpec(std::ostream &) const;
+        void WriteApplicationHeader(std::ostream &) const;
+        void WriteApplicationCode(std::ostream &) const;
 
 #endif
 
@@ -126,8 +126,8 @@ class Generator
         void ReportError(const std::string &);
         void ReportError(const std::string &, const SourceElement &);
         void ReportError(const std::string &, const SourceLocation &);
-        std::uint32_t CheckValue();
-        void ComputeCheckValue();
+        std::uint32_t CheckValue() const;
+        std::uint32_t ComputeCheckValue() const;
 
     private:
 
@@ -146,8 +146,8 @@ class Generator
 
         // Spec data.
         std::map<std::string, NonTerminal *> definitions;
-        bool checkValueComputed = false;
-        std::uint32_t checkValue = 0;
+        mutable bool checkValueComputed = false;
+        mutable std::uint32_t checkValue = 0;
 };
 
 } // extern "C"

@@ -24,7 +24,7 @@ class Instruction
     public:
 
         // Destructor.
-        virtual ~Instruction();
+        virtual ~Instruction() = default;
 
         // Address methods.
         void Offset(std::uint32_t);
@@ -56,7 +56,7 @@ class Instruction
 
         // Data.
         std::uint8_t opCode;
-        std::uint32_t offset, targetOffset;
+        std::uint32_t offset = 0, targetOffset = 0;
         std::string comment;
         bool targetLocationDefined, fixed;
         Executable::Location targetLocation;
@@ -68,13 +68,13 @@ class NullInstruction : public Instruction
 
         NullInstruction();
 
-        virtual unsigned Size() const;
-        virtual void Write(std::ostream &) const;
-        virtual void Print(std::ostream &) const;
+        unsigned Size() const override;
+        void Write(std::ostream &) const override;
+        void Print(std::ostream &) const override;
 
     protected:
 
-        virtual void PrintCode(std::ostream &) const;
+        void PrintCode(std::ostream &) const override;
 };
 
 class SimpleInstruction : public Instruction
@@ -89,7 +89,7 @@ class SimpleInstruction : public Instruction
 
     protected:
 
-        virtual void PrintCode(std::ostream &) const;
+        void PrintCode(std::ostream &) const override;
 };
 
 class PushNoneInstruction : public SimpleInstruction
@@ -125,9 +125,9 @@ class PushIntegerInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -143,9 +143,9 @@ class PushFloatInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -161,9 +161,9 @@ class PushSymbolInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -179,9 +179,9 @@ class PushStringInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -253,9 +253,9 @@ class PushModuleInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -266,14 +266,14 @@ class PopInstruction : public Instruction
 {
     public:
 
-        PopInstruction
+        explicit PopInstruction
             (std::uint8_t count = 1, const std::string &comment = "");
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -284,7 +284,7 @@ class UnaryInstruction : public SimpleInstruction
 {
     public:
 
-        UnaryInstruction
+        explicit UnaryInstruction
             (std::uint8_t opCode, const std::string &comment = "");
 };
 
@@ -292,7 +292,7 @@ class BinaryInstruction : public SimpleInstruction
 {
     public:
 
-        BinaryInstruction
+        explicit BinaryInstruction
             (std::uint8_t opCode, const std::string &comment = "");
 };
 
@@ -309,7 +309,7 @@ class LoadInstruction : public Instruction
 {
     public:
 
-        LoadInstruction
+        explicit LoadInstruction
             (bool address, const std::string &comment = "");
         LoadInstruction
             (std::int32_t symbol, bool address,
@@ -317,9 +317,9 @@ class LoadInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -343,9 +343,9 @@ class DeleteInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -364,15 +364,15 @@ class GlobalInstruction : public Instruction
 {
     public:
 
-        explicit GlobalInstruction
+        GlobalInstruction
             (std::int32_t symbol, bool local,
              const std::string &comment = "");
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -417,7 +417,7 @@ class ConditionalJumpInstruction : public SimpleInstruction
 {
     public:
 
-        explicit ConditionalJumpInstruction
+        ConditionalJumpInstruction
             (bool condition, const Executable::Location &,
              const std::string &comment = "");
 };
@@ -458,9 +458,9 @@ class AddModuleInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -484,9 +484,9 @@ class LoadModuleInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -512,9 +512,9 @@ class MakeArgumentInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -539,9 +539,9 @@ class MakeParameterInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 
@@ -593,7 +593,7 @@ class IndexInstruction : public SimpleInstruction
 {
     public:
 
-        IndexInstruction
+        explicit IndexInstruction
             (bool address, const std::string &comment = "");
 };
 
@@ -609,9 +609,9 @@ class MemberInstruction : public Instruction
 
     protected:
 
-        virtual unsigned OperandsSize() const;
-        virtual void WriteOperands(std::ostream &) const;
-        virtual void PrintCode(std::ostream &) const;
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
 
     private:
 

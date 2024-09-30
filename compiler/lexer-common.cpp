@@ -56,7 +56,7 @@ map<string, int> Lexer::keywords =
 Token *Lexer::ProcessLineContinuation()
 {
     string lex;
-    lex += Get(); // backslash
+    lex += static_cast<char>(Get()); // backslash
 
     // Allow trailing whitespace only if followed by a comment.
     bool trailingSpace = false;
@@ -64,7 +64,7 @@ Token *Lexer::ProcessLineContinuation()
     while (c = Peek(), isspace(c) && c != '\n')
     {
         trailingSpace = true;
-        lex += Get();
+        lex += static_cast<char>(Get());
     }
     if (c == '#')
     {
@@ -256,7 +256,7 @@ Token *Lexer::ProcessNumber()
                 static_cast<uint32_t>(INT32_MAX) + 1U;
             errno = 0;
             auto lValue = strtoul(s, nullptr, 10);
-            uint32_t uValue = static_cast<uint32_t>(lValue);
+            auto uValue = static_cast<uint32_t>(lValue);
             return
                 errno != 0 || lValue > max ?
                 new Token
@@ -272,7 +272,7 @@ Token *Lexer::ProcessNumber()
         {
             errno = 0;
             auto lValue = strtoul(s, nullptr, 0x10);
-            uint32_t uValue = static_cast<uint32_t>(lValue);
+            auto uValue = static_cast<uint32_t>(lValue);
             return
                 errno != 0 || lValue > UINT32_MAX ?
                 new Token
@@ -296,7 +296,7 @@ Token *Lexer::ProcessString()
 {
     string lex, escapeLex;
 
-    char quote = static_cast<char>(Get());
+    auto quote = static_cast<char>(Get());
 
     enum class State
     {
@@ -314,7 +314,7 @@ Token *Lexer::ProcessString()
         int ci = Get();
         if (ci == EOF)
             break;
-        char c = static_cast<char>(ci);
+        auto c = static_cast<char>(ci);
 
         switch (state)
         {
@@ -385,7 +385,7 @@ Token *Lexer::ProcessString()
             case State::DecimalEscape:
             {
                 escapeLex += c;
-                char c2 = static_cast<char>(Peek());
+                auto c2 = static_cast<char>(Peek());
                 if (escapeLex.size() == 3 || !isdigit(c2))
                 {
                     int value = atoi(escapeLex.c_str());

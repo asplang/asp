@@ -56,14 +56,10 @@ const DefStatement *Statement::ParentDef() const
     return defStatement;
 }
 
-Block::Block()
-{
-}
-
 Block::~Block()
 {
-    for (auto iter = statements.begin(); iter != statements.end(); iter++)
-        delete *iter;
+    for (auto &statement: statements)
+        delete statement;
 }
 
 void Block::Add(Statement *statement)
@@ -74,7 +70,7 @@ void Block::Add(Statement *statement)
     statements.push_back(statement);
 }
 
-void Block::Parent(Statement *statement)
+void Block::Parent(const Statement *statement)
 {
     parentStatement = statement;
 }
@@ -107,7 +103,6 @@ AssignmentStatement::AssignmentStatement
     Statement(assignmentToken),
     assignmentTokenType(assignmentToken.type),
     targetExpression(targetExpression),
-    valueExpression(nullptr),
     valueAssignmentStatement(valueAssignmentStatement)
 {
     targetExpression->Parent(this);
@@ -119,8 +114,7 @@ AssignmentStatement::AssignmentStatement
     Statement(assignmentToken),
     assignmentTokenType(assignmentToken.type),
     targetExpression(targetExpression),
-    valueExpression(valueExpression),
-    valueAssignmentStatement(nullptr)
+    valueExpression(valueExpression)
 {
     targetExpression->Parent(this);
     valueExpression->Parent(this);
@@ -146,9 +140,7 @@ InsertionStatement::InsertionStatement
      Expression *itemExpression) :
     Statement(insertionToken),
     containerInsertionStatement(containerInsertionStatement),
-    containerExpression(nullptr),
-    itemExpression(itemExpression),
-    keyValuePair(nullptr)
+    itemExpression(itemExpression)
 {
 }
 
@@ -158,8 +150,6 @@ InsertionStatement::InsertionStatement
      KeyValuePair *keyValuePair) :
     Statement(insertionToken),
     containerInsertionStatement(containerInsertionStatement),
-    containerExpression(nullptr),
-    itemExpression(nullptr),
     keyValuePair(keyValuePair)
 {
 }
@@ -168,10 +158,8 @@ InsertionStatement::InsertionStatement
     (const Token &insertionToken,
      Expression *containerExpression, Expression *itemExpression) :
     Statement(insertionToken),
-    containerInsertionStatement(nullptr),
     containerExpression(containerExpression),
-    itemExpression(itemExpression),
-    keyValuePair(nullptr)
+    itemExpression(itemExpression)
 {
 }
 
@@ -179,9 +167,7 @@ InsertionStatement::InsertionStatement
     (const Token &insertionToken,
      Expression *containerExpression, KeyValuePair *keyValuePair) :
     Statement(insertionToken),
-    containerInsertionStatement(nullptr),
     containerExpression(containerExpression),
-    itemExpression(nullptr),
     keyValuePair(keyValuePair)
 {
 }
@@ -222,10 +208,6 @@ ImportName::ImportName(const Token &nameToken, const Token &asNameToken) :
 {
 }
 
-ImportNameList::ImportNameList()
-{
-}
-
 void ImportNameList::Add(ImportName *name)
 {
     if (names.empty())
@@ -235,8 +217,8 @@ void ImportNameList::Add(ImportName *name)
 
 ImportNameList::~ImportNameList()
 {
-    for (auto iter = names.begin(); iter != names.end(); iter++)
-        delete *iter;
+    for (auto &name: names)
+        delete name;
 }
 
 ImportStatement::ImportStatement
@@ -251,10 +233,6 @@ ImportStatement::~ImportStatement()
 {
     delete moduleNameList;
     delete memberNameList;
-}
-
-VariableList::VariableList()
-{
 }
 
 void VariableList::Add(const Token &nameToken)
@@ -321,7 +299,6 @@ IfStatement::IfStatement
     Statement(*conditionExpression),
     conditionExpression(conditionExpression),
     trueBlock(trueBlock),
-    falseBlock(nullptr),
     elsePart(elsePart)
 {
     conditionExpression->Parent(this);
@@ -333,8 +310,7 @@ IfStatement::IfStatement
     Statement(*conditionExpression),
     conditionExpression(conditionExpression),
     trueBlock(trueBlock),
-    falseBlock(falseBlock),
-    elsePart(nullptr)
+    falseBlock(falseBlock)
 {
     conditionExpression->Parent(this);
     trueBlock->Parent(this);
@@ -345,9 +321,7 @@ IfStatement::IfStatement
     (Expression *conditionExpression, Block *trueBlock) :
     Statement(*conditionExpression),
     conditionExpression(conditionExpression),
-    trueBlock(trueBlock),
-    falseBlock(nullptr),
-    elsePart(nullptr)
+    trueBlock(trueBlock)
 {
     conditionExpression->Parent(this);
     trueBlock->Parent(this);
@@ -451,14 +425,10 @@ Parameter::~Parameter()
     delete defaultExpression;
 }
 
-void Parameter::Parent(const Statement *statement)
+void Parameter::Parent(const Statement *statement) const
 {
     if (defaultExpression)
         defaultExpression->Parent(statement);
-}
-
-ParameterList::ParameterList()
-{
 }
 
 void ParameterList::Add(Parameter *parameter)
@@ -470,17 +440,14 @@ void ParameterList::Add(Parameter *parameter)
 
 ParameterList::~ParameterList()
 {
-    for (auto iter = parameters.begin(); iter != parameters.end(); iter++)
-        delete *iter;
+    for (auto &parameter: parameters)
+        delete parameter;
 }
 
-void ParameterList::Parent(const Statement *statement)
+void ParameterList::Parent(const Statement *statement) const
 {
-    for (auto iter = parameters.begin(); iter != parameters.end(); iter++)
-    {
-        auto parameter = *iter;
+    for (auto &parameter: parameters)
         parameter->Parent(statement);
-    }
 }
 
 DefStatement::DefStatement

@@ -71,8 +71,8 @@ ShortCircuitLogicalExpression::ShortCircuitLogicalExpression
 
 ShortCircuitLogicalExpression::~ShortCircuitLogicalExpression()
 {
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
-        delete *iter;
+    for (auto &expression: expressions)
+        delete expression;
 }
 
 void ShortCircuitLogicalExpression::Add(Expression *expression)
@@ -82,11 +82,8 @@ void ShortCircuitLogicalExpression::Add(Expression *expression)
 
 void ShortCircuitLogicalExpression::Parent(const Statement *statement)
 {
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
-    {
-        auto expression = *iter;
+    for (auto &expression: expressions)
         expression->Parent(statement);
-    }
 }
 
 BinaryExpression::BinaryExpression
@@ -129,10 +126,6 @@ void UnaryExpression::Parent(const Statement *statement)
     expression->Parent(statement);
 }
 
-TargetExpression::TargetExpression()
-{
-}
-
 TargetExpression::TargetExpression(const Token &token) :
     Expression(token)
 {
@@ -142,9 +135,8 @@ TargetExpression::TargetExpression(const Token &token) :
 
 TargetExpression::~TargetExpression()
 {
-    for (auto iter = targetExpressions.begin();
-         iter != targetExpressions.end(); iter++)
-        delete *iter;
+    for (auto &targetExpression: targetExpressions)
+        delete targetExpression;
 }
 
 bool TargetExpression::IsTuple() const
@@ -187,19 +179,15 @@ Argument::~Argument()
     delete valueExpression;
 }
 
-void Argument::Parent(const Statement *statement)
+void Argument::Parent(const Statement *statement) const
 {
     valueExpression->Parent(statement);
 }
 
-ArgumentList::ArgumentList()
-{
-}
-
 ArgumentList::~ArgumentList()
 {
-    for (auto iter = arguments.begin(); iter != arguments.end(); iter++)
-        delete *iter;
+    for (auto &argument: arguments)
+        delete argument;
 }
 
 void ArgumentList::Add(Argument *argument)
@@ -209,13 +197,10 @@ void ArgumentList::Add(Argument *argument)
     arguments.push_back(argument);
 }
 
-void ArgumentList::Parent(const Statement *statement)
+void ArgumentList::Parent(const Statement *statement) const
 {
-    for (auto iter = arguments.begin(); iter != arguments.end(); iter++)
-    {
-        auto argument = *iter;
+    for (auto &argument: arguments)
         argument->Parent(statement);
-    }
 }
 
 CallExpression::CallExpression
@@ -321,7 +306,7 @@ KeyValuePair::~KeyValuePair()
     delete valueExpression;
 }
 
-void KeyValuePair::Parent(const Statement *statement)
+void KeyValuePair::Parent(const Statement *statement) const
 {
     keyExpression->Parent(statement);
     valueExpression->Parent(statement);
@@ -332,14 +317,10 @@ DictionaryExpression::DictionaryExpression(const Token &token) :
 {
 }
 
-DictionaryExpression::DictionaryExpression()
-{
-}
-
 DictionaryExpression::~DictionaryExpression()
 {
-    for (auto iter = entries.begin(); iter != entries.end(); iter++)
-        delete *iter;
+    for (auto &entry: entries)
+        delete entry;
 }
 
 void DictionaryExpression::Add(KeyValuePair *entry)
@@ -351,11 +332,8 @@ void DictionaryExpression::Add(KeyValuePair *entry)
 
 void DictionaryExpression::Parent(const Statement *statement)
 {
-    for (auto iter = entries.begin(); iter != entries.end(); iter++)
-    {
-        auto entry = *iter;
+    for (auto &entry: entries)
         entry->Parent(statement);
-    }
 }
 
 SetExpression::SetExpression(const Token &token) :
@@ -365,8 +343,8 @@ SetExpression::SetExpression(const Token &token) :
 
 SetExpression::~SetExpression()
 {
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
-        delete *iter;
+    for (auto &expression: expressions)
+        delete expression;
 }
 
 void SetExpression::Add(Expression *expression)
@@ -378,11 +356,8 @@ void SetExpression::Add(Expression *expression)
 
 void SetExpression::Parent(const Statement *statement)
 {
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
-    {
-        auto expression = *iter;
+    for (auto &expression: expressions)
         expression->Parent(statement);
-    }
 }
 
 ListExpression::ListExpression(const Token &token) :
@@ -390,14 +365,10 @@ ListExpression::ListExpression(const Token &token) :
 {
 }
 
-ListExpression::ListExpression()
-{
-}
-
 ListExpression::~ListExpression()
 {
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
-        delete *iter;
+    for (auto &expression: expressions)
+        delete expression;
 }
 
 void ListExpression::Add(Expression *expression)
@@ -426,11 +397,8 @@ Expression *ListExpression::PopFront()
 
 void ListExpression::Parent(const Statement *statement)
 {
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
-    {
-        auto expression = *iter;
+    for (auto &expression: expressions)
         expression->Parent(statement);
-    }
 }
 
 TupleExpression::TupleExpression(const Token &token) :
@@ -440,8 +408,8 @@ TupleExpression::TupleExpression(const Token &token) :
 
 TupleExpression::~TupleExpression()
 {
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
-        delete *iter;
+    for (auto &expression: expressions)
+        delete expression;
 }
 
 void TupleExpression::Add(Expression *expression)
@@ -453,11 +421,8 @@ void TupleExpression::Add(Expression *expression)
 
 void TupleExpression::Parent(const Statement *statement)
 {
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
-    {
-        auto expression = *iter;
+    for (auto &expression: expressions)
         expression->Parent(statement);
-    }
 }
 
 RangeExpression::RangeExpression
@@ -561,7 +526,7 @@ Expression *FoldBinaryExpression
     (int operatorTokenType,
      Expression *leftExpression, Expression *rightExpression)
 {
-    typedef ConstantExpression::Type Type;
+    using Type = ConstantExpression::Type;
 
     auto *leftConstExpression = dynamic_cast<ConstantExpression *>
         (leftExpression);
@@ -677,10 +642,10 @@ Expression *FoldBinaryExpression
 
 Expression *FoldTernaryExpression
     (int operatorTokenType,
-     Expression *conditionExpression,
+     const Expression *conditionExpression,
      Expression *trueExpression, Expression *falseExpression)
 {
-    auto *conditionConstExpression = dynamic_cast<ConstantExpression *>
+    auto *conditionConstExpression = dynamic_cast<const ConstantExpression *>
         (conditionExpression);
 
     switch (operatorTokenType)
@@ -823,7 +788,7 @@ int ConstantExpression::StringCompare(const ConstantExpression &right) const
     return s == right.s ? 0 : s < right.s ? -1 : +1;
 }
 
-Expression *ConstantExpression::FoldNot()
+Expression *ConstantExpression::FoldNot() const
 {
     return new ConstantExpression(Token(sourceLocation,
         !IsTrue() ? TOKEN_TRUE : TOKEN_FALSE));
@@ -849,7 +814,7 @@ Expression *ConstantExpression::FoldPlus()
     }
 }
 
-Expression *ConstantExpression::FoldMinus()
+Expression *ConstantExpression::FoldMinus() const
 {
     switch (type)
     {
@@ -883,7 +848,7 @@ Expression *ConstantExpression::FoldMinus()
     }
 }
 
-Expression *ConstantExpression::FoldInvert()
+Expression *ConstantExpression::FoldInvert() const
 {
     if (type == Type::NegatedMinInteger)
         throw string("Integer constant out of range");
@@ -917,21 +882,24 @@ Expression *FoldAnd
 }
 
 Expression *FoldEqual
-    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+    (const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
     return new ConstantExpression(Token(leftExpression->sourceLocation,
         leftExpression->IsEqual(*rightExpression) ? TOKEN_TRUE : TOKEN_FALSE));
 }
 
 Expression *FoldNotEqual
-    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+    (const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
     return new ConstantExpression(Token(leftExpression->sourceLocation,
         !leftExpression->IsEqual(*rightExpression) ? TOKEN_TRUE : TOKEN_FALSE));
 }
 
 Expression *FoldLess
-    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+    (const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
     return new ConstantExpression(Token(leftExpression->sourceLocation,
         leftExpression->Compare(*rightExpression) < 0 ?
@@ -939,7 +907,8 @@ Expression *FoldLess
 }
 
 Expression *FoldLessOrEqual
-    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+    (const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
     return new ConstantExpression(Token(leftExpression->sourceLocation,
         leftExpression->Compare(*rightExpression) <= 0 ?
@@ -947,7 +916,8 @@ Expression *FoldLessOrEqual
 }
 
 Expression *FoldGreater
-    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+    (const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
     return new ConstantExpression(Token(leftExpression->sourceLocation,
         leftExpression->Compare(*rightExpression) > 0 ?
@@ -955,7 +925,8 @@ Expression *FoldGreater
 }
 
 Expression *FoldGreaterOrEqual
-    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+    (const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
     return new ConstantExpression(Token(leftExpression->sourceLocation,
         leftExpression->Compare(*rightExpression) >= 0 ?
@@ -963,7 +934,8 @@ Expression *FoldGreaterOrEqual
 }
 
 Expression *FoldObjectOrder
-    (ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+    (const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
     return new ConstantExpression(Token(leftExpression->sourceLocation,
         leftExpression->type != rightExpression->type ?
@@ -974,9 +946,10 @@ Expression *FoldObjectOrder
 
 Expression *FoldBitwiseOperation
     (int operatorTokenType,
-     ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+     const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
-    typedef ConstantExpression::Type Type;
+    using Type = ConstantExpression::Type;
 
     if (leftExpression->type == Type::NegatedMinInteger ||
         rightExpression->type == Type::NegatedMinInteger)
@@ -1064,7 +1037,7 @@ Expression *FoldStringConcatenationOperation
     (int operatorTokenType,
      ConstantExpression *leftExpression, ConstantExpression *rightExpression)
 {
-    typedef ConstantExpression::Type Type;
+    using Type = ConstantExpression::Type;
 
     if (leftExpression->type != Type::String ||
         rightExpression->type != Type::String)
@@ -1081,9 +1054,10 @@ Expression *FoldStringConcatenationOperation
 
 Expression *FoldArithmeticOperation
     (int operatorTokenType,
-     ConstantExpression *leftExpression, ConstantExpression *rightExpression)
+     const ConstantExpression *leftExpression,
+     const ConstantExpression *rightExpression)
 {
-    typedef ConstantExpression::Type Type;
+    using Type = ConstantExpression::Type;
 
     if (leftExpression->type == Type::NegatedMinInteger ||
         rightExpression->type == Type::NegatedMinInteger)
@@ -1227,8 +1201,8 @@ Expression *FoldArithmeticOperation
             case TOKEN_PERCENT:
                 if (rightFloat == 0.0)
                     throw string("Divide by zero in division expression");
-                floatResult = static_cast<double>
-                    (leftFloat - floor(leftFloat / rightFloat) * rightFloat);
+                floatResult =
+                    leftFloat - floor(leftFloat / rightFloat) * rightFloat;
                 break;
 
             case TOKEN_DOUBLE_ASTERISK:
@@ -1245,14 +1219,14 @@ Expression *FoldArithmeticOperation
 }
 
 Expression *FoldConditional
-    (ConstantExpression *conditionExpression,
+    (const ConstantExpression *conditionExpression,
      Expression *leftExpression, Expression *rightExpression)
 {
-    typedef ConstantExpression::Type Type;
+    using Type = ConstantExpression::Type;
 
-    auto *leftConstExpression = dynamic_cast<ConstantExpression *>
+    auto *leftConstExpression = dynamic_cast<const ConstantExpression *>
         (leftExpression);
-    auto *rightConstExpression = dynamic_cast<ConstantExpression *>
+    auto *rightConstExpression = dynamic_cast<const ConstantExpression *>
         (rightExpression);
     if (leftConstExpression != nullptr &&
         leftConstExpression->type == Type::NegatedMinInteger ||

@@ -16,7 +16,7 @@ class Assignment : public NonTerminal
     public:
 
         Assignment(const Token &name, Literal *);
-        ~Assignment();
+        ~Assignment() override;
 
         std::string Name() const
         {
@@ -45,8 +45,8 @@ class Parameter : public NonTerminal
         };
 
         Parameter(const Token &name, Literal *);
-        Parameter(const Token &name, Type = Type::Positional);
-        ~Parameter();
+        explicit Parameter(const Token &name, Type = Type::Positional);
+        ~Parameter() override;
 
         std::string Name() const
         {
@@ -84,12 +84,11 @@ class ParameterList : public NonTerminal
 {
     public:
 
-        ParameterList();
-        ~ParameterList();
+        ~ParameterList() override;
 
         void Add(Parameter *);
 
-        typedef std::list<Parameter *>::const_iterator ConstParameterIterator;
+        using ConstParameterIterator = std::list<Parameter *>::const_iterator;
         bool ParametersEmpty() const
         {
             return parameters.empty();
@@ -119,7 +118,7 @@ class FunctionDefinition : public NonTerminal
         FunctionDefinition
             (const Token &name, bool isLibraryInterface,
              const Token &internalName, ParameterList *);
-        ~FunctionDefinition();
+        ~FunctionDefinition() override;
 
         const std::string &Name() const
         {
@@ -150,9 +149,9 @@ class NameList : public NonTerminal
 {
     public:
 
-        void Add(Token &name);
+        void Add(const Token &name);
 
-        typedef std::list<std::string>::const_iterator ConstNameIterator;
+        using ConstNameIterator = std::list<std::string>::const_iterator;
         ConstNameIterator NamesBegin() const
         {
             return names.begin();

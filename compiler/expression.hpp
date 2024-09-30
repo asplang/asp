@@ -26,7 +26,7 @@ class Expression : public NonTerminal
         bool IsEnclosed() const;
 
         virtual void Parent(const Statement *);
-        const Statement *Parent() const;
+        virtual const Statement *Parent() const final;
 
         enum class EmitType
         {
@@ -50,11 +50,11 @@ class ConditionalExpression : public Expression
         ConditionalExpression
             (const Token &operatorToken,
              Expression *, Expression *, Expression *);
-        ~ConditionalExpression();
+        ~ConditionalExpression() override;
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -68,18 +68,18 @@ class ShortCircuitLogicalExpression : public Expression
 
         ShortCircuitLogicalExpression
             (const Token &operatorToken, Expression *, Expression *);
-        ~ShortCircuitLogicalExpression();
+        ~ShortCircuitLogicalExpression() override;
 
         void Add(Expression *);
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
         int OperatorTokenType() const
         {
             return operatorTokenType;
         }
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -93,11 +93,11 @@ class BinaryExpression : public Expression
 
         BinaryExpression
             (const Token &operatorToken, Expression *, Expression *);
-        ~BinaryExpression();
+        ~BinaryExpression() override;
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -110,11 +110,11 @@ class UnaryExpression : public Expression
     public:
 
         UnaryExpression(const Token &operatorToken, Expression *);
-        ~UnaryExpression();
+        ~UnaryExpression() override;
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -126,16 +126,16 @@ class TargetExpression : public Expression
 {
     public:
 
-        TargetExpression();
-        TargetExpression(const Token &nameToken);
-        ~TargetExpression();
+        TargetExpression() = default;
+        explicit TargetExpression(const Token &nameToken);
+        ~TargetExpression() override;
 
         bool IsTuple() const;
         void Add(TargetExpression *);
 
-        void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -157,9 +157,9 @@ class Argument : public NonTerminal
 
         Argument(const Token &, Expression *);
         explicit Argument(Expression *, Type = Type::NonGroup);
-        ~Argument();
+        ~Argument() override;
 
-        void Parent(const Statement *);
+        void Parent(const Statement *) const;
 
         Type GetType() const
         {
@@ -183,14 +183,14 @@ class ArgumentList : public NonTerminal
 {
     public:
 
-        ArgumentList();
-        ~ArgumentList();
+        ~ArgumentList() override;
 
         void Add(Argument *);
 
-        void Parent(const Statement *);
+        void Parent(const Statement *) const;
 
-        typedef std::list<Argument *>::const_iterator ConstArgumentIterator;
+        using ConstArgumentIterator =
+            std::list<Argument *>::const_iterator;
         ConstArgumentIterator ArgumentsBegin() const
         {
             return arguments.begin();
@@ -212,11 +212,11 @@ class CallExpression : public Expression
     public:
 
         CallExpression(Expression *, ArgumentList *);
-        ~CallExpression();
+        ~CallExpression() override;
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -229,11 +229,11 @@ class ElementExpression : public Expression
     public:
 
         ElementExpression(Expression *, Expression *);
-        ~ElementExpression();
+        ~ElementExpression() override;
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -245,11 +245,11 @@ class MemberExpression : public Expression
     public:
 
         MemberExpression(Expression *, const Token &);
-        ~MemberExpression();
+        ~MemberExpression() override;
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -267,7 +267,7 @@ class VariableExpression : public Expression
         bool HasSymbol() const;
         std::string Name() const;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -283,7 +283,7 @@ class SymbolExpression : public Expression
         SymbolExpression
             (const Token &operatorToken, const Token &nameToken);
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -295,9 +295,9 @@ class KeyValuePair : public NonTerminal
     public:
 
         KeyValuePair(Expression *key, Expression *value);
-        ~KeyValuePair();
+        ~KeyValuePair() override;
 
-        void Parent(const Statement *);
+        void Parent(const Statement *) const;
 
         void Emit(Executable &) const;
 
@@ -310,15 +310,15 @@ class DictionaryExpression : public Expression
 {
     public:
 
-        DictionaryExpression(const Token &);
-        DictionaryExpression();
-        ~DictionaryExpression();
+        DictionaryExpression() = default;
+        explicit DictionaryExpression(const Token &);
+        ~DictionaryExpression() override;
 
         void Add(KeyValuePair *);
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -329,14 +329,14 @@ class SetExpression : public Expression
 {
     public:
 
-        SetExpression(const Token &);
-        ~SetExpression();
+        explicit SetExpression(const Token &);
+        ~SetExpression() override;
 
         void Add(Expression *);
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -347,17 +347,17 @@ class ListExpression : public Expression
 {
     public:
 
-        ListExpression(const Token &);
-        ListExpression();
-        ~ListExpression();
+        ListExpression() = default;
+        explicit ListExpression(const Token &);
+        ~ListExpression() override;
 
         void Add(Expression *);
         Expression *PopFront();
         bool IsEmpty() const;
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -368,14 +368,15 @@ class TupleExpression : public Expression
 {
     public:
 
-        TupleExpression(const Token &);
-        ~TupleExpression();
+        explicit TupleExpression(const Token &);
+        ~TupleExpression() override;
 
         void Add(Expression *);
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        typedef std::list<Expression *>::const_iterator ConstExpressionIterator;
+        using ConstExpressionIterator =
+            std::list<Expression *>::const_iterator;
         ConstExpressionIterator ExpressionsBegin() const
         {
             return expressions.begin();
@@ -385,7 +386,7 @@ class TupleExpression : public Expression
             return expressions.end();
         }
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -398,11 +399,11 @@ class RangeExpression : public Expression
 
         RangeExpression
             (const Token &, Expression *, Expression *, Expression *);
-        ~RangeExpression();
+        ~RangeExpression() override;
 
-        virtual void Parent(const Statement *);
+        void Parent(const Statement *) override;
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
     private:
 
@@ -414,7 +415,7 @@ Expression *FoldUnaryExpression
 Expression *FoldBinaryExpression
     (int operatorTokenType, Expression *, Expression *);
 Expression *FoldTernaryExpression
-    (int operatorTokenType, Expression *, Expression *, Expression *);
+    (int operatorTokenType, const Expression *, Expression *, Expression *);
 
 class ConstantExpression : public Expression
 {
@@ -445,7 +446,7 @@ class ConstantExpression : public Expression
         friend Expression *FoldTernaryExpression
             (int operatorTokenType, Expression *, Expression *, Expression *);
 
-        virtual void Emit(Executable &, EmitType) const;
+        void Emit(Executable &, EmitType) const override;
 
         bool IsTrue() const;
         bool IsString() const;
@@ -457,34 +458,38 @@ class ConstantExpression : public Expression
         int NumericCompare(const ConstantExpression &) const;
         int StringCompare(const ConstantExpression &) const;
 
-        Expression *FoldNot();
+        Expression *FoldNot() const;
         Expression *FoldPlus();
-        Expression *FoldMinus();
-        Expression *FoldInvert();
+        Expression *FoldMinus() const;
+        Expression *FoldInvert() const;
         friend Expression *FoldOr(ConstantExpression *, Expression *);
         friend Expression *FoldAnd(ConstantExpression *, Expression *);
         friend Expression *FoldEqual
-            (ConstantExpression *, ConstantExpression *);
+            (const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldNotEqual
-            (ConstantExpression *, ConstantExpression *);
+            (const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldLess
-            (ConstantExpression *, ConstantExpression *);
+            (const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldLessOrEqual
-            (ConstantExpression *, ConstantExpression *);
+            (const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldGreater
-            (ConstantExpression *, ConstantExpression *);
+            (const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldGreaterOrEqual
-            (ConstantExpression *, ConstantExpression *);
+            (const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldObjectOrder
-            (ConstantExpression *, ConstantExpression *);
+            (const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldBitwiseOperation
-            (int operatorTypeType, ConstantExpression *, ConstantExpression *);
+            (int operatorTypeType,
+             const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldStringConcatenationOperation
             (int operatorTypeType, ConstantExpression *, ConstantExpression *);
         friend Expression *FoldArithmeticOperation
-            (int operatorTypeType, ConstantExpression *, ConstantExpression *);
+            (int operatorTypeType,
+             const ConstantExpression *, const ConstantExpression *);
         friend Expression *FoldConditional
-            (ConstantExpression *, Expression *, Expression *);
+            (const ConstantExpression *, Expression *, Expression *);
+
+    private:
 
         Type type;
         union

@@ -7,15 +7,16 @@
 #include "symbols.h"
 #include <iomanip>
 #include <map>
+#include <string>
 
 using namespace std;
 
-static const char SourceInfoVersion[1] = {'\x01'};
+static const string SourceInfoVersion = "\x01";
 
 static void WriteItem(ostream &, const string &);
 static void WriteItem(ostream &, uint32_t);
 
-static uint32_t MaxCodeSize = 0x10000000;
+static const uint32_t MaxCodeSize = 0x10000000;
 
 Executable::Executable(SymbolTable &symbolTable) :
     symbolTable(symbolTable)
@@ -24,8 +25,8 @@ Executable::Executable(SymbolTable &symbolTable) :
 
 Executable::~Executable()
 {
-    for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
-        delete iter->instruction;
+    for (auto &instructionInfo: instructions)
+        delete instructionInfo.instruction;
 }
 
 void Executable::SetCheckValue(uint32_t checkValue)
@@ -88,7 +89,7 @@ void Executable::Finalize()
     for (auto instructionIter = instructions.begin();
          instructionIter != instructions.end(); instructionIter++)
     {
-        auto instruction = instructionIter->instruction;
+        const auto &instruction = instructionIter->instruction;
 
         instruction->Offset(offset);
 
@@ -108,9 +109,9 @@ void Executable::Finalize()
         throw string("Code too large");
 
     // Fix up target locations.
-    for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
+    for (const auto &instructionInfo: instructions)
     {
-        auto instruction = iter->instruction;
+        const auto &instruction = instructionInfo.instruction;
 
         if (!instruction->Fixed())
             instruction->Fix
@@ -133,9 +134,9 @@ void Executable::Write(ostream &os) const
     WriteItem(os, checkValue);
 
     // Write all the instructions.
-    for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
+    for (const auto &instructionInfo: instructions)
     {
-        auto instruction = iter->instruction;
+        const auto &instruction = instructionInfo.instruction;
 
         // Ensure any required fixing has been applied to the instruction.
         if (!instruction->Fixed())
@@ -151,8 +152,8 @@ void Executable::WriteListing(ostream &os) const
     SourceLocation previousSourceLocation;
     for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
     {
-        auto instruction = iter->instruction;
-        auto sourceLocation = iter->sourceLocation;
+        const auto &instruction = iter->instruction;
+        const auto &sourceLocation = iter->sourceLocation;
 
         // Ensure any required fixing has been applied to the instruction.
         if (!instruction->Fixed())
@@ -210,15 +211,14 @@ void Executable::WriteSourceInfo(ostream &os) const
     os.put('\0');
 
     // Write the file format version.
-    os.write(SourceInfoVersion, sizeof SourceInfoVersion);
+    os.write(SourceInfoVersion.c_str(), SourceInfoVersion.size());
 
     // Write and keep track of all source file names.
     map<string, size_t> sourceFileNameIndices;
-    for (auto instructionIter = instructions.begin();
-         instructionIter != instructions.end(); instructionIter++)
+    for (const auto &instructionInfo: instructions)
     {
-        auto instruction = instructionIter->instruction;
-        auto sourceLocation = instructionIter->sourceLocation;
+        const auto &instruction = instructionInfo.instruction;
+        const auto &sourceLocation = instructionInfo.sourceLocation;
 
         // Ensure any required fixing has been applied to the instruction.
         if (!instruction->Fixed())
@@ -244,8 +244,8 @@ void Executable::WriteSourceInfo(ostream &os) const
     SourceLocation previousSourceLocation;
     for (auto iter = instructions.begin(); iter != instructions.end(); iter++)
     {
-        auto instruction = iter->instruction;
-        auto sourceLocation = iter->sourceLocation;
+        const auto &instruction = iter->instruction;
+        const auto &sourceLocation = iter->sourceLocation;
 
         // Skip null instructions.
         if (instruction->Size() == 0)
@@ -289,8 +289,7 @@ void Executable::WriteSourceInfo(ostream &os) const
 
     // Write symbol names in order of their numeric value.
     map<int32_t, string> sortedSymbols;
-    for (auto iter = symbolTable.Begin();
-         iter != symbolTable.End(); iter++)
+    for (auto iter = symbolTable.Begin(); iter != symbolTable.End(); iter++)
         sortedSymbols.emplace(iter->second, iter->first);
     unsigned symbol = 0;
     for (auto iter = sortedSymbols.begin();
@@ -318,7 +317,7 @@ static void WriteItem(ostream &os, uint32_t value)
 {
     for (unsigned i = 0; i < 4; i++)
     {
-        uint8_t c = static_cast<uint8_t>((value >> ((3 - i) << 3)) & 0xFF);
+        auto c = static_cast<uint8_t>((value >> ((3 - i) << 3)) & 0xFF);
         os.put(*reinterpret_cast<const char *>(&c));
     }
 }

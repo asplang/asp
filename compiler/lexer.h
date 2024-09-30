@@ -21,7 +21,7 @@ class Lexer
     public:
 
         // Constructor.
-        explicit Lexer(std::istream &, const std::string &fileName);
+        Lexer(std::istream &, const std::string &fileName);
 
         // Next token method.
         Token *Next();

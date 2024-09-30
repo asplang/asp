@@ -14,6 +14,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstring>
+#include <memory>
 #include <cstdlib>
 #include <cerrno>
 
@@ -34,10 +35,10 @@ using namespace std;
 struct ActiveSourceFile
 {
     string sourceFileName;
-    ifstream *sourceStream;
+    unique_ptr<istream> sourceStream;
     bool isLibrary;
     SourceLocation oldSourceLocation;
-    Lexer *lexer;
+    unique_ptr<Lexer> lexer;
     void *parser;
 };
 
@@ -109,10 +110,9 @@ static int main1(int argc, char **argv)
     string codeFileName = baseName + codeSuffix;
 
     // Open input source file.
-    auto *sourceStream = new ifstream(sourceFileName);
+    auto sourceStream = unique_ptr<istream>(new ifstream(sourceFileName));
     if (!*sourceStream)
     {
-        delete sourceStream;
         cerr
             << "Error opening " << sourceFileName
             << ": " << strerror(errno) << endl;
@@ -166,12 +166,13 @@ static int main1(int argc, char **argv)
 
     // Prepare to process top-level source file.
     deque<ActiveSourceFile> activeSourceFiles;
+    auto lexer = unique_ptr<Lexer>
+        (new Lexer(*sourceStream, sourceFileName));
     activeSourceFiles.emplace_back(ActiveSourceFile
     {
-        sourceFileName, sourceStream,
+        sourceFileName, move(sourceStream),
         false, SourceLocation(),
-        new Lexer(*sourceStream, sourceFileName),
-        ParseAlloc(malloc, &generator)
+        move(lexer), ParseAlloc(malloc, &generator)
     });
 
     // Compile spec.
@@ -211,12 +212,10 @@ static int main1(int argc, char **argv)
             // We're done with the current source file.
             auto oldSourceLocation = activeSourceFile.oldSourceLocation;
             ParseFree(activeSourceFile.parser, free);
-            delete activeSourceFile.lexer;
-            delete activeSourceFile.sourceStream;
             activeSourceFiles.pop_back();
             if (activeSourceFiles.empty())
                 break;
-            auto &activeSourceFile = activeSourceFiles.back();
+            const auto &activeSourceFile = activeSourceFiles.back();
 
             // Update source file name in generator for error reporting.
             generator.CurrentSource
@@ -232,7 +231,7 @@ static int main1(int argc, char **argv)
 
             // Check for included source file.
             string includeFileName = generator.CurrentSourceFileName();
-            auto oldSourceFileName = activeSourceFile.sourceFileName;
+            const auto &oldSourceFileName = activeSourceFile.sourceFileName;
             if (includeFileName != oldSourceFileName)
             {
                 // Determine search path for locating included file.
@@ -247,12 +246,9 @@ static int main1(int argc, char **argv)
                     (searchPath.end(), includePath.begin(), includePath.end());
 
                 string newSourceFileName;
-                ifstream *newSourceStream = nullptr;
-                for (auto iter = searchPath.begin();
-                     iter != searchPath.end(); iter++)
+                unique_ptr<istream> newSourceStream;
+                for (auto directory: searchPath)
                 {
-                    auto directory = *iter;
-
                     // Determine path name of source file.
                     if (!directory.empty())
                     {
@@ -265,13 +261,13 @@ static int main1(int argc, char **argv)
                     newSourceFileName = directory + includeFileName;
 
                     // Attempt opening the source file.
-                    auto *sourceStream = new ifstream(newSourceFileName);
+                    auto sourceStream = unique_ptr<istream>
+                        (new ifstream(newSourceFileName));
                     if (*sourceStream)
                     {
-                        newSourceStream = sourceStream;
+                        newSourceStream = move(sourceStream);
                         break;
                     }
-                    delete sourceStream;
                 }
                 if (newSourceStream == nullptr)
                 {
@@ -285,11 +281,9 @@ static int main1(int argc, char **argv)
                 }
 
                 // Ensure there's no recursive inclusion.
-                for (auto iter = activeSourceFiles.begin();
-                     iter != activeSourceFiles.end(); iter++)
+                for (const auto &activeSourceFile: activeSourceFiles)
                 {
-                    auto &lexer = *iter;
-                    if (newSourceFileName == lexer.sourceFileName)
+                    if (newSourceFileName == activeSourceFile.sourceFileName)
                     {
                         cerr
                             << token->sourceLocation.fileName << ':'
@@ -303,12 +297,13 @@ static int main1(int argc, char **argv)
 
                 auto oldSourceLocation = generator.CurrentSourceLocation();
                 generator.CurrentSource(newSourceFileName);
+                auto lexer = unique_ptr<Lexer>
+                    (new Lexer(*newSourceStream, newSourceFileName));
                 activeSourceFiles.emplace_back(ActiveSourceFile
                 {
-                    newSourceFileName, newSourceStream,
+                    newSourceFileName, move(newSourceStream),
                     false, oldSourceLocation,
-                    new Lexer(*newSourceStream, newSourceFileName),
-                    ParseAlloc(malloc, &generator)
+                    move(lexer), ParseAlloc(malloc, &generator)
                 });
             }
         }
@@ -328,15 +323,15 @@ static int main1(int argc, char **argv)
             {headerFileName, headerStream},
             {codeFileName, codeStream},
         };
-        for (unsigned i = 0; i < sizeof files / sizeof *files; i++)
+        for (auto &file: files)
         {
-            files[i].stream.close();
-            if (!files[i].stream)
+            file.stream.close();
+            if (!file.stream)
             {
                 writeError = true;
                 if (reportError)
                     cerr
-                        << "Error writing " << files[i].fileName
+                        << "Error writing " << file.fileName
                         << ": " << strerror(errno) << endl;
             }
         }

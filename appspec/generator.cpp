@@ -25,8 +25,8 @@ Generator::Generator
 
 Generator::~Generator()
 {
-    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
-        delete iter->second;
+    for (auto &definition: definitions)
+        delete definition.second;
 }
 
 unsigned Generator::ErrorCount() const
@@ -336,7 +336,7 @@ DEFINE_ACTION
 
 DEFINE_UTIL(FreeNonTerminal, void, NonTerminal *, nt)
 {
-    delete reinterpret_cast<NonTerminal *>(nt);
+    delete nt;
 }
 
 DEFINE_UTIL(FreeToken, void, Token *, token)

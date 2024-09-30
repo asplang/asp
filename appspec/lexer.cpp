@@ -98,7 +98,7 @@ Token *Lexer::Next()
         {
             Get();
             if (!isspace(c))
-                token = new Token(sourceLocation, -1, string(1, c));
+                token = new Token(sourceLocation, -1, string(1, (char)c));
         }
     }
 

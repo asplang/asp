@@ -16,8 +16,8 @@ using namespace std;
 
 void Block::Emit(Executable &executable) const
 {
-    for (auto iter = statements.begin(); iter != statements.end(); iter++)
-        (*iter)->Emit(executable);
+    for (const auto &statement: statements)
+        statement->Emit(executable);
 }
 
 void ExpressionStatement::Emit(Executable &executable) const
@@ -331,7 +331,7 @@ void GlobalStatement::Emit(Executable &executable) const
     for (auto iter = variableList->NamesBegin();
          iter != variableList->NamesEnd(); iter++)
     {
-        auto name = *iter;
+        const auto &name = *iter;
         auto symbol = executable.Symbol(name);
 
         ostringstream oss;
@@ -351,7 +351,7 @@ void LocalStatement::Emit(Executable &executable) const
     for (auto iter = variableList->NamesBegin();
          iter != variableList->NamesEnd(); iter++)
     {
-        auto name = *iter;
+        const auto &name = *iter;
         auto symbol = executable.Symbol(name);
 
         ostringstream oss;
@@ -364,15 +364,20 @@ void LocalStatement::Emit(Executable &executable) const
 
 void DelStatement::Emit(Executable &executable) const
 {
-    Emit1(executable, expression);
+    Emit1(executable, GetExpression());
 }
 
-void DelStatement::Emit1(Executable &executable, Expression *expression) const
+void DelStatement::Emit1
+    (Executable &executable, const Expression *expression) const
 {
-    auto tupleExpression = dynamic_cast<TupleExpression *>(expression);
-    auto elementExpression = dynamic_cast<ElementExpression *>(expression);
-    auto memberExpression = dynamic_cast<MemberExpression *>(expression);
-    auto variableExpression = dynamic_cast<VariableExpression *>(expression);
+    auto tupleExpression = dynamic_cast<const TupleExpression *>
+        (expression);
+    auto elementExpression = dynamic_cast<const ElementExpression *>
+        (expression);
+    auto memberExpression = dynamic_cast<const MemberExpression *>
+        (expression);
+    auto variableExpression = dynamic_cast<const VariableExpression *>
+        (expression);
     if (tupleExpression != nullptr)
     {
         for (auto iter = tupleExpression->ExpressionsBegin();
@@ -432,25 +437,26 @@ void ReturnStatement::Emit(Executable &executable) const
         for (unsigned i = 0; i < parentStatement->StackUsage(); i++)
             popCount++;
     }
-    const uint32_t maxPopCount = 0xFF;
+    const uint8_t maxPopCount = 0xFF;
     while (popCount >= maxPopCount)
     {
         executable.Insert(new PopInstruction(maxPopCount), sourceLocation);
         popCount -= maxPopCount;
     }
     if (popCount > 0)
-        executable.Insert(new PopInstruction(popCount), sourceLocation);
+        executable.Insert
+            (new PopInstruction((uint8_t)popCount), sourceLocation);
 
     if (expression != nullptr)
         expression->Emit(executable);
     else
     {
         // Use None as the return value.
-        Expression *noneExpression = new ConstantExpression
+        ConstantExpression constNoneExpression
             (Token(sourceLocation, TOKEN_NONE));
-        noneExpression->Parent(this);
-        noneExpression->Emit(executable);
-        delete noneExpression;
+        Expression &noneExpression = constNoneExpression;
+        noneExpression.Parent(this);
+        noneExpression.Emit(executable);
     }
 
     executable.Insert(new ReturnInstruction, sourceLocation);
@@ -458,6 +464,7 @@ void ReturnStatement::Emit(Executable &executable) const
 
 void AssertStatement::Emit(Executable &executable) const
 {
+    auto *expression = GetExpression();
     auto *constantExpression = dynamic_cast<const ConstantExpression *>
         (expression);
     if (constantExpression != nullptr && !constantExpression->IsTrue())
@@ -566,20 +573,10 @@ void WhileStatement::Emit(Executable &executable) const
     if (falseBlock != nullptr)
     {
         executable.PushLocation(endLocation);
-        auto loopedExpression = new VariableExpression
+        VariableExpression loopedExpression
             ((SourceElement &)*this, loopedVariableSymbol);
-        try
-        {
-            loopedExpression->Parent(this);
-            loopedExpression->Emit
-                (executable, Expression::EmitType::Value);
-        }
-        catch (...)
-        {
-            delete loopedExpression;
-            throw;
-        }
-        delete loopedExpression;
+        loopedExpression.Parent(this);
+        loopedExpression.Emit(executable, Expression::EmitType::Value);
         executable.Insert
             (new ConditionalJumpInstruction
                 (true, endLocation, "Jump if true to end"),
@@ -659,20 +656,10 @@ void ForStatement::Emit(Executable &executable) const
     if (falseBlock != nullptr)
     {
         executable.PushLocation(endLocation);
-        auto loopedExpression = new VariableExpression
+        VariableExpression loopedExpression
             ((SourceElement &)*this, loopedVariableSymbol);
-        try
-        {
-            loopedExpression->Parent(this);
-            loopedExpression->Emit
-                (executable, Expression::EmitType::Value);
-        }
-        catch (...)
-        {
-            delete loopedExpression;
-            throw;
-        }
-        delete loopedExpression;
+        loopedExpression.Parent(this);
+        loopedExpression.Emit(executable, Expression::EmitType::Value);
         executable.Insert
             (new ConditionalJumpInstruction
                 (true, endLocation, "Jump if true to end"),
@@ -717,10 +704,8 @@ void ParameterList::Emit(Executable &executable) const
     executable.Insert
         (new PushParameterListInstruction("Push empty parameter list"),
          sourceLocation);
-    for (auto iter = parameters.begin();
-         iter != parameters.end(); iter++)
+    for (const auto &parameter: parameters)
     {
-        auto parameter = *iter;
         parameter->Emit(executable);
         executable.Insert
             (new BuildInstruction("Add parameter to parameter list"),
@@ -770,12 +755,11 @@ void DefStatement::Emit(Executable &executable) const
          sourceLocation);
     executable.Insert(new MakeFunctionInstruction, sourceLocation);
 
-    auto variableExpression = new VariableExpression
+    VariableExpression variableExpression
         (Token(sourceLocation, TOKEN_NAME, name));
-    variableExpression->Parent(this);
-    variableExpression->Emit
+    variableExpression.Parent(this);
+    variableExpression.Emit
         (executable, Expression::EmitType::Address);
-    delete variableExpression;
     executable.Insert(new SetInstruction(true), sourceLocation);
 }
 
@@ -975,10 +959,8 @@ void TargetExpression::Emit
             (new PushTupleInstruction("Create empty tuple"),
              sourceLocation);
 
-        for (auto iter = targetExpressions.begin();
-             iter != targetExpressions.end(); iter++)
+        for (const auto &targetExpression: targetExpressions)
         {
-            auto targetExpression = *iter;
             targetExpression->Emit(executable, emitType);
             executable.Insert
                 (new BuildInstruction("Add item to tuple"),
@@ -1031,9 +1013,8 @@ void ArgumentList::Emit(Executable &executable) const
     executable.Insert
         (new PushArgumentListInstruction("Push empty argument list"),
          sourceLocation);
-    for (auto iter = arguments.begin(); iter != arguments.end(); iter++)
+    for (const auto &argument: arguments)
     {
-        auto argument = *iter;
         argument->Emit(executable);
         executable.Insert
             (new BuildInstruction("Add argument to argument list"),
@@ -1151,9 +1132,8 @@ void DictionaryExpression::Emit
     executable.Insert
         (new PushDictionaryInstruction("Create empty dictionary"),
          sourceLocation);
-    for (auto iter = entries.begin(); iter != entries.end(); iter++)
+    for (const auto &entry: entries)
     {
-        auto entry = *iter;
         entry->Emit(executable);
         executable.Insert
             (new BuildInstruction("Add entry to dictionary"),
@@ -1172,9 +1152,8 @@ void SetExpression::Emit
     executable.Insert
         (new PushSetInstruction("Create empty set"),
          sourceLocation);
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
+    for (const auto &expression: expressions)
     {
-        auto expression = *iter;
         expression->Emit(executable);
         executable.Insert
             (new BuildInstruction("Add item to set"),
@@ -1191,9 +1170,8 @@ void ListExpression::Emit
     executable.Insert
         (new PushListInstruction("Create empty list"),
          sourceLocation);
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
+    for (const auto &expression: expressions)
     {
-        auto expression = *iter;
         expression->Emit(executable, emitType);
         executable.Insert
             (new BuildInstruction("Add item to list"),
@@ -1210,9 +1188,8 @@ void TupleExpression::Emit
     executable.Insert
         (new PushTupleInstruction("Create empty tuple"),
          sourceLocation);
-    for (auto iter = expressions.begin(); iter != expressions.end(); iter++)
+    for (const auto &expression: expressions)
     {
-        auto expression = *iter;
         expression->Emit(executable, emitType);
         executable.Insert
             (new BuildInstruction("Add item to tuple"),
@@ -1236,7 +1213,7 @@ void RangeExpression::Emit
     for (auto iter = partExpressions.rbegin();
          iter != partExpressions.rend(); iter++)
     {
-        auto partExpression = *iter;
+        const auto partExpression = *iter;
         if (partExpression != nullptr)
         {
             partExpression->Emit(executable);

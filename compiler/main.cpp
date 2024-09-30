@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <string>
 #include <cstring>
+#include <memory>
 #include <cstdlib>
 #include <cerrno>
 
@@ -192,10 +193,8 @@ static int main1(int argc, char **argv)
     {
         string fileName(argv[argi]);
         bool accepted = false;
-        for (unsigned i = 0; i < sizeof inputs / sizeof *inputs; i++)
+        for (auto &&input: inputs)
         {
-            auto &input = inputs[i];
-
             if (fileName.size() <= input.suffix.size())
                 continue;
             auto suffixPos = fileName.size() - input.suffix.size();
@@ -367,22 +366,20 @@ static int main1(int argc, char **argv)
             break;
 
         // Open module file.
-        ifstream *moduleStream = nullptr;
+        auto moduleStream = unique_ptr<istream>();
         if (moduleFileName == mainModuleBaseFileName)
         {
             // Open specified main module file.
-            auto *stream = new ifstream(mainModuleFileName);
+            auto stream = unique_ptr<istream>
+                (new ifstream(mainModuleFileName));
             if (*stream)
-                moduleStream = stream;
+                moduleStream = move(stream);
         }
         else
         {
             // Search for the module file using the search path.
-            for (auto iter = searchPath.begin();
-                 iter != searchPath.end(); iter++)
+            for (auto &&directory: searchPath)
             {
-                auto directory = *iter;
-
                 // For an empty entry, use the main module's directory (which,
                 // it may be noted, may also be empty).
                 if (directory.empty())
@@ -395,13 +392,13 @@ static int main1(int argc, char **argv)
                 auto modulePathName = directory + moduleFileName;
 
                 // Attempt opening the module file.
-                auto *stream = new ifstream(modulePathName);
+                auto stream = unique_ptr<istream>
+                    (new ifstream(modulePathName));
                 if (*stream)
                 {
-                    moduleStream = stream;
+                    moduleStream = move(stream);
                     break;
                 }
-                delete stream;
             }
         }
         if (moduleStream == nullptr)
@@ -471,7 +468,6 @@ static int main1(int argc, char **argv)
         } while (!errorDetected && token->type != 0);
 
         ParseFree(parser, free);
-        delete moduleStream;
     }
 
     compiler.Finalize();

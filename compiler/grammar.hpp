@@ -38,9 +38,7 @@ class SourceElement
 {
     public:
 
-        SourceElement()
-        {
-        }
+        SourceElement() = default;
 
         explicit SourceElement(const SourceLocation &sourceLocation) :
             sourceLocation(sourceLocation)
@@ -67,7 +65,7 @@ class NonTerminal : public SourceElement
 
         // Constructor, destructor.
         explicit NonTerminal(const SourceElement & = SourceElement());
-        virtual ~NonTerminal();
+        virtual ~NonTerminal() = default;
 
     protected:
 

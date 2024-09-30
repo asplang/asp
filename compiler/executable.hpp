@@ -42,7 +42,7 @@ class Executable
         std::int32_t TemporarySymbol() const;
 
         // Location type definition.
-        typedef std::list<InstructionInfo>::iterator Location;
+        using Location = std::list<InstructionInfo>::iterator;
 
         // Instruction insertion methods.
         Location Insert(Instruction *, const SourceLocation &);

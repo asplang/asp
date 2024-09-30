@@ -10,7 +10,3 @@ NonTerminal::NonTerminal(const SourceElement &sourceElement) :
     SourceElement(sourceElement)
 {
 }
-
-NonTerminal::~NonTerminal()
-{
-}

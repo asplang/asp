@@ -30,10 +30,6 @@ Compiler::Compiler
 {
 }
 
-Compiler::~Compiler()
-{
-}
-
 void Compiler::LoadApplicationSpec(istream &specStream)
 {
     // Read and check application spec header.
@@ -388,7 +384,7 @@ DEFINE_ACTION
     for (auto iter = moduleNameList->NamesBegin();
          iter != moduleNameList->NamesEnd(); iter++)
     {
-        auto importName = *iter;
+        const auto &importName = *iter;
         AddModule(importName->Name());
     }
 
@@ -687,7 +683,7 @@ DEFINE_ACTION
     for (auto iter = argumentList->ArgumentsBegin();
          iter != argumentList->ArgumentsEnd(); iter++, position++)
     {
-        auto &argument = **iter;
+        const auto &argument = **iter;
         Argument::Type type = argument.GetType();
         bool isPositional =
             type == Argument::Type::NonGroup && !argument.HasName();

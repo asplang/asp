@@ -12,10 +12,11 @@
 
 using namespace std;
 
-static const char AppSpecVersion[1] = {'\x01'};
+static const string AppSpecVersion = "\x01";
 
 static void WriteValue(ostream &, unsigned *specByteCount, const Literal &);
-static void ContributeValue(crc_spec_t &, crc_session_t &, const Literal &);
+static void ContributeValue
+    (const crc_spec_t &, crc_session_t &, const Literal &);
 
 template <class T>
 static void Write(ostream &os, T value)
@@ -51,18 +52,18 @@ static void WriteStringEscapedHex(ostream &os, T value)
     }
 }
 
-void Generator::WriteCompilerSpec(ostream &os)
+void Generator::WriteCompilerSpec(ostream &os) const
 {
     // Write the specification's header, including check value.
     os.write("AspS", 4);
-    os.write(AppSpecVersion, sizeof AppSpecVersion);
+    os.write(AppSpecVersion.c_str(), AppSpecVersion.size());
     Write(os, CheckValue());
 
     // Assign symbols, to variable and function names first, then to parameter
     // names, writing each name only once, in order of assigned symbol.
-    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
+    for (const auto &definitionEntry: definitions)
     {
-        auto &name = iter->first;
+        const auto &name = definitionEntry.first;
 
         bool wasDefined = symbolTable.IsDefined(name);
         symbolTable.Symbol(name);
@@ -70,21 +71,20 @@ void Generator::WriteCompilerSpec(ostream &os)
         if (!wasDefined)
             os << name << '\n';
     }
-    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
+    for (const auto &definitionEntry: definitions)
     {
-        auto &definition = iter->second;
-        auto functionDefinition =
-            dynamic_cast<const FunctionDefinition *>(definition);
+        const auto functionDefinition =
+            dynamic_cast<const FunctionDefinition *>(definitionEntry.second);
         if (functionDefinition == nullptr)
             continue;
 
-        auto &parameters = functionDefinition->Parameters();
+        const auto &parameters = functionDefinition->Parameters();
 
         for (auto parameterIter = parameters.ParametersBegin();
              parameterIter != parameters.ParametersEnd();
              parameterIter++)
         {
-            auto &parameter = **parameterIter;
+            const auto &parameter = **parameterIter;
             const auto &parameterName = parameter.Name();
 
             bool wasDefined = symbolTable.IsDefined(parameterName);
@@ -96,7 +96,7 @@ void Generator::WriteCompilerSpec(ostream &os)
     }
 }
 
-void Generator::WriteApplicationHeader(ostream &os)
+void Generator::WriteApplicationHeader(ostream &os) const
 {
     os
         << "/*** AUTO-GENERATED; DO NOT EDIT ***/\n\n"
@@ -113,7 +113,7 @@ void Generator::WriteApplicationHeader(ostream &os)
          iter != symbolTable.End(); iter++)
     {
         const auto &name = iter->first;
-        const auto symbol = iter->second;
+        const auto &symbol = iter->second;
 
         os
             << "#define ASP_APP_" << baseFileName << "_SYM_" << name
@@ -121,10 +121,10 @@ void Generator::WriteApplicationHeader(ostream &os)
     }
 
     // Write application function declarations.
-    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
+    for (const auto &definitionEntry: definitions)
     {
-        auto &definition = iter->second;
-        auto functionDefinition =
+        const auto &definition = definitionEntry.second;
+        const auto functionDefinition =
             dynamic_cast<const FunctionDefinition *>(definition);
         if (functionDefinition == nullptr)
             continue;
@@ -136,7 +136,7 @@ void Generator::WriteApplicationHeader(ostream &os)
             << "AspRunResult " << functionDefinition->InternalName() << "\n"
                "    (AspEngine *,";
 
-        auto &parameters = functionDefinition->Parameters();
+        const auto &parameters = functionDefinition->Parameters();
 
         if (!parameters.ParametersEmpty())
             os << "\n";
@@ -145,7 +145,7 @@ void Generator::WriteApplicationHeader(ostream &os)
              parameterIter != parameters.ParametersEnd();
              parameterIter++)
         {
-            auto &parameter = **parameterIter;
+            const auto &parameter = **parameterIter;
 
             os << "     AspDataEntry *" << parameter.Name() << ',';
             if (parameter.IsGroup())
@@ -172,7 +172,7 @@ void Generator::WriteApplicationHeader(ostream &os)
            "#endif\n";
 }
 
-void Generator::WriteApplicationCode(ostream &os)
+void Generator::WriteApplicationCode(ostream &os) const
 {
     os
         << "/*** AUTO-GENERATED; DO NOT EDIT ***/\n\n"
@@ -187,10 +187,10 @@ void Generator::WriteApplicationCode(ostream &os)
            "{\n"
            "    switch (symbol)\n"
            "    {\n";
-    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
+    for (const auto &definitionEntry: definitions)
     {
-        auto &definition = iter->second;
-        auto functionDefinition =
+        const auto &definition = definitionEntry.second;
+        const auto functionDefinition =
             dynamic_cast<const FunctionDefinition *>(definition);
         if (functionDefinition == nullptr)
             continue;
@@ -201,16 +201,16 @@ void Generator::WriteApplicationCode(ostream &os)
             << "        case " << symbol << ":\n"
             << "        {\n";
 
-        auto &parameters = functionDefinition->Parameters();
+        const auto &parameters = functionDefinition->Parameters();
 
         for (auto parameterIter = parameters.ParametersBegin();
              parameterIter != parameters.ParametersEnd();
              parameterIter++)
         {
-            auto &parameter = **parameterIter;
+            const auto &parameter = **parameterIter;
 
             const auto &parameterName = parameter.Name();
-            int32_t parameterSymbol = symbolTable.Symbol(parameterName);
+            auto parameterSymbol = symbolTable.Symbol(parameterName);
 
             if (parameter.IsGroup())
             {
@@ -244,7 +244,7 @@ void Generator::WriteApplicationCode(ostream &os)
              parameterIter != parameters.ParametersEnd();
              parameterIter++)
         {
-            auto &parameter = **parameterIter;
+            const auto &parameter = **parameterIter;
 
             os << parameter.Name();
             if (parameter.IsGroup())
@@ -266,12 +266,12 @@ void Generator::WriteApplicationCode(ostream &os)
         << "\nAspAppSpec AspAppSpec_" << baseFileName << " =\n"
            "{";
     unsigned specByteCount = 0;
-    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
+    for (const auto &definitionEntry: definitions)
     {
-        auto &definition = iter->second;
-        auto assignment =
+        const auto &definition = definitionEntry.second;
+        const auto assignment =
             dynamic_cast<const Assignment *>(definition);
-        auto functionDefinition =
+        const auto functionDefinition =
             dynamic_cast<const FunctionDefinition *>(definition);
 
         os << "\n    \"";
@@ -301,10 +301,10 @@ void Generator::WriteApplicationCode(ostream &os)
                  parameterIter != parameters.ParametersEnd();
                  parameterIter++)
             {
-                auto &parameter = **parameterIter;
+                const auto &parameter = **parameterIter;
 
                 int32_t parameterSymbol = symbolTable.Symbol(parameter.Name());
-                uint32_t word = *reinterpret_cast<uint32_t *>(&parameterSymbol);
+                auto word = *reinterpret_cast<uint32_t *>(&parameterSymbol);
 
                 uint32_t parameterType = 0;
                 const auto &defaultValue = parameter.DefaultValue();
@@ -342,20 +342,20 @@ void Generator::WriteApplicationCode(ostream &os)
     }
 }
 
-uint32_t Generator::CheckValue()
+uint32_t Generator::CheckValue() const
 {
     if (!checkValueComputed)
     {
-        ComputeCheckValue();
+        checkValue = ComputeCheckValue();
         checkValueComputed = true;
     }
     return checkValue;
 }
 
-void Generator::ComputeCheckValue()
+uint32_t Generator::ComputeCheckValue() const
 {
     // Use CRC-32/ISO-HDLC for computing a check value.
-    auto spec = crc_make_spec
+    const auto spec = crc_make_spec
         (32, 0x04C11DB7, 0xFFFFFFFF, true, true, 0xFFFFFFFF);
     crc_session_t session;
     crc_start(&spec, &session);
@@ -365,14 +365,13 @@ void Generator::ComputeCheckValue()
         CheckValueVariablePrefix = "\v",
         CheckValueFunctionPrefix = "\f",
         CheckValueParameterPrefix = "(";
-    for (auto iter = definitions.begin(); iter != definitions.end(); iter++)
+    for (const auto &definitionEntry: definitions)
     {
-        auto &name = iter->first;
-        auto &definition = iter->second;
-
-        auto assignment =
+        const auto &name = definitionEntry.first;
+        const auto &definition = definitionEntry.second;
+        const auto assignment =
             dynamic_cast<const Assignment *>(definition);
-        auto functionDefinition =
+        const auto functionDefinition =
             dynamic_cast<const FunctionDefinition *>(definition);
 
         if (assignment != nullptr)
@@ -403,14 +402,13 @@ void Generator::ComputeCheckValue()
                 (&spec, &session,
                  name.c_str(), static_cast<unsigned>(name.size()));
 
-            auto &parameters = functionDefinition->Parameters();
+            const auto &parameters = functionDefinition->Parameters();
 
             for (auto parameterIter = parameters.ParametersBegin();
                  parameterIter != parameters.ParametersEnd();
                  parameterIter++)
             {
-                auto &parameter = **parameterIter;
-
+                const auto &parameter = **parameterIter;
                 const auto &parameterName = parameter.Name();
 
                 // Contribute the parameter name.
@@ -432,7 +430,7 @@ void Generator::ComputeCheckValue()
         else
             throw string("Internal error");
     }
-    checkValue = static_cast<uint32_t>(crc_finish(&spec, &session));
+    return static_cast<uint32_t>(crc_finish(&spec, &session));
 }
 
 static void WriteValue
@@ -455,7 +453,7 @@ static void WriteValue
 
         case AppSpecValueType_Integer:
         {
-            auto value = literal.IntegerValue();
+            int32_t value = literal.IntegerValue();
             WriteStringEscapedHex
                 (os, *reinterpret_cast<uint32_t *>(&value));
             *specByteCount += sizeof value;
@@ -481,7 +479,7 @@ static void WriteValue
         case AppSpecValueType_String:
         {
             auto value = literal.StringValue();
-            uint32_t valueSize = static_cast<uint32_t>
+            auto valueSize = static_cast<uint32_t>
                 (value.size());
             WriteStringEscapedHex(os, valueSize);
             for (unsigned i = 0; i < valueSize; i++)
@@ -494,7 +492,7 @@ static void WriteValue
 }
 
 static void ContributeValue
-    (crc_spec_t &spec, crc_session_t &session, const Literal &literal)
+    (const crc_spec_t &spec, crc_session_t &session, const Literal &literal)
 {
     auto valueType = literal.GetType();
     auto b = static_cast<uint8_t>(valueType);
@@ -511,7 +509,7 @@ static void ContributeValue
 
         case AppSpecValueType_Integer:
         {
-            auto value = literal.IntegerValue();
+            int32_t value = literal.IntegerValue();
             auto uValue = *reinterpret_cast<uint32_t *>(&value);
             for (unsigned i = 0; i < sizeof value; i++)
             {

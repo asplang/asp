@@ -13,7 +13,7 @@ class ValidFunctionDefinition
 {
     public:
 
-        typedef Parameter::Type ParameterType;
+        using ParameterType = Parameter::Type;
         std::string AddParameter
             (const std::string &name, ParameterType, bool hasDefault);
         bool IsValid() const

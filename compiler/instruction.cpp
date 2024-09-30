@@ -17,7 +17,6 @@ static inline char Byte(uint64_t value, unsigned index)
 
 Instruction::Instruction(uint8_t opCode, const string &comment) :
     opCode(opCode),
-    offset(0), targetOffset(0),
     comment(comment),
     targetLocationDefined(false),
     fixed(true)
@@ -28,14 +27,9 @@ Instruction::Instruction
     (uint8_t opCode, const Executable::Location &targetLocation,
      const string &comment) :
     opCode(opCode),
-    offset(0), targetOffset(0),
     comment(comment),
     targetLocationDefined(true), fixed(false),
     targetLocation(targetLocation)
-{
-}
-
-Instruction::~Instruction()
 {
 }
 
@@ -114,6 +108,7 @@ unsigned Instruction::OperandsSize() const
 
 void Instruction::WriteOperands(ostream &os) const
 {
+    // Write no operands by default.
 }
 
 unsigned Instruction::OperandSize(uint32_t value)
@@ -156,14 +151,17 @@ unsigned NullInstruction::Size() const
 
 void NullInstruction::Write(ostream &) const
 {
+    // Do nothing.
 }
 
 void NullInstruction::Print(ostream &) const
 {
+    // Do nothing.
 }
 
 void NullInstruction::PrintCode(ostream &) const
 {
+    // Do nothing.
 }
 
 SimpleInstruction::SimpleInstruction

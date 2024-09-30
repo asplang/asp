@@ -24,7 +24,7 @@ class Statement : public NonTerminal
     public:
 
         virtual void Parent(const Block *);
-        const Block *Parent() const;
+        virtual const Block *Parent() const final;
         virtual unsigned StackUsage() const;
 
         virtual void Emit(Executable &) const = 0;
@@ -41,12 +41,11 @@ class Block : public NonTerminal
 {
     public:
 
-        Block();
-        ~Block();
+        ~Block() override;
 
         void Add(Statement *);
 
-        void Parent(Statement *);
+        void Parent(const Statement *);
         const Statement *Parent() const;
 
         const Statement *FinalStatement() const;
@@ -55,7 +54,7 @@ class Block : public NonTerminal
 
     private:
 
-        Statement *parentStatement = nullptr;
+        const Statement *parentStatement = nullptr;
         std::list<Statement *> statements;
 };
 
@@ -64,11 +63,16 @@ class ExpressionStatement : public Statement
     public:
 
         explicit ExpressionStatement(Expression *);
-        ~ExpressionStatement();
+        ~ExpressionStatement() override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
-    protected:
+        const Expression *GetExpression() const
+        {
+            return expression;
+        }
+
+    private:
 
         Expression *expression;
 };
@@ -83,18 +87,18 @@ class AssignmentStatement : public Statement
         AssignmentStatement
             (const Token &assignmentToken,
              Expression *target, Expression *value);
-        ~AssignmentStatement();
+        ~AssignmentStatement() override;
 
-        virtual void Parent(const Block *);
+        void Parent(const Block *) override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
         void Emit1(Executable &, bool top) const;
 
     private:
 
         int assignmentTokenType;
-        Expression *targetExpression, *valueExpression;
-        AssignmentStatement *valueAssignmentStatement;
+        Expression *targetExpression, *valueExpression = nullptr;
+        AssignmentStatement *valueAssignmentStatement = nullptr;
 };
 
 class InsertionStatement : public Statement
@@ -113,16 +117,16 @@ class InsertionStatement : public Statement
         InsertionStatement
             (const Token &insertionToken,
              Expression *container, KeyValuePair *);
-        ~InsertionStatement();
+        ~InsertionStatement() override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
         void Emit1(Executable &, bool top) const;
 
     private:
 
-        InsertionStatement *containerInsertionStatement;
-        Expression *containerExpression, *itemExpression;
-        KeyValuePair *keyValuePair;
+        InsertionStatement *containerInsertionStatement = nullptr;
+        Expression *containerExpression = nullptr, *itemExpression = nullptr;
+        KeyValuePair *keyValuePair = nullptr;
 };
 
 class BreakStatement : public Statement
@@ -131,7 +135,7 @@ class BreakStatement : public Statement
 
         explicit BreakStatement(const Token &token);
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 };
 
 class ContinueStatement : public Statement
@@ -140,7 +144,7 @@ class ContinueStatement : public Statement
 
         explicit ContinueStatement(const Token &token);
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 };
 
 class PassStatement : public Statement
@@ -149,7 +153,7 @@ class PassStatement : public Statement
 
         explicit PassStatement(const Token &token);
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 };
 
 class ImportName : public NonTerminal
@@ -177,12 +181,11 @@ class ImportNameList : public NonTerminal
 {
     public:
 
-        ImportNameList();
-        ~ImportNameList();
+        ~ImportNameList() override;
 
         void Add(ImportName *);
 
-        typedef std::list<ImportName *>::const_iterator ConstNameIterator;
+        using ConstNameIterator = std::list<ImportName *>::const_iterator;
         std::size_t NamesSize() const
         {
             return names.size();
@@ -208,9 +211,9 @@ class ImportStatement : public Statement
         explicit ImportStatement
             (ImportNameList *moduleNameList,
              ImportNameList *memberNameList = nullptr);
-        ~ImportStatement();
+        ~ImportStatement() override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
     private:
 
@@ -221,13 +224,11 @@ class VariableList : public NonTerminal
 {
     public:
 
-        VariableList();
-
         void Add(const Token &);
 
         void Parent(const Statement *);
 
-        typedef std::list<std::string>::const_iterator ConstNameIterator;
+        using ConstNameIterator = std::list<std::string>::const_iterator;
         std::size_t NamesSize() const
         {
             return names.size();
@@ -252,9 +253,9 @@ class GlobalStatement : public Statement
     public:
 
         explicit GlobalStatement(VariableList *);
-        ~GlobalStatement();
+        ~GlobalStatement() override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
     private:
 
@@ -266,9 +267,9 @@ class LocalStatement : public Statement
     public:
 
         explicit LocalStatement(VariableList *);
-        ~LocalStatement();
+        ~LocalStatement() override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
     private:
 
@@ -281,8 +282,8 @@ class DelStatement : public ExpressionStatement
 
         explicit DelStatement(Expression *);
 
-        virtual void Emit(Executable &) const;
-        void Emit1(Executable &, Expression *) const;
+        void Emit(Executable &) const override;
+        void Emit1(Executable &, const Expression *) const;
 };
 
 class ReturnStatement : public Statement
@@ -290,9 +291,9 @@ class ReturnStatement : public Statement
     public:
 
         ReturnStatement(const Token &keywordToken, Expression *);
-        ~ReturnStatement();
+        ~ReturnStatement() override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
     private:
 
@@ -305,7 +306,7 @@ class AssertStatement : public ExpressionStatement
 
         explicit AssertStatement(Expression *);
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 };
 
 class IfStatement : public Statement
@@ -315,17 +316,17 @@ class IfStatement : public Statement
         IfStatement(Expression *, Block *, IfStatement *);
         IfStatement(Expression *, Block *, Block *);
         IfStatement(Expression *, Block *);
-        ~IfStatement();
+        ~IfStatement() override;
 
-        virtual void Parent(const Block *);
+        void Parent(const Block *) override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
     private:
 
         Expression *conditionExpression;
-        Block *trueBlock, *falseBlock;
-        IfStatement *elsePart;
+        Block *trueBlock, *falseBlock = nullptr;
+        IfStatement *elsePart = nullptr;
 };
 
 class LoopStatement : public Statement
@@ -347,9 +348,9 @@ class WhileStatement : public LoopStatement
     public:
 
         WhileStatement(Expression *, Block *, Block *);
-        ~WhileStatement();
+        ~WhileStatement() override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
     private:
 
@@ -364,11 +365,11 @@ class ForStatement : public LoopStatement
         ForStatement
             (TargetExpression *, Expression *,
              Block *, Block *);
-        ~ForStatement();
+        ~ForStatement() override;
 
-        virtual unsigned StackUsage() const;
+        unsigned StackUsage() const override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
     private:
 
@@ -388,12 +389,12 @@ class Parameter : public NonTerminal
             DictionaryGroup,
         };
 
-        Parameter
+        explicit Parameter
             (const Token &name, Type = Type::Positional,
              Expression * = nullptr);
-        ~Parameter();
+        ~Parameter() override;
 
-        void Parent(const Statement *);
+        void Parent(const Statement *) const;
 
         const std::string &Name() const
         {
@@ -421,14 +422,13 @@ class ParameterList : public NonTerminal
 {
     public:
 
-        ParameterList();
-        ~ParameterList();
+        ~ParameterList() override;
 
         void Add(Parameter *);
 
-        void Parent(const Statement *);
+        void Parent(const Statement *) const;
 
-        typedef std::list<Parameter *>::const_iterator ConstParameterIterator;
+        using ConstParameterIterator = std::list<Parameter *>::const_iterator;
         ConstParameterIterator ParametersBegin() const
         {
             return parameters.begin();
@@ -450,9 +450,9 @@ class DefStatement : public Statement
     public:
 
         DefStatement(const Token &nameToken, ParameterList *, Block *);
-        ~DefStatement();
+        ~DefStatement() override;
 
-        virtual void Emit(Executable &) const;
+        void Emit(Executable &) const override;
 
     private:
 

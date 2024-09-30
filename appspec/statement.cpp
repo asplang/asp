@@ -38,10 +38,6 @@ Parameter::~Parameter()
     delete defaultValue;
 }
 
-ParameterList::ParameterList()
-{
-}
-
 void ParameterList::Add(Parameter *parameter)
 {
     if (parameters.empty())
@@ -51,8 +47,8 @@ void ParameterList::Add(Parameter *parameter)
 
 ParameterList::~ParameterList()
 {
-    for (auto iter = parameters.begin(); iter != parameters.end(); iter++)
-        delete *iter;
+    for (auto &parameter: parameters)
+        delete parameter;
 }
 
 FunctionDefinition::FunctionDefinition
@@ -71,7 +67,7 @@ FunctionDefinition::~FunctionDefinition()
     delete parameterList;
 }
 
-void NameList::Add(Token &nameToken)
+void NameList::Add(const Token &nameToken)
 {
     if (names.empty())
         (SourceElement &)*this = nameToken;

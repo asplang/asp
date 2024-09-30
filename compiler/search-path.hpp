@@ -13,7 +13,7 @@ class SearchPath : public std::vector<std::string>
     public:
 
         // Constructor.
-        SearchPath(const std::string &pathString = "");
+        explicit SearchPath(const std::string &pathString = "");
 };
 
 #endif

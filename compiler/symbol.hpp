@@ -24,7 +24,7 @@ class SymbolTable
         bool IsDefined(const std::string &) const;
 
         // Symbol iteration methods.
-        typedef std::map<std::string, std::int32_t> Map;
+        using Map = std::map<std::string, std::int32_t>;
         Map::const_iterator Begin() const;
         Map::const_iterator End() const;
 

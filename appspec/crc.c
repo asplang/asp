@@ -41,8 +41,10 @@ void crc_init_spec
     spec->refout = refout;
     ASSIGN(spec->xorout, xorout);
     ASSIGN(spec->mask,
+        #ifdef CRC_SUPPORT_64
         width == 64 ? (uint64_t)(int64_t)(-1) :
         width > 32 ? ((uint64_t)1U << width) - 1U :
+        #endif
         width == 32 ? (uint32_t)(int32_t)(-1) :
         ((uint32_t)1U << width) - 1U);
 
@@ -60,10 +62,12 @@ void crc_init_spec
 
     /* Initialize tables. */
     crc_arg_t top_bit_mask = (crc_arg_t)1U << (spec->width - 1);
-    for (unsigned b = 0; b < 0x100; b++)
+    for (unsigned ub = 0; ub < 0x100; ub++)
     {
+        uint8_t b = (uint8_t)ub;
+
         /* Reflect the byte for use here and during calculation. */
-        uint8_t ref_b = reflect(b, 8);
+        uint8_t ref_b = (uint8_t)reflect(b, 8);
 
         /* Determine CRC contribution for the byte. */
         crc_arg_t crc = 0;
@@ -81,7 +85,7 @@ void crc_init_spec
         }
 
         /* Initialize the applicable table entries. */
-        unsigned crc_index = refin ? ref_b : b;
+        uint8_t crc_index = refin ? ref_b : b;
         spec->byte_table[b] = crc_index;
         ASSIGN(spec->crc_table[crc_index], crc & ACCESS(spec->mask));
     }
@@ -119,7 +123,8 @@ void crc_add
     while (size--)
     {
         uint8_t b = spec->byte_table[*bp++];
-        uint8_t index = b ^ (ACCESS(session->crc) >> (spec->width - 8));
+        uint8_t index = (uint8_t)
+            (b ^ (ACCESS(session->crc) >> (spec->width - 8)));
         ASSIGN(session->crc,
             (ACCESS(session->crc) << 8) ^ ACCESS(spec->crc_table[index]));
     }

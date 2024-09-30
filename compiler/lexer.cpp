@@ -119,7 +119,8 @@ void Lexer::FetchNext()
         {
             Get();
             if (!isspace(c))
-                token = new Token(sourceLocation, -1, string(1, c));
+                token = new Token
+                    (sourceLocation, -1, string(1, static_cast<char>(c)));
         }
 
         if (token)
@@ -167,7 +168,7 @@ Token *Lexer::ProcessSpecial()
             lex += static_cast<char>(Get());
     }
 
-    static const map<string, int> keywords =
+    static const map<string, int> operators =
     {
         {",", TOKEN_COMMA},
         {"+", TOKEN_PLUS},
@@ -218,8 +219,8 @@ Token *Lexer::ProcessSpecial()
     };
     if (type == -1)
     {
-        auto iter = keywords.find(lex);
-        if (iter != keywords.end())
+        auto iter = operators.find(lex);
+        if (iter != operators.end())
             type = iter->second;
     }
     return new Token(sourceLocation, type, lex);
@@ -256,7 +257,7 @@ int Lexer::Get()
 
     // Maintain indent level.
     if (checkIndent && isspace(c) && c != '\n')
-        currIndent += c;
+        currIndent += static_cast<char>(c);
 
     // Maintain line/column.
     if (c == '\n')

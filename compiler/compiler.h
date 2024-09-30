@@ -63,9 +63,8 @@ class Compiler
 {
     public:
 
-        // Constructor, destructor.
+        // Constructor.
         Compiler(std::ostream &errorStream, SymbolTable &, Executable &);
-        ~Compiler();
 
         // Compiler methods.
         void LoadApplicationSpec(std::istream &);
