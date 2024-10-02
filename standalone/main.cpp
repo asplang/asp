@@ -9,6 +9,7 @@
 #include <ctime>
 #include <iostream>
 #include <iomanip>
+#include <set>
 #include <string>
 #include <cstring>
 #include <cstdio>
@@ -109,6 +110,19 @@ static void Usage()
         << COMMAND_OPTION_PREFIXES[0] << "U option.\n"
         #endif
         ;
+}
+
+template<class C> static void CloseFiles(C files)
+{
+    bool warned = false;
+    for (auto file: files)
+    {
+        if (fclose(file) != 0 && !warned)
+        {
+            cerr << "Error closing one or more output files" << endl;
+            warned = true;
+        }
+    }
 }
 
 int main(int argc, char **argv)
@@ -247,6 +261,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // Prepare to close files when done.
+    set<FILE *> openedFiles;
+    openedFiles.insert(executableFile);
+
     // Open the trace and dump files.
     #ifdef ASP_DEBUG
     FILE *stdFiles[] = {nullptr, stdout, stderr};
@@ -261,8 +279,10 @@ int main(int argc, char **argv)
             cerr
                 << "Error opening trace file " << traceFileName
                 << ": " << strerror(errno) << endl;
+            CloseFiles(openedFiles);
             return 1;
         }
+        openedFiles.insert(traceFile);
     }
     FILE *dumpFile = stdout;
     if (dumpFileDescriptor != 0)
@@ -279,8 +299,10 @@ int main(int argc, char **argv)
                 cerr
                     << "Error opening dump file " << dumpFileName
                     << ": " << strerror(errno) << endl;
+                CloseFiles(openedFiles);
                 return 1;
             }
+            openedFiles.insert(traceFile);
         }
     }
     #endif
@@ -292,33 +314,37 @@ int main(int argc, char **argv)
     // Initialize the Asp engine.
     StandaloneAspContext context;
     AspEngine engine;
-    char *code = nullptr;
+    auto code = unique_ptr<char[]>();
     if (codeByteCount != 0)
     {
-        code = new char[codeByteCount];
+        code.reset(new char[codeByteCount]);
         if (code == nullptr)
         {
             cerr << "Error allocating engine code area" << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
     }
-    char *data = new char[dataByteSize];
+    auto data = unique_ptr<char[]>(new char [dataByteSize]);
     if (data == nullptr)
     {
         cerr << "Error allocating engine data area" << endl;
+        CloseFiles(openedFiles);
         return 2;
     }
     AspRunResult initializeResult = AspInitialize
         (&engine,
-         code, codeByteCount,
-         data, dataByteSize,
+         code.get(), codeByteCount,
+         data.get(), dataByteSize,
          &AspAppSpec_standalone, &context);
     if (initializeResult != AspRunResult_OK)
     {
         cerr
             << "Initialize error 0x" << hex << uppercase << setfill('0')
             << setw(2) << initializeResult << ": "
-            << AspRunResultToString((int)initializeResult) << endl;
+            << AspRunResultToString(static_cast<int>(initializeResult))
+            << endl;
+        CloseFiles(openedFiles);
         return 2;
     }
 
@@ -328,7 +354,7 @@ int main(int argc, char **argv)
     #endif
 
     // Load the executable using one of three methods.
-    char *externalCode = nullptr;
+    auto externalCode = unique_ptr<char[]>();
     if (codeByteCount == 0)
     {
         if (codePageByteCount != 0)
@@ -347,38 +373,44 @@ int main(int argc, char **argv)
             cerr
                 << "Error determining size of " << executableFileName
                 << ": " << strerror(errno) << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
-        size_t externalCodeSize = (size_t)tellResult;
-        externalCode = new char[externalCodeSize];
+        auto externalCodeSize = static_cast<size_t>(tellResult);
+        externalCode.reset(new char[externalCodeSize]);
         if (externalCode == nullptr)
         {
             cerr << "Error allocating memory for executable code" << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
         rewind(executableFile);
 
         // Read the entire executable into memory.
         size_t readResult = fread
-            (externalCode, externalCodeSize, 1U, executableFile);
+            (externalCode.get(), externalCodeSize, 1U, executableFile);
         if (readResult != 1U || feof(executableFile) || ferror(executableFile))
         {
             cerr
                 << "Error reading " << executableFileName
                 << ": " << strerror(errno) << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
+        openedFiles.erase(executableFile);
         fclose(executableFile);
         executableFile = nullptr;
 
         AspAddCodeResult sealResult = AspSealCode
-            (&engine, externalCode, externalCodeSize);
+            (&engine, externalCode.get(), externalCodeSize);
         if (sealResult != AspAddCodeResult_OK)
         {
             cerr
                 << "Seal error 0x" << hex << uppercase << setfill('0')
                 << setw(2) << sealResult << ": "
-                << AspAddCodeResultToString((int)sealResult) << endl;
+                << AspAddCodeResultToString(static_cast<int>(sealResult))
+                << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
     }
@@ -386,7 +418,7 @@ int main(int argc, char **argv)
     {
         while (true)
         {
-            char c = fgetc(executableFile);
+            auto c = static_cast<char>(fgetc(executableFile));
             if (feof(executableFile))
                 break;
             if (ferror(executableFile))
@@ -394,6 +426,7 @@ int main(int argc, char **argv)
                 cerr
                     << "Error reading " << executableFileName
                     << ": " << strerror(errno) << endl;
+                CloseFiles(openedFiles);
                 return 2;
             }
             AspAddCodeResult addResult = AspAddCode(&engine, &c, 1);
@@ -402,10 +435,13 @@ int main(int argc, char **argv)
                 cerr
                     << "Load error 0x" << hex << uppercase << setfill('0')
                     << setw(2) << addResult << ": "
-                    << AspAddCodeResultToString((int)addResult) << endl;
+                    << AspAddCodeResultToString(static_cast<int>(addResult))
+                    << endl;
+                CloseFiles(openedFiles);
                 return 2;
             }
         }
+        openedFiles.erase(executableFile);
         fclose(executableFile);
         executableFile = nullptr;
 
@@ -415,7 +451,9 @@ int main(int argc, char **argv)
             cerr
                 << "Seal error 0x" << hex << uppercase << setfill('0')
                 << setw(2) << sealResult << ": "
-                << AspAddCodeResultToString((int)sealResult) << endl;
+                << AspAddCodeResultToString(static_cast<int>(sealResult))
+                << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
     }
@@ -427,13 +465,14 @@ int main(int argc, char **argv)
             cerr
                 << "Code page size is larger than available code area."
                 << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
-        uint8_t codePageCount = (uint8_t)computedCodePageCount;
+        auto codePageCount = static_cast<uint8_t>(computedCodePageCount);
         if (codePageCount != computedCodePageCount)
             cerr
                 << "WARNING: Number of code pages limited to "
-                << (unsigned)codePageCount << endl;
+                << static_cast<unsigned>(codePageCount) << endl;
 
         AspRunResult setPagingResult = AspSetCodePaging
             (&engine, codePageCount, codePageByteCount, LoadCodePage);
@@ -442,7 +481,9 @@ int main(int argc, char **argv)
             cerr
                 << "Error 0x" << hex << uppercase << setfill('0')
                 << setw(2) << setPagingResult << " initializing code paging: "
-                << AspRunResultToString((int)setPagingResult) << endl;
+                << AspRunResultToString(static_cast<int>(setPagingResult))
+                << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
 
@@ -452,7 +493,9 @@ int main(int argc, char **argv)
             cerr
                 << "Error 0x" << hex << uppercase << setfill('0')
                 << setw(2) << pageResult << " loading paged code: "
-                << AspAddCodeResultToString((int)pageResult) << endl;
+                << AspAddCodeResultToString(static_cast<int>(pageResult))
+                << endl;
+            CloseFiles(openedFiles);
             return 2;
         }
     }
@@ -493,7 +536,9 @@ int main(int argc, char **argv)
         cerr
             << "Arguments error 0x" << hex << uppercase << setfill('0')
             << setw(2) << argumentResult << ": "
-            << AspRunResultToString((int)argumentResult) << endl;
+            << AspRunResultToString(static_cast<int>(argumentResult))
+            << endl;
+        CloseFiles(openedFiles);
         return 2;
     }
 
@@ -525,6 +570,7 @@ int main(int argc, char **argv)
     // Close the executable if not already done (e.g., in code paging mode).
     if (executableFile != nullptr)
     {
+        openedFiles.erase(executableFile);
         fclose(executableFile);
         executableFile = nullptr;
     }
@@ -558,7 +604,7 @@ int main(int argc, char **argv)
         fprintf
             (statusFile,
              "Run error 0x%02X: %s\n",
-             runResult, AspRunResultToString((int)runResult));
+             runResult, AspRunResultToString(static_cast<int>(runResult)));
 
         // Report the program counter.
         auto programCounter = AspProgramCounter(&engine);
@@ -603,9 +649,7 @@ int main(int argc, char **argv)
         }
     }
 
-    delete [] code;
-    delete [] externalCode;
-    delete [] data;
+    CloseFiles(openedFiles);
 
     return runResult == AspRunResult_Complete ? 0 : 2;
 }
@@ -613,7 +657,7 @@ int main(int argc, char **argv)
 static AspRunResult LoadCodePage
     (void *id, uint32_t offset, size_t *size, void *codePage)
 {
-    FILE *executableFile = (FILE *)id;
+    auto executableFile = static_cast<FILE *>(id);
 
     int result = fseek(executableFile, (long)offset, SEEK_SET);
     if (result != 0)

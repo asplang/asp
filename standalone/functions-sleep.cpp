@@ -16,7 +16,7 @@ extern "C" AspRunResult asp_sleep
      AspDataEntry *sec,
      AspDataEntry **returnValue)
 {
-    auto context = reinterpret_cast<StandaloneAspContext *>
+    auto context = static_cast<StandaloneAspContext *>
         (AspContext(engine));
 
     clock_t ticks = clock();
