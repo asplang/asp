@@ -7,6 +7,10 @@ chronological order.
 Changes
 -------
 
+Version 1.2.0.2 (compiler 1.2.0.1, engine 1.2.0.2):
+- Cleaned up the code according to static analysis results. No changes to
+  functionality were made.
+
 Version 1.2.0.1 (compiler 1.2.0.0, engine 1.2.0.1):
 Engine:
   - Fixed a bug in the script-callable exit function that was converting a
