@@ -40,13 +40,17 @@ void crc_init_spec
     spec->refin = refin;
     spec->refout = refout;
     ASSIGN(spec->xorout, xorout);
+    #ifdef CRC_SUPPORT_64
     ASSIGN(spec->mask,
-        #ifdef CRC_SUPPORT_64
         width == 64 ? (uint64_t)(int64_t)(-1) :
         width > 32 ? ((uint64_t)1U << width) - 1U :
-        #endif
         width == 32 ? (uint32_t)(int32_t)(-1) :
         ((uint32_t)1U << width) - 1U);
+    #else
+    ASSIGN(spec->mask,
+        width == 32 ? (uint32_t)(int32_t)(-1) :
+        ((uint32_t)1U << width) - 1U);
+    #endif
 
     /* For widths less than 1 byte, shift things to the left so that the
        action happens at the byte's MSb. The final answer will be shifted

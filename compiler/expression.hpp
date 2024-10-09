@@ -444,7 +444,8 @@ class ConstantExpression : public Expression
         friend Expression *FoldBinaryExpression
             (int operatorTokenType, Expression *, Expression *);
         friend Expression *FoldTernaryExpression
-            (int operatorTokenType, Expression *, Expression *, Expression *);
+            (int operatorTokenType, const Expression *,
+             Expression *, Expression *);
 
         void Emit(Executable &, EmitType) const override;
 
