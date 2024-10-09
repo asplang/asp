@@ -7,6 +7,9 @@ chronological order.
 Changes
 -------
 
+Version 1.2.0.3 (compiler 1.2.0.2, engine 1.2.0.2):
+- Fixed issues that caused compilation to fail with Windows Visual Studio.
+
 Version 1.2.0.2 (compiler 1.2.0.1, engine 1.2.0.2):
 - Cleaned up the code according to static analysis results. No changes to
   functionality were made.
