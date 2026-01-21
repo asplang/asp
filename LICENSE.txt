@@ -2,7 +2,7 @@ Software:
 
 MIT License
 
-Copyright (c) 2025 Canadensys Aerospace Corporation
+Copyright (c) 2026 Canadensys Aerospace Corporation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@ SOFTWARE.
 
 Artwork:
 
-Copyright (c) 2025 Sam Taylor
+Copyright (c) 2026 Sam Taylor
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of the graphic image files packaged together with this software, to use, copy,
