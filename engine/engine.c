@@ -878,6 +878,11 @@ size_t AspProgramCounter(const AspEngine *engine)
     return (size_t)engine->pc;
 }
 
+size_t AspFreeCount(const AspEngine *engine)
+{
+    return engine->freeCount;
+}
+
 size_t AspLowFreeCount(const AspEngine *engine)
 {
     return engine->lowFreeCount;
