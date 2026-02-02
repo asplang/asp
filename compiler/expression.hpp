@@ -122,28 +122,6 @@ class UnaryExpression : public Expression
         Expression *expression;
 };
 
-class TargetExpression : public Expression
-{
-    public:
-
-        TargetExpression() = default;
-        explicit TargetExpression(const Token &nameToken);
-        ~TargetExpression() override;
-
-        bool IsTuple() const;
-        void Add(TargetExpression *);
-
-        void Parent(const Statement *) override;
-
-        void Emit(Executable &, EmitType) const override;
-
-    private:
-
-        const Statement *parentStatement = nullptr;
-        std::string name;
-        std::list<TargetExpression *> targetExpressions;
-};
-
 class Argument : public NonTerminal
 {
     public:

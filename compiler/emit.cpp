@@ -941,40 +941,6 @@ void UnaryExpression::Emit
          sourceLocation);
 }
 
-void TargetExpression::Emit
-    (Executable &executable, EmitType emitType) const
-{
-    if (emitType != EmitType::Address)
-        ThrowError("Unexpected use of target expression");
-
-    if (!name.empty())
-    {
-        if (!targetExpressions.empty())
-            ThrowError("Internal error: Invalid target expression");
-
-        auto symbol = executable.Symbol(name);
-        ostringstream oss;
-        oss << "Push address of variable " << name;
-        executable.Insert
-            (new LoadInstruction(symbol, true, oss.str()),
-             sourceLocation);
-    }
-    else
-    {
-        executable.Insert
-            (new PushTupleInstruction("Create empty tuple"),
-             sourceLocation);
-
-        for (const auto &targetExpression: targetExpressions)
-        {
-            targetExpression->Emit(executable, emitType);
-            executable.Insert
-                (new BuildInstruction("Add item to tuple"),
-                 sourceLocation);
-        }
-    }
-}
-
 void Argument::Emit(Executable &executable) const
 {
     valueExpression->Emit(executable);

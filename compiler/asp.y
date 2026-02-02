@@ -211,58 +211,77 @@ for(result) ::=
          targetExpression, iterableExpression, trueBlock, 0);
 }
 
-%type target {TargetExpression *}
+%type target {Expression *}
 
 target(result) ::= target1(targetExpression).
 {
-    result = ACTION(AssignTargetExpression, targetExpression);
+    result = ACTION(AssignExpression, targetExpression);
 }
 
 target(result) ::= target2(targetExpression).
 {
-    result = ACTION(AssignTargetExpression, targetExpression);
+    result = ACTION(AssignExpression, targetExpression);
 }
 
-%type target1 {TargetExpression *}
+%type target1 {Expression *}
 
 target1(result) ::=
     target1(leftTargetExpression) COMMA(operatorToken)
     target1(rightTargetExpression).
 {
     result = ACTION
-        (MakeTargetExpression, operatorToken,
+        (MakeTupleExpression, operatorToken,
          leftTargetExpression, rightTargetExpression);
 }
 
 target1(result) ::=
     LEFT_PAREN target1(targetExpression) RIGHT_PAREN.
 {
-    result = ACTION(MakeEnclosedTargetExpression, targetExpression);
+    result = ACTION(MakeEnclosedExpression, targetExpression);
 }
 
 target1(result) ::=
     LEFT_PAREN target2(targetExpression) RIGHT_PAREN.
 {
-    result = ACTION(MakeEnclosedTargetExpression, targetExpression);
+    result = ACTION(MakeEnclosedExpression, targetExpression);
 }
 
 target1(result) ::= LEFT_PAREN(token) RIGHT_PAREN.
 {
-    result = ACTION(MakeTargetExpression, token, 0, 0);
+    result = ACTION(MakeTupleExpression, token, 0, 0);
+}
+
+target1(result) ::=
+    target1(sequenceTargetExpression)
+    LEFT_BRACKET expression(indexTargetExpression) RIGHT_BRACKET.
+{
+    result = ACTION
+        (MakeElementExpression,
+         sequenceTargetExpression, indexTargetExpression);
+}
+
+target1(result) ::= target1(targetExpression) PERIOD NAME(nameToken).
+{
+    result = ACTION
+        (MakeMemberExpression, targetExpression, nameToken);
+}
+
+target1(result) ::= list(listTargetExpression).
+{
+    result = ACTION(MakeListExpression, listTargetExpression);
 }
 
 target1(result) ::= NAME(nameToken).
 {
-    result = ACTION(MakeTargetExpression, nameToken, 0, 0);
+    result = ACTION(MakeVariableExpression, nameToken);
 }
 
-%type target2 {TargetExpression *}
+%type target2 {Expression *}
 
-target2(result) ::=
-    target1(leftTargetExpression) COMMA(operatorToken).
+target2(result) ::= target1(leftTargetExpression) COMMA(operatorToken).
 {
     result = ACTION
-        (MakeTargetExpression, operatorToken, leftTargetExpression, 0);
+        (MakeTupleExpression, operatorToken, leftTargetExpression, 0);
 }
 
 %type def {Statement *}

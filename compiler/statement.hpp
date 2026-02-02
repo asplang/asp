@@ -381,7 +381,7 @@ class ForStatement : public LoopStatement
     public:
 
         ForStatement
-            (TargetExpression *, Expression *,
+            (Expression *, Expression *,
              Block *, Block *);
         ~ForStatement() override;
 
@@ -391,7 +391,7 @@ class ForStatement : public LoopStatement
 
     private:
 
-        TargetExpression *targetExpression;
+        Expression *targetExpression;
         Expression *iterableExpression;
         Block *trueBlock, *falseBlock;
 };

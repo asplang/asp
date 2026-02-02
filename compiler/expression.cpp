@@ -126,38 +126,6 @@ void UnaryExpression::Parent(const Statement *statement)
     expression->Parent(statement);
 }
 
-TargetExpression::TargetExpression(const Token &token) :
-    Expression(token)
-{
-    if (token.type == TOKEN_NAME)
-        name = token.s;
-}
-
-TargetExpression::~TargetExpression()
-{
-    for (auto &targetExpression: targetExpressions)
-        delete targetExpression;
-}
-
-bool TargetExpression::IsTuple() const
-{
-    return name.empty();
-}
-
-void TargetExpression::Add(TargetExpression *targetExpression)
-{
-    if (IsEnclosed())
-        throw string("Internal error: Cannot add to a enclosed target tuple");
-    if (targetExpressions.empty())
-        (SourceElement &)*this = *targetExpression;
-    targetExpressions.push_back(targetExpression);
-}
-
-void TargetExpression::Parent(const Statement *statement)
-{
-    parentStatement = statement;
-}
-
 Argument::Argument
     (const Token &nameToken, Expression *valueExpression) :
     NonTerminal(nameToken),

@@ -542,7 +542,7 @@ DEFINE_ACTION
 
 DEFINE_ACTION
     (MakeForStatement, Statement *,
-     TargetExpression *, targetExpression, Expression *,expression,
+     Expression *, targetExpression, Expression *,expression,
      Block *, trueBlock, Block *, falseBlock)
 {
     return new ForStatement
@@ -920,48 +920,6 @@ DEFINE_ACTION
      ConstantExpression *, constantExpression)
 {
     return constantExpression;
-}
-
-DEFINE_ACTION
-    (MakeTargetExpression, TargetExpression *,
-     Token *, token,
-     TargetExpression *, leftTargetExpression,
-     TargetExpression *, rightTargetExpression)
-{
-    TargetExpression *result = leftTargetExpression;
-    if (leftTargetExpression == nullptr ||
-        !leftTargetExpression->IsTuple() ||
-        leftTargetExpression->IsEnclosed())
-    {
-        result = new TargetExpression(*token);
-        if (leftTargetExpression != nullptr)
-            result->Add(leftTargetExpression);
-        else if (result->IsTuple())
-            result->Enclose();
-    }
-
-    if (rightTargetExpression != nullptr)
-        result->Add(rightTargetExpression);
-
-    delete token;
-    return result;
-}
-
-DEFINE_ACTION
-    (MakeEnclosedTargetExpression, TargetExpression *,
-     TargetExpression *, targetExpression)
-{
-    // Enclose the expression in parentheses. This prevents target expressions
-    // in parentheses from being added to.
-    targetExpression->Enclose();
-    return targetExpression;
-}
-
-DEFINE_ACTION
-    (AssignTargetExpression, TargetExpression *,
-     TargetExpression *, targetExpression)
-{
-    return targetExpression;
 }
 
 DEFINE_ACTION

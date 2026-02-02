@@ -404,7 +404,7 @@ WhileStatement::~WhileStatement()
 }
 
 ForStatement::ForStatement
-    (TargetExpression *targetExpression, Expression *iterableExpression,
+    (Expression *targetExpression, Expression *iterableExpression,
      Block *trueBlock, Block *falseBlock) :
     LoopStatement(*targetExpression),
     targetExpression(targetExpression),
