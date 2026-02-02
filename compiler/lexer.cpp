@@ -164,7 +164,7 @@ Token *Lexer::ProcessSpecial()
     else if (c != '\0' && strchr(eq2, c) != nullptr && c2 == '=')
     {
         lex += static_cast<char>(Get());
-        if (Peek() == '>')
+        if (lex == "<=" && Peek() == '>')
             lex += static_cast<char>(Get());
     }
 
