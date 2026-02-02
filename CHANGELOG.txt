@@ -7,6 +7,15 @@ chronological order.
 Changes
 -------
 
+Version 1.2.5.0 (generator 1.2.2.2, compiler 1.2.3.0, engine 1.2.3.4):
+- Compiler:
+  - Added new target types to for statements that are allowed in Python but
+    were not previously supported in Asp: list element, module member, and list
+    (as sequence target).
+- Engine:
+  - Added API function AspFreeCount to obtain the instantaneous free data slot
+    count during a run.
+
 Version 1.2.4.4 (generator 1.2.2.2, compiler 1.2.2.3, engine 1.2.3.3):
 - Engine:
   - Added API function AspGetRunResult to obtain the current run result of the
