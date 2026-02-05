@@ -307,17 +307,25 @@ DEFINE_ACTION
     (AddStatementToBlock, Block *,
      Block *, block, Statement *, statement)
 {
-    if (statement)
+    if (statement != nullptr)
     {
-        auto blockStatement = dynamic_cast<BlockStatement *>(statement);
-        if (blockStatement == nullptr)
-            block->Add(statement);
-        else
+        try
         {
-            blockStatement->MoveStatements(block);
-            delete statement;
+            auto blockStatement = dynamic_cast<BlockStatement *>(statement);
+            if (blockStatement == nullptr)
+                block->Add(statement);
+            else
+            {
+                blockStatement->MoveStatements(block);
+                delete statement;
+            }
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
         }
     }
+
     return block;
 }
 
@@ -331,8 +339,21 @@ DEFINE_ACTION
      Token *, assignmentToken, Expression *, targetExpression,
      AssignmentStatement *, valueAssignmentStatement)
 {
-    auto result = new AssignmentStatement
-        (*assignmentToken, targetExpression, valueAssignmentStatement);
+    AssignmentStatement *result = nullptr;
+
+    if (targetExpression != nullptr && valueAssignmentStatement != nullptr)
+    {
+        try
+        {
+            result = new AssignmentStatement
+                (*assignmentToken, targetExpression, valueAssignmentStatement);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete assignmentToken;
     return result;
 }
@@ -342,8 +363,21 @@ DEFINE_ACTION
      Token *, assignmentToken, Expression *, targetExpression,
      Expression *, valueExpression)
 {
-    auto result = new AssignmentStatement
-        (*assignmentToken, targetExpression, valueExpression);
+    AssignmentStatement *result = nullptr;
+
+    if (targetExpression != nullptr && valueExpression != nullptr)
+    {
+        try
+        {
+            result = new AssignmentStatement
+                (*assignmentToken, targetExpression, valueExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete assignmentToken;
     return result;
 }
@@ -367,8 +401,21 @@ DEFINE_ACTION
      Token *, insertionToken, InsertionStatement *, insertionStatement,
      Expression *, itemExpression)
 {
-    auto result = new InsertionStatement
-        (*insertionToken, insertionStatement, itemExpression);
+    InsertionStatement *result = nullptr;
+
+    if (insertionStatement != nullptr && itemExpression != nullptr)
+    {
+        try
+        {
+            result = new InsertionStatement
+                (*insertionToken, insertionStatement, itemExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete insertionToken;
     return result;
 }
@@ -378,8 +425,21 @@ DEFINE_ACTION
      Token *, insertionToken, InsertionStatement *, insertionStatement,
      KeyValuePair *, keyValuePair)
 {
-    auto result = new InsertionStatement
-        (*insertionToken, insertionStatement, keyValuePair);
+    InsertionStatement *result = nullptr;
+
+    if (insertionStatement != nullptr && keyValuePair != nullptr)
+    {
+        try
+        {
+            result = new InsertionStatement
+                (*insertionToken, insertionStatement, keyValuePair);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete insertionToken;
     return result;
 }
@@ -389,8 +449,21 @@ DEFINE_ACTION
      Token *, insertionToken, Expression *, containerExpression,
      Expression *, itemExpression)
 {
-    auto result = new InsertionStatement
-        (*insertionToken, containerExpression, itemExpression);
+    InsertionStatement *result = nullptr;
+
+    if (containerExpression != nullptr && itemExpression != nullptr)
+    {
+        try
+        {
+            result = new InsertionStatement
+                (*insertionToken, containerExpression, itemExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete insertionToken;
     return result;
 }
@@ -400,8 +473,21 @@ DEFINE_ACTION
      Token *, insertionToken, Expression *, containerExpression,
      KeyValuePair *, keyValuePair)
 {
-    auto result = new InsertionStatement
-        (*insertionToken, containerExpression, keyValuePair);
+    InsertionStatement *result = nullptr;
+
+    if (containerExpression != nullptr && keyValuePair != nullptr)
+    {
+        try
+        {
+            result = new InsertionStatement
+                (*insertionToken, containerExpression, keyValuePair);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete insertionToken;
     return result;
 }
@@ -417,69 +503,152 @@ DEFINE_ACTION
     (MakeExpressionStatement, Statement *,
      Expression *, expression)
 {
-    return new ExpressionStatement(expression);
+    if (expression != nullptr)
+    {
+        try
+        {
+            return new ExpressionStatement(expression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeImportStatement, Statement *,
      ImportNameList *, moduleNameList)
 {
-    for (auto iter = moduleNameList->NamesBegin();
-         iter != moduleNameList->NamesEnd(); iter++)
+    if (moduleNameList != nullptr)
     {
-        const auto &importName = *iter;
+        try
+        {
+            for (auto iter = moduleNameList->NamesBegin();
+                 iter != moduleNameList->NamesEnd(); iter++)
+            {
+                const auto &importName = *iter;
 
-        AddModule(importName->Name());
+                AddModule(importName->Name());
 
-        auto importedModuleIter = importedModules.emplace
-            (importName->Name(), list<SourceElement>()).first;
-        importedModuleIter->second.push_back(*moduleNameList);
+                auto importedModuleIter = importedModules.emplace
+                    (importName->Name(), list<SourceElement>()).first;
+                importedModuleIter->second.push_back(*moduleNameList);
+            }
+
+            return new ImportStatement(moduleNameList);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
     }
 
-    return new ImportStatement(moduleNameList);
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeFromImportStatement, Statement *,
      ImportName *, moduleName, ImportNameList *, memberNameList)
 {
-    AddModule(moduleName->Name());
+    if (moduleName != nullptr && memberNameList != nullptr)
+    {
+        try
+        {
+            AddModule(moduleName->Name());
 
-    auto importedModuleIter = importedModules.emplace
-        (moduleName->Name(), list<SourceElement>()).first;
-    importedModuleIter->second.push_back(*moduleName);
+            auto importedModuleIter = importedModules.emplace
+                (moduleName->Name(), list<SourceElement>()).first;
+            importedModuleIter->second.push_back(*moduleName);
 
-    auto moduleNameList = new ImportNameList;
-    moduleNameList->Add(moduleName);
-    return new ImportStatement(moduleNameList, memberNameList);
+            auto moduleNameList = new ImportNameList;
+            moduleNameList->Add(moduleName);
+            return new ImportStatement(moduleNameList, memberNameList);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeGlobalStatement, Statement *,
      VariableList *, variableList)
 {
-    return new GlobalStatement(variableList);
+    if (variableList != nullptr)
+    {
+        try
+        {
+            return new GlobalStatement(variableList);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeLocalStatement, Statement *,
      VariableList *, variableList)
 {
-    return new LocalStatement(variableList);
+    if (variableList != nullptr)
+    {
+        try
+        {
+            return new LocalStatement(variableList);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeDelStatement, Statement *,
      Expression *, expression)
 {
-    return new DelStatement(expression);
+    if (expression != nullptr)
+    {
+        try
+        {
+            return new DelStatement(expression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeReturnStatement, Statement *,
      Token *, keywordToken, Expression *, expression)
 {
-    auto result = new ReturnStatement(*keywordToken, expression);
+    Statement *result = nullptr;
+
+    // Note that the expression may be unspecified (i.e., null).
+    try
+    {
+        result = new ReturnStatement(*keywordToken, expression);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete keywordToken;
     return result;
 }
@@ -488,26 +657,68 @@ DEFINE_ACTION
     (MakeAssertStatement, Statement *,
      Expression *, expression)
 {
-    return new AssertStatement(expression);
+    if (expression != nullptr)
+    {
+        try
+        {
+            return new AssertStatement(expression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION(MakeBreakStatement, Statement *, Token *, token)
 {
-    auto result = new BreakStatement(*token);
+    Statement *result = nullptr;
+
+    try
+    {
+        result = new BreakStatement(*token);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete token;
     return result;
 }
 
 DEFINE_ACTION(MakeContinueStatement, Statement *, Token *, token)
 {
-    auto result = new ContinueStatement(*token);
+    Statement *result = nullptr;
+
+    try
+    {
+        result = new ContinueStatement(*token);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete token;
     return result;
 }
 
 DEFINE_ACTION(MakePassStatement, Statement *, Token *, token)
 {
-    auto result = new PassStatement(*token);
+    Statement *result = nullptr;
+
+    try
+    {
+        result = new PassStatement(*token);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete token;
     return result;
 }
@@ -516,28 +727,79 @@ DEFINE_ACTION
     (MakeIfElseIfStatement, IfStatement *,
      Expression *, expression, Block *, trueBlock, IfStatement *, ifStatement)
 {
-    return new IfStatement(expression, trueBlock, ifStatement);
+    if (expression != nullptr && trueBlock != nullptr &&
+        ifStatement != nullptr)
+    {
+        try
+        {
+            return new IfStatement(expression, trueBlock, ifStatement);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeIfElseStatement, IfStatement *,
      Expression *, expression, Block *, trueBlock, Block *, falseBlock)
 {
-    return new IfStatement(expression, trueBlock, falseBlock);
+    if (expression != nullptr &&
+        trueBlock != nullptr && falseBlock != nullptr)
+    {
+        try
+        {
+            return new IfStatement(expression, trueBlock, falseBlock);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeIfStatement, IfStatement *,
      Expression *, expression, Block *, trueBlock)
 {
-    return new IfStatement(expression, trueBlock);
+    if (expression != nullptr && trueBlock != nullptr)
+    {
+        try
+        {
+            return new IfStatement(expression, trueBlock);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeWhileStatement, Statement *,
      Expression *, expression, Block *, trueBlock, Block *, falseBlock)
 {
-    return new WhileStatement(expression, trueBlock, falseBlock);
+    // Note that the false expression may be unspecified (i.e., null).
+    if (expression != nullptr && trueBlock != nullptr)
+    {
+        try
+        {
+            return new WhileStatement(expression, trueBlock, falseBlock);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
@@ -545,33 +807,61 @@ DEFINE_ACTION
      Expression *, targetExpression, Expression *,expression,
      Block *, trueBlock, Block *, falseBlock)
 {
-    return new ForStatement
-        (targetExpression, expression, trueBlock, falseBlock);
+    // Note that the target or false expressions may be unspecified
+    // (i.e., null).
+    if (expression != nullptr && trueBlock != nullptr)
+    {
+        try
+        {
+            return new ForStatement
+                (targetExpression, expression, trueBlock, falseBlock);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeDefStatement, Statement *,
      Token *, nameToken, ParameterList *, parameterList, Block *, block)
 {
-    if (!parameterList->HasSourceLocation())
-        (SourceElement &)*parameterList = *nameToken;
+    Statement *result = nullptr;
 
-    // Ensure the validity of the order of parameter types.
-    ValidFunctionDefinition validFunctionDefinition;
-    for (auto iter = parameterList->ParametersBegin();
-         validFunctionDefinition.IsValid() &&
-         iter != parameterList->ParametersEnd();
-         iter++)
+    if (parameterList != nullptr && block != nullptr)
     {
-        const auto &parameter = **iter;
+        try
+        {
+            if (!parameterList->HasSourceLocation())
+                (SourceElement &)*parameterList = *nameToken;
 
-        string error = validFunctionDefinition.AddParameter
-            (parameter.Name(), parameter.GetType(), parameter.HasDefault());
-        if (!error.empty())
-            ReportError(error, parameter);
+            // Ensure the validity of the order of parameter types.
+            ValidFunctionDefinition validFunctionDefinition;
+            for (auto iter = parameterList->ParametersBegin();
+                 validFunctionDefinition.IsValid() &&
+                 iter != parameterList->ParametersEnd();
+                 iter++)
+            {
+                const auto &parameter = **iter;
+
+                string error = validFunctionDefinition.AddParameter
+                    (parameter.Name(), parameter.GetType(),
+                     parameter.HasDefault());
+                if (!error.empty())
+                    ReportError(error, parameter);
+            }
+
+            result = new DefStatement(*nameToken, parameterList, block);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
     }
 
-    auto result = new DefStatement(*nameToken, parameterList, block);
     delete nameToken;
     return result;
 }
@@ -579,7 +869,19 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeBlockStatement, Statement *, Block *, block)
 {
-    return new BlockStatement(block);
+    if (block != nullptr)
+    {
+        try
+        {
+            return new BlockStatement(block);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
@@ -593,32 +895,37 @@ DEFINE_ACTION
      Token *, operatorToken, Expression *, conditionExpression,
      Expression *, trueExpression, Expression *, falseExpression)
 {
-    // Attempt to fold constant expression.
     Expression *result = nullptr;
-    try
+
+    if (conditionExpression != nullptr &&
+        trueExpression != nullptr && falseExpression != nullptr)
     {
-        result = FoldTernaryExpression
-            (operatorToken->type,
-             conditionExpression, trueExpression, falseExpression);
+        try
+        {
+            // Attempt to fold constant expression.
+            result = FoldTernaryExpression
+                (operatorToken->type,
+                 conditionExpression, trueExpression, falseExpression);
+            if (result)
+            {
+                (SourceElement &)*result = *operatorToken;
+                if (conditionExpression != result)
+                    delete conditionExpression;
+                if (trueExpression != result)
+                    delete trueExpression;
+                if (falseExpression != result)
+                    delete falseExpression;
+            }
+            else
+                result = new ConditionalExpression
+                    (*operatorToken, conditionExpression,
+                     trueExpression, falseExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
     }
-    catch (const string &error)
-    {
-        ReportError(error);
-    }
-    if (result)
-    {
-        (SourceElement &)*result = *operatorToken;
-        if (conditionExpression != result)
-            delete conditionExpression;
-        if (trueExpression != result)
-            delete trueExpression;
-        if (falseExpression != result)
-            delete falseExpression;
-    }
-    else
-        result = new ConditionalExpression
-            (*operatorToken, conditionExpression,
-             trueExpression, falseExpression);
 
     delete operatorToken;
     return result;
@@ -629,39 +936,45 @@ DEFINE_ACTION
      Token *, operatorToken,
      Expression *, leftExpression, Expression *, rightExpression)
 {
-    // Attempt to fold constant expression.
     Expression *result = nullptr;
-    try
+
+    if (leftExpression != nullptr && rightExpression != nullptr)
     {
-        result = FoldBinaryExpression
-            (operatorToken->type, leftExpression, rightExpression);
-    }
-    catch (const string &error)
-    {
-        ReportError(error);
-    }
-    if (result)
-    {
-        (SourceElement &)*result = *operatorToken;
-        if (leftExpression != result)
-            delete leftExpression;
-        if (rightExpression != result)
-            delete rightExpression;
-    }
-    else
-    {
-        auto castLeftExpression = dynamic_cast<ShortCircuitLogicalExpression *>
-            (leftExpression);
-        if (castLeftExpression != nullptr &&
-            castLeftExpression->OperatorTokenType() == operatorToken->type)
+        try
         {
-            castLeftExpression->Add(rightExpression);
-            result = leftExpression;
+            // Attempt to fold constant expression.
+            result = FoldBinaryExpression
+                (operatorToken->type, leftExpression, rightExpression);
+            if (result)
+            {
+                (SourceElement &)*result = *operatorToken;
+                if (leftExpression != result)
+                    delete leftExpression;
+                if (rightExpression != result)
+                    delete rightExpression;
+            }
+            else
+            {
+                auto castLeftExpression =
+                    dynamic_cast<ShortCircuitLogicalExpression *>
+                    (leftExpression);
+                if (castLeftExpression != nullptr &&
+                    castLeftExpression->OperatorTokenType()
+                    == operatorToken->type)
+                {
+                    castLeftExpression->Add(rightExpression);
+                    result = leftExpression;
+                }
+                else
+                {
+                    result = new ShortCircuitLogicalExpression
+                        (*operatorToken, leftExpression, rightExpression);
+                }
+            }
         }
-        else
+        catch (const string &error)
         {
-            result = new ShortCircuitLogicalExpression
-                (*operatorToken, leftExpression, rightExpression);
+            ReportError(error);
         }
     }
 
@@ -674,28 +987,32 @@ DEFINE_ACTION
      Token *, operatorToken,
      Expression *, leftExpression, Expression *, rightExpression)
 {
-    // Attempt to fold constant expression.
     Expression *result = nullptr;
-    try
+
+    if (leftExpression != nullptr && rightExpression != nullptr)
     {
-        result = FoldBinaryExpression
-            (operatorToken->type, leftExpression, rightExpression);
+        try
+        {
+            // Attempt to fold constant expression.
+            result = FoldBinaryExpression
+                (operatorToken->type, leftExpression, rightExpression);
+            if (result)
+            {
+                (SourceElement &)*result = *operatorToken;
+                if (leftExpression != result)
+                    delete leftExpression;
+                if (rightExpression != result)
+                    delete rightExpression;
+            }
+            else
+                result = new BinaryExpression
+                    (*operatorToken, leftExpression, rightExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
     }
-    catch (const string &error)
-    {
-        ReportError(error);
-    }
-    if (result)
-    {
-        (SourceElement &)*result = *operatorToken;
-        if (leftExpression != result)
-            delete leftExpression;
-        if (rightExpression != result)
-            delete rightExpression;
-    }
-    else
-        result = new BinaryExpression
-            (*operatorToken, leftExpression, rightExpression);
 
     delete operatorToken;
     return result;
@@ -705,24 +1022,28 @@ DEFINE_ACTION
     (MakeUnaryExpression, Expression *,
      Token *, operatorToken, Expression *, expression)
 {
-    // Attempt to fold constant expression.
     Expression *result = nullptr;
-    try
+
+    if (expression != nullptr)
     {
-        result = FoldUnaryExpression(operatorToken->type, expression);
+        // Attempt to fold constant expression.
+        try
+        {
+            result = FoldUnaryExpression(operatorToken->type, expression);
+            if (result)
+            {
+                (SourceElement &)*result = *operatorToken;
+                if (expression != result)
+                    delete expression;
+            }
+            else
+                result = new UnaryExpression(*operatorToken, expression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
     }
-    catch (const string &error)
-    {
-        ReportError(error);
-    }
-    if (result)
-    {
-        (SourceElement &)*result = *operatorToken;
-        if (expression != result)
-            delete expression;
-    }
-    else
-        result = new UnaryExpression(*operatorToken, expression);
 
     delete operatorToken;
     return result;
@@ -732,59 +1053,97 @@ DEFINE_ACTION
     (MakeCallExpression, Expression *,
      Expression *, functionExpression, ArgumentList *, argumentList)
 {
-    if (!argumentList->HasSourceLocation())
-        (SourceElement &)*argumentList = *functionExpression;
-
-    // Ensure named arguments follow positional ones.
-    bool namedSeen = false, dictionaryGroupSeen = false;
-    unsigned position = 1;
-    for (auto iter = argumentList->ArgumentsBegin();
-         iter != argumentList->ArgumentsEnd(); iter++, position++)
+    if (functionExpression != nullptr && argumentList != nullptr)
     {
-        const auto &argument = **iter;
-        Argument::Type type = argument.GetType();
-        bool isPositional =
-            type == Argument::Type::NonGroup && !argument.HasName();
-
-        if (isPositional && (namedSeen || dictionaryGroupSeen))
+        try
         {
-            ostringstream oss;
-            oss
-                << "Positional argument " << position << " follows "
-                << (dictionaryGroupSeen ? "dictionary group" : "named")
-                << " argument";
-            ReportError(oss.str(), argument);
-        }
-        else if (type == Argument::Type::IterableGroup && dictionaryGroupSeen)
-        {
-            ostringstream oss;
-            oss
-                << "Iterable argument " << position
-                << " follows dictionary group argument";
-            ReportError(oss.str(), argument);
-        }
+            if (!argumentList->HasSourceLocation())
+                (SourceElement &)*argumentList = *functionExpression;
 
-        if (type == Argument::Type::DictionaryGroup)
-            dictionaryGroupSeen = true;
-        else if (argument.HasName())
-            namedSeen = true;
+            // Ensure named arguments follow positional ones.
+            bool namedSeen = false, dictionaryGroupSeen = false;
+            unsigned position = 1;
+            for (auto iter = argumentList->ArgumentsBegin();
+                 iter != argumentList->ArgumentsEnd(); iter++, position++)
+            {
+                const auto &argument = **iter;
+                Argument::Type type = argument.GetType();
+                bool isPositional =
+                    type == Argument::Type::NonGroup && !argument.HasName();
+
+                if (isPositional && (namedSeen || dictionaryGroupSeen))
+                {
+                    ostringstream oss;
+                    oss
+                        << "Positional argument " << position << " follows "
+                        << (dictionaryGroupSeen ? "dictionary group" : "named")
+                        << " argument";
+                    ReportError(oss.str(), argument);
+                }
+                else if (type == Argument::Type::IterableGroup &&
+                         dictionaryGroupSeen)
+                {
+                    ostringstream oss;
+                    oss
+                        << "Iterable argument " << position
+                        << " follows dictionary group argument";
+                    ReportError(oss.str(), argument);
+                }
+
+                if (type == Argument::Type::DictionaryGroup)
+                    dictionaryGroupSeen = true;
+                else if (argument.HasName())
+                    namedSeen = true;
+            }
+
+            return new CallExpression(functionExpression, argumentList);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
     }
 
-    return new CallExpression(functionExpression, argumentList);
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeElementExpression, Expression *,
      Expression *, sequenceExpression, Expression *, indexExpression)
 {
-    return new ElementExpression(sequenceExpression, indexExpression);
+    if (sequenceExpression != nullptr && indexExpression != nullptr)
+    {
+        try
+        {
+            return new ElementExpression(sequenceExpression, indexExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeMemberExpression, Expression *,
      Expression *, expression, Token *, nameToken)
 {
-    auto result = new MemberExpression(expression, *nameToken);
+    Expression *result = nullptr;
+
+    if (expression != nullptr)
+    {
+        try
+        {
+            result = new MemberExpression(expression, *nameToken);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete nameToken;
     return result;
 }
@@ -793,7 +1152,17 @@ DEFINE_ACTION
     (MakeVariableExpression, Expression *,
      Token *, nameToken)
 {
-    auto result = new VariableExpression(*nameToken);
+    Expression *result = nullptr;
+
+    try
+    {
+        result = new VariableExpression(*nameToken);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete nameToken;
     return result;
 }
@@ -802,7 +1171,17 @@ DEFINE_ACTION
     (MakeSymbolExpression, Expression *,
      Token *, operatorToken, Token *, nameToken)
 {
-    auto result = new SymbolExpression(*operatorToken, *nameToken);
+    Expression *result = nullptr;
+
+    try
+    {
+        result = new SymbolExpression(*operatorToken, *nameToken);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete operatorToken;
     delete nameToken;
     return result;
@@ -848,18 +1227,29 @@ DEFINE_ACTION
      Token *, token,
      Expression *, leftExpression, Expression *, rightExpression)
 {
-    auto result = dynamic_cast<TupleExpression *>(leftExpression);
-    if (leftExpression == nullptr || result == nullptr || result->IsEnclosed())
-    {
-        result = new TupleExpression(*token);
-        if (leftExpression)
-            result->Add(leftExpression);
-        else
-            result->Enclose();
-    }
+    TupleExpression *result = nullptr;
 
-    if (rightExpression)
-        result->Add(rightExpression);
+    // Note that either expression may be unspecified (i.e., null).
+    try
+    {
+        result = dynamic_cast<TupleExpression *>(leftExpression);
+        if (leftExpression == nullptr ||
+            result == nullptr || result->IsEnclosed())
+        {
+            result = new TupleExpression(*token);
+            if (leftExpression)
+                result->Add(leftExpression);
+            else
+                result->Enclose();
+        }
+
+        if (rightExpression != nullptr)
+            result->Add(rightExpression);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
 
     delete token;
     return result;
@@ -869,7 +1259,17 @@ DEFINE_ACTION
     (MakeConstantExpression, ConstantExpression *,
      Token *, token)
 {
-    auto result = new ConstantExpression(*token);
+    ConstantExpression *result = nullptr;
+
+    try
+    {
+        result = new ConstantExpression(*token);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete token;
     return result;
 }
@@ -879,23 +1279,39 @@ DEFINE_ACTION
      ConstantExpression *, leftExpression,
      ConstantExpression *, rightExpression)
 {
-    // Only strings can be juxtaposed.
-    if (leftExpression->GetType() != ConstantExpression::Type::String ||
-        rightExpression->GetType() != ConstantExpression::Type::String)
-        throw string("Syntax error");
+    ConstantExpression *result = nullptr;
 
-    // Fold the juxtaposed expression using addition.
-    Expression *resultExpression = FoldBinaryExpression
-        (TOKEN_PLUS, leftExpression, rightExpression);
-    if (resultExpression == nullptr)
-        throw string("Internal error: Error folding juxtaposed strings");
-    if (leftExpression != resultExpression)
-        delete leftExpression;
-    if (rightExpression != resultExpression)
-        delete rightExpression;
-    auto result = dynamic_cast<ConstantExpression *>(resultExpression);
-    if (result == nullptr)
-        throw string("Internal error: Error folding juxtaposed strings");
+    if (leftExpression != nullptr && rightExpression != nullptr)
+    {
+        try
+        {
+            // Only strings can be juxtaposed.
+            if (leftExpression->GetType()
+                != ConstantExpression::Type::String ||
+                rightExpression->GetType()
+                != ConstantExpression::Type::String)
+                throw string("Syntax error");
+
+            // Fold the juxtaposed expressions using addition.
+            Expression *resultExpression = FoldBinaryExpression
+                (TOKEN_PLUS, leftExpression, rightExpression);
+            if (resultExpression == nullptr)
+                throw string
+                    ("Internal error: Error folding juxtaposed strings");
+            if (leftExpression != resultExpression)
+                delete leftExpression;
+            if (rightExpression != resultExpression)
+                delete rightExpression;
+            result = dynamic_cast<ConstantExpression *>(resultExpression);
+            if (result == nullptr)
+                throw string
+                    ("Internal error: Error folding juxtaposed strings");
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
 
     return result;
 }
@@ -903,10 +1319,22 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeEnclosedExpression, Expression *, Expression *, expression)
 {
-    // Enclose the expression in parentheses. This prevents tuples in
-    // parentheses from being added to.
-    expression->Enclose();
-    return expression;
+    if (expression != nullptr)
+    {
+        try
+        {
+            // Enclose the expression in parentheses. This prevents tuples in
+            // parentheses from being added to.
+            expression->Enclose();
+            return expression;
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
@@ -932,7 +1360,18 @@ DEFINE_ACTION
     (AddImportNameToList, ImportNameList *,
      ImportNameList *, importNameList, ImportName *, importName)
 {
-    importNameList->Add(importName);
+    if (importNameList != nullptr && importName != nullptr)
+    {
+        try
+        {
+            importNameList->Add(importName);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     return importNameList;
 }
 
@@ -940,9 +1379,20 @@ DEFINE_ACTION
     (MakeImportName, ImportName *,
      Token *, importNameToken, Token *, importNameAsToken)
 {
-    auto result = importNameAsToken ?
-        new ImportName(*importNameToken, *importNameAsToken) :
-        new ImportName(*importNameToken);
+    ImportName *result = nullptr;
+
+    // Note that the "as" name may be unspecified (i.e., null).
+    try
+    {
+        result = importNameAsToken ?
+            new ImportName(*importNameToken, *importNameAsToken) :
+            new ImportName(*importNameToken);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete importNameToken;
     delete importNameAsToken;
     return result;
@@ -958,7 +1408,18 @@ DEFINE_ACTION
     (AddParameterToList, ParameterList *,
      ParameterList *, parameterList, Parameter *, parameter)
 {
-    parameterList->Add(parameter);
+    if (parameterList != nullptr && parameter != nullptr)
+    {
+        try
+        {
+            parameterList->Add(parameter);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     return parameterList;
 }
 
@@ -966,8 +1427,19 @@ DEFINE_ACTION
     (MakeParameter, Parameter *,
      Token *, nameToken, Expression *, defaultExpression)
 {
-    auto result = new Parameter
-        (*nameToken, Parameter::Type::Positional, defaultExpression);
+    Parameter *result = nullptr;
+
+    // Note that the default expression may be unspecified (i.e., null).
+    try
+    {
+        result = new Parameter
+            (*nameToken, Parameter::Type::Positional, defaultExpression);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete nameToken;
     return result;
 }
@@ -976,8 +1448,18 @@ DEFINE_ACTION
     (MakeTupleGroupParameter, Parameter *,
      Token *, nameToken)
 {
-    auto result = new Parameter
-        (*nameToken, Parameter::Type::TupleGroup);
+    Parameter *result = nullptr;
+
+    try
+    {
+        result = new Parameter
+            (*nameToken, Parameter::Type::TupleGroup);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete nameToken;
     return result;
 }
@@ -986,8 +1468,18 @@ DEFINE_ACTION
     (MakeDictionaryGroupParameter, Parameter *,
      Token *, nameToken)
 {
-    auto result = new Parameter
-        (*nameToken, Parameter::Type::DictionaryGroup);
+    Parameter *result = nullptr;
+
+    try
+    {
+        result = new Parameter
+            (*nameToken, Parameter::Type::DictionaryGroup);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete nameToken;
     return result;
 }
@@ -1002,7 +1494,18 @@ DEFINE_ACTION
     (AddArgumentToList, ArgumentList *,
      ArgumentList *, argumentList, Argument *, argument)
 {
-    argumentList->Add(argument);
+    if (argumentList != nullptr && argument != nullptr)
+    {
+        try
+        {
+            argumentList->Add(argument);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     return argumentList;
 }
 
@@ -1010,9 +1513,23 @@ DEFINE_ACTION
     (MakeArgument, Argument *,
      Token *, nameToken, Expression *, valueExpression)
 {
-    auto result = nameToken != nullptr ?
-        new Argument(*nameToken, valueExpression) :
-        new Argument(valueExpression);
+    Argument *result = nullptr;
+
+    // Note that the name may be unspecified (i.e., null).
+    if (valueExpression != nullptr)
+    {
+        try
+        {
+            result = nameToken != nullptr ?
+                new Argument(*nameToken, valueExpression) :
+                new Argument(valueExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete nameToken;
     return result;
 }
@@ -1021,24 +1538,51 @@ DEFINE_ACTION
     (MakeIterableGroupArgument, Argument *,
      Expression *, valueExpression)
 {
-    auto constantExpression = dynamic_cast<ConstantExpression *>
-        (valueExpression);
-    if (constantExpression != nullptr && !constantExpression->IsString())
-        ReportError("Invalid type for iterable group argument");
+    if (valueExpression != nullptr)
+    {
+        try
+        {
+            auto constantExpression = dynamic_cast<ConstantExpression *>
+                (valueExpression);
+            if (constantExpression != nullptr &&
+                !constantExpression->IsString())
+                ReportError("Invalid type for iterable group argument");
 
-    return new Argument(valueExpression, Argument::Type::IterableGroup);
+            return new Argument
+                (valueExpression, Argument::Type::IterableGroup);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
     (MakeDictionaryGroupArgument, Argument *,
      Expression *, valueExpression)
 {
-    auto constantExpression = dynamic_cast<ConstantExpression *>
-        (valueExpression);
-    if (constantExpression != nullptr)
-        ReportError("Invalid type for dictionary group argument");
+    if (valueExpression != nullptr)
+    {
+        try
+        {
+            auto constantExpression = dynamic_cast<ConstantExpression *>
+                (valueExpression);
+            if (constantExpression != nullptr)
+                ReportError("Invalid type for dictionary group argument");
 
-    return new Argument(valueExpression, Argument::Type::DictionaryGroup);
+            return new Argument
+                (valueExpression, Argument::Type::DictionaryGroup);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
@@ -1051,7 +1595,18 @@ DEFINE_ACTION
     (AddVariableToList, VariableList *,
      VariableList *, variableList, Token *, nameToken)
 {
-    variableList->Add(*nameToken);
+    if (variableList != nullptr)
+    {
+        try
+        {
+            variableList->Add(*nameToken);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete nameToken;
     return variableList;
 }
@@ -1066,8 +1621,18 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeEmptyDictionary, DictionaryExpression *, Token *, token)
 {
-    auto result = token != nullptr ?
-        new DictionaryExpression(*token) : new DictionaryExpression;
+    DictionaryExpression *result = nullptr;
+
+    try
+    {
+        result = token != nullptr ?
+            new DictionaryExpression(*token) : new DictionaryExpression;
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete token;
     return result;
 }
@@ -1077,7 +1642,19 @@ DEFINE_ACTION
      DictionaryExpression *, dictionaryExpression,
      KeyValuePair *, keyValuePair)
 {
-    dictionaryExpression->Add(keyValuePair);
+    if (dictionaryExpression != nullptr && keyValuePair != nullptr)
+    {
+        try
+        {
+            dictionaryExpression->Add(keyValuePair);
+            return dictionaryExpression;
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     return dictionaryExpression;
 }
 
@@ -1091,7 +1668,17 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeEmptySet, SetExpression *, Token *, token)
 {
-    auto result = new SetExpression(*token);
+    SetExpression *result = nullptr;
+
+    try
+    {
+        result = new SetExpression(*token);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete token;
     return result;
 }
@@ -1100,10 +1687,23 @@ DEFINE_ACTION
     (AssignSet, SetExpression *,
      Token *, token, ListExpression *, listExpression)
 {
-    auto result = new SetExpression(*token);
+    SetExpression *result = nullptr;
+
+    if (listExpression != nullptr)
+    {
+        try
+        {
+            result = new SetExpression(*token);
+            while (auto expression = listExpression->PopFront())
+                result->Add(expression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     delete token;
-    while (auto expression = listExpression->PopFront())
-        result->Add(expression);
     delete listExpression;
     return result;
 }
@@ -1111,21 +1711,42 @@ DEFINE_ACTION
 DEFINE_ACTION
     (MakeEmptyList, ListExpression *, Token *, token)
 {
-    if (token != nullptr)
+    ListExpression *result = nullptr;
+
+    try
     {
-        auto result = new ListExpression(*token);
-        delete token;
-        return result;
+        if (token != nullptr)
+        {
+            result = new ListExpression(*token);
+        }
+        else
+            return new ListExpression;
     }
-    else
-        return new ListExpression;
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
+    delete token;
+    return result;
 }
 
 DEFINE_ACTION
     (AddExpressionToList, ListExpression *,
      ListExpression *, listExpression, Expression *, expression)
 {
-    listExpression->Add(expression);
+    if (listExpression != nullptr && expression != nullptr)
+    {
+        try
+        {
+            listExpression->Add(expression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
     return listExpression;
 }
 
@@ -1133,8 +1754,10 @@ DEFINE_ACTION
     (AssignList, ListExpression *,
      Token *, token, ListExpression *, listExpression)
 {
-    if (listExpression->IsEmpty())
+    if (listExpression != nullptr && listExpression->IsEmpty() &&
+        token != nullptr)
         (SourceElement &)*listExpression = *token;
+
     delete token;
     return listExpression;
 }
@@ -1143,7 +1766,19 @@ DEFINE_ACTION
     (MakeKeyValuePair, KeyValuePair *,
      Expression *, keyExpression, Expression *, valueExpression)
 {
-    return new KeyValuePair(keyExpression, valueExpression);
+    if (keyExpression != nullptr && valueExpression != nullptr)
+    {
+        try
+        {
+            return new KeyValuePair(keyExpression, valueExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
 }
 
 DEFINE_ACTION
@@ -1152,8 +1787,19 @@ DEFINE_ACTION
      Expression *, startExpression, Expression *, endExpression,
      Expression *, stepExpression)
 {
-    auto result = new RangeExpression
-        (*token, startExpression, endExpression, stepExpression);
+    RangeExpression *result = nullptr;
+
+    // Note that any of the expressions may be unspecified (i.e., null).
+    try
+    {
+        result = new RangeExpression
+            (*token, startExpression, endExpression, stepExpression);
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
     delete token;
     return result;
 }
