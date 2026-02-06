@@ -295,7 +295,8 @@ LocalStatement::~LocalStatement()
 }
 
 DelStatement::DelStatement(Expression *expression) :
-    ExpressionStatement(expression)
+    Statement(*expression),
+    expression(expression)
 {
 }
 
@@ -314,7 +315,8 @@ ReturnStatement::~ReturnStatement()
 }
 
 AssertStatement::AssertStatement(Expression *expression) :
-    ExpressionStatement(expression)
+    Statement(*expression),
+    expression(expression)
 {
 }
 

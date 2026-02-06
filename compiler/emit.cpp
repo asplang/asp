@@ -370,7 +370,7 @@ void LocalStatement::Emit(Executable &executable) const
 
 void DelStatement::Emit(Executable &executable) const
 {
-    Emit1(executable, GetExpression());
+    Emit1(executable, expression);
 }
 
 void DelStatement::Emit1
@@ -410,7 +410,7 @@ void DelStatement::Emit1
     else if (variableExpression != nullptr)
     {
         if (variableExpression->HasSymbol())
-            ThrowError("Cannot delete temporary variable");
+            ThrowError("Internal error: Cannot delete temporary variable");
 
         auto name = variableExpression->Name();
         auto symbol = executable.Symbol(name);
@@ -422,7 +422,7 @@ void DelStatement::Emit1
              sourceLocation);
     }
     else
-        ThrowError("Invalid type for del");
+        ThrowError("Internal error: Invalid type for del");
 }
 
 void ReturnStatement::Emit(Executable &executable) const
@@ -470,7 +470,6 @@ void ReturnStatement::Emit(Executable &executable) const
 
 void AssertStatement::Emit(Executable &executable) const
 {
-    auto *expression = GetExpression();
     auto *constantExpression = dynamic_cast<const ConstantExpression *>
         (expression);
     if (constantExpression != nullptr && !constantExpression->IsTrue())

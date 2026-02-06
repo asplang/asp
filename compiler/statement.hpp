@@ -85,11 +85,6 @@ class ExpressionStatement : public Statement
 
         void Emit(Executable &) const override;
 
-        const Expression *GetExpression() const
-        {
-            return expression;
-        }
-
     private:
 
         Expression *expression;
@@ -294,7 +289,7 @@ class LocalStatement : public Statement
         VariableList *variableList;
 };
 
-class DelStatement : public ExpressionStatement
+class DelStatement : public Statement
 {
     public:
 
@@ -302,6 +297,10 @@ class DelStatement : public ExpressionStatement
 
         void Emit(Executable &) const override;
         void Emit1(Executable &, const Expression *) const;
+
+    private:
+
+        Expression *expression;
 };
 
 class ReturnStatement : public Statement
@@ -318,13 +317,17 @@ class ReturnStatement : public Statement
         Expression *expression;
 };
 
-class AssertStatement : public ExpressionStatement
+class AssertStatement : public Statement
 {
     public:
 
         explicit AssertStatement(Expression *);
 
         void Emit(Executable &) const override;
+
+    private:
+
+        Expression *expression;
 };
 
 class IfStatement : public Statement
