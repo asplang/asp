@@ -46,25 +46,13 @@ size_t AspDataEntrySize(void)
     return sizeof(AspDataEntry);
 }
 
-void AspClearData(AspEngine *engine, bool clean)
+void AspClearData(AspEngine *engine)
 {
     /* Clear data storage, setting every element to a free entry. */
     engine->freeListIndex = 0;
     AspDataEntry *entry = engine->data;
     for (unsigned i = 0; i < engine->dataEndIndex; i++, entry++)
     {
-        /* Destroy application objects if applicable. */
-        if (clean)
-        {
-            uint8_t type = AspDataGetType(entry);
-            if (type == DataType_AppIntegerObject ||
-                type == DataType_AppPointerObject)
-            {
-                AspDataSetUseCount(entry, 1U);
-                AspUnref(engine, entry);
-            }
-        }
-
         memset(entry, 0, sizeof *entry);
         AspDataSetType(entry, DataType_Free);
         AspDataSetFreeNext(entry, i + 1);

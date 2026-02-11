@@ -388,12 +388,28 @@ static void ProcessCodeHeader(AspEngine *engine)
 
 static AspRunResult ResetData(AspEngine *engine)
 {
-    /* Clear data storage, setting every element to a free entry. */
+    /* Destroy application objects if applicable. */
     bool isRunning =
         engine->state == AspEngineState_Running ||
         engine->state == AspEngineState_RunError ||
         engine->state == AspEngineState_Ended;
-    AspClearData(engine, isRunning);
+    if (isRunning)
+    {
+        AspDataEntry *entry = engine->data;
+        for (unsigned i = 0; i < engine->dataEndIndex; i++, entry++)
+        {
+            uint8_t type = AspDataGetType(entry);
+            if (type == DataType_AppIntegerObject ||
+                type == DataType_AppPointerObject)
+            {
+                AspDataSetUseCount(entry, 1U);
+                AspUnref(engine, entry);
+            }
+        }
+    }
+
+    /* Clear data storage, setting every element to a free entry. */
+    AspClearData(engine);
 
     /* Allocate the None singleton. Note that this is the only time we expect
        a zero index returned from AspAlloc to be valid. Subsequently, a zero
