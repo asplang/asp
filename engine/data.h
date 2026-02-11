@@ -550,7 +550,7 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataGetWord0((eptr)))
 
 /* Functions. */
-void AspClearData(AspEngine *);
+void AspClearData(AspEngine *, bool clean);
 uint32_t AspAlloc(AspEngine *);
 bool AspFree(AspEngine *, uint32_t index);
 bool AspIsObject(const AspDataEntry *);
