@@ -765,6 +765,8 @@ int main(int argc, char **argv)
         }
     }
 
+    AspReset(&engine);
+
     CloseFiles(openedFiles);
 
     return runResult == AspRunResult_Complete ? 0 : 2;
