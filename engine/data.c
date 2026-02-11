@@ -49,15 +49,15 @@ void AspClearData(AspEngine *engine)
 {
     /* Clear data storage, setting every element to a free entry. */
     engine->freeListIndex = 0;
-    AspDataEntry *data = engine->data;
-    for (unsigned i = 0; i < engine->dataEndIndex; i++)
+    AspDataEntry *entry = engine->data;
+    for (unsigned i = 0; i < engine->dataEndIndex; i++, entry++)
     {
-        memset(data + i, 0, sizeof *data);
-        AspDataSetType(data + i, DataType_Free);
-        AspDataSetFreeNext(data + i, i + 1);
+        memset(entry, 0, sizeof *entry);
+        AspDataSetType(entry, DataType_Free);
+        AspDataSetFreeNext(entry, i + 1);
     }
     if (engine->dataEndIndex != 0)
-        AspDataSetFreeNext(data + engine->dataEndIndex - 1, 0);
+        AspDataSetFreeNext(entry - 1, 0);
     engine->lowFreeCount = engine->freeCount = engine->dataEndIndex;
 }
 

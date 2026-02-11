@@ -54,6 +54,7 @@ AspRunResult AspInitializeEx
 
     engine->context = context;
     engine->floatConverter = floatConverter;
+    engine->state = AspEngineState_Reset;
     engine->codeArea = code;
     engine->maxCodeSize = codeSize;
     engine->cachedCodePageCount = 0;
@@ -256,7 +257,6 @@ AspRunResult AspReset(AspEngine *engine)
     if (engine->inApp)
         return AspRunResult_InvalidState;
 
-    engine->state = AspEngineState_Reset;
     engine->headerIndex = 0;
     engine->loadResult = AspAddCodeResult_OK;
     engine->runResult = AspRunResult_OK;
@@ -288,7 +288,12 @@ AspRunResult AspReset(AspEngine *engine)
     engine->appFunctionReturnValue = 0;
     engine->nextSymbol = -1;
 
-    return ResetData(engine);
+    AspRunResult result = ResetData(engine);
+    if (result != AspRunResult_OK)
+        return result;
+
+    engine->state = AspEngineState_Reset;
+    return AspRunResult_OK;
 }
 
 AspRunResult AspSetCycleDetectionLimit(AspEngine *engine, uint32_t limit)
@@ -313,7 +318,6 @@ AspRunResult AspRestart(AspEngine *engine)
         engine->state != AspEngineState_Ended)
         return AspRunResult_InvalidState;
 
-    engine->state = AspEngineState_Ready;
     engine->runResult = AspRunResult_OK;
     engine->pc = engine->instructionAddress = 0;
     engine->codePageReadCount = 0;
@@ -326,7 +330,12 @@ AspRunResult AspRestart(AspEngine *engine)
     engine->appFunctionReturnValue = 0;
     engine->nextSymbol = -1;
 
-    return ResetData(engine);
+    AspRunResult result = ResetData(engine);
+    if (result != AspRunResult_OK)
+        return result;
+
+    engine->state = AspEngineState_Ready;
+    return AspRunResult_OK;
 }
 
 static void ProcessCodeHeader(AspEngine *engine)
@@ -375,6 +384,26 @@ static void ProcessCodeHeader(AspEngine *engine)
 
 static AspRunResult ResetData(AspEngine *engine)
 {
+    /* Destroy application objects if applicable. */
+    bool isRunning =
+        engine->state == AspEngineState_Running ||
+        engine->state == AspEngineState_RunError ||
+        engine->state == AspEngineState_Ended;
+    if (isRunning)
+    {
+        AspDataEntry *entry = engine->data;
+        for (unsigned i = 0; i < engine->dataEndIndex; i++, entry++)
+        {
+            uint8_t type = AspDataGetType(entry);
+            if (type == DataType_AppIntegerObject ||
+                type == DataType_AppPointerObject)
+            {
+                AspDataSetUseCount(entry, 1U);
+                AspUnref(engine, entry);
+            }
+        }
+    }
+
     /* Clear data storage, setting every element to a free entry. */
     AspClearData(engine);
 

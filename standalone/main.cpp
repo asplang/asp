@@ -603,6 +603,9 @@ int main(int argc, char **argv)
         }
     }
 
+    // Reset the engine, destroying any residual application objects.
+    AspReset(&engine);
+
     delete [] code;
     delete [] externalCode;
     delete [] data;
