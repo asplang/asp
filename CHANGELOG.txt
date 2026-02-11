@@ -7,6 +7,15 @@ chronological order.
 Changes
 -------
 
+Version 1.2.5.1 (generator 1.2.2.2, compiler 1.2.3.0, engine 1.2.3.5):
+- Engine:
+  - Fixed potential resource leaks in applications that use app objects.
+    - Applications must call AspReset or AspRestart after a script run to have
+      the destructors of any remaining app objects called.
+- Standalone application:
+  - Added a call to AspReset after script completion in order to destroy any
+    remaining app objects.
+
 Version 1.2.5.0 (generator 1.2.2.2, compiler 1.2.3.0, engine 1.2.3.4):
 - Compiler:
   - Added new target types to for statements that are allowed in Python but
@@ -208,7 +217,7 @@ Version 1.2.0.2 (generator 1.2.0.1, compiler 1.2.0.1, engine 1.2.0.2):
   functionality were made.
 
 Version 1.2.0.1 (generator 1.2.0.0, compiler 1.2.0.0, engine 1.2.0.1):
-Engine:
+- Engine:
   - Fixed a bug in the script-callable exit function that was converting a
     floating-point argument value to integer, and then using the converted
     integer value for computing the run result. This unintended behaviour was
@@ -228,7 +237,7 @@ Version 1.2.0.0 (generator 1.2.0.0, compiler 1.2.0.0, engine 1.2.0.0):
     - Made modules iterable.
     - Added new versions of the LD, LDA, MEM, and MEMA instructions that obtain
       the symbol from the stack instead of an immediate operand.
-Engine:
+- Engine:
   - Added iterator support for list insertions:
     - The key of a key/value pair can be an iterator into the target list.
     - The target of a value insertion can be a list iterator.
