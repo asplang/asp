@@ -277,9 +277,20 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fprintf(fp, " val=%d",
                     AspDataGetAppIntegerObjectValue(entry));
             else
-                fprintf(fp, " ptr=%d",
+            {
+                fputs(" ptr=", fp);
+                #ifdef ASP_DEBUG_NO_PTRS
+                fputc('?', fp);
+                #else
+                fprintf(fp, "%p",
                     AspDataGetAppPointerObjectValue(entry));
+                #endif
+            }
             #endif
+            fputs(" dtor=", fp);
+            #ifdef ASP_DEBUG_NO_PTRS
+            fputc('?', fp);
+            #else
             if (t == DataType_AppIntegerObject)
             {
                 union
@@ -287,16 +298,18 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                     void (*fp)(AspEngine *, int16_t, int32_t);
                     void *vp;
                 } u = {.fp = AspDataGetAppIntegerObjectDestructor(entry)};
-                fprintf(fp, " dtor=%p", u.vp);
+                fprintf(fp, "%p", u.vp);
             }
             else
             {
                 union
                 {
-                    void (*fp)(AspEngine *, int16_t, void *); void *vp;
+                    void (*fp)(AspEngine *, int16_t, void *);
+                    void *vp;
                 } u = {.fp = AspDataGetAppPointerObjectDestructor(entry)};
-                fprintf(fp, " dtor=%p", u.vp);
+                fprintf(fp, "%p", u.vp);
             }
+            #endif
             break;
 
         case DataType_Type:
@@ -435,9 +448,14 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_AppPointerObjectInfo:
-            fprintf(fp, " type=%d ptr=%p",
-                AspDataGetAppObjectType(entry),
+            fprintf(fp, " type=%d ptr=",
+                AspDataGetAppObjectType(entry));
+            #ifdef ASP_DEBUG_NO_PTRS
+            fputc('?', fp);
+            #else
+            fprintf(fp, "%p",
                 AspDataGetAppPointerObjectValue(entry));
+            #endif
             break;
 
         case DataType_Free:
