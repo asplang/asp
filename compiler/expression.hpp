@@ -43,6 +43,24 @@ class Expression : public NonTerminal
         const Statement *parentStatement = nullptr;
 };
 
+class AssignmentExpression : public Expression
+{
+    public:
+
+        AssignmentExpression
+            (const Token &operatorToken,
+             Expression *target, Expression *value);
+        ~AssignmentExpression();
+
+        void Parent(const Statement *) override;
+
+        void Emit(Executable &, EmitType) const override;
+
+    private:
+
+        Expression *targetExpression, *valueExpression;
+};
+
 class ConditionalExpression : public Expression
 {
     public:

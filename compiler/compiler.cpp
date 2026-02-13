@@ -891,6 +891,30 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeAssignmentExpression, Expression *,
+     Token *, operatorToken,
+     Expression *, targetExpression, Expression *, valueExpression)
+{
+    Expression *result = nullptr;
+
+    if (targetExpression != nullptr && valueExpression != nullptr)
+    {
+        try
+        {
+            result = new AssignmentExpression
+                (*operatorToken, targetExpression, valueExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    delete operatorToken;
+    return result;
+}
+
+DEFINE_ACTION
     (MakeConditionalExpression, Expression *,
      Token *, operatorToken, Expression *, conditionExpression,
      Expression *, trueExpression, Expression *, falseExpression)

@@ -768,6 +768,19 @@ void DefStatement::Emit(Executable &executable) const
     executable.Insert(new SetInstruction(true), sourceLocation);
 }
 
+void AssignmentExpression::Emit
+    (Executable &executable, EmitType emitType) const
+{
+    valueExpression->Emit(executable);
+    targetExpression->Emit(executable, Expression::EmitType::Address);
+
+    executable.Insert
+        (new SetInstruction
+            (false,
+             "Assign, leave value on stack"),
+         sourceLocation);
+}
+
 void ConditionalExpression::Emit
     (Executable &executable, EmitType emitType) const
 {

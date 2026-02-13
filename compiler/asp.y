@@ -18,6 +18,7 @@
 %left INSERT.
 %left COMMA.
 %left COLON.
+%nonassoc EXPRESSION_ASSIGN.
 %left IF. // Conditional expression.
 %nonassoc RANGE.
 %right STEP.
@@ -600,6 +601,15 @@ expression1(result) ::=
     result = ACTION
         (MakeTupleExpression, operatorToken,
          leftExpression, rightExpression);
+}
+
+expression1(result) ::=
+    expression1(targetExpression) EXPRESSION_ASSIGN(operatorToken)
+    expression1(valueExpression).
+{
+    result = ACTION
+        (MakeAssignmentExpression, operatorToken,
+         targetExpression, valueExpression);
 }
 
 expression1(result) ::=

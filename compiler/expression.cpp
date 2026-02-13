@@ -34,6 +34,32 @@ const Statement *Expression::Parent() const
     return parentStatement;
 }
 
+AssignmentExpression::AssignmentExpression
+    (const Token &operatorToken,
+     Expression *targetExpression, Expression *valueExpression) :
+    Expression(operatorToken),
+    targetExpression(targetExpression),
+    valueExpression(valueExpression)
+{
+    auto variableTargetExpression = dynamic_cast<const VariableExpression *>
+        (targetExpression);
+    if (variableTargetExpression == nullptr)
+        throw string
+            ("Invalid target of an assignment expression; must be a variable");
+}
+
+AssignmentExpression::~AssignmentExpression()
+{
+    delete targetExpression;
+    delete valueExpression;
+}
+
+void AssignmentExpression::Parent(const Statement *statement)
+{
+    targetExpression->Parent(statement);
+    valueExpression->Parent(statement);
+}
+
 ConditionalExpression::ConditionalExpression
     (const Token &operatorToken, Expression *conditionExpression,
      Expression *trueExpression, Expression *falseExpression) :
@@ -43,6 +69,14 @@ ConditionalExpression::ConditionalExpression
     trueExpression(trueExpression),
     falseExpression(falseExpression)
 {
+    // Unfortunately, the parser permits an unparenthesized assignment
+    // expression to appear as the condition expression (notwithstanding the
+    // operators' precendences), so we must catch the syntax error here.
+    auto assignmentConditionExpression =
+        dynamic_cast<const AssignmentExpression *>(conditionExpression);
+    if (assignmentConditionExpression != nullptr &&
+        !assignmentConditionExpression->IsEnclosed())
+        throw string("Syntax error");
 }
 
 ConditionalExpression::~ConditionalExpression()
@@ -133,6 +167,12 @@ Argument::Argument
     name(nameToken.s),
     valueExpression(valueExpression)
 {
+    auto assignmentValueExpression =
+        dynamic_cast<const AssignmentExpression *>(valueExpression);
+    if (assignmentValueExpression != nullptr && !valueExpression->IsEnclosed())
+        throw string
+            ("Unparenthesized assignment expression is not allowed as a "
+             "keyword argument value");
 }
 
 Argument::Argument(Expression *valueExpression, Type type) :

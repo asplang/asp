@@ -172,6 +172,9 @@ class Compiler
 
     /* Expressions. */
     DECLARE_METHOD
+        (MakeAssignmentExpression, Expression *,
+         Token *, Expression *, Expression *)
+    DECLARE_METHOD
         (MakeConditionalExpression, Expression *,
          Token *, Expression *, Expression *, Expression *)
     DECLARE_METHOD

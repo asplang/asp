@@ -137,7 +137,7 @@ Token *Lexer::ProcessSpecial()
     lex += static_cast<char>(c);
 
     static const char dbl[] = "*/<>.=";
-    static const char eq2[] = "+-*/%<>=&^|";
+    static const char eq2[] = "+-*/%<>=&^|:";
     static const char eq3[] = "*/<>";
     int type = -1;
     if (c == '!')
@@ -211,6 +211,7 @@ Token *Lexer::ProcessSpecial()
         {"&=", TOKEN_BIT_AND_ASSIGN},
         {"^=", TOKEN_BIT_XOR_ASSIGN},
         {"|=", TOKEN_BIT_OR_ASSIGN},
+        {":=", TOKEN_EXPRESSION_ASSIGN},
         {"!=", TOKEN_NE},
         {"**=", TOKEN_POWER_ASSIGN},
         {"//=", TOKEN_FLOOR_DIVIDE_ASSIGN},

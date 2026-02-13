@@ -114,6 +114,13 @@ ExpressionStatement::ExpressionStatement(Expression *expression) :
     Statement(*expression),
     expression(expression)
 {
+    auto assignmentExpression =
+        dynamic_cast<const AssignmentExpression *>(expression);
+    if (assignmentExpression != nullptr && !expression->IsEnclosed())
+        throw string
+            ("Unparenthesized assignment expression is not allowed as a "
+             "statement");
+
     expression->Parent(this);
 }
 
@@ -130,6 +137,13 @@ AssignmentStatement::AssignmentStatement
     targetExpression(targetExpression),
     valueAssignmentStatement(valueAssignmentStatement)
 {
+    auto assignmentTargetExpression =
+        dynamic_cast<const AssignmentExpression *>(targetExpression);
+    if (assignmentTargetExpression != nullptr)
+        throw string
+            ("Assignment expression is not allowed as the target of an "
+             "assignment");
+
     targetExpression->Parent(this);
 }
 
@@ -141,6 +155,20 @@ AssignmentStatement::AssignmentStatement
     targetExpression(targetExpression),
     valueExpression(valueExpression)
 {
+    auto assignmentTargetExpression =
+        dynamic_cast<const AssignmentExpression *>(targetExpression);
+    if (assignmentTargetExpression != nullptr)
+        throw string
+            ("Assignment expression is not allowed as the target of an "
+             "assignment");
+
+    auto assignmentValueExpression =
+        dynamic_cast<const AssignmentExpression *>(valueExpression);
+    if (assignmentValueExpression != nullptr && !valueExpression->IsEnclosed())
+        throw string
+            ("Unparenthesized assignment expression is not allowed as the "
+             "value of an assignment");
+
     targetExpression->Parent(this);
     valueExpression->Parent(this);
 }
@@ -186,6 +214,12 @@ InsertionStatement::InsertionStatement
     containerExpression(containerExpression),
     itemExpression(itemExpression)
 {
+    auto assignmentContainerExpression =
+        dynamic_cast<const AssignmentExpression *>(containerExpression);
+    if (assignmentContainerExpression != nullptr)
+        throw string
+            ("Assignment expression is not allowed as the target of an "
+             "insertion");
 }
 
 InsertionStatement::InsertionStatement
@@ -195,6 +229,12 @@ InsertionStatement::InsertionStatement
     containerExpression(containerExpression),
     keyValuePair(keyValuePair)
 {
+    auto assignmentContainerExpression =
+        dynamic_cast<const AssignmentExpression *>(containerExpression);
+    if (assignmentContainerExpression != nullptr)
+        throw string
+            ("Assignment expression is not allowed as the target of an "
+             "insertion");
 }
 
 InsertionStatement::~InsertionStatement()
@@ -442,9 +482,20 @@ Parameter::Parameter
     type(type),
     defaultExpression(defaultExpression)
 {
-    if (defaultExpression != nullptr &&
-        (type == Type::TupleGroup || type == Type::DictionaryGroup))
-        throw string("Group parameter cannot have a default value");
+    if (defaultExpression != nullptr)
+    {
+        if (type == Type::TupleGroup || type == Type::DictionaryGroup)
+            throw string("Group parameter cannot have a default value");
+
+        auto assignmentDefaultExpression =
+            dynamic_cast<const AssignmentExpression *>(defaultExpression);
+        if (assignmentDefaultExpression != nullptr &&
+            !defaultExpression->IsEnclosed())
+            throw string
+                ("Unparenthesized assignment expression is not allowed as a "
+                 "parameter default value");
+
+    }
 }
 
 Parameter::~Parameter()
