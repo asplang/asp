@@ -4,6 +4,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 
+configure_file(version.txt version.txt COPYONLY) # Force reread on change
 file(STRINGS version.txt VERSION)
 
 project(asp
