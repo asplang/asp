@@ -7,6 +7,13 @@ chronological order.
 Changes
 -------
 
+Version 1.2.5.2 (generator 1.2.2.2, compiler 1.2.3.1, engine 1.2.3.5):
+- Compiler:
+  - Fixed a regression, introduced in version 1.2.5.1, compiler version
+    1.2.3.0, that restricted the syntax of the del statement too much,
+    disallowing some complex yet valid expressions containing function calls
+    and either element or member selection.
+
 Version 1.2.5.1 (generator 1.2.2.2, compiler 1.2.3.0, engine 1.2.3.5):
 - Engine:
   - Fixed potential resource leaks in applications that use app objects.
