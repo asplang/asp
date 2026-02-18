@@ -353,6 +353,16 @@ class ListExpression : public Expression
 
         void Parent(const Statement *) override;
 
+        using ConstExpressionIterator =
+            std::list<Expression *>::const_iterator;
+        ConstExpressionIterator ExpressionsBegin() const
+        {
+            return expressions.begin();
+        }
+        ConstExpressionIterator ExpressionsEnd() const
+        {
+            return expressions.end();
+        }
         void Emit(Executable &, EmitType) const override;
 
     private:

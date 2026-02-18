@@ -1122,7 +1122,7 @@ variables(result) ::= NAME(nameToken).
 
 %type del {Statement *}
 
-del(result) ::= DEL target(targetExpression).
+del(result) ::= DEL expression(targetExpression).
 {
     result = ACTION(MakeDelStatement, targetExpression);
 }

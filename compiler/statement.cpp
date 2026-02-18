@@ -338,6 +338,41 @@ DelStatement::DelStatement(Expression *expression) :
     Statement(*expression),
     expression(expression)
 {
+    // Check validity of expression syntax.
+    list<const Expression *> checkList = {expression};
+    for (const auto &checkExpression: checkList)
+    {
+        auto tupleExpression = dynamic_cast<const TupleExpression *>
+            (checkExpression);
+        if (tupleExpression != nullptr)
+        {
+            for (auto iter = tupleExpression->ExpressionsBegin();
+                 iter != tupleExpression->ExpressionsEnd(); iter++)
+                checkList.push_back(*iter);
+            continue;
+        }
+
+        auto listExpression = dynamic_cast<const ListExpression *>
+            (checkExpression);
+        if (listExpression != nullptr)
+        {
+            for (auto iter = listExpression->ExpressionsBegin();
+                 iter != listExpression->ExpressionsEnd(); iter++)
+                checkList.push_back(*iter);
+            continue;
+        }
+
+        auto variableExpression = dynamic_cast<const VariableExpression *>
+            (checkExpression);
+        auto elementExpression = dynamic_cast<const ElementExpression *>
+            (checkExpression);
+        auto memberExpression = dynamic_cast<const MemberExpression *>
+            (checkExpression);
+        if (variableExpression == nullptr &&
+            elementExpression == nullptr &&
+            memberExpression == nullptr)
+            throw string("Cannot delete value expression");
+    }
 }
 
 ReturnStatement::ReturnStatement
