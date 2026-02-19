@@ -271,9 +271,9 @@ AspRunResult AspCallFunction
             #endif
             return AspRunResult_InvalidAppFunction;
         }
-        const AspDataEntry *argumentListEntry = AspPush(engine, argumentList);
         const AspDataEntry *functionEntry = AspPush(engine, function);
-        if (argumentListEntry == 0 || functionEntry == 0)
+        const AspDataEntry *argumentListEntry = AspPush(engine, argumentList);
+        if (functionEntry == 0 || argumentListEntry == 0)
             return AspRunResult_OutOfDataMemory;
         engine->callFromApp = true;
         return AspRunResult_Call;

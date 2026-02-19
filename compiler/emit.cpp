@@ -1014,8 +1014,8 @@ void CallExpression::Emit
     else if (emitType == EmitType::Delete)
         ThrowError("Cannot delete function call");
 
-    argumentList->Emit(executable);
     functionExpression->Emit(executable);
+    argumentList->Emit(executable);
     executable.Insert(new CallInstruction, sourceLocation);
 }
 
@@ -1048,7 +1048,7 @@ void MemberExpression::Emit
         ostringstream oss;
         oss << "Push symbol of variable " << name;
         executable.Insert
-            (new PushIntegerInstruction(symbol, oss.str()),
+            (new PushSymbolInstruction(symbol, oss.str()),
              sourceLocation);
         return;
     }
@@ -1100,8 +1100,8 @@ void SymbolExpression::Emit
 
 void KeyValuePair::Emit(Executable &executable) const
 {
-    valueExpression->Emit(executable);
     keyExpression->Emit(executable);
+    valueExpression->Emit(executable);
     executable.Insert(new MakeKeyValuePairInstruction, sourceLocation);
 }
 
@@ -1194,8 +1194,8 @@ void RangeExpression::Emit
         startExpression, endExpression, stepExpression
     };
     unsigned partCount = 0;
-    for (auto iter = partExpressions.rbegin();
-         iter != partExpressions.rend(); iter++)
+    for (auto iter = partExpressions.begin();
+         iter != partExpressions.end(); iter++)
     {
         const auto partExpression = *iter;
         if (partExpression != nullptr)

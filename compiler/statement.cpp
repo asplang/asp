@@ -362,6 +362,11 @@ DelStatement::DelStatement(Expression *expression) :
             continue;
         }
 
+        auto assignmentExpression =
+            dynamic_cast<const AssignmentExpression *>(checkExpression);
+        if (assignmentExpression != nullptr)
+            throw string("Syntax error");
+
         auto variableExpression = dynamic_cast<const VariableExpression *>
             (checkExpression);
         auto elementExpression = dynamic_cast<const ElementExpression *>

@@ -1010,9 +1010,9 @@ static AspRunResult Step(AspEngine *engine)
                         (engine, AspDataGetModuleNamespaceIndex(container));
 
                     /* Ensure the index is a symbol. */
-                    if (AspDataGetType(index) != DataType_Integer)
+                    if (AspDataGetType(index) != DataType_Symbol)
                         return AspRunResult_UnexpectedType;
-                    int32_t symbol = AspDataGetInteger(index);
+                    int32_t symbol = AspDataGetSymbol(index);
 
                     /* Locate the entry. */
                     AspTreeResult findResult = AspFindSymbol
@@ -1400,6 +1400,14 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *function = 0, *arguments = 0;
             if (!engine->again)
             {
+                /* Pop argument list off the stack. */
+                arguments = AspTopValue(engine);
+                if (arguments == 0)
+                    return AspRunResult_StackUnderflow;
+                if (AspDataGetType(arguments) != DataType_ArgumentList)
+                    return AspRunResult_UnexpectedType;
+                AspPop(engine);
+
                 /* Pop the function off the stack. */
                 function = AspTopValue(engine);
                 if (function == 0)
@@ -1407,14 +1415,6 @@ static AspRunResult Step(AspEngine *engine)
                 if (AspDataGetType(function) != DataType_Function)
                     return AspRunResult_UnexpectedType;
                 AspRef(engine, function);
-                AspPop(engine);
-
-                /* Pop argument list off the stack. */
-                arguments = AspTopValue(engine);
-                if (arguments == 0)
-                    return AspRunResult_StackUnderflow;
-                if (AspDataGetType(arguments) != DataType_ArgumentList)
-                    return AspRunResult_UnexpectedType;
                 AspPop(engine);
             }
 
@@ -1925,20 +1925,20 @@ static AspRunResult Step(AspEngine *engine)
             fputs("MKKVP\n", engine->traceFile);
             #endif
 
-            /* Access the key on top of the stack. */
-            AspDataEntry *key = AspTopValue(engine);
-            if (key == 0)
-                return AspRunResult_StackUnderflow;
-            if (!AspIsObject(key))
-                return AspRunResult_UnexpectedType;
-            AspRef(engine, key);
-            AspPop(engine);
-
             /* Access the value on top of the stack. */
-            const AspDataEntry *value = AspTopValue(engine);
+            AspDataEntry *value = AspTopValue(engine);
             if (value == 0)
                 return AspRunResult_StackUnderflow;
             if (!AspIsObject(value))
+                return AspRunResult_UnexpectedType;
+            AspRef(engine, value);
+            AspPop(engine);
+
+            /* Access the key on top of the stack. */
+            const AspDataEntry *key = AspTopValue(engine);
+            if (key == 0)
+                return AspRunResult_StackUnderflow;
+            if (!AspIsObject(key))
                 return AspRunResult_UnexpectedType;
 
             /* Create a key value pair entry. */
@@ -1999,36 +1999,6 @@ static AspRunResult Step(AspEngine *engine)
             /* Access the start, end, and step entries on top of the stack,
                as applicable. */
             AspDataEntry *start = 0, *end = 0, *step = 0;
-            if (hasStart)
-            {
-                start = AspTopValue(engine);
-                if (start == 0)
-                    return AspRunResult_StackUnderflow;
-                if (AspIsNone(start))
-                    hasStart = false;
-                else
-                {
-                    if (!AspIsIntegral(start))
-                        return AspRunResult_UnexpectedType;
-                    AspRef(engine, start);
-                }
-                AspPop(engine);
-            }
-            if (hasEnd)
-            {
-                end = AspTopValue(engine);
-                if (end == 0)
-                    return AspRunResult_StackUnderflow;
-                if (AspIsNone(end))
-                    hasEnd = false;
-                else
-                {
-                    if (!AspIsIntegral(end))
-                        return AspRunResult_UnexpectedType;
-                    AspRef(engine, end);
-                }
-                AspPop(engine);
-            }
             int32_t stepValue = 1;
             if (hasStep)
             {
@@ -2049,15 +2019,40 @@ static AspRunResult Step(AspEngine *engine)
                 }
                 AspPop(engine);
             }
+            if (hasEnd)
+            {
+                end = AspTopValue(engine);
+                if (end == 0)
+                    return AspRunResult_StackUnderflow;
+                if (AspIsNone(end))
+                    hasEnd = false;
+                else
+                {
+                    if (!AspIsIntegral(end))
+                        return AspRunResult_UnexpectedType;
+                    AspRef(engine, end);
+                }
+                AspPop(engine);
+            }
             int32_t startValue = 0;
             if (hasStart)
             {
-                AspIntegerValue(start, &startValue);
-                if (startValue == (stepValue < 0 ? -1 : 0))
-                {
+                start = AspTopValue(engine);
+                if (start == 0)
+                    return AspRunResult_StackUnderflow;
+                if (AspIsNone(start))
                     hasStart = false;
-                    AspUnref(engine, start);
+                else
+                {
+                    if (!AspIsIntegral(start))
+                        return AspRunResult_UnexpectedType;
+                    AspIntegerValue(start, &startValue);
+                    if (startValue == (stepValue < 0 ? -1 : 0))
+                        hasStart = false;
+                    else
+                        AspRef(engine, start);
                 }
+                AspPop(engine);
             }
 
             /* Create a range entry. */

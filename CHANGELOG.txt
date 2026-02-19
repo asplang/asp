@@ -7,6 +7,20 @@ chronological order.
 Changes
 -------
 
+Version 1.3.0.0 (generator 1.3.0.0, compiler 1.3.0.0, engine 1.3.0.0):
+- Compiler:
+  - Added support for assignment expressions (i.e., the "walrus operator").
+- Compiler and engine:
+  - Changed the order of evaluation of several expressions so that the results
+    of assignment expressions in the earlier (i.e., left) parts of an
+    expression can be used in later (i.e., right) parts. The affected syntax is
+    as follows:
+    - Range components: start, end, and step.
+    - Function identification and arguments in function calls.
+    - Dictionary key/value pairs.
+  - Corrected the operand type for the member selection instruction from an
+    integer to a symbol.
+
 Version 1.2.5.2 (generator 1.2.2.2, compiler 1.2.3.1, engine 1.2.3.5):
 - Compiler:
   - Fixed a regression, introduced in version 1.2.5.1, compiler version
