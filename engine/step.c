@@ -532,6 +532,28 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
+        case OpCode_SWAP:
+        {
+            #ifdef ASP_DEBUG
+            fputs("SWAP\n", engine->traceFile);
+            #endif
+
+            const AspDataEntry *oldTop = AspTopValue(engine);
+            if (oldTop == 0)
+                return AspRunResult_StackUnderflow;
+            AspPopNoErase(engine);
+
+            const AspDataEntry *newTop = AspTopValue(engine);
+            if (newTop == 0)
+                return AspRunResult_StackUnderflow;
+            AspPopNoErase(engine);
+
+            AspPushNoUse(engine, oldTop);
+            AspPushNoUse(engine, newTop);
+
+            break;
+        }
+
         case OpCode_LNOT:
         case OpCode_POS:
         case OpCode_NEG:
@@ -858,6 +880,46 @@ static AspRunResult Step(AspEngine *engine)
                 return assignResult;
             if (opCode == OpCode_SETP)
                 AspPop(engine);
+            break;
+        }
+
+        case OpCode_AUG:
+        {
+            #ifdef ASP_DEBUG
+            fputs("AUG\n", engine->traceFile);
+            #endif
+
+            /* Access the address on top of the stack. */
+            AspDataEntry *address = AspTopValue(engine);
+            if (address == 0)
+                return AspRunResult_StackUnderflow;
+
+            /* Obtain the value at the address. */
+            AspDataEntry *value = 0;
+            switch (AspDataGetType(address))
+            {
+                default:
+                    return AspRunResult_UnexpectedType;
+
+                case DataType_Element:
+                    value = AspValueEntry
+                        (engine, AspDataGetElementValueIndex(address));
+                    break;
+
+                case DataType_DictionaryNode:
+                case DataType_NamespaceNode:
+                    value = AspValueEntry
+                        (engine, AspDataGetTreeNodeValueIndex(address));
+                    break;
+            }
+
+            /* Push the value onto the stack. */
+            if (!AspIsObject(value))
+                return AspRunResult_UnexpectedType;
+            const AspDataEntry *stackEntry = AspPush(engine, value);
+            if (stackEntry == 0)
+                return AspRunResult_OutOfDataMemory;
+
             break;
         }
 
@@ -2143,9 +2205,9 @@ static AspRunResult Step(AspEngine *engine)
                     if (opCode != OpCode_BLD)
                         return AspRunResult_UnexpectedType;
                     if (!AspIsObject(item) &&
+                        itemType != DataType_Element &&
                         itemType != DataType_DictionaryNode &&
-                        itemType != DataType_NamespaceNode &&
-                        itemType != DataType_Element)
+                        itemType != DataType_NamespaceNode)
                         return AspRunResult_UnexpectedType;
                     break;
 
@@ -2168,9 +2230,9 @@ static AspRunResult Step(AspEngine *engine)
                     if (opCode == OpCode_BLD)
                     {
                         if (!AspIsObject(item) &&
+                            itemType != DataType_Element &&
                             itemType != DataType_DictionaryNode &&
-                            itemType != DataType_NamespaceNode &&
-                            itemType != DataType_Element)
+                            itemType != DataType_NamespaceNode)
                             return AspRunResult_UnexpectedType;
                         break;
                     }

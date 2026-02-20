@@ -41,6 +41,7 @@ typedef enum OpCode
     OpCode_PUSHM4 = 0x1F, /* 4-byte module symbol */
     OpCode_POP = 0x20, /* pop single entry */
     OpCode_POP1 = 0x21, /* pop N entries with 1-byte count */
+    OpCode_SWAP = 0x24, /* swap top 2 stack entries */
 
     /* Unary operations. */
     OpCode_LNOT = 0x40, /* logical not */
@@ -88,6 +89,7 @@ typedef enum OpCode
     /* Assignment and deletion operations. */
     OpCode_SET = 0x88, /* assign variable (no pop) */
     OpCode_SETP = 0x89, /* assign variable with pop */
+    OpCode_AUG = 0x8A, /* push value at address */
     OpCode_ERASE = 0x8C, /* delete element or slice */
     OpCode_DEL1 = 0x8D, /* delete variable with 1-byte symbol */
     OpCode_DEL2 = 0x8E, /* delete variable with 2-byte symbol */

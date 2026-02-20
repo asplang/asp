@@ -105,7 +105,12 @@ class AssignmentStatement : public Statement
         void Parent(const Block *) override;
 
         void Emit(Executable &) const override;
-        void Emit1(Executable &, bool top) const;
+
+    protected:
+
+        void EmitAugmented(Executable &) const;
+        void EmitValue(Executable &) const;
+        void EmitTargets(Executable &) const;
 
     private:
 
@@ -133,6 +138,9 @@ class InsertionStatement : public Statement
         ~InsertionStatement() override;
 
         void Emit(Executable &) const override;
+
+    protected:
+
         void Emit1(Executable &, bool top) const;
 
     private:
@@ -296,6 +304,9 @@ class DelStatement : public Statement
         explicit DelStatement(Expression *);
 
         void Emit(Executable &) const override;
+
+    protected:
+
         void Emit1(Executable &, const Expression *) const;
 
     private:

@@ -36,63 +36,86 @@ void ExpressionStatement::Emit(Executable &executable) const
 
 void AssignmentStatement::Emit(Executable &executable) const
 {
-    Emit1(executable, true);
+    if (assignmentTokenType != TOKEN_ASSIGN)
+        EmitAugmented(executable);
+    else
+    {
+        EmitValue(executable);
+        EmitTargets(executable);
+    }
 }
 
-void AssignmentStatement::Emit1(Executable &executable, bool top) const
+void AssignmentStatement::EmitAugmented(Executable &executable) const
 {
-    if (assignmentTokenType != TOKEN_ASSIGN)
-        targetExpression->Emit(executable, Expression::EmitType::Value);
+    targetExpression->Emit(executable, Expression::EmitType::Address);
 
-    if (valueAssignmentStatement != nullptr)
-        valueAssignmentStatement->Emit1(executable, false);
-    else
-        valueExpression->Emit(executable);
+    executable.Insert
+        (new AugmentInstruction("Push value at address"),
+         sourceLocation);
 
-    if (assignmentTokenType != TOKEN_ASSIGN)
+    valueExpression->Emit(executable);
+
+    static map<int, uint8_t> opCodes =
     {
-        static map<int, uint8_t> opCodes =
-        {
-            {TOKEN_BIT_OR_ASSIGN, OpCode_OR},
-            {TOKEN_BIT_XOR_ASSIGN, OpCode_XOR},
-            {TOKEN_BIT_AND_ASSIGN, OpCode_AND},
-            {TOKEN_LEFT_SHIFT_ASSIGN, OpCode_LSH},
-            {TOKEN_RIGHT_SHIFT_ASSIGN, OpCode_RSH},
-            {TOKEN_PLUS_ASSIGN, OpCode_ADD},
-            {TOKEN_MINUS_ASSIGN, OpCode_SUB},
-            {TOKEN_TIMES_ASSIGN, OpCode_MUL},
-            {TOKEN_DIVIDE_ASSIGN, OpCode_DIV},
-            {TOKEN_FLOOR_DIVIDE_ASSIGN, OpCode_FDIV},
-            {TOKEN_MODULO_ASSIGN, OpCode_MOD},
-            {TOKEN_POWER_ASSIGN, OpCode_POW},
-        };
+        {TOKEN_BIT_OR_ASSIGN, OpCode_OR},
+        {TOKEN_BIT_XOR_ASSIGN, OpCode_XOR},
+        {TOKEN_BIT_AND_ASSIGN, OpCode_AND},
+        {TOKEN_LEFT_SHIFT_ASSIGN, OpCode_LSH},
+        {TOKEN_RIGHT_SHIFT_ASSIGN, OpCode_RSH},
+        {TOKEN_PLUS_ASSIGN, OpCode_ADD},
+        {TOKEN_MINUS_ASSIGN, OpCode_SUB},
+        {TOKEN_TIMES_ASSIGN, OpCode_MUL},
+        {TOKEN_DIVIDE_ASSIGN, OpCode_DIV},
+        {TOKEN_FLOOR_DIVIDE_ASSIGN, OpCode_FDIV},
+        {TOKEN_MODULO_ASSIGN, OpCode_MOD},
+        {TOKEN_POWER_ASSIGN, OpCode_POW},
+    };
 
-        auto iter = opCodes.find(assignmentTokenType);
-        if (iter == opCodes.end())
-        {
-            ostringstream oss;
-            oss
-                << "Internal error:"
-                   " Cannot find op code for augmented assignment "
-                << assignmentTokenType;
-            ThrowError(oss.str());
-        }
+    auto iter = opCodes.find(assignmentTokenType);
+    if (iter == opCodes.end())
+    {
         ostringstream oss;
         oss
-            << "Perform binary operation 0x"
-            << hex << uppercase << setfill('0')
-            << setw(2) << static_cast<unsigned>(iter->second);
-        executable.Insert
-            (new BinaryInstruction(iter->second, oss.str()),
-             sourceLocation);
+            << "Internal error:"
+               " Cannot find op code for augmented assignment "
+            << assignmentTokenType;
+        ThrowError(oss.str());
     }
+    ostringstream oss;
+    oss
+        << "Perform binary operation 0x"
+        << hex << uppercase << setfill('0')
+        << setw(2) << static_cast<unsigned>(iter->second);
+    executable.Insert
+        (new BinaryInstruction(iter->second, oss.str()),
+         sourceLocation);
 
+    executable.Insert(new SwapInstruction, sourceLocation);
+    executable.Insert
+        (new SetInstruction(true, "Assign with pop"),
+         sourceLocation);
+}
+
+void AssignmentStatement::EmitValue(Executable &executable) const
+{
+    if (valueExpression != nullptr)
+        valueExpression->Emit(executable);
+    else
+        valueAssignmentStatement->EmitValue(executable);
+}
+
+void AssignmentStatement::EmitTargets(Executable &executable) const
+{
     targetExpression->Emit(executable, Expression::EmitType::Address);
     executable.Insert
         (new SetInstruction
-            (top,
-             top ? "Assign with pop" : "Assign, leave value on stack"),
+            (valueExpression != nullptr,
+             valueExpression ?
+             "Assign with pop" : "Assign, leave value on stack"),
          sourceLocation);
+
+    if (valueAssignmentStatement != nullptr)
+        valueAssignmentStatement->EmitTargets(executable);
 }
 
 void InsertionStatement::Emit(Executable &executable) const
@@ -775,9 +798,7 @@ void AssignmentExpression::Emit
     targetExpression->Emit(executable, Expression::EmitType::Address);
 
     executable.Insert
-        (new SetInstruction
-            (false,
-             "Assign, leave value on stack"),
+        (new SetInstruction(false, "Assign, leave value on stack"),
          sourceLocation);
 }
 

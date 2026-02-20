@@ -192,7 +192,7 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_PUSHAL, "PUSHAL"},
         {OpCode_PUSHPL, "PUSHPL"},
         {OpCode_PUSHCA, "PUSHCA"},
-        {OpCode_POP, "POP"},
+        {OpCode_SWAP, "SWAP"},
         {OpCode_LNOT, "LNOT"},
         {OpCode_POS, "POS"},
         {OpCode_NEG, "NEG"},
@@ -221,6 +221,7 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_IS, "IS"},
         {OpCode_SET, "SET"},
         {OpCode_SETP, "SETP"},
+        {OpCode_AUG, "AUG"},
         {OpCode_ERASE, "ERASE"},
         {OpCode_SITER, "SITER"},
         {OpCode_TITER, "TITER"},
@@ -474,6 +475,12 @@ void PopInstruction::PrintCode(ostream &os) const
         os << ' ' << (unsigned)count;
 }
 
+SwapInstruction::SwapInstruction
+    (const string &comment) :
+    SimpleInstruction(OpCode_SWAP, comment)
+{
+}
+
 UnaryInstruction::UnaryInstruction
     (uint8_t opCode, const string &comment) :
     SimpleInstruction(opCode, comment)
@@ -540,6 +547,11 @@ void LoadInstruction::PrintCode(ostream &os) const
 
 SetInstruction::SetInstruction(bool pop, const string &comment) :
     SimpleInstruction(pop ? OpCode_SETP : OpCode_SET, comment)
+{
+}
+
+AugmentInstruction::AugmentInstruction(const string &comment) :
+    SimpleInstruction(OpCode_AUG, comment)
 {
 }
 

@@ -280,6 +280,14 @@ class PopInstruction : public Instruction
         std::int8_t count;
 };
 
+class SwapInstruction : public SimpleInstruction
+{
+    public:
+
+        explicit SwapInstruction
+            (const std::string &comment = "");
+};
+
 class UnaryInstruction : public SimpleInstruction
 {
     public:
@@ -332,6 +340,14 @@ class SetInstruction : public SimpleInstruction
 
         explicit SetInstruction
             (bool pop, const std::string &comment = "");
+};
+
+class AugmentInstruction : public SimpleInstruction
+{
+    public:
+
+        explicit AugmentInstruction
+            (const std::string &comment = "");
 };
 
 class DeleteInstruction : public Instruction
