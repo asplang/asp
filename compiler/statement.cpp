@@ -3,6 +3,7 @@
 //
 
 #include "statement.hpp"
+#include "asp.h"
 
 using namespace std;
 
@@ -137,12 +138,7 @@ AssignmentStatement::AssignmentStatement
     targetExpression(targetExpression),
     valueAssignmentStatement(valueAssignmentStatement)
 {
-    auto assignmentTargetExpression =
-        dynamic_cast<const AssignmentExpression *>(targetExpression);
-    if (assignmentTargetExpression != nullptr)
-        throw string
-            ("Assignment expression is not allowed as the target of an "
-             "assignment");
+    Check(assignmentToken);
 
     targetExpression->Parent(this);
 }
@@ -155,6 +151,14 @@ AssignmentStatement::AssignmentStatement
     targetExpression(targetExpression),
     valueExpression(valueExpression)
 {
+    Check(assignmentToken);
+
+    targetExpression->Parent(this);
+    valueExpression->Parent(this);
+}
+
+void AssignmentStatement::Check(const Token &assignmentToken) const
+{
     auto assignmentTargetExpression =
         dynamic_cast<const AssignmentExpression *>(targetExpression);
     if (assignmentTargetExpression != nullptr)
@@ -162,15 +166,28 @@ AssignmentStatement::AssignmentStatement
             ("Assignment expression is not allowed as the target of an "
              "assignment");
 
-    auto assignmentValueExpression =
-        dynamic_cast<const AssignmentExpression *>(valueExpression);
-    if (assignmentValueExpression != nullptr && !valueExpression->IsEnclosed())
-        throw string
-            ("Unparenthesized assignment expression is not allowed as the "
-             "value of an assignment");
+    if (valueExpression != nullptr)
+    {
+        auto assignmentValueExpression =
+            dynamic_cast<const AssignmentExpression *>(valueExpression);
+        if (assignmentValueExpression != nullptr &&
+            !valueExpression->IsEnclosed())
+            throw string
+                ("Unparenthesized assignment expression is not allowed as the "
+                 "value of an assignment");
+    }
 
-    targetExpression->Parent(this);
-    valueExpression->Parent(this);
+    if (assignmentToken.type != TOKEN_ASSIGN)
+    {
+        auto tupleTargetExpression = dynamic_cast<const TupleExpression *>
+            (targetExpression);
+        auto listTargetExpression = dynamic_cast<const ListExpression *>
+            (targetExpression);
+        if (tupleTargetExpression != nullptr ||
+            listTargetExpression != nullptr)
+            throw string
+                ("Cannot apply augmented assignment to sequence");
+    }
 }
 
 AssignmentStatement::~AssignmentStatement()

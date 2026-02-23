@@ -108,6 +108,7 @@ class AssignmentStatement : public Statement
 
     protected:
 
+        void Check(const Token &) const;
         void EmitAugmented(Executable &) const;
         void EmitValue(Executable &) const;
         void EmitTargets(Executable &) const;
