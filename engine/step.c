@@ -701,6 +701,10 @@ static AspRunResult Step(AspEngine *engine)
             }
             else
             {
+                #ifdef ASP_DEBUG
+                fputc('*', engine->traceFile);
+                #endif
+
                 /* Obtain the symbol from the stack. */
                 const AspDataEntry *symbol = AspTopValue(engine);
                 if (symbol == 0)
@@ -785,6 +789,10 @@ static AspRunResult Step(AspEngine *engine)
             }
             else
             {
+                #ifdef ASP_DEBUG
+                fputc('*', engine->traceFile);
+                #endif
+
                 /* Obtain the symbol from the stack. */
                 const AspDataEntry *symbol = AspTopValue(engine);
                 if (symbol == 0)
@@ -1862,29 +1870,16 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_MKFUN:
         {
             #ifdef ASP_DEBUG
-            fputs("MKFUN @", engine->traceFile);
+            fputs("MKFUN\n", engine->traceFile);
             #endif
 
             /* Access code address on top of the stack. */
             AspDataEntry *codeAddressEntry = AspTopValue(engine);
             if (codeAddressEntry == 0)
-            {
-                #ifdef ASP_DEBUG
-                fputs("?\n", engine->traceFile);
-                #endif
                 return AspRunResult_StackUnderflow;
-            }
             if (AspDataGetType(codeAddressEntry) != DataType_CodeAddress)
-            {
-                #ifdef ASP_DEBUG
-                fputs("?\n", engine->traceFile);
-                #endif
                 return AspRunResult_UnexpectedType;
-            }
             uint32_t codeAddress = AspDataGetCodeAddress(codeAddressEntry);
-            #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "0x%07X\n", codeAddress);
-            #endif
             AspRunResult validateResult = AspValidateCodeAddress
                 (engine, codeAddress);
             if (validateResult != AspRunResult_OK)
@@ -2779,6 +2774,10 @@ static AspRunResult Step(AspEngine *engine)
             }
             else
             {
+                #ifdef ASP_DEBUG
+                fputc('*', engine->traceFile);
+                #endif
+
                 /* Obtain the symbol from the stack. */
                 const AspDataEntry *symbol = AspTopValue(engine);
                 if (symbol == 0)
