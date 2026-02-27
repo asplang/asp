@@ -300,6 +300,48 @@ SymbolExpression::SymbolExpression
 {
 }
 
+NameValuePair::NameValuePair
+    (const Token &nameToken, Expression *valueExpression) :
+    NonTerminal(nameToken),
+    name(nameToken.s),
+    valueExpression(valueExpression)
+{
+}
+
+NameValuePair::~NameValuePair()
+{
+    delete valueExpression;
+}
+
+void NameValuePair::Parent(const Statement *statement) const
+{
+    valueExpression->Parent(statement);
+}
+
+ObjectExpression::ObjectExpression(const Token &token) :
+    Expression(token)
+{
+}
+
+ObjectExpression::~ObjectExpression()
+{
+    for (auto &entry: entries)
+        delete entry;
+}
+
+void ObjectExpression::Add(NameValuePair *entry)
+{
+    if (entries.empty())
+        (SourceElement &)*this = *entry;
+    entries.push_back(entry);
+}
+
+void ObjectExpression::Parent(const Statement *statement)
+{
+    for (auto &entry: entries)
+        entry->Parent(statement);
+}
+
 KeyValuePair::KeyValuePair
     (Expression *keyExpression, Expression *valueExpression) :
     NonTerminal((SourceElement &)*keyExpression),

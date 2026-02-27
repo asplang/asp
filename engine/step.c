@@ -783,7 +783,6 @@ static AspRunResult Step(AspEngine *engine)
             operandSize++;
         case OpCode_LDA:
         {
-
             #ifdef ASP_DEBUG
             fputs("LDA ", engine->traceFile);
             #endif
@@ -807,6 +806,10 @@ static AspRunResult Step(AspEngine *engine)
             }
             else
             {
+                #ifdef ASP_DEBUG
+                fputc('*', engine->traceFile);
+                #endif
+
                 /* Obtain the symbol from the stack. */
                 const AspDataEntry *symbol = AspTopValue(engine);
                 if (symbol == 0)
@@ -944,7 +947,8 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_StackUnderflow;
             AspRef(engine, container);
             AspPop(engine);
-            switch (AspDataGetType(container))
+            uint8_t containerType = AspDataGetType(container);
+            switch (containerType)
             {
                 default:
                     return AspRunResult_UnexpectedType;
@@ -1065,11 +1069,15 @@ static AspRunResult Step(AspEngine *engine)
                     break;
                 }
 
+                case DataType_Object:
                 case DataType_Module:
                 {
-                    /* Access the module's namespace. */
+                    /* Access the underlying namespace. */
                     AspDataEntry *ns = AspEntry
-                        (engine, AspDataGetModuleNamespaceIndex(container));
+                        (engine,
+                         containerType == DataType_Object ?
+                         AspDataGetObjectNamespaceIndex(container) :
+                         AspDataGetModuleNamespaceIndex(container));
 
                     /* Ensure the index is a symbol. */
                     if (AspDataGetType(index) != DataType_Symbol)
@@ -1627,7 +1635,7 @@ static AspRunResult Step(AspEngine *engine)
             /* Restore the caller's global namespace and module. */
             AspDataEntry *module = AspEntry
                 (engine, AspDataGetFrameModuleIndex(frame));
-            engine->globalNamespace = AspValueEntry
+            engine->globalNamespace = AspEntry
                 (engine, AspDataGetModuleNamespaceIndex(module));
             engine->module = module;
 
@@ -1713,7 +1721,7 @@ static AspRunResult Step(AspEngine *engine)
             /* Replace the global and local namespaces with those of the
                module. */
             engine->module = module;
-            engine->globalNamespace = AspValueEntry
+            engine->globalNamespace = AspEntry
                 (engine, AspDataGetModuleNamespaceIndex(module));
             engine->localNamespace = engine->globalNamespace;
 
@@ -1921,6 +1929,32 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
+        case OpCode_MKOBJ:
+        {
+            #ifdef ASP_DEBUG
+            fputs("MKOBJ\n", engine->traceFile);
+            #endif
+
+            /* Create a namespace for the object. */
+            AspDataEntry *ns = AspAllocEntry(engine, DataType_Namespace);
+            if (ns == 0)
+                return AspRunResult_OutOfDataMemory;
+
+            /* Create the object. */
+            AspDataEntry *object = AspAllocEntry(engine, DataType_Object);
+            if (object == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspDataSetObjectNamespaceIndex(object, AspIndex(engine, ns));
+
+            /* Push the object onto the stack. */
+            const AspDataEntry *stackEntry = AspPush(engine, object);
+            if (stackEntry == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspUnref(engine, object);
+
+            break;
+        }
+
         case OpCode_MKFUN:
         {
             #ifdef ASP_DEBUG
@@ -2003,7 +2037,7 @@ static AspRunResult Step(AspEngine *engine)
             if (!AspIsObject(key))
                 return AspRunResult_UnexpectedType;
 
-            /* Create a key value pair entry. */
+            /* Create a key/value pair entry. */
             AspDataEntry *keyValuePairEntry = AspAllocEntry
                 (engine, DataType_KeyValuePair);
             if (keyValuePairEntry == 0)
@@ -2016,6 +2050,55 @@ static AspRunResult Step(AspEngine *engine)
             /* Replace the top stack entry with the dictionary entry. */
             AspDataSetStackEntryValueIndex
                 (engine->stackTop, AspIndex(engine, keyValuePairEntry));
+
+            break;
+        }
+
+        case OpCode_MKNVP4:
+            operandSize += 2;
+        case OpCode_MKNVP2:
+            operandSize++;
+        case OpCode_MKNVP1:
+            operandSize++;
+        {
+            #ifdef ASP_DEBUG
+            fputs("MKNVP ", engine->traceFile);
+            #endif
+
+            /* Fetch the entry symbol from the operand. */
+            int32_t entrySymbol;
+            AspRunResult operandLoadResult = LoadSignedWordOperand
+                (engine, operandSize, &entrySymbol);
+            if (operandLoadResult != AspRunResult_OK)
+            {
+                #ifdef ASP_DEBUG
+                fputs("?\n", engine->traceFile);
+                #endif
+                return operandLoadResult;
+            }
+            #ifdef ASP_DEBUG
+            fprintf(engine->traceFile, "%d\n", entrySymbol);
+            #endif
+
+            /* Access the value on top of the stack. */
+            AspDataEntry *value = AspTopValue(engine);
+            if (value == 0)
+                return AspRunResult_StackUnderflow;
+            if (!AspIsObject(value))
+                return AspRunResult_UnexpectedType;
+
+            /* Create a name/value pair entry. */
+            AspDataEntry *nameValuePairEntry = AspAllocEntry
+                (engine, DataType_NameValuePair);
+            if (nameValuePairEntry == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspDataSetNameValuePairSymbol(nameValuePairEntry, entrySymbol);
+            AspDataSetNameValuePairValueIndex
+                (nameValuePairEntry, AspIndex(engine, value));
+
+            /* Replace the top stack entry with the object entry. */
+            AspDataSetStackEntryValueIndex
+                (engine->stackTop, AspIndex(engine, nameValuePairEntry));
 
             break;
         }
@@ -2195,6 +2278,7 @@ static AspRunResult Step(AspEngine *engine)
 
             /* Ensure item is of an expected type. */
             AspDataEntry *key = 0, *value = 0;
+            int32_t symbol = 0;
             uint8_t containerType = AspDataGetType(container);
             switch (containerType)
             {
@@ -2256,8 +2340,33 @@ static AspRunResult Step(AspEngine *engine)
                         (engine, AspDataGetKeyValuePairValueIndex(item));
                     break;
 
-                case DataType_ForwardIterator:
+                case DataType_Object:
+                case DataType_Module:
+                    if (opCode == OpCode_BLD)
+                    {
+                        if (containerType == DataType_Module ||
+                            itemType != DataType_NameValuePair)
+                            return AspRunResult_UnexpectedType;
+                        symbol = AspDataGetNameValuePairSymbol(item);
+                        value = AspValueEntry
+                            (engine, AspDataGetNameValuePairValueIndex(item));
+                    }
+                    else
+                    {
+                        if (itemType != DataType_KeyValuePair)
+                            return AspRunResult_UnexpectedType;
+                        key = AspValueEntry
+                            (engine, AspDataGetKeyValuePairKeyIndex(item));
+                        if (AspDataGetType(key) != DataType_Symbol)
+                            return AspRunResult_UnexpectedType;
+                        symbol = AspDataGetSymbol(key);
+                        value = AspValueEntry
+                            (engine, AspDataGetKeyValuePairValueIndex(item));
+                    }
+                    break;
+
                 case DataType_ReverseIterator:
+                case DataType_ForwardIterator:
                     if (opCode == OpCode_BLD || !AspIsObject(item))
                         return AspRunResult_UnexpectedType;
                     key = container;
@@ -2385,6 +2494,38 @@ static AspRunResult Step(AspEngine *engine)
                         (engine, container, key, value);
                     if (insertResult.result != AspRunResult_OK)
                         return insertResult.result;
+
+                    AspUnref(engine, item);
+                    if (engine->runResult != AspRunResult_OK)
+                        return engine->runResult;
+
+                    break;
+                }
+
+                case DataType_Object:
+                case DataType_Module:
+                {
+                    /* Access the underlying namespace. */
+                    AspDataEntry *ns = AspEntry
+                        (engine,
+                         containerType == DataType_Object ?
+                         AspDataGetObjectNamespaceIndex(container) :
+                         AspDataGetModuleNamespaceIndex(container));
+                    if (AspDataGetType(ns) != DataType_Namespace)
+                        return AspRunResult_UnexpectedType;
+
+                    AspTreeResult insertResult = AspTreeTryInsertBySymbol
+                        (engine, ns, symbol, value);
+                    if (insertResult.result != AspRunResult_OK)
+                        return insertResult.result;
+                    if (!insertResult.inserted)
+                    {
+                        AspRunResult assignResult = AspAssignSimple
+                            (engine, insertResult.node, value);
+                        if (assignResult != AspRunResult_OK)
+                            return assignResult;
+                    }
+
                     AspUnref(engine, item);
                     if (engine->runResult != AspRunResult_OK)
                         return engine->runResult;
@@ -2784,6 +2925,63 @@ static AspRunResult Step(AspEngine *engine)
 
                     break;
                 }
+
+                case DataType_Object:
+                case DataType_Module:
+                {
+                    /* Access the underlying namespace. */
+                    AspDataEntry *ns = AspEntry
+                        (engine,
+                         containerType == DataType_Object ?
+                         AspDataGetObjectNamespaceIndex(container) :
+                         AspDataGetModuleNamespaceIndex(container));
+
+                    /* Ensure the index is a symbol. */
+                    if (AspDataGetType(index) != DataType_Symbol)
+                        return AspRunResult_UnexpectedType;
+                    int32_t symbol = AspDataGetSymbol(index);
+
+                    /* Locate the entry. */
+                    AspTreeResult findResult = AspFindSymbol
+                        (engine, ns, symbol);
+                    if (findResult.result != AspRunResult_OK)
+                        return findResult.result;
+
+                    if (opCode == OpCode_IDX)
+                    {
+                        /* Fail if the key was not found. */
+                        if (findResult.node == 0)
+                            return AspRunResult_KeyNotFound;
+
+                        /* Push the value onto the stack. */
+                        const AspDataEntry *stackEntry = AspPush
+                            (engine, findResult.value);
+                        if (stackEntry == 0)
+                            return AspRunResult_OutOfDataMemory;
+                    }
+                    else
+                    {
+                        /* Create a new entry if the key was not found. */
+                        AspDataEntry *node = findResult.node;
+                        if (node == 0)
+                        {
+                            AspTreeResult insertResult =
+                                AspTreeTryInsertBySymbol
+                                    (engine, ns, symbol,
+                                     engine->noneSingleton);
+                            if (insertResult.result != AspRunResult_OK)
+                                return insertResult.result;
+                            node = insertResult.node;
+                        }
+
+                        /* Push the address onto the stack. */
+                        const AspDataEntry *stackEntry = AspPush(engine, node);
+                        if (stackEntry == 0)
+                            return AspRunResult_OutOfDataMemory;
+                    }
+
+                    break;
+                }
             }
 
             AspUnref(engine, index);
@@ -2836,6 +3034,10 @@ static AspRunResult Step(AspEngine *engine)
             }
             else
             {
+                #ifdef ASP_DEBUG
+                fputc('*', engine->traceFile);
+                #endif
+
                 /* Obtain the symbol from the stack. */
                 const AspDataEntry *symbol = AspTopValue(engine);
                 if (symbol == 0)
@@ -2849,30 +3051,41 @@ static AspRunResult Step(AspEngine *engine)
             fputc('\n', engine->traceFile);
             #endif
 
-            /* Obtain the module from the stack. */
-            AspDataEntry *module = AspTopValue(engine);
-            if (module == 0)
+            /* Obtain the container from the stack. */
+            AspDataEntry *container = AspTopValue(engine);
+            if (container == 0)
                 return AspRunResult_StackUnderflow;
-            if (AspDataGetType(module) != DataType_Module)
-                return AspRunResult_UnexpectedType;
-            AspRef(engine, module);
+            AspRef(engine, container);
             AspPop(engine);
 
-            /* Access the module's global namespace. */
-            AspDataEntry *moduleNamespace = AspValueEntry
-                (engine, AspDataGetModuleNamespaceIndex(module));
-            if (AspDataGetType(moduleNamespace) != DataType_Namespace)
+            /* Access the container's namespace. */
+            AspDataEntry *ns = 0;
+            switch (AspDataGetType(container))
+            {
+                default:
+                    return AspRunResult_UnexpectedType;
+
+                case DataType_Object:
+                    ns = AspEntry
+                        (engine, AspDataGetObjectNamespaceIndex(container));
+                    break;
+
+                case DataType_Module:
+                    ns = AspEntry
+                        (engine, AspDataGetModuleNamespaceIndex(container));
+                    break;
+            }
+            if (AspDataGetType(ns) != DataType_Namespace)
                 return AspRunResult_UnexpectedType;
 
-            /* Look up the variable in the module's namespace, creating
-               it for an address lookup if it doesn't exist. */
+            /* Look up the variable in the namespace, creating it for an
+               address lookup if it doesn't exist. */
             AspTreeResult memberResult =
                 isAddressInstruction ?
                 AspTreeTryInsertBySymbol
-                    (engine, moduleNamespace,
-                     variableSymbol, engine->noneSingleton) :
+                    (engine, ns, variableSymbol, engine->noneSingleton) :
                 AspFindSymbol
-                    (engine, moduleNamespace, variableSymbol);
+                    (engine, ns, variableSymbol);
             if (memberResult.result != AspRunResult_OK)
                 return memberResult.result;
             if (memberResult.value == 0)
@@ -2886,7 +3099,7 @@ static AspRunResult Step(AspEngine *engine)
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
-            AspUnref(engine, module);
+            AspUnref(engine, container);
 
             break;
         }

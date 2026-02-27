@@ -918,6 +918,11 @@ expression1(result) ::= expression1(expression) PERIOD NAME(nameToken).
         (MakeMemberExpression, expression, nameToken);
 }
 
+expression1(result) ::= object(objectExpression).
+{
+    result = ACTION(MakeObjectExpression, objectExpression);
+}
+
 expression1(result) ::= dictionary(dictionaryExpression).
 {
     result = ACTION(MakeDictionaryExpression, dictionaryExpression);
@@ -1202,6 +1207,51 @@ key_value_pair(result) ::=
 {
     result = ACTION
         (MakeKeyValuePair, keyExpression, valueExpression);
+}
+
+%type object {ObjectExpression *}
+
+object(result) ::= LEFT_BRACE(token) ASSIGN RIGHT_BRACE.
+{
+    result = ACTION(MakeEmptyObject, token);
+}
+
+object(result) ::=
+    LEFT_BRACE object_entries(objectEntriesExpression) RIGHT_BRACE.
+{
+    result = ACTION(AssignObject, objectEntriesExpression);
+}
+
+%type object_entries {ObjectExpression *}
+
+object_entries(result) ::= object_entries(objectExpression) COMMA.
+{
+    result = ACTION(AssignObject, objectExpression);
+}
+
+object_entries(result) ::=
+    object_entries(objectExpression) COMMA
+    name_value_pair(nameValuePair).
+{
+    result = ACTION
+        (AddEntryToObject, objectExpression, nameValuePair);
+}
+
+object_entries(result) ::= name_value_pair(nameValuePair).
+{
+    result = ACTION
+        (AddEntryToObject,
+         ACTION(MakeEmptyObject, 0),
+         nameValuePair);
+}
+
+%type name_value_pair {NameValuePair *}
+
+name_value_pair(result) ::=
+    NAME(nameToken) ASSIGN expression1(valueExpression).
+{
+    result = ACTION
+        (MakeNameValuePair, nameToken, valueExpression);
 }
 
 %type list {ListExpression *}

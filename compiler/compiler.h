@@ -47,9 +47,11 @@ DECLARE_TYPE(ParameterList)
 DECLARE_TYPE(Parameter)
 DECLARE_TYPE(ArgumentList)
 DECLARE_TYPE(Argument)
+DECLARE_TYPE(ObjectExpression)
 DECLARE_TYPE(DictionaryExpression)
 DECLARE_TYPE(SetExpression)
 DECLARE_TYPE(ListExpression)
+DECLARE_TYPE(NameValuePair)
 DECLARE_TYPE(KeyValuePair)
 DECLARE_TYPE(RangeExpression)
 DECLARE_TYPE(VariableList)
@@ -204,6 +206,8 @@ class Compiler
         (MakeLiteralExpression, Expression *,
          ConstantExpression *)
     DECLARE_METHOD
+        (MakeObjectExpression, Expression *, ObjectExpression *)
+    DECLARE_METHOD
         (MakeDictionaryExpression, Expression *, DictionaryExpression *)
     DECLARE_METHOD
         (MakeSetExpression, Expression *, SetExpression *)
@@ -278,6 +282,15 @@ class Compiler
     DECLARE_METHOD
         (AssignVariableList, VariableList *, VariableList *)
 
+    /* Objects. */
+    DECLARE_METHOD
+        (MakeEmptyObject, ObjectExpression *, Token *)
+    DECLARE_METHOD
+        (AddEntryToObject, ObjectExpression *,
+         ObjectExpression *, NameValuePair *)
+    DECLARE_METHOD
+        (AssignObject, ObjectExpression *, ObjectExpression *)
+
     /* Dictionaries. */
     DECLARE_METHOD
         (MakeEmptyDictionary, DictionaryExpression *, Token *)
@@ -301,6 +314,11 @@ class Compiler
          ListExpression *, Expression *)
     DECLARE_METHOD
         (AssignList, ListExpression *, Token *, ListExpression *)
+
+    /* Name/value pairs. */
+    DECLARE_METHOD
+        (MakeNameValuePair, NameValuePair *,
+         Token *, Expression *)
 
     /* Key/value pairs. */
     DECLARE_METHOD

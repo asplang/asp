@@ -1219,6 +1219,13 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeObjectExpression, Expression *,
+     ObjectExpression *, objectExpression)
+{
+    return objectExpression;
+}
+
+DEFINE_ACTION
     (MakeDictionaryExpression, Expression *,
      DictionaryExpression *, dictionaryExpression)
 {
@@ -1643,6 +1650,53 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeEmptyObject, ObjectExpression *, Token *, token)
+{
+    ObjectExpression *result = nullptr;
+
+    try
+    {
+        result = token != nullptr ?
+            new ObjectExpression(*token) : new ObjectExpression;
+    }
+    catch (const string &error)
+    {
+        ReportError(error);
+    }
+
+    delete token;
+    return result;
+}
+
+DEFINE_ACTION
+    (AddEntryToObject, ObjectExpression *,
+     ObjectExpression *, objectExpression,
+     NameValuePair *, nameValuePair)
+{
+    if (objectExpression != nullptr && nameValuePair != nullptr)
+    {
+        try
+        {
+            objectExpression->Add(nameValuePair);
+            return objectExpression;
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return objectExpression;
+}
+
+DEFINE_ACTION
+    (AssignObject, ObjectExpression *,
+     ObjectExpression *, objectExpression)
+{
+    return objectExpression;
+}
+
+DEFINE_ACTION
     (MakeEmptyDictionary, DictionaryExpression *, Token *, token)
 {
     DictionaryExpression *result = nullptr;
@@ -1784,6 +1838,28 @@ DEFINE_ACTION
 
     delete token;
     return listExpression;
+}
+
+DEFINE_ACTION
+    (MakeNameValuePair, NameValuePair *,
+     Token *, nameToken, Expression *, valueExpression)
+{
+    NameValuePair *result = nullptr;
+
+    if (valueExpression != nullptr)
+    {
+        try
+        {
+            result = new NameValuePair(*nameToken, valueExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    delete nameToken;
+    return result;
 }
 
 DEFINE_ACTION

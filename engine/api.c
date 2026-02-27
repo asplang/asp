@@ -168,6 +168,7 @@ bool AspIsIterable(const AspDataEntry *entry)
          type == DataType_Tuple ||
          type == DataType_List ||
          type == DataType_Ellipsis ||
+         type == DataType_Object ||
          type == DataType_Module ||
          type == DataType_Set ||
          type == DataType_Dictionary);
@@ -176,6 +177,11 @@ bool AspIsIterable(const AspDataEntry *entry)
 bool AspIsFunction(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Function;
+}
+
+bool AspIsSimpleObject(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Object;
 }
 
 bool AspIsModule(const AspDataEntry *entry)
@@ -773,24 +779,11 @@ static AspDataEntry *ToString
                 break;
             }
 
-            case DataType_ForwardIterator:
-            case DataType_ReverseIterator:
-            {
-                uint32_t iterableIndex =
-                    AspDataGetIteratorIterableIndex(entry);
-                const AspDataEntry *iterable = AspValueEntry
-                    (engine, iterableIndex);
-                snprintf(buffer, sizeof buffer, "<%s:", TypeString(type));
-                if (iterable == 0)
-                    strcat(buffer, "?");
-                else
-                    strcat(buffer, TypeString(AspDataGetType(iterable)));
-                uint32_t memberIndex = AspDataGetIteratorMemberIndex(entry);
-                if (memberIndex == 0)
-                    strcat(buffer, " @end");
-                strcat(buffer, ">");
+            case DataType_Object:
+                snprintf
+                    (buffer, sizeof buffer, "<obj:%07X>",
+                     AspIndex(engine, entry));
                 break;
-            }
 
             case DataType_Function:
             {
@@ -819,6 +812,25 @@ static AspDataEntry *ToString
                     (buffer, sizeof buffer, "<mod:@%07X>",
                      AspDataGetModuleCodeAddress(entry));
                 break;
+
+            case DataType_ReverseIterator:
+            case DataType_ForwardIterator:
+            {
+                uint32_t iterableIndex =
+                    AspDataGetIteratorIterableIndex(entry);
+                const AspDataEntry *iterable = AspValueEntry
+                    (engine, iterableIndex);
+                snprintf(buffer, sizeof buffer, "<%s:", TypeString(type));
+                if (iterable == 0)
+                    strcat(buffer, "?");
+                else
+                    strcat(buffer, TypeString(AspDataGetType(iterable)));
+                uint32_t memberIndex = AspDataGetIteratorMemberIndex(entry);
+                if (memberIndex == 0)
+                    strcat(buffer, " @end");
+                strcat(buffer, ">");
+                break;
+            }
 
             case DataType_AppIntegerObject:
             case DataType_AppPointerObject:
@@ -940,6 +952,8 @@ static const char *TypeString(DataType type)
             return "set";
         case DataType_Dictionary:
             return "dict";
+        case DataType_Object:
+            return "obj";
         case DataType_Function:
             return "func";
         case DataType_Module:

@@ -144,22 +144,11 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     break;
                 }
             }
-            else if (t == DataType_ForwardIterator ||
-                     t == DataType_ReverseIterator)
+            else if (t == DataType_Object)
             {
-                const AspDataEntry *iterable = AspValueEntry
-                    (engine, AspDataGetIteratorIterableIndex(entry));
-                AspPushNoUse(engine, iterable);
-
-                AspDataEntry *member = AspEntry
-                    (engine, AspDataGetIteratorMemberIndex(entry));
-                if (member != 0 && AspDataGetIteratorMemberNeedsCleanup(entry))
-                {
-                    if (IsTerminal(member))
-                        AspUnref(engine, member);
-                    else
-                        AspPushNoUse(engine, member);
-                }
+                const AspDataEntry *ns = AspValueEntry
+                    (engine, AspDataGetObjectNamespaceIndex(entry));
+                AspPushNoUse(engine, ns);
             }
             else if (t == DataType_Function)
             {
@@ -176,6 +165,23 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 const AspDataEntry *ns = AspValueEntry
                     (engine, AspDataGetModuleNamespaceIndex(entry));
                 AspPushNoUse(engine, ns);
+            }
+            else if (t == DataType_ReverseIterator ||
+                     t == DataType_ForwardIterator)
+            {
+                const AspDataEntry *iterable = AspValueEntry
+                    (engine, AspDataGetIteratorIterableIndex(entry));
+                AspPushNoUse(engine, iterable);
+
+                AspDataEntry *member = AspEntry
+                    (engine, AspDataGetIteratorMemberIndex(entry));
+                if (member != 0 && AspDataGetIteratorMemberNeedsCleanup(entry))
+                {
+                    if (IsTerminal(member))
+                        AspUnref(engine, member);
+                    else
+                        AspPushNoUse(engine, member);
+                }
             }
             else if (t == DataType_AppIntegerObject)
             {
@@ -224,6 +230,15 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
 
                 AspDataEntry *value = AspValueEntry
                     (engine, AspDataGetKeyValuePairValueIndex(entry));
+                if (IsTerminal(value))
+                    AspUnref(engine, value);
+                else
+                    AspPushNoUse(engine, value);
+            }
+            else if (t == DataType_NameValuePair)
+            {
+                AspDataEntry *value = AspValueEntry
+                    (engine, AspDataGetNameValuePairValueIndex(entry));
                 if (IsTerminal(value))
                     AspUnref(engine, value);
                 else

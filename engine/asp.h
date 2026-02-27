@@ -153,6 +153,7 @@ ASP_API bool AspIsReverseIterator(const AspDataEntry *);
 ASP_API bool AspIsIterator(const AspDataEntry *);
 ASP_API bool AspIsIterable(const AspDataEntry *);
 ASP_API bool AspIsFunction(const AspDataEntry *);
+ASP_API bool AspIsSimpleObject(const AspDataEntry *);
 ASP_API bool AspIsModule(const AspDataEntry *);
 ASP_API bool AspIsAppIntegerObject(const AspDataEntry *);
 ASP_API bool AspIsAppPointerObject(const AspDataEntry *);

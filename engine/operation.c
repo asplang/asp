@@ -1400,6 +1400,7 @@ static AspOperationResult PerformMembershipOperation
         }
 
         case DataType_Ellipsis:
+        case DataType_Object:
         case DataType_Module:
         {
             int32_t symbol;
@@ -1410,6 +1411,9 @@ static AspOperationResult PerformMembershipOperation
             }
 
             const AspDataEntry *ns =
+                rightType == DataType_Object ?
+                AspValueEntry
+                    (engine, AspDataGetObjectNamespaceIndex(right)) :
                 rightType == DataType_Module ?
                 AspValueEntry
                     (engine, AspDataGetModuleNamespaceIndex(right)) :

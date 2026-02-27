@@ -138,6 +138,14 @@ typedef enum OpCode
     OpCode_MKIGARG = 0xC4, /* make iteratable group argument */
     OpCode_MKDGARG = 0xC5, /* make dictionary group argument */
 
+    /* Object entry operations. */
+    OpCode_MKNVP1 = 0xC9, /* make name/value pair with 1-byte symbol */
+    OpCode_MKNVP2 = 0xCA, /* make name/value pair with 2-byte symbol */
+    OpCode_MKNVP4 = 0xCB, /* make name/value pair with 4-byte symbol */
+
+    /* Object creation operations. */
+    OpCode_MKOBJ = 0xCC, /* make object */
+
     /* Function parameter operations. */
     OpCode_MKPAR1 = 0xD1, /* make parameter with 1-byte symbol */
     OpCode_MKPAR2 = 0xD2, /* make parameter with 2-byte symbol */
@@ -155,8 +163,8 @@ typedef enum OpCode
     /* Function definition operations. */
     OpCode_MKFUN = 0xE0, /* make function */
 
-    /* Container entry operations. */
-    OpCode_MKKVP = 0xE2, /* make key/value pair entry */
+    /* Dictionary entry operations. */
+    OpCode_MKKVP = 0xE2, /* make key/value pair */
 
     /* Range operations. */
     OpCode_MKR0 = 0xE4, /* make range .. */

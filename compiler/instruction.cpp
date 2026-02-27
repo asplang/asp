@@ -236,6 +236,7 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_CALL, "CALL"},
         {OpCode_RET, "RET"},
         {OpCode_XMOD, "XMOD"},
+        {OpCode_MKOBJ, "MKOBJ"},
         {OpCode_MKFUN, "MKFUN"},
         {OpCode_MKKVP, "MKKVP"},
         {OpCode_MKR0, "MKR0"},
@@ -829,10 +830,42 @@ void MakeParameterInstruction::PrintCode(ostream &os) const
     os << "PAR " << symbol;
 }
 
+MakeObjectInstruction::MakeObjectInstruction
+    (const string &comment) :
+    SimpleInstruction(OpCode_MKOBJ, comment)
+{
+}
+
 MakeFunctionInstruction::MakeFunctionInstruction
     (const string &comment) :
     SimpleInstruction(OpCode_MKFUN, comment)
 {
+}
+
+MakeNameValuePairInstruction::MakeNameValuePairInstruction
+    (int32_t symbol, const string &comment) :
+    Instruction
+        ((OperandSize(symbol) <= 1 ? OpCode_MKNVP1 :
+          OperandSize(symbol) == 2 ? OpCode_MKNVP2 : OpCode_MKNVP4),
+         comment),
+    symbol(symbol)
+{
+}
+
+unsigned MakeNameValuePairInstruction::OperandsSize() const
+{
+    return max(1U, OperandSize(symbol));
+}
+
+void MakeNameValuePairInstruction::WriteOperands(ostream &os) const
+{
+    uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
+    WriteField(os, uSymbol, OperandsSize());
+}
+
+void MakeNameValuePairInstruction::PrintCode(ostream &os) const
+{
+    os << "MKNVP " << symbol;
 }
 
 MakeKeyValuePairInstruction::MakeKeyValuePairInstruction

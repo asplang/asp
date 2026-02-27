@@ -286,6 +286,42 @@ class SymbolExpression : public Expression
         std::string name;
 };
 
+class NameValuePair : public NonTerminal
+{
+    public:
+
+        NameValuePair(const Token &nameToken, Expression *value);
+        ~NameValuePair() override;
+
+        void Parent(const Statement *) const;
+
+        void Emit(Executable &) const;
+
+    private:
+
+        std::string name;
+        Expression *valueExpression;
+};
+
+class ObjectExpression : public Expression
+{
+    public:
+
+        ObjectExpression() = default;
+        explicit ObjectExpression(const Token &);
+        ~ObjectExpression() override;
+
+        void Add(NameValuePair *);
+
+        void Parent(const Statement *) override;
+
+        void Emit(Executable &, EmitType) const override;
+
+    private:
+
+        std::list<NameValuePair *> entries;
+};
+
 class KeyValuePair : public NonTerminal
 {
     public:

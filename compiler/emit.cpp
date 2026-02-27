@@ -1119,6 +1119,38 @@ void SymbolExpression::Emit
          sourceLocation);
 }
 
+void NameValuePair::Emit(Executable &executable) const
+{
+    valueExpression->Emit(executable);
+
+    auto nameSymbol = executable.Symbol(name);
+    ostringstream oss;
+    oss << "Make object entry with variable " << name;
+    executable.Insert
+        (new MakeNameValuePairInstruction(nameSymbol, oss.str()),
+         sourceLocation);
+}
+
+void ObjectExpression::Emit
+    (Executable &executable, EmitType emitType) const
+{
+    if (emitType == EmitType::Address)
+        ThrowError("Cannot take address of object expression");
+    else if (emitType == EmitType::Delete)
+        ThrowError("Cannot delete object expression");
+
+    executable.Insert
+        (new MakeObjectInstruction("Create empty object"),
+         sourceLocation);
+    for (const auto &entry: entries)
+    {
+        entry->Emit(executable);
+        executable.Insert
+            (new BuildInstruction("Add entry to object"),
+             sourceLocation);
+    }
+}
+
 void KeyValuePair::Emit(Executable &executable) const
 {
     keyExpression->Emit(executable);

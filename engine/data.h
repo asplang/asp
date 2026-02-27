@@ -20,7 +20,7 @@ extern "C" {
 /* Data types. */
 typedef enum
 {
-    /* Objects. */
+    /* Object types. */
     DataType_None = 0x00,
     DataType_Ellipsis = 0x01,
     DataType_Boolean = 0x02,
@@ -34,6 +34,7 @@ typedef enum
     DataType_List = 0x0A,
     DataType_Set = 0x0B,
     DataType_Dictionary = 0x0D,
+    DataType_Object = 0x0E,
     DataType_Function = 0x0F,
     DataType_Module = 0x10,
     DataType_ReverseIterator = 0x15,
@@ -51,6 +52,7 @@ typedef enum
     DataType_Element = 0x62,
     DataType_StringFragment = 0x64,
     DataType_KeyValuePair = 0x66,
+    DataType_NameValuePair = 0x68,
     DataType_Namespace = 0x70,
     DataType_SetNode = 0x74,
     DataType_DictionaryNode = 0x78,
@@ -260,6 +262,12 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataGetIteratorCollectionIndex(eptr) \
     (AspDataGetWord3((eptr)))
 
+/* Object entry field access. */
+#define AspDataSetObjectNamespaceIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetObjectNamespaceIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+
 /* Function entry field access. */
 #define AspDataSetFunctionIsApp(eptr, value) \
     (AspDataSetBit0((eptr), (unsigned)(value)))
@@ -439,6 +447,16 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataSetKeyValuePairValueIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetKeyValuePairValueIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+
+/* NameValuePair entry field access. */
+#define AspDataSetNameValuePairSymbol(eptr, value) \
+    (AspDataSetSignedWord0((eptr), (value)))
+#define AspDataGetNameValuePairSymbol(eptr) \
+    (AspDataGetSignedWord0((eptr)))
+#define AspDataSetNameValuePairValueIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetNameValuePairValueIndex(eptr) \
     (AspDataGetWord1((eptr)))
 
 /* Common tree node entry field access. */

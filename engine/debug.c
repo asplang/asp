@@ -135,6 +135,7 @@ static TypeName gTypeNames[] =
     {DataType_List, "list"},
     {DataType_Set, "set"},
     {DataType_Dictionary, "dict"},
+    {DataType_Object, "obj"},
     {DataType_Function, "func"},
     {DataType_Module, "mod"},
     {DataType_ReverseIterator, "iter-rev"},
@@ -151,6 +152,7 @@ static TypeName gTypeNames[] =
     {DataType_Element, "elem"},
     {DataType_StringFragment, "strfrag"},
     {DataType_KeyValuePair, "kvp"},
+    {DataType_NameValuePair, "nvp"},
     {DataType_Namespace, "ns"},
     {DataType_SetNode, "snode"},
     {DataType_DictionaryNode, "dnode"},
@@ -232,15 +234,9 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetTreeRootIndex(entry));
             break;
 
-        case DataType_ForwardIterator:
-        case DataType_ReverseIterator:
-            fprintf(fp, " coll=0x%07X",
-                AspDataGetIteratorIterableIndex(entry));
-            fprintf(fp, " mem=0x%07X si=%d",
-                AspDataGetIteratorMemberIndex(entry),
-                AspDataGetIteratorStringIndex(entry));
-            if (AspDataGetIteratorMemberNeedsCleanup(entry))
-                fputs(" nc", fp);
+        case DataType_Object:
+            fprintf(fp, " ns=0x%07X",
+                AspDataGetObjectNamespaceIndex(entry));
             break;
 
         case DataType_Function:
@@ -263,6 +259,17 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fprintf(fp, " ns=0x%07X ld=%d",
                 AspDataGetModuleNamespaceIndex(entry),
                 AspDataGetModuleIsLoaded(entry));
+            break;
+
+        case DataType_ReverseIterator:
+        case DataType_ForwardIterator:
+            fprintf(fp, " coll=0x%07X",
+                AspDataGetIteratorIterableIndex(entry));
+            fprintf(fp, " mem=0x%07X si=%d",
+                AspDataGetIteratorMemberIndex(entry),
+                AspDataGetIteratorStringIndex(entry));
+            if (AspDataGetIteratorMemberNeedsCleanup(entry))
+                fputs(" nc", fp);
             break;
 
         case DataType_AppIntegerObject:
@@ -380,6 +387,12 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fprintf(fp, " key=0x%07X val=0x%07X",
                 AspDataGetKeyValuePairKeyIndex(entry),
                 AspDataGetKeyValuePairValueIndex(entry));
+            break;
+
+        case DataType_NameValuePair:
+            fprintf(fp, " sym=%d val=0x%07X",
+                AspDataGetNameValuePairSymbol(entry),
+                AspDataGetNameValuePairValueIndex(entry));
             break;
 
         case DataType_SetNode:

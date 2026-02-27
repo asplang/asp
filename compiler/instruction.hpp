@@ -564,12 +564,38 @@ class MakeParameterInstruction : public Instruction
         std::int32_t symbol;
 };
 
+class MakeObjectInstruction : public SimpleInstruction
+{
+    public:
+
+        explicit MakeObjectInstruction
+            (const std::string &comment = "");
+};
+
 class MakeFunctionInstruction : public SimpleInstruction
 {
     public:
 
         explicit MakeFunctionInstruction
             (const std::string &comment = "");
+};
+
+class MakeNameValuePairInstruction : public Instruction
+{
+    public:
+
+        explicit MakeNameValuePairInstruction
+            (std::int32_t symbol, const std::string &comment = "");
+
+    protected:
+
+        unsigned OperandsSize() const override;
+        void WriteOperands(std::ostream &) const override;
+        void PrintCode(std::ostream &) const override;
+
+    private:
+
+        std::int32_t symbol;
 };
 
 class MakeKeyValuePairInstruction : public SimpleInstruction

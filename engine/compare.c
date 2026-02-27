@@ -81,10 +81,10 @@ AspRunResult AspCompare
             }
             else if (compareType == AspCompareType_Equality)
             {
-                if ((leftType == DataType_ForwardIterator ||
-                     rightType == DataType_ForwardIterator) &&
-                    (leftType == DataType_ReverseIterator ||
-                     rightType == DataType_ReverseIterator))
+                if ((leftType == DataType_ReverseIterator ||
+                     rightType == DataType_ReverseIterator) &&
+                    (leftType == DataType_ForwardIterator ||
+                     rightType == DataType_ForwardIterator))
                 {
                     /* Compare iterators of different types (forward and
                        reverse). They are only ever tested for equality. */
@@ -111,9 +111,10 @@ AspRunResult AspCompare
                         type == DataType_Range ||
                         type == DataType_Set ||
                         type == DataType_Dictionary ||
-                        type == DataType_ForwardIterator ||
                         type == DataType_ReverseIterator ||
+                        type == DataType_ForwardIterator ||
                         type == DataType_Function ||
+                        type == DataType_Object ||
                         type == DataType_Module ||
                         type == DataType_AppIntegerObject ||
                         type == DataType_AppPointerObject ||
@@ -125,8 +126,8 @@ AspRunResult AspCompare
                     if (type == DataType_List ||
                         type == DataType_Set ||
                         type == DataType_Dictionary ||
-                        type == DataType_ForwardIterator ||
-                        type == DataType_ReverseIterator)
+                        type == DataType_ReverseIterator ||
+                        type == DataType_ForwardIterator)
                         return AspRunResult_UnexpectedType;
                     break;
             }
@@ -374,8 +375,8 @@ AspRunResult AspCompare
                         break;
                     }
 
-                    case DataType_ForwardIterator:
                     case DataType_ReverseIterator:
+                    case DataType_ForwardIterator:
                     {
                         /* Iterators are only ever tested for equality. */
                         comparison = CompareIterators
@@ -413,6 +414,19 @@ AspRunResult AspCompare
                                 leftAddress < rightAddress ? -1 : 1;
                         }
 
+                        break;
+                    }
+
+                    case DataType_Object:
+                    {
+                        uint32_t
+                            leftValue = AspDataGetObjectNamespaceIndex
+                                (leftEntry),
+                            rightValue = AspDataGetObjectNamespaceIndex
+                                (rightEntry);
+                        comparison =
+                            leftValue == rightValue ? 0 :
+                            leftValue < rightValue ? -1 : 1;
                         break;
                     }
 
