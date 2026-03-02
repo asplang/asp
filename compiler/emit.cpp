@@ -779,16 +779,17 @@ void DefStatement::Emit(Executable &executable) const
 
     parameterList->Emit(executable);
     executable.Insert
-        (new PushCodeAddressInstruction(entryLocation, "Push code address"),
+        (new MakeFunctionInstruction(entryLocation, "Make function"),
          sourceLocation);
-    executable.Insert(new MakeFunctionInstruction, sourceLocation);
 
     VariableExpression variableExpression
         (Token(sourceLocation, TOKEN_NAME, name));
     variableExpression.Parent(this);
     variableExpression.Emit
         (executable, Expression::EmitType::Address);
-    executable.Insert(new SetInstruction(true), sourceLocation);
+    executable.Insert
+        (new SetInstruction(true, "Assign function with pop"),
+         sourceLocation);
 }
 
 void AssignmentExpression::Emit

@@ -236,14 +236,6 @@ class PushParameterListInstruction : public SimpleInstruction
             (const std::string &comment = "");
 };
 
-class PushCodeAddressInstruction : public SimpleInstruction
-{
-    public:
-
-        explicit PushCodeAddressInstruction
-            (const Executable::Location &, const std::string &comment = "");
-};
-
 class PushModuleInstruction : public Instruction
 {
     public:
@@ -577,7 +569,7 @@ class MakeFunctionInstruction : public SimpleInstruction
     public:
 
         explicit MakeFunctionInstruction
-            (const std::string &comment = "");
+            (const Executable::Location &, const std::string &comment = "");
 };
 
 class MakeNameValuePairInstruction : public Instruction

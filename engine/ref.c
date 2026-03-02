@@ -304,7 +304,6 @@ static bool IsTerminal(const AspDataEntry *entry)
         DataType_Float,
         DataType_Symbol,
         DataType_Type,
-        DataType_CodeAddress,
         DataType_AppIntegerObject,
         DataType_AppPointerObject,
         DataType_StringFragment,

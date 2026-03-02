@@ -408,43 +408,6 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
-        case OpCode_PUSHCA:
-        {
-            #ifdef ASP_DEBUG
-            fputs("PUSHCA ", engine->traceFile);
-            #endif
-
-            /* Fetch the code address from the operand. */
-            uint32_t codeAddressOperand;
-            AspRunResult operandLoadResult = LoadUnsignedWordOperand
-                (engine, 4, &codeAddressOperand);
-            if (operandLoadResult != AspRunResult_OK)
-            {
-                #ifdef ASP_DEBUG
-                fputs("?\n", engine->traceFile);
-                #endif
-                return operandLoadResult;
-            }
-            #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "@0x%07X\n", codeAddressOperand);
-            #endif
-            AspRunResult validateResult = AspValidateCodeAddress
-                (engine, codeAddressOperand);
-            if (validateResult != AspRunResult_OK)
-                return validateResult;
-
-            AspDataEntry *codeAddressEntry = AspAllocEntry
-                (engine, DataType_CodeAddress);
-            if (codeAddressEntry == 0)
-                return AspRunResult_OutOfDataMemory;
-            AspDataSetCodeAddress(codeAddressEntry, codeAddressOperand);
-            const AspDataEntry *stackEntry = AspPush(engine, codeAddressEntry);
-            if (stackEntry == 0)
-                return AspRunResult_OutOfDataMemory;
-
-            break;
-        }
-
         case OpCode_PUSHM4:
             operandSize += 2;
         case OpCode_PUSHM2:
@@ -1958,37 +1921,27 @@ static AspRunResult Step(AspEngine *engine)
         case OpCode_MKFUN:
         {
             #ifdef ASP_DEBUG
-            fputs("MKFUN @", engine->traceFile);
+            fputs("MKFUN ", engine->traceFile);
             #endif
 
-            /* Access code address on top of the stack. */
-            AspDataEntry *codeAddressEntry = AspTopValue(engine);
-            if (codeAddressEntry == 0)
+            /* Fetch the code address from the operand. */
+            uint32_t codeAddress;
+            AspRunResult operandLoadResult = LoadUnsignedWordOperand
+                (engine, 4, &codeAddress);
+            if (operandLoadResult != AspRunResult_OK)
             {
                 #ifdef ASP_DEBUG
                 fputs("?\n", engine->traceFile);
                 #endif
-                return AspRunResult_StackUnderflow;
+                return operandLoadResult;
             }
-            if (AspDataGetType(codeAddressEntry) != DataType_CodeAddress)
-            {
-                #ifdef ASP_DEBUG
-                fputs("?\n", engine->traceFile);
-                #endif
-                return AspRunResult_UnexpectedType;
-            }
-            uint32_t codeAddress = AspDataGetCodeAddress(codeAddressEntry);
             #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "0x%07X\n", codeAddress);
+            fprintf(engine->traceFile, "@0x%07X\n", codeAddress);
             #endif
             AspRunResult validateResult = AspValidateCodeAddress
                 (engine, codeAddress);
             if (validateResult != AspRunResult_OK)
                 return validateResult;
-            AspPop(engine);
-            AspUnref(engine, codeAddressEntry);
-            if (engine->runResult != AspRunResult_OK)
-                return engine->runResult;
 
             /* Access parameter list on top of the stack. */
             const AspDataEntry *parameters = AspTopValue(engine);

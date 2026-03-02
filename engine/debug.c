@@ -145,7 +145,6 @@ static TypeName gTypeNames[] =
     {DataType_Type, "type"},
 
     /* Support types. */
-    {DataType_CodeAddress, "caddr"},
     {DataType_StackEntry, "stkent"},
     {DataType_Frame, "frame"},
     {DataType_AppFrame, "appframe"},
@@ -322,11 +321,6 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         case DataType_Type:
             fprintf(fp, " type=0x%02X",
                 AspDataGetTypeValue(entry));
-            break;
-
-        case DataType_CodeAddress:
-            fprintf(fp, " addr=0x%07X",
-                AspDataGetCodeAddress(entry));
             break;
 
         case DataType_StackEntry:

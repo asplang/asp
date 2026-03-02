@@ -45,7 +45,6 @@ typedef enum
     DataType_ObjectMask = 0x3F,
 
     /* Support types. */
-    DataType_CodeAddress = 0x40,
     DataType_StackEntry = 0x50,
     DataType_Frame = 0x52,
     DataType_AppFrame = 0x54,
@@ -350,12 +349,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     ((eptr)->s.c = (value))
 #define AspDataGetTypeValue(eptr) \
     ((eptr)->s.c)
-
-/* CodeAddress entry field access. */
-#define AspDataSetCodeAddress(eptr, value) \
-    (AspDataSetWord0((eptr), (value)))
-#define AspDataGetCodeAddress(eptr) \
-    (AspDataGetWord0((eptr)))
 
 /* StackEntry entry field access. */
 #define AspDataSetStackEntryPreviousIndex(eptr, value) \

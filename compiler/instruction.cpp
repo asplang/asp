@@ -191,7 +191,6 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_PUSHDI, "PUSHDI"},
         {OpCode_PUSHAL, "PUSHAL"},
         {OpCode_PUSHPL, "PUSHPL"},
-        {OpCode_PUSHCA, "PUSHCA"},
         {OpCode_SWAP, "SWAP"},
         {OpCode_LNOT, "LNOT"},
         {OpCode_POS, "POS"},
@@ -417,12 +416,6 @@ PushArgumentListInstruction::PushArgumentListInstruction
 PushParameterListInstruction::PushParameterListInstruction
     (const string &comment) :
     SimpleInstruction(OpCode_PUSHPL, comment)
-{
-}
-
-PushCodeAddressInstruction::PushCodeAddressInstruction
-    (const Executable::Location &location, const string &comment) :
-    SimpleInstruction(OpCode_PUSHCA, location, comment)
 {
 }
 
@@ -837,8 +830,8 @@ MakeObjectInstruction::MakeObjectInstruction
 }
 
 MakeFunctionInstruction::MakeFunctionInstruction
-    (const string &comment) :
-    SimpleInstruction(OpCode_MKFUN, comment)
+    (const Executable::Location &location, const string &comment) :
+    SimpleInstruction(OpCode_MKFUN, location, comment)
 {
 }
 

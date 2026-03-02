@@ -35,7 +35,6 @@ typedef enum OpCode
     OpCode_PUSHDI = 0x17, /* empty dictionary */
     OpCode_PUSHAL = 0x18, /* argument list */
     OpCode_PUSHPL = 0x19, /* parameter list */
-    OpCode_PUSHCA = 0x1C, /* 4-byte code address */
     OpCode_PUSHM1 = 0x1D, /* 1-byte module symbol */
     OpCode_PUSHM2 = 0x1E, /* 2-byte module symbol */
     OpCode_PUSHM4 = 0x1F, /* 4-byte module symbol */
@@ -161,7 +160,7 @@ typedef enum OpCode
     OpCode_MKDGPAR4 = 0xDF, /* make dict group parameter with 1-byte symbol */
 
     /* Function definition operations. */
-    OpCode_MKFUN = 0xE0, /* make function */
+    OpCode_MKFUN = 0xE0, /* make function with 4-byte code address */
 
     /* Dictionary entry operations. */
     OpCode_MKKVP = 0xE2, /* make key/value pair */
