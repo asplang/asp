@@ -31,6 +31,7 @@ static const char *TypeString(DataType);
 static AspDataEntry *NewRange
     (AspEngine *, int32_t start, const int32_t *end, int32_t step);
 static AspDataEntry *NewObject(AspEngine *, DataType);
+static AspDataEntry *GetNamespace(AspEngine *, const AspDataEntry *);
 static bool PrepareArgumentList(AspEngine *);
 
 void AspEngineVersion(uint8_t version[4])
@@ -1082,6 +1083,19 @@ AspDataEntry *AspFind
     return AspIsSet(tree) ? result.key : result.value;
 }
 
+AspDataEntry *AspMember
+    (AspEngine *engine, const AspDataEntry *object, int32_t symbol)
+{
+    AspDataEntry *ns = GetNamespace(engine, object);
+    if (ns == 0)
+        return 0;
+
+    AspTreeResult result = AspFindSymbol(engine, ns, symbol);
+    if (result.result != AspRunResult_OK)
+        return 0;
+    return result.value;
+}
+
 AspDataEntry *AspAt(AspEngine *engine, const AspDataEntry *iterator)
 {
     AspIteratorResult result = AspIteratorDereference(engine, iterator);
@@ -1588,6 +1602,70 @@ bool AspDictionaryErase
     AspRunResult result = AspTreeEraseNode
         (engine, dictionary, findResult.node, true, true);
     return result == AspRunResult_OK;
+}
+
+bool AspObjectInsert
+    (AspEngine *engine, AspDataEntry *object,
+     int32_t symbol, AspDataEntry *value, bool take)
+{
+    /* Access the underlying namespace. */
+    AspDataEntry *ns = GetNamespace(engine, object);
+    if (ns == 0)
+        return false;
+
+    AspTreeResult result = AspTreeTryInsertBySymbol
+        (engine, ns, symbol, value);
+    if (result.result != AspRunResult_OK)
+        return false;
+    if (!result.inserted)
+    {
+        AspRunResult assignResult = AspAssignSimple
+            (engine, result.node, value);
+        if (assignResult != AspRunResult_OK)
+            return false;
+    }
+
+    if (take)
+        AspUnref(engine, value);
+
+    return true;
+}
+
+bool AspObjectErase(AspEngine *engine, AspDataEntry *object, int32_t symbol)
+{
+    /* Access the underlying namespace. */
+    AspDataEntry *ns = GetNamespace(engine, object);
+    if (ns == 0)
+        return false;
+
+    AspTreeResult findResult = AspFindSymbol(engine, ns, symbol);
+    if (findResult.result != AspRunResult_OK)
+        return false;
+    AspRunResult result = AspTreeEraseNode
+        (engine, ns, findResult.node, true, true);
+    return result == AspRunResult_OK;
+}
+
+static AspDataEntry *GetNamespace
+    (AspEngine *engine, const AspDataEntry *object)
+{
+    uint8_t type = AspDataGetType(object);
+    AspDataEntry *ns = 0;
+    switch (type)
+    {
+        default:
+            return 0;
+
+        case DataType_Object:
+            ns = AspEntry(engine, AspDataGetObjectNamespaceIndex(object));
+            break;
+
+        case DataType_Module:
+            ns = AspEntry(engine, AspDataGetModuleNamespaceIndex(object));
+            break;
+    }
+
+    return ns;
 }
 
 bool AspAddPositionalArgument

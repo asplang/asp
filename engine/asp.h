@@ -181,6 +181,8 @@ ASP_API char AspStringElement
     (AspEngine *, const AspDataEntry *str, int32_t index);
 ASP_API AspDataEntry *AspFind
     (AspEngine *, const AspDataEntry *tree, const AspDataEntry *key);
+ASP_API AspDataEntry *AspMember
+    (AspEngine *, const AspDataEntry *object, int32_t symbol);
 ASP_API AspDataEntry *AspAt(AspEngine *, const AspDataEntry *iterator);
 ASP_API bool AspAtSame
     (AspEngine *,
@@ -241,6 +243,11 @@ ASP_API bool AspDictionaryInsert
      AspDataEntry *key, AspDataEntry *value, bool take);
 ASP_API bool AspDictionaryErase
     (AspEngine *, AspDataEntry *dictionary, const AspDataEntry *key);
+ASP_API bool AspObjectInsert
+    (AspEngine *, AspDataEntry *object,
+     int32_t symbol, AspDataEntry *value, bool take);
+ASP_API bool AspObjectErase
+    (AspEngine *, AspDataEntry *object, int32_t symbol);
 ASP_API bool AspAddPositionalArgument
     (AspEngine *, AspDataEntry *value, bool take);
 ASP_API bool AspAddNamedArgument
