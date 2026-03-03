@@ -211,6 +211,7 @@ ASP_API AspDataEntry *AspNewTuple(AspEngine *);
 ASP_API AspDataEntry *AspNewList(AspEngine *);
 ASP_API AspDataEntry *AspNewSet(AspEngine *);
 ASP_API AspDataEntry *AspNewDictionary(AspEngine *);
+ASP_API AspDataEntry *AspNewSimpleObject(AspEngine *);
 ASP_API AspDataEntry *AspNewIterator
     (AspEngine *, AspDataEntry *iterable, bool reversed);
 ASP_API AspDataEntry *AspNewAppIntegerObject

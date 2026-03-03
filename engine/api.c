@@ -1357,6 +1357,19 @@ AspDataEntry *AspNewDictionary(AspEngine *engine)
     return NewObject(engine, DataType_Dictionary);
 }
 
+AspDataEntry *AspNewSimpleObject(AspEngine *engine)
+{
+    AspDataEntry *ns = AspAllocEntry(engine, DataType_Namespace);
+    if (ns == 0)
+        return 0;
+
+    AspDataEntry *object = AspAllocEntry(engine, DataType_Object);
+    if (object != 0)
+        AspDataSetObjectNamespaceIndex(object, AspIndex(engine, ns));
+
+    return object;
+}
+
 AspDataEntry *AspNewIterator
     (AspEngine *engine, AspDataEntry *iterable, bool reversed)
 {

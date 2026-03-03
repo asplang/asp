@@ -1898,16 +1898,9 @@ static AspRunResult Step(AspEngine *engine)
             fputs("MKOBJ\n", engine->traceFile);
             #endif
 
-            /* Create a namespace for the object. */
-            AspDataEntry *ns = AspAllocEntry(engine, DataType_Namespace);
-            if (ns == 0)
-                return AspRunResult_OutOfDataMemory;
-
-            /* Create the object. */
-            AspDataEntry *object = AspAllocEntry(engine, DataType_Object);
+            AspDataEntry *object = AspNewSimpleObject(engine);
             if (object == 0)
                 return AspRunResult_OutOfDataMemory;
-            AspDataSetObjectNamespaceIndex(object, AspIndex(engine, ns));
 
             /* Push the object onto the stack. */
             const AspDataEntry *stackEntry = AspPush(engine, object);
