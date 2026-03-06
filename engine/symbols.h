@@ -14,7 +14,7 @@ extern "C" {
 #define AspSystemModuleSymbol 0
 #define AspSystemArgumentsSymbol 1
 #define AspSystemMainModuleSymbol 2
-#define AspScriptSymbolBase 3
+#define AspScriptSymbolBase 64
 
 #define AspIsSymbolReserved(symbol) \
     ((symbol) == AspSystemModuleSymbol || \

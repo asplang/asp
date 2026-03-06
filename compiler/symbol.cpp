@@ -18,6 +18,11 @@ SymbolTable::SymbolTable(bool reserveSystemSymbols)
         Symbol(AspSystemModuleName);
         Symbol(AspSystemArgumentsName);
         Symbol(AspSystemMainModuleName);
+
+        // Set the next symbol to use for a name.
+        if (nextNamedSymbol > AspScriptSymbolBase)
+            throw string("Internal error: Too many reserved symbols");
+        nextNamedSymbol = AspScriptSymbolBase;
     }
 }
 
