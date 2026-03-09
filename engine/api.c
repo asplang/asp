@@ -796,29 +796,37 @@ static AspDataEntry *ToString
             {
                 int count = 0;
                 count += snprintf
-                    (buffer + count, sizeof buffer - count,
-                     "<func:");
+                    (buffer + count, sizeof buffer - count, "<func:");
                 if (AspDataGetFunctionIsApp(entry))
                     count += snprintf
-                        (buffer + count, sizeof buffer - count,
-                         "app:%d",
+                        (buffer + count, sizeof buffer - count, "app:%d",
                          AspDataGetFunctionSymbol(entry));
                 else
                     count += snprintf
-                        (buffer + count, sizeof buffer - count,
-                         "@%07X",
+                        (buffer + count, sizeof buffer - count, "@%07X",
                          AspDataGetFunctionCodeAddress(entry));
                 count += snprintf
-                    (buffer + count, sizeof buffer - count,
-                     ">");
+                    (buffer + count, sizeof buffer - count, ">");
                 break;
             }
 
             case DataType_Module:
-                snprintf
-                    (buffer, sizeof buffer, "<mod:@%07X>",
-                     AspDataGetModuleCodeAddress(entry));
+            {
+                int count = 0;
+                count += snprintf
+                    (buffer + count, sizeof buffer - count, "<mod:");
+                if (AspDataGetModuleIsApp(entry))
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count, "app:%d",
+                         AspDataGetModuleSymbol(entry));
+                else
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count, "@%07X",
+                         AspDataGetModuleCodeAddress(entry));
+                count += snprintf
+                    (buffer + count, sizeof buffer - count, ">");
                 break;
+            }
 
             case DataType_AppIntegerObject:
             case DataType_AppPointerObject:
