@@ -41,6 +41,8 @@ typedef enum
     DataType_ForwardIterator = 0x16,
     DataType_AppIntegerObject = 0x1A,
     DataType_AppPointerObject = 0x1B,
+    DataType_Class = 0x1C,
+    DataType_BoundMethod = 0x1D,
     DataType_Type = 0x1F,
     DataType_ObjectMask = 0x3F,
 
@@ -63,6 +65,7 @@ typedef enum
     DataType_ArgumentList = 0x83,
     DataType_AppIntegerObjectInfo = 0xAA,
     DataType_AppPointerObjectInfo = 0xAB,
+    DataType_ShadowingMember = 0xAD,
     DataType_Free = 0xFF,
 } DataType;
 
@@ -262,6 +265,10 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataGetWord3((eptr)))
 
 /* Object entry field access. */
+#define AspDataSetObjectClassIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetObjectClassIndex(eptr) \
+    (AspDataGetWord0((eptr)))
 #define AspDataSetObjectNamespaceIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetObjectNamespaceIndex(eptr) \
@@ -344,6 +351,26 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataGetAppPointerObjectDestructor(eptr) \
     ((eptr)->w.u.fp)
 
+/* Class entry field access. */
+#define AspDataSetClassBaseClassIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetClassBaseClassIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetClassNamespaceIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetClassNamespaceIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+
+/* Bound method entry field access. */
+#define AspDataSetBoundMethodFunctionIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetBoundMethodFunctionIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetBoundMethodObjectIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetBoundMethodObjectIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+
 /* Type entry field access. */
 #define AspDataSetTypeValue(eptr, value) \
     ((eptr)->s.c = (value))
@@ -371,6 +398,10 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetBit1((eptr), (unsigned)(value)))
 #define AspDataGetStackEntryFlag(eptr) \
     ((bool)(AspDataGetBit1((eptr))))
+#define AspDataSetStackEntryState(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetStackEntryState(eptr) \
+    (AspDataGetWord3((eptr)))
 
 /* Frame entry field access. */
 #define AspDataSetFrameReturnAddress(eptr, value) \
@@ -385,6 +416,10 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord2((eptr), (value)))
 #define AspDataGetFrameLocalNamespaceIndex(eptr) \
     (AspDataGetWord2((eptr)))
+#define AspDataSetFrameObjectIndex(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetFrameObjectIndex(eptr) \
+    (AspDataGetWord3((eptr)))
 
 /* Application function frame entry field access. */
 #define AspDataSetAppFrameFunctionIndex(eptr, value) \
@@ -552,6 +587,16 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataSetArgumentValueIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetArgumentValueIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+
+/* Shadowing member entry field access. */
+#define AspDataSetShadowingMemberTargetIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetShadowingMemberTargetIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetShadowingMemberSourceIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetShadowingMemberSourceIndex(eptr) \
     (AspDataGetWord1((eptr)))
 
 /* Free entry field access. */

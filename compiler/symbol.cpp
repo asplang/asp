@@ -18,6 +18,7 @@ SymbolTable::SymbolTable(bool reserveSystemSymbols)
         Symbol(AspSystemModuleName);
         Symbol(AspSystemArgumentsName);
         Symbol(AspSystemMainModuleName);
+        Symbol(AspClassInitializeName);
 
         // Set the next symbol to use for a name.
         if (nextNamedSymbol > AspScriptSymbolBase)

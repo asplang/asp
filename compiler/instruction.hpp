@@ -556,6 +556,14 @@ class MakeParameterInstruction : public Instruction
         std::int32_t symbol;
 };
 
+class MakeClassInstruction : public SimpleInstruction
+{
+    public:
+
+        explicit MakeClassInstruction
+            (const std::string &comment = "");
+};
+
 class MakeObjectInstruction : public SimpleInstruction
 {
     public:

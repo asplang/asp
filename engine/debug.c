@@ -142,6 +142,8 @@ static TypeName gTypeNames[] =
     {DataType_ForwardIterator, "iter"},
     {DataType_AppIntegerObject, "app-int"},
     {DataType_AppPointerObject, "app-ptr"},
+    {DataType_Class, "class"},
+    {DataType_BoundMethod, "method"},
     {DataType_Type, "type"},
 
     /* Support types. */
@@ -163,6 +165,7 @@ static TypeName gTypeNames[] =
     {DataType_ArgumentList, "args"},
     {DataType_AppIntegerObjectInfo, "app-ii"},
     {DataType_AppPointerObjectInfo, "app-pi"},
+    {DataType_ShadowingMember, "shadow"},
     {DataType_Free, "free"},
 };
 
@@ -234,9 +237,14 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_Object:
+        {
             fprintf(fp, " ns=0x%07X",
                 AspDataGetObjectNamespaceIndex(entry));
+            uint32_t classIndex = AspDataGetObjectClassIndex(entry);
+            if (classIndex)
+                fprintf(fp, " class=0x%07X", classIndex);
             break;
+        }
 
         case DataType_Function:
             if (AspDataGetFunctionIsApp(entry))
@@ -318,12 +326,29 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             #endif
             break;
 
+        case DataType_Class:
+        {
+            fprintf(fp, " ns=0x%07X",
+                AspDataGetClassNamespaceIndex(entry));
+            uint32_t baseClassIndex = AspDataGetClassBaseClassIndex(entry);
+            if (baseClassIndex)
+                fprintf(fp, " base=0x%07X", baseClassIndex);
+            break;
+        }
+
+        case DataType_BoundMethod:
+            fprintf(fp, " func=0x%07X obj=0x%07X",
+                AspDataGetBoundMethodFunctionIndex(entry),
+                AspDataGetBoundMethodObjectIndex(entry));
+            break;
+
         case DataType_Type:
             fprintf(fp, " type=0x%02X",
                 AspDataGetTypeValue(entry));
             break;
 
         case DataType_StackEntry:
+        {
             fprintf(fp, " prev=0x%07X val=0x%07X",
                 AspDataGetStackEntryPreviousIndex(entry),
                 AspDataGetStackEntryValueIndex(entry));
@@ -332,13 +357,20 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                     AspDataGetStackEntryValue2Index(entry));
             if (AspDataGetStackEntryFlag(entry))
                 fputs(" fl", fp);
+            uint32_t state = AspDataGetStackEntryState(entry);
+            if (state != 0)
+                fprintf(fp, " st=%u", state);
             break;
+        }
 
         case DataType_Frame:
             fprintf(fp, " ra=0x%07X mod=0x%07X locns=0x%07X",
                 AspDataGetFrameReturnAddress(entry),
                 AspDataGetFrameModuleIndex(entry),
                 AspDataGetFrameLocalNamespaceIndex(entry));
+            uint32_t objectIndex = AspDataGetFrameObjectIndex(entry);
+            if (objectIndex)
+                fprintf(fp, " obj=0x%07X", objectIndex);
             break;
 
         case DataType_AppFrame:
@@ -463,6 +495,12 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fprintf(fp, "%p",
                 AspDataGetAppPointerObjectValue(entry));
             #endif
+            break;
+
+        case DataType_ShadowingMember:
+            fprintf(fp, " tgt=0x%07X src=0x%07X",
+                AspDataGetShadowingMemberTargetIndex(entry),
+                AspDataGetShadowingMemberSourceIndex(entry));
             break;
 
         case DataType_Free:

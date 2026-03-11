@@ -142,8 +142,9 @@ typedef enum OpCode
     OpCode_MKNVP2 = 0xCA, /* make name/value pair with 2-byte symbol */
     OpCode_MKNVP4 = 0xCB, /* make name/value pair with 4-byte symbol */
 
-    /* Object creation operations. */
-    OpCode_MKOBJ = 0xCC, /* make object */
+    /* Class and object creation operations. */
+    OpCode_MKCLS = 0xCC, /* make class */
+    OpCode_MKOBJ = 0xCD, /* make simple object */
 
     /* Function parameter operations. */
     OpCode_MKPAR1 = 0xD1, /* make parameter with 1-byte symbol */

@@ -149,6 +149,10 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 const AspDataEntry *ns = AspValueEntry
                     (engine, AspDataGetObjectNamespaceIndex(entry));
                 AspPushNoUse(engine, ns);
+
+                uint32_t classIndex = AspDataGetObjectClassIndex(entry);
+                if (classIndex != 0)
+                    AspPushNoUse(engine, AspValueEntry(engine, classIndex));
             }
             else if (t == DataType_Function)
             {
@@ -213,11 +217,37 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 if (info != entry)
                     AspUnref(engine, info);
             }
+            else if (t == DataType_Class)
+            {
+                const AspDataEntry *ns = AspValueEntry
+                    (engine, AspDataGetClassNamespaceIndex(entry));
+                AspPushNoUse(engine, ns);
+
+                uint32_t baseClassIndex = AspDataGetClassBaseClassIndex(entry);
+                if (baseClassIndex != 0)
+                    AspPushNoUse
+                        (engine, AspValueEntry(engine, baseClassIndex));
+            }
+            else if (t == DataType_BoundMethod)
+            {
+                const AspDataEntry *function = AspValueEntry
+                    (engine, AspDataGetBoundMethodFunctionIndex(entry));
+                AspPushNoUse(engine, function);
+
+                const AspDataEntry *object = AspValueEntry
+                    (engine, AspDataGetBoundMethodObjectIndex(entry));
+                AspPushNoUse(engine, object);
+            }
             else if (t == DataType_Frame)
             {
                 const AspDataEntry *module = AspValueEntry
                     (engine, AspDataGetFrameModuleIndex(entry));
                 AspPushNoUse(engine, module);
+
+                uint32_t objectIndex = AspDataGetFrameObjectIndex(entry);
+                if (objectIndex != 0)
+                    AspPushNoUse
+                        (engine, AspValueEntry(engine, objectIndex));
             }
             else if (t == DataType_KeyValuePair)
             {
@@ -264,6 +294,15 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     AspUnref(engine, value);
                 else
                     AspPushNoUse(engine, value);
+            }
+            else if (t == DataType_ShadowingMember)
+            {
+                AspDataEntry *shadowingSource = AspValueEntry
+                    (engine, AspDataGetShadowingMemberSourceIndex(entry));
+                if (IsTerminal(shadowingSource))
+                    AspUnref(engine, shadowingSource);
+                else
+                    AspPushNoUse(engine, shadowingSource);
             }
 
             /* Free the entry. */

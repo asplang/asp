@@ -57,6 +57,7 @@ typedef enum
     AspRunResult_MalformedFunctionCall = 0x14,
     AspRunResult_UndefinedAppFunction = 0x15,
     AspRunResult_InvalidAppFunction = 0x16,
+    AspRunResult_InvalidReturnValue = 0x17,
     AspRunResult_DivideByZero = 0x18,
     AspRunResult_ArithmeticOverflow = 0x19,
     AspRunResult_OutOfDataMemory = 0x20,
@@ -148,16 +149,19 @@ ASP_API bool AspIsList(const AspDataEntry *);
 ASP_API bool AspIsSequence(const AspDataEntry *);
 ASP_API bool AspIsSet(const AspDataEntry *);
 ASP_API bool AspIsDictionary(const AspDataEntry *);
+ASP_API bool AspIsSimpleObject(const AspDataEntry *);
+ASP_API bool AspIsClassInstance(const AspDataEntry *);
+ASP_API bool AspIsFunction(const AspDataEntry *);
+ASP_API bool AspIsModule(const AspDataEntry *);
 ASP_API bool AspIsForwardIterator(const AspDataEntry *);
 ASP_API bool AspIsReverseIterator(const AspDataEntry *);
 ASP_API bool AspIsIterator(const AspDataEntry *);
 ASP_API bool AspIsIterable(const AspDataEntry *);
-ASP_API bool AspIsFunction(const AspDataEntry *);
-ASP_API bool AspIsSimpleObject(const AspDataEntry *);
-ASP_API bool AspIsModule(const AspDataEntry *);
 ASP_API bool AspIsAppIntegerObject(const AspDataEntry *);
 ASP_API bool AspIsAppPointerObject(const AspDataEntry *);
 ASP_API bool AspIsAppObject(const AspDataEntry *);
+ASP_API bool AspIsClass(const AspDataEntry *);
+ASP_API bool AspIsBoundMethod(const AspDataEntry *);
 ASP_API bool AspIsType(const AspDataEntry *);
 ASP_API bool AspIsTrue(AspEngine *, const AspDataEntry *);
 ASP_API bool AspIntegerValue(const AspDataEntry *, int32_t *);

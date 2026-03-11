@@ -30,7 +30,7 @@ unsigned Statement::StackUsage() const
 const LoopStatement *Statement::ParentLoop() const
 {
     // Search for parent loop statement, ending the search if we reach a
-    // function definition or the top level first.
+    // function definition, a class definition, or the top level first.
     const LoopStatement *loopStatement = nullptr;
     for (auto parentStatement = Parent()->Parent();
          parentStatement != nullptr && loopStatement == nullptr;
@@ -39,7 +39,9 @@ const LoopStatement *Statement::ParentLoop() const
     {
         auto defStatement =
             dynamic_cast<const DefStatement *>(parentStatement);
-        if (defStatement != nullptr)
+        auto classStatement =
+            dynamic_cast<const ClassStatement *>(parentStatement);
+        if (defStatement != nullptr || classStatement != nullptr)
             break;
     }
     return loopStatement;
@@ -48,12 +50,18 @@ const LoopStatement *Statement::ParentLoop() const
 const DefStatement *Statement::ParentDef() const
 {
     // Search for parent function definition statement, ending the search
-    // if we reach the top level first.
+    // if we reach a class definition or the top level first.
     const DefStatement *defStatement = nullptr;
     for (auto parentStatement = Parent()->Parent();
          parentStatement != nullptr && defStatement == nullptr;
          defStatement = dynamic_cast<const DefStatement *>(parentStatement),
-         parentStatement = parentStatement->Parent()->Parent()) ;
+         parentStatement = parentStatement->Parent()->Parent())
+    {
+        auto classStatement =
+            dynamic_cast<const ClassStatement *>(parentStatement);
+        if (classStatement != nullptr)
+            break;
+    }
     return defStatement;
 }
 
@@ -599,5 +607,23 @@ DefStatement::DefStatement
 DefStatement::~DefStatement()
 {
     delete parameterList;
+    delete block;
+}
+
+ClassStatement::ClassStatement
+    (const Token &nameToken, Argument *baseClassArgument, Block *block) :
+    Statement(nameToken),
+    name(nameToken.s),
+    baseClassArgument(baseClassArgument),
+    block(block)
+{
+    if (baseClassArgument)
+        baseClassArgument->Parent(this);
+    block->Parent(this);
+}
+
+ClassStatement::~ClassStatement()
+{
+    delete baseClassArgument;
     delete block;
 }

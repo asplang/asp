@@ -165,6 +165,10 @@ class Argument : public NonTerminal
         {
             return !name.empty();
         }
+        const Expression *ValueExpression() const
+        {
+            return valueExpression;
+        }
 
         void Emit(Executable &) const;
 
@@ -187,6 +191,10 @@ class ArgumentList : public NonTerminal
 
         using ConstArgumentIterator =
             std::list<Argument *>::const_iterator;
+        std::size_t ArgumentsSize() const
+        {
+            return arguments.size();
+        }
         ConstArgumentIterator ArgumentsBegin() const
         {
             return arguments.begin();

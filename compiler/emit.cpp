@@ -750,7 +750,7 @@ void DefStatement::Emit(Executable &executable) const
 
     executable.PushLocation(entryLocation);
     executable.Insert
-        (new JumpInstruction(defineLocation, "Jump around code"),
+        (new JumpInstruction(defineLocation, "Jump around function code"),
          sourceLocation);
     executable.PopLocation();
 
@@ -780,6 +780,66 @@ void DefStatement::Emit(Executable &executable) const
     parameterList->Emit(executable);
     executable.Insert
         (new MakeFunctionInstruction(entryLocation, "Make function"),
+         sourceLocation);
+
+    VariableExpression variableExpression
+        (Token(sourceLocation, TOKEN_NAME, name));
+    variableExpression.Parent(this);
+    variableExpression.Emit
+        (executable, Expression::EmitType::Address);
+    executable.Insert
+        (new SetInstruction(true, "Assign function with pop"),
+         sourceLocation);
+}
+
+void ClassStatement::Emit(Executable &executable) const
+{
+    auto entryLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+    auto defineLocation = executable.Insert
+        (new NullInstruction, sourceLocation);
+
+    executable.PushLocation(entryLocation);
+    executable.Insert
+        (new JumpInstruction(defineLocation, "Jump around class code"),
+         sourceLocation);
+    executable.PopLocation();
+
+    executable.PushLocation(defineLocation);
+    try
+    {
+        block->Emit(executable);
+
+        if (baseClassArgument != 0)
+            baseClassArgument->ValueExpression()->Emit(executable);
+        else
+            executable.Insert
+                (new PushNoneInstruction("Push null base class"),
+                 sourceLocation);
+        executable.Insert
+            (new MakeClassInstruction("Make class"), sourceLocation);
+        executable.Insert
+            (new ReturnInstruction("Return class"), sourceLocation);
+    }
+    catch (...)
+    {
+        executable.PopLocation();
+        throw;
+    }
+    executable.PopLocation();
+
+    executable.Insert
+        (new PushParameterListInstruction("Push empty parameter list"),
+         sourceLocation);
+    executable.Insert
+        (new MakeFunctionInstruction(entryLocation, "Make class function"),
+         sourceLocation);
+
+    executable.Insert
+        (new PushArgumentListInstruction("Push empty argument list"),
+         sourceLocation);
+    executable.Insert
+        (new CallInstruction("Call class function"),
          sourceLocation);
 
     VariableExpression variableExpression

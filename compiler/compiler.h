@@ -168,6 +168,9 @@ class Compiler
         (MakeDefStatement, Statement *,
          Token *, ParameterList *, Block *)
     DECLARE_METHOD
+        (MakeClassStatement, Statement *,
+         Token *, ArgumentList *, Block *)
+    DECLARE_METHOD
         (MakeBlockStatement, Statement *, Block *)
     DECLARE_METHOD
         (AssignStatement, Statement *, Statement *)

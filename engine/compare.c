@@ -118,6 +118,8 @@ AspRunResult AspCompare
                         type == DataType_Module ||
                         type == DataType_AppIntegerObject ||
                         type == DataType_AppPointerObject ||
+                        type == DataType_Class ||
+                        type == DataType_BoundMethod ||
                         type == DataType_Type)
                         return AspRunResult_UnexpectedType;
                     break;
@@ -476,6 +478,44 @@ AspRunResult AspCompare
                             leftValue == rightValue ? 0 :
                             leftValue < rightValue ? -1 : 1 :
                             leftType < rightType ? -1 : 1;
+                        break;
+                    }
+
+                    case DataType_Class:
+                    {
+                        uint32_t
+                            leftNamespaceIndex = AspDataGetClassNamespaceIndex
+                                (leftEntry),
+                            rightNamespaceIndex = AspDataGetClassNamespaceIndex
+                                (rightEntry),
+                            leftBaseClassIndex = AspDataGetClassBaseClassIndex
+                                (leftEntry),
+                            rightBaseClassIndex = AspDataGetClassBaseClassIndex
+                                (rightEntry);
+                        comparison =
+                            leftNamespaceIndex == rightNamespaceIndex ?
+                            leftBaseClassIndex == rightBaseClassIndex ? 0 :
+                            leftBaseClassIndex < rightBaseClassIndex ? -1 : 1 :
+                            leftNamespaceIndex < rightNamespaceIndex ? -1 : 1;
+                        break;
+                    }
+
+                    case DataType_BoundMethod:
+                    {
+                        uint32_t
+                            leftFunctionIndex =
+                                AspDataGetBoundMethodFunctionIndex(leftEntry),
+                            rightFunctionIndex =
+                                AspDataGetBoundMethodFunctionIndex(rightEntry),
+                            leftObjectIndex =
+                                AspDataGetBoundMethodObjectIndex(leftEntry),
+                            rightObjectIndex =
+                                AspDataGetBoundMethodObjectIndex(rightEntry),
+                        comparison =
+                            leftFunctionIndex == rightFunctionIndex ?
+                            leftObjectIndex == rightObjectIndex ? 0 :
+                            leftObjectIndex < rightObjectIndex ? -1 : 1 :
+                            leftFunctionIndex < rightFunctionIndex ? -1 : 1;
                         break;
                     }
 

@@ -494,4 +494,20 @@ class DefStatement : public Statement
         Block *block;
 };
 
+class ClassStatement : public Statement
+{
+    public:
+
+        ClassStatement(const Token &nameToken, Argument *, Block *);
+        ~ClassStatement() override;
+
+        void Emit(Executable &) const override;
+
+    private:
+
+        std::string name;
+        Argument *baseClassArgument;
+        Block *block;
+};
+
 #endif

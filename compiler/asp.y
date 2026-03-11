@@ -127,6 +127,11 @@ compound_statement(result) ::= def(statement).
     result = ACTION(AssignStatement, (Statement *)statement);
 }
 
+compound_statement(result) ::= class(statement).
+{
+    result = ACTION(AssignStatement, (Statement *)statement);
+}
+
 %type if {IfStatement *}
 
 if(result) ::=
@@ -338,6 +343,24 @@ parameter(result) ::=
     DOUBLE_ASTERISK NAME(nameToken).
 {
     result = ACTION(MakeDictionaryGroupParameter, nameToken);
+}
+
+%type class {Statement *}
+
+class(result) ::=
+    CLASS NAME(nameToken) block(block).
+{
+    result = ACTION
+        (MakeClassStatement, nameToken,
+         ACTION(MakeEmptyArgumentList, 0),
+         block);
+}
+
+class(result) ::=
+    CLASS NAME(nameToken) LEFT_PAREN arguments(argumentList) RIGHT_PAREN
+    block(block).
+{
+    result = ACTION(MakeClassStatement, nameToken, argumentList, block);
 }
 
 %type block {Block *}

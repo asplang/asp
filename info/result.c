@@ -78,6 +78,8 @@ const char *AspRunResultToString(int result)
             return "Undefined app function";
         case AspRunResult_InvalidAppFunction:
             return "Invalid app function";
+        case AspRunResult_InvalidReturnValue:
+            return "Invalid return value";
         case AspRunResult_DivideByZero:
             return "Divide by zero";
         case AspRunResult_ArithmeticOverflow:

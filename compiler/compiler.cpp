@@ -867,6 +867,55 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeClassStatement, Statement *,
+     Token *, nameToken, ArgumentList *, argumentList, Block *, block)
+{
+    Statement *result = nullptr;
+
+    if (block != nullptr)
+    {
+        try
+        {
+            if (!argumentList->HasSourceLocation())
+                (SourceElement &)*argumentList = *nameToken;
+
+            // Reject multiple inheritance.
+            if (argumentList->ArgumentsSize() > 1)
+                ReportError
+                    ("Multiple inheritance is not supported",
+                     *argumentList);
+            Argument *argument =
+                argumentList->ArgumentsSize() == 0 ? 0 :
+                *argumentList->ArgumentsBegin();
+
+            // Ensure the validity of the base class argument, if present.
+            if (argument != 0)
+            {
+                if (argument->HasName())
+                    ReportError
+                        ("Named argument is not allowed as a base class",
+                         *argument);
+
+                auto argumentType = argument->GetType();
+                if (argumentType != Argument::Type::NonGroup)
+                    ReportError
+                        ("Group argument is not allowed as a base class",
+                         *argument);
+            }
+
+            result = new ClassStatement(*nameToken, argument, block);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    delete nameToken;
+    return result;
+}
+
+DEFINE_ACTION
     (MakeBlockStatement, Statement *, Block *, block)
 {
     if (block != nullptr)

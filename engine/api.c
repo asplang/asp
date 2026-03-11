@@ -140,6 +140,30 @@ bool AspIsDictionary(const AspDataEntry *entry)
     return entry != 0 && AspDataGetType(entry) == DataType_Dictionary;
 }
 
+bool AspIsSimpleObject(const AspDataEntry *entry)
+{
+    return
+        entry != 0 && AspDataGetType(entry) == DataType_Object &&
+        AspDataGetObjectClassIndex(entry) == 0;
+}
+
+bool AspIsClassInstruction(const AspDataEntry *entry)
+{
+    return
+        entry != 0 && AspDataGetType(entry) == DataType_Object &&
+        AspDataGetObjectClassIndex(entry) != 0;
+}
+
+bool AspIsFunction(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Function;
+}
+
+bool AspIsModule(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Module;
+}
+
 bool AspIsForwardIterator(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_ForwardIterator;
@@ -164,30 +188,16 @@ bool AspIsIterable(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        (type == DataType_Range ||
+        (type == DataType_Ellipsis ||
+         type == DataType_Range ||
          type == DataType_String ||
          type == DataType_Tuple ||
          type == DataType_List ||
-         type == DataType_Ellipsis ||
+         type == DataType_Set ||
+         type == DataType_Dictionary ||
          type == DataType_Object ||
          type == DataType_Module ||
-         type == DataType_Set ||
-         type == DataType_Dictionary);
-}
-
-bool AspIsFunction(const AspDataEntry *entry)
-{
-    return entry != 0 && AspDataGetType(entry) == DataType_Function;
-}
-
-bool AspIsSimpleObject(const AspDataEntry *entry)
-{
-    return entry != 0 && AspDataGetType(entry) == DataType_Object;
-}
-
-bool AspIsModule(const AspDataEntry *entry)
-{
-    return entry != 0 && AspDataGetType(entry) == DataType_Module;
+         type == DataType_Class);
 }
 
 bool AspIsAppIntegerObject(const AspDataEntry *entry)
@@ -207,6 +217,16 @@ bool AspIsAppObject(const AspDataEntry *entry)
         entry != 0 &&
         (type == DataType_AppIntegerObject ||
          type == DataType_AppPointerObject);
+}
+
+bool AspIsClass(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Class;
+}
+
+bool AspIsBoundMethod(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_BoundMethod;
 }
 
 bool AspIsType(const AspDataEntry *entry)
@@ -458,6 +478,7 @@ static AspDataEntry *ToString
     const AspDataEntry *startStackTop = engine->stackTop;
     const AspDataEntry *next = 0;
     bool flag = false;
+    uint32_t state = 0;
     uint32_t iterationCount = 0;
     for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
     {
@@ -491,12 +512,15 @@ static AspDataEntry *ToString
 
             case DataType_Float:
             {
+                int count = 0;
                 double f;
                 AspFloatValue(entry, &f);
-                snprintf(buffer, sizeof buffer, "%g", f);
+                count += snprintf
+                    (buffer + count, sizeof buffer - count, "%g", f);
                 if (!isnan(f) && !isinf(f) &&
                     strchr(buffer, '.') == 0 && strchr(buffer, 'e') == 0)
-                    strcat(buffer, ".0");
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count, ".0");
                 break;
             }
 
@@ -781,10 +805,55 @@ static AspDataEntry *ToString
             }
 
             case DataType_Object:
-                snprintf
-                    (buffer, sizeof buffer, "<obj:%07X>",
-                     AspIndex(engine, entry));
+            {
+                int count = 0;
+                if (!flag)
+                {
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count,
+                         "<obj:0x%07X", AspIndex(engine, entry));
+                    uint32_t classIndex = AspDataGetObjectClassIndex
+                        (entry);
+                    if (classIndex == 0)
+                        flag = true;
+                    else
+                    {
+                        count += snprintf
+                            (buffer + count, sizeof buffer - count, ":");
+
+                        AspDataEntry *classEntry = AspValueEntry
+                            (engine, AspDataGetObjectClassIndex(entry));
+                        if (AspDataGetType(classEntry) != DataType_Class)
+                        {
+                            count += snprintf
+                                (buffer + count, sizeof buffer - count, "?");
+                            flag = true;
+                        }
+                        else
+                        {
+                            /* Save state and defer the class to the next
+                               iteration. */
+                            AspDataEntry *entryStackEntry = AspPushNoUse
+                                (engine, entry);
+                            const AspDataEntry *classStackEntry = AspPushNoUse
+                                (engine, classEntry);
+                            if (entryStackEntry == 0 || classStackEntry == 0)
+                            {
+                                AspUnref(engine, result);
+                                result = 0;
+                                break;
+                            }
+                            AspDataSetStackEntryFlag(entryStackEntry, true);
+                        }
+                    }
+                }
+
+                if (flag)
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count, ">");
+
                 break;
+            }
 
             case DataType_Function:
             {
@@ -797,7 +866,9 @@ static AspDataEntry *ToString
                          AspDataGetFunctionSymbol(entry));
                 else
                     count += snprintf
-                        (buffer + count, sizeof buffer - count, "@%07X",
+                        (buffer + count, sizeof buffer - count,
+                         "0x%07X@0x%07X",
+                         AspIndex(engine, entry),
                          AspDataGetFunctionCodeAddress(entry));
                 count += snprintf
                     (buffer + count, sizeof buffer - count, ">");
@@ -808,14 +879,16 @@ static AspDataEntry *ToString
             {
                 int count = 0;
                 count += snprintf
-                    (buffer, sizeof buffer, "<mod:");
+                    (buffer + count, sizeof buffer - count, "<mod:");
                 if (AspDataGetModuleIsApp(entry))
                     count += snprintf
                         (buffer + count, sizeof buffer - count, "app:%d",
                          AspDataGetModuleSymbol(entry));
                 else
                     count += snprintf
-                        (buffer + count, sizeof buffer - count, "@%07X",
+                        (buffer + count, sizeof buffer - count,
+                         "0x%07X@0x%07X",
+                         AspIndex(engine, entry),
                          AspDataGetModuleCodeAddress(entry));
                 count += snprintf
                     (buffer + count, sizeof buffer - count, ">");
@@ -825,52 +898,89 @@ static AspDataEntry *ToString
             case DataType_ReverseIterator:
             case DataType_ForwardIterator:
             {
+                int count = 0;
                 uint32_t iterableIndex =
                     AspDataGetIteratorIterableIndex(entry);
                 const AspDataEntry *iterable = AspValueEntry
                     (engine, iterableIndex);
-                snprintf(buffer, sizeof buffer, "<%s:", TypeString(type));
-                if (iterable == 0)
-                    strcat(buffer, "?");
-                else
-                    strcat(buffer, TypeString(AspDataGetType(iterable)));
+                count += snprintf
+                    (buffer + count, sizeof buffer - count, "<%s:%s",
+                     TypeString(type),
+                     iterable == 0 ? "?" :
+                     TypeString(AspDataGetType(iterable)));
                 uint32_t memberIndex = AspDataGetIteratorMemberIndex(entry);
                 if (memberIndex == 0)
-                    strcat(buffer, " @end");
-                strcat(buffer, ">");
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count, " @end");
+                count += snprintf
+                    (buffer + count, sizeof buffer - count, ">");
                 break;
             }
 
             case DataType_AppIntegerObject:
             case DataType_AppPointerObject:
             {
+                int count = 0;
                 const AspDataEntry *infoEntry = AspAppObjectInfoEntry
                     (engine, (AspDataEntry *)entry);
-                snprintf
-                    (buffer, sizeof buffer, "<app-%s:%d:",
+                count += snprintf
+                    (buffer + count, sizeof buffer - count, "<app-%s:%d:",
                      type == DataType_AppIntegerObject ? "int" : "ptr",
                      AspDataGetAppObjectType(infoEntry));
                 if (infoEntry == 0)
-                    strcat(buffer, "?");
+                    count += snprintf
+                        (buffer + count, sizeof buffer - count, "?");
                 else
                 {
-                    size_t
-                        len = strlen(buffer),
-                        remainingLen = sizeof buffer - len;
-                    char *bufferEnd = buffer + len;
                     if (type == DataType_AppIntegerObject)
                     {
-                        snprintf
-                            (bufferEnd, remainingLen, "%d>",
+                        count += snprintf
+                            (buffer + count, sizeof buffer - count, "%d>",
                              AspDataGetAppIntegerObjectValue(infoEntry));
                     }
                     else
                     {
-                        snprintf
-                            (bufferEnd, remainingLen, "%p>",
+                        count += snprintf
+                            (buffer + count, sizeof buffer - count, "%p>",
                              AspDataGetAppPointerObjectValue(infoEntry));
                     }
                 }
+                break;
+            }
+
+            case DataType_Class:
+                snprintf
+                    (buffer, sizeof buffer,
+                     "<class:0x%07X>", AspIndex(engine, entry));
+                break;
+
+            case DataType_BoundMethod:
+            {
+                strcpy
+                    (buffer,
+                     state == 0 ? "<method:" : state == 1 ? ":" : ">");
+                if (state >= 2)
+                    break;
+
+                next = AspValueEntry
+                    (engine,
+                     state == 0 ?
+                     AspDataGetBoundMethodFunctionIndex(entry) :
+                     AspDataGetBoundMethodObjectIndex(entry));
+
+                /* Save state and defer the components to the next
+                   iteration. */
+                AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
+                const AspDataEntry *valueStackEntry = AspPushNoUse
+                    (engine, next);
+                if (entryStackEntry == 0 || valueStackEntry == 0)
+                {
+                    AspUnref(engine, result);
+                    result = 0;
+                    break;
+                }
+                AspDataSetStackEntryState(entryStackEntry, state + 1);
+
                 break;
             }
 
@@ -904,6 +1014,7 @@ static AspDataEntry *ToString
         entry = AspTopValue(engine);
         next = AspTopValue2(engine);
         flag = AspDataGetStackEntryFlag(engine->stackTop);
+        state = AspDataGetStackEntryState(engine->stackTop);
         AspPopNoErase(engine);
     }
     if (iterationCount >= engine->cycleDetectionLimit)
@@ -975,6 +1086,10 @@ static const char *TypeString(DataType type)
             return "app-int";
         case DataType_AppPointerObject:
             return "app-ptr";
+        case DataType_Class:
+            return "class";
+        case DataType_BoundMethod:
+            return "method";
         case DataType_Type:
             return "type";
     }
@@ -1789,7 +1904,7 @@ AspRunResult AspCall
     /* Consume the argument list and call the function. */
     AspDataEntry *argumentList = engine->argumentList;
     engine->argumentList = 0;
-    return AspCallFunction(engine, function, argumentList, true);
+    return AspCallFunction(engine, function, argumentList, true, 0);
 }
 
 AspRunResult AspReturnValue(AspEngine *engine, AspDataEntry **returnValue)

@@ -235,6 +235,7 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_CALL, "CALL"},
         {OpCode_RET, "RET"},
         {OpCode_XMOD, "XMOD"},
+        {OpCode_MKCLS, "MKCLS"},
         {OpCode_MKOBJ, "MKOBJ"},
         {OpCode_MKFUN, "MKFUN"},
         {OpCode_MKKVP, "MKKVP"},
@@ -821,6 +822,12 @@ void MakeParameterInstruction::PrintCode(ostream &os) const
              OpCode() == OpCode_MKDGPAR4)
         os << "DG";
     os << "PAR " << symbol;
+}
+
+MakeClassInstruction::MakeClassInstruction
+    (const string &comment) :
+    SimpleInstruction(OpCode_MKCLS, comment)
+{
 }
 
 MakeObjectInstruction::MakeObjectInstruction
