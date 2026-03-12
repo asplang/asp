@@ -78,6 +78,13 @@ if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     # Unsupported options when using clang-cl
     add_compile_options(/Zc:preprocessor /wd4554)
 endif()
+if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(
+        -Wno-parentheses -Wno-switch
+        -Wno-shift-op-parentheses
+        -Wno-unqualified-std-cast-call
+        )
+endif()
 
 add_subdirectory(engine)
 
