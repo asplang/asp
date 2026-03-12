@@ -56,7 +56,7 @@ static void Usage()
         << COMMAND_OPTION_PREFIXES[0]
         << "p pc       Translate program counter source location.\n"
         << COMMAND_OPTION_PREFIXES[0]
-        << "s name     Translate symbol number to name.\n";
+        << "s symbol   Translate symbol number to name.\n";
 }
 
 int main(int argc, char **argv)
