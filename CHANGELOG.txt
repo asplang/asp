@@ -7,6 +7,9 @@ chronological order.
 Changes
 -------
 
+Version 1.1.4.8 (compiler 1.1.0.2, engine 1.1.4.5):
+- Fixed an error in the aspinfo help text.
+
 Version 1.1.4.7 (compiler 1.1.0.2, engine 1.1.4.5):
 - Made some CMake improvements.
 
