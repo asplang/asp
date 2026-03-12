@@ -7,6 +7,15 @@ chronological order.
 Changes
 -------
 
+Version 1.2.5.3 (generator 1.2.2.2, compiler 1.2.3.1, engine 1.2.3.6):
+- Engine:
+  - Fixed an issue with how application modules were converted to their string
+    representation. Script modules were not affected.
+- Information utility:
+  - Fixed an error in the help text.
+- Build:
+  - Added Clang compiler options to squelch nuisance warnings.
+
 Version 1.2.5.2 (generator 1.2.2.2, compiler 1.2.3.1, engine 1.2.3.5):
 - Compiler:
   - Fixed a regression, introduced in version 1.2.5.1, compiler version
@@ -576,7 +585,7 @@ Version 0.7.1.2 (compiler 0.7.1.1, engine 0.7.3.1):
 - Compiler:
   - Added generation of the source info file (.aspd).
   - Added the -v option to print version information and exit.
-- Info library and utility (new):
+- Information library and utility (new):
   - Added a library for translating error codes into text and translating
     a script's program counter into source location to be used in error
     reporting and tracing applications.
