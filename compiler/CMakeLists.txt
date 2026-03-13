@@ -74,7 +74,12 @@ target_compile_definitions(aspc PRIVATE
 target_include_directories(aspc PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
+    "${reserved_SOURCE_DIR}"
     "${aspe_SOURCE_DIR}"
+    )
+
+target_link_libraries(aspc PRIVATE
+    reserved
     )
 
 install(TARGETS aspc

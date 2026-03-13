@@ -9,7 +9,7 @@
 #include "tree.h"
 #include "arguments.h"
 #include "function.h"
-#include "symbols.h"
+#include "reserved.h"
 #include "appspec.h"
 #include <string.h>
 #include <stdint.h>
@@ -456,7 +456,8 @@ static AspRunResult ResetData(AspEngine *engine)
         (engine->systemModule, AspIndex(engine, engine->systemNamespace));
     AspDataSetModuleIsLoaded(engine->systemModule, true);
     AspTreeResult addSystemModuleResult = AspTreeTryInsertBySymbol
-        (engine, engine->modules, AspSystemModuleSymbol, engine->systemModule);
+        (engine, engine->modules,
+         AspReservedSymbol_SystemModule, engine->systemModule);
     if (addSystemModuleResult.result != AspRunResult_OK)
         return addSystemModuleResult.result;
     AspUnref(engine, engine->systemModule);
@@ -467,7 +468,8 @@ static AspRunResult ResetData(AspEngine *engine)
     if (arguments == 0)
         return AspRunResult_OutOfDataMemory;
     AspTreeResult addArgumentsResult = AspTreeTryInsertBySymbol
-        (engine, engine->systemNamespace, AspSystemArgumentsSymbol, arguments);
+        (engine, engine->systemNamespace,
+         AspReservedSymbol_SystemArguments, arguments);
     if (addArgumentsResult.result != AspRunResult_OK)
         return addArgumentsResult.result;
     AspUnref(engine, arguments);
@@ -558,7 +560,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
     int32_t nextAppModuleId = 0;
     AspDataEntry *currentAppModule = engine->module;
     AspDataEntry *currentAppNamespace = engine->systemNamespace;
-    for (int32_t nextSymbol = AspScriptSymbolBase;
+    for (int32_t nextSymbol = AspReservedSymbol_End;
          nextSymbol <= AspSignedWordMax; nextSymbol++)
     {
         if (specIndex >= specSize)

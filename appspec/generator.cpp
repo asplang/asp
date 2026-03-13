@@ -5,7 +5,7 @@
 #include "generator.h"
 #include "app.h"
 #include "function.hpp"
-#include "symbols.h"
+#include "reserved.h"
 #include "grammar.hpp"
 #include <iostream>
 #include <sstream>
@@ -615,12 +615,22 @@ void Generator::ClearDefinition
 
 bool Generator::CheckReservedNameError(const Token &nameToken)
 {
-    if (AspIsNameReserved(nameToken.s.c_str()))
+    /* Prevent certain reserved names from being used. */
+    int32_t reservedSymbols[] =
     {
-        ostringstream oss;
-        oss << "Cannot redefine reserved name '" << nameToken.s << '\'';
-        ReportError(oss.str(), nameToken);
-        return true;
+        AspReservedSymbol_SystemModule,
+        AspReservedSymbol_SystemArguments,
+        AspReservedSymbol_MainModule,
+    };
+    for (auto symbol: reservedSymbols)
+    {
+        if (nameToken.s == AspReservedName(symbol))
+        {
+            ostringstream oss;
+            oss << "Cannot redefine reserved name '" << nameToken.s << '\'';
+            ReportError(oss.str(), nameToken);
+            return true;
+        }
     }
 
     return false;

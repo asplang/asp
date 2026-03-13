@@ -14,7 +14,7 @@
 #include "assign.h"
 #include "function.h"
 #include "operation.h"
-#include "symbols.h"
+#include "reserved.h"
 #include <string.h>
 #include <stdint.h>
 
@@ -1493,7 +1493,7 @@ static AspRunResult Step(AspEngine *engine)
                         if (AspDataGetType(ns) != DataType_Namespace)
                             return AspRunResult_UnexpectedType;
                         AspTreeResult findResult = AspFindSymbol
-                            (engine, ns, AspClassInitializeSymbol);
+                            (engine, ns, AspReservedSymbol_ClassInitialize);
                         if (findResult.result != AspRunResult_OK)
                             return findResult.result;
                         if (findResult.value != 0)
@@ -1685,10 +1685,11 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_OutOfDataMemory;
 
             /* Add an entry for the system module to the module's namespace. */
-            if (moduleSymbol != AspSystemModuleSymbol)
+            if (moduleSymbol != AspReservedSymbol_SystemModule)
             {
                 AspTreeResult addSystemResult = AspTreeTryInsertBySymbol
-                    (engine, ns, AspSystemModuleSymbol, engine->systemModule);
+                    (engine, ns,
+                     AspReservedSymbol_SystemModule, engine->systemModule);
                 if (addSystemResult.result != AspRunResult_OK)
                     return addSystemResult.result;
             }
@@ -1795,7 +1796,7 @@ static AspRunResult Step(AspEngine *engine)
             /* Set the system __main__ variable to the first loaded module. */
             AspTreeResult mainInsertResult = AspTreeTryInsertBySymbol
                 (engine, engine->systemNamespace,
-                 AspSystemMainModuleSymbol, module);
+                 AspReservedSymbol_MainModule, module);
             if (mainInsertResult.result != AspRunResult_OK)
                 return mainInsertResult.result;
 

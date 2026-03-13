@@ -4,14 +4,14 @@
 
 #include "executable.hpp"
 #include "instruction.hpp"
-#include "symbols.h"
+#include "reserved.h"
 #include <iomanip>
 #include <map>
 #include <string>
 
 using namespace std;
 
-static const string SourceInfoVersion = "\x01";
+static const string SourceInfoVersion = "\x02";
 
 static void WriteItem(ostream &, const string &);
 static void WriteItem(ostream &, uint32_t);
@@ -295,15 +295,15 @@ void Executable::WriteSourceInfo(ostream &os) const
     map<int32_t, string> sortedSymbols;
     for (auto iter = symbolTable.Begin(); iter != symbolTable.End(); iter++)
         sortedSymbols.emplace(iter->second, iter->first);
-    unsigned symbol = 0;
-    for (auto iter = sortedSymbols.begin();
-         iter != sortedSymbols.end(); iter++, symbol++)
+    for (const auto &entry: sortedSymbols)
     {
+        auto symbol = entry.first;
+        const auto &name = entry.second;
+
         // Skip reserved symbols, as their names are already known.
-        if (symbol < AspScriptSymbolBase)
+        if (symbol < AspReservedSymbol_End)
             continue;
 
-        const auto &name = iter->second;
         WriteItem(os, name);
     }
 

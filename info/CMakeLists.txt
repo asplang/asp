@@ -46,9 +46,14 @@ target_compile_definitions(aspd
     )
 
 target_include_directories(aspd PUBLIC
+    "${PROJECT_SOURCE_DIR}"
+    "${reserved_SOURCE_DIR}"
     "${aspe_SOURCE_DIR}"
     "${aspe_BINARY_DIR}"
-    "${PROJECT_SOURCE_DIR}"
+    )
+
+target_link_libraries(aspd PRIVATE
+    reserved
     )
 
 if(WIN32)

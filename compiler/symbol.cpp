@@ -3,7 +3,7 @@
 //
 
 #include "symbol.hpp"
-#include "symbols.h"
+#include "reserved.h"
 #include "word.h"
 #include <sstream>
 #include <utility>
@@ -15,15 +15,26 @@ SymbolTable::SymbolTable(bool reserveSystemSymbols)
     // Reserve symbols used by the system if applicable.
     if (reserveSystemSymbols)
     {
-        Symbol(AspSystemModuleName);
-        Symbol(AspSystemArgumentsName);
-        Symbol(AspSystemMainModuleName);
-        Symbol(AspClassInitializeName);
+        for (const AspReservedNameEntry *entry = AspNextReservedNameEntry(0);
+             entry != 0; entry = AspNextReservedNameEntry(entry))
+        {
+            auto symbol = entry->symbol;
+            auto name = entry->name;
+
+            if (symbol >= AspReservedSymbol_End)
+            {
+                ostringstream oss;
+                oss
+                    << "Internal error: Symbol for reserved name " << name
+                    << " is out of range";
+                throw string(oss.str());
+            }
+
+            symbolsByName.insert(make_pair(name, symbol));
+        }
 
         // Set the next symbol to use for a name.
-        if (nextNamedSymbol > AspScriptSymbolBase)
-            throw string("Internal error: Too many reserved symbols");
-        nextNamedSymbol = AspScriptSymbolBase;
+        nextNamedSymbol = AspReservedSymbol_End;
     }
 }
 

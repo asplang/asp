@@ -3,13 +3,15 @@
  */
 
 #include "asp-info.h"
-#include "symbols.h"
+#include "reserved.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#define AspReservedSymbol_End_v1 3
 
 static bool FinishLoad(AspSourceInfo *);
 static unsigned long ScanSourceFileNames
@@ -277,13 +279,14 @@ const char *AspGetSymbolName
         return 0;
     if (symbol < 0)
         return "";
-    if (symbol == AspSystemModuleSymbol)
-        return AspSystemModuleName;
-    if (symbol == AspSystemArgumentsSymbol)
-        return AspSystemArgumentsName;
-    if (symbol == AspSystemMainModuleSymbol)
-        return AspSystemMainModuleName;
-    symbol -= AspScriptSymbolBase;
+    int32_t reservedSymbolEnd = info->version <= 0x01 ?
+        AspReservedSymbol_End_v1 : AspReservedSymbol_End;
+    if (symbol < reservedSymbolEnd)
+    {
+        const char *reservedName = AspReservedName(symbol);
+        return reservedName == 0 ? "" : reservedName;
+    }
+    symbol -= reservedSymbolEnd;
     for (const char *p = info->symbolNames;
          p < info->data + info->size && *p != '\0';
          p += strlen(p) + 1, symbol--)

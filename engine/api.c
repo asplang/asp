@@ -10,7 +10,7 @@
 #include "iterator.h"
 #include "assign.h"
 #include "function.h"
-#include "symbols.h"
+#include "reserved.h"
 #include "compare.h"
 #include <math.h>
 #include <stdio.h>
@@ -1978,7 +1978,7 @@ bool AspEraseLocal(AspEngine *engine, int32_t symbol)
 AspDataEntry *AspArguments(AspEngine *engine)
 {
     AspTreeResult findResult = AspFindSymbol
-        (engine, engine->systemNamespace, AspSystemArgumentsSymbol);
+        (engine, engine->systemNamespace, AspReservedSymbol_SystemArguments);
     return findResult.value;
 }
 

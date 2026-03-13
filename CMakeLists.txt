@@ -86,6 +86,7 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
         )
 endif()
 
+add_subdirectory(reserved)
 add_subdirectory(engine)
 
 if(BUILD_FOR_HOST)

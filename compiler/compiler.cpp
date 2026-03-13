@@ -9,7 +9,7 @@
 #include "statement.hpp"
 #include "function.hpp"
 #include "instruction.hpp"
-#include "symbols.h"
+#include "reserved.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -29,7 +29,7 @@ Compiler::Compiler
     executable(executable),
     topLocation(executable.Insert(new NullInstruction, NoSourceLocation))
 {
-    appModuleNames.insert(AspSystemModuleName);
+    appModuleNames.insert(AspReservedName(AspReservedSymbol_SystemModule));
 }
 
 void Compiler::LoadApplicationSpec(istream &specStream)
@@ -125,7 +125,7 @@ void Compiler::AddModuleFileName(const string &moduleFileName)
         oss
             << "Cannot use module name '" << moduleName
             << "' which is reserved ";
-        if (moduleName == AspSystemModuleName)
+        if (moduleName == AspReservedName(AspReservedSymbol_SystemModule))
             oss << "for system use";
         else
             oss << "as an application module";

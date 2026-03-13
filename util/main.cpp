@@ -64,7 +64,7 @@ static void Usage()
         << COMMAND_OPTION_PREFIXES[0]
         << "p pc       Translate program counter source location.\n"
         << COMMAND_OPTION_PREFIXES[0]
-        << "s name     Translate symbol number to name.\n"
+        << "s symbol   Translate symbol number to name.\n"
         << COMMAND_OPTION_PREFIXES[0]
         << "v          Print version information and exit.\n";
 }
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
             argIndex++;
         else if (option == "v")
             reportVersion = true;
-        else
+        else if (option != "l")
         {
             cerr << "Invalid option: " << arg << endl;
             return 1;

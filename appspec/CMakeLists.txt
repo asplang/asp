@@ -72,9 +72,14 @@ target_compile_definitions(aspg PRIVATE
 target_include_directories(aspg PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
+    "${reserved_SOURCE_DIR}"
     "${aspc_SOURCE_DIR}"
     "${aspe_BINARY_DIR}"
     "${aspe_SOURCE_DIR}"
+    )
+
+target_link_libraries(aspg PRIVATE
+    reserved
     )
 
 install(TARGETS aspg

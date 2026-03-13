@@ -97,6 +97,7 @@ if(BUILD_FOR_TARGET)
     target_include_directories(aspe PUBLIC
         "${CMAKE_CURRENT_BINARY_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${reserved_SOURCE_DIR}"
         )
 
     add_library(aspm

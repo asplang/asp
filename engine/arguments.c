@@ -3,7 +3,7 @@
  */
 
 #include "asp-priv.h"
-#include "symbols.h"
+#include "reserved.h"
 #include "sequence.h"
 #include "tree.h"
 #include "data.h"
@@ -205,7 +205,7 @@ static AspRunResult InitializeArguments
 
     /* Locate the arguments tuple. */
     AspTreeResult argumentsResult = AspFindSymbol
-        (engine, engine->systemNamespace, AspSystemArgumentsSymbol);
+        (engine, engine->systemNamespace, AspReservedSymbol_SystemArguments);
     if (argumentsResult.result != AspRunResult_OK)
         return argumentsResult.result;
     if (AspDataGetType(argumentsResult.value) != DataType_Tuple)
