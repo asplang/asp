@@ -35,16 +35,16 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
         if (!AspIsObject(entry) || AspDataGetUseCount(entry) == 0)
         {
             uint8_t t = AspDataGetType(entry);
-            if (t == DataType_Boolean)
+            if (t == DataType_Ellipsis)
+            {
+                engine->ellipsisSingleton = 0;
+            }
+            else if (t == DataType_Boolean)
             {
                 AspDataEntry **singleton =
                     AspDataGetBoolean(entry) ?
                     &engine->trueSingleton : &engine->falseSingleton;
                 *singleton = 0;
-            }
-            else if (t == DataType_Ellipsis)
-            {
-                engine->ellipsisSingleton = 0;
             }
             else if (t == DataType_Range)
             {
@@ -154,6 +154,27 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 if (classIndex != 0)
                     AspPushNoUse(engine, AspValueEntry(engine, classIndex));
             }
+            else if (t == DataType_Class)
+            {
+                const AspDataEntry *ns = AspValueEntry
+                    (engine, AspDataGetClassNamespaceIndex(entry));
+                AspPushNoUse(engine, ns);
+
+                uint32_t baseClassIndex = AspDataGetClassBaseClassIndex(entry);
+                if (baseClassIndex != 0)
+                    AspPushNoUse
+                        (engine, AspValueEntry(engine, baseClassIndex));
+            }
+            else if (t == DataType_BoundMethod)
+            {
+                const AspDataEntry *function = AspValueEntry
+                    (engine, AspDataGetBoundMethodFunctionIndex(entry));
+                AspPushNoUse(engine, function);
+
+                const AspDataEntry *object = AspValueEntry
+                    (engine, AspDataGetBoundMethodObjectIndex(entry));
+                AspPushNoUse(engine, object);
+            }
             else if (t == DataType_Function)
             {
                 const AspDataEntry *module = AspValueEntry
@@ -216,27 +237,6 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 }
                 if (info != entry)
                     AspUnref(engine, info);
-            }
-            else if (t == DataType_Class)
-            {
-                const AspDataEntry *ns = AspValueEntry
-                    (engine, AspDataGetClassNamespaceIndex(entry));
-                AspPushNoUse(engine, ns);
-
-                uint32_t baseClassIndex = AspDataGetClassBaseClassIndex(entry);
-                if (baseClassIndex != 0)
-                    AspPushNoUse
-                        (engine, AspValueEntry(engine, baseClassIndex));
-            }
-            else if (t == DataType_BoundMethod)
-            {
-                const AspDataEntry *function = AspValueEntry
-                    (engine, AspDataGetBoundMethodFunctionIndex(entry));
-                AspPushNoUse(engine, function);
-
-                const AspDataEntry *object = AspValueEntry
-                    (engine, AspDataGetBoundMethodObjectIndex(entry));
-                AspPushNoUse(engine, object);
             }
             else if (t == DataType_Frame)
             {

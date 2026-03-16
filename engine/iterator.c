@@ -141,15 +141,15 @@ AspIteratorResult AspIteratorCreate
 
         case DataType_Ellipsis:
         case DataType_Object:
-        case DataType_Module:
         case DataType_Class:
+        case DataType_Module:
             iterable =
                 iterableType == DataType_Object ?
                 AspEntry(engine, AspDataGetObjectNamespaceIndex(iterable)) :
-                iterableType == DataType_Module ?
-                AspEntry(engine, AspDataGetModuleNamespaceIndex(iterable)) :
                 iterableType == DataType_Class ?
                 AspEntry(engine, AspDataGetClassNamespaceIndex(iterable)) :
+                iterableType == DataType_Module ?
+                AspEntry(engine, AspDataGetModuleNamespaceIndex(iterable)) :
                 engine->localNamespace;
 
             /* Store the underlying namespace for local scope iterators so that
@@ -342,16 +342,16 @@ AspRunResult AspIteratorNext
 
         case DataType_Ellipsis:
         case DataType_Object:
-        case DataType_Module:
         case DataType_Class:
+        case DataType_Module:
             iterable = AspEntry
                 (engine,
                  iterableType == DataType_Object ?
                  AspDataGetObjectNamespaceIndex(iterable) :
-                 iterableType == DataType_Module ?
-                 AspDataGetModuleNamespaceIndex(iterable) :
                  iterableType == DataType_Class ?
                  AspDataGetClassNamespaceIndex(iterable) :
+                 iterableType == DataType_Module ?
+                 AspDataGetModuleNamespaceIndex(iterable) :
                  AspDataGetIteratorCollectionIndex(iterator));
 
             /* Disallow a local scope iterator from being manipulated outside
@@ -495,16 +495,16 @@ AspIteratorResult AspIteratorDereference
 
         case DataType_Ellipsis:
         case DataType_Object:
-        case DataType_Module:
         case DataType_Class:
+        case DataType_Module:
             iterable = AspEntry
                 (engine,
                  iterableType == DataType_Object ?
                  AspDataGetObjectNamespaceIndex(iterable) :
-                 iterableType == DataType_Module ?
-                 AspDataGetModuleNamespaceIndex(iterable) :
                  iterableType == DataType_Class ?
                  AspDataGetClassNamespaceIndex(iterable) :
+                 iterableType == DataType_Module ?
+                 AspDataGetModuleNamespaceIndex(iterable) :
                  AspDataGetIteratorCollectionIndex(iterator));
 
             /* Disallow a local scope iterator from being used outside the

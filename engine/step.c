@@ -1048,8 +1048,8 @@ static AspRunResult Step(AspEngine *engine)
                 }
 
                 case DataType_Object:
-                case DataType_Module:
                 case DataType_Class:
+                case DataType_Module:
                 {
                     /* Access the underlying namespace. */
                     AspDataEntry *ns = AspEntry

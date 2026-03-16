@@ -35,15 +35,15 @@ typedef enum
     DataType_Set = 0x0B,
     DataType_Dictionary = 0x0D,
     DataType_Object = 0x0E,
-    DataType_Function = 0x0F,
-    DataType_Module = 0x10,
-    DataType_ReverseIterator = 0x15,
-    DataType_ForwardIterator = 0x16,
-    DataType_AppIntegerObject = 0x1A,
-    DataType_AppPointerObject = 0x1B,
     DataType_Class = 0x1C,
     DataType_BoundMethod = 0x1D,
-    DataType_Type = 0x1F,
+    DataType_Function = 0x1F,
+    DataType_Module = 0x20,
+    DataType_ReverseIterator = 0x25,
+    DataType_ForwardIterator = 0x26,
+    DataType_AppIntegerObject = 0x2A,
+    DataType_AppPointerObject = 0x2B,
+    DataType_Type = 0x2F,
     DataType_ObjectMask = 0x3F,
 
     /* Support types. */
@@ -296,6 +296,26 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataGetFunctionParametersIndex(eptr) \
     (AspDataGetWord3((eptr)))
 
+/* Class entry field access. */
+#define AspDataSetClassBaseClassIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetClassBaseClassIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetClassNamespaceIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetClassNamespaceIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+
+/* Bound method entry field access. */
+#define AspDataSetBoundMethodFunctionIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetBoundMethodFunctionIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetBoundMethodObjectIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetBoundMethodObjectIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+
 /* Module entry field access. */
 #define AspDataSetModuleIsApp(eptr, value) \
     (AspDataSetBit1((eptr), (unsigned)(value)))
@@ -350,26 +370,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     ((eptr)->w.u.fp = (value))
 #define AspDataGetAppPointerObjectDestructor(eptr) \
     ((eptr)->w.u.fp)
-
-/* Class entry field access. */
-#define AspDataSetClassBaseClassIndex(eptr, value) \
-    (AspDataSetWord0((eptr), (value)))
-#define AspDataGetClassBaseClassIndex(eptr) \
-    (AspDataGetWord0((eptr)))
-#define AspDataSetClassNamespaceIndex(eptr, value) \
-    (AspDataSetWord1((eptr), (value)))
-#define AspDataGetClassNamespaceIndex(eptr) \
-    (AspDataGetWord1((eptr)))
-
-/* Bound method entry field access. */
-#define AspDataSetBoundMethodFunctionIndex(eptr, value) \
-    (AspDataSetWord0((eptr), (value)))
-#define AspDataGetBoundMethodFunctionIndex(eptr) \
-    (AspDataGetWord0((eptr)))
-#define AspDataSetBoundMethodObjectIndex(eptr, value) \
-    (AspDataSetWord1((eptr), (value)))
-#define AspDataGetBoundMethodObjectIndex(eptr) \
-    (AspDataGetWord1((eptr)))
 
 /* Type entry field access. */
 #define AspDataSetTypeValue(eptr, value) \

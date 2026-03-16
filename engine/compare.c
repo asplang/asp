@@ -111,15 +111,15 @@ AspRunResult AspCompare
                         type == DataType_Range ||
                         type == DataType_Set ||
                         type == DataType_Dictionary ||
-                        type == DataType_ReverseIterator ||
-                        type == DataType_ForwardIterator ||
-                        type == DataType_Function ||
                         type == DataType_Object ||
-                        type == DataType_Module ||
-                        type == DataType_AppIntegerObject ||
-                        type == DataType_AppPointerObject ||
                         type == DataType_Class ||
                         type == DataType_BoundMethod ||
+                        type == DataType_Function ||
+                        type == DataType_Module ||
+                        type == DataType_ReverseIterator ||
+                        type == DataType_ForwardIterator ||
+                        type == DataType_AppIntegerObject ||
+                        type == DataType_AppPointerObject ||
                         type == DataType_Type)
                         return AspRunResult_UnexpectedType;
                     break;
@@ -377,48 +377,6 @@ AspRunResult AspCompare
                         break;
                     }
 
-                    case DataType_ReverseIterator:
-                    case DataType_ForwardIterator:
-                    {
-                        /* Iterators are only ever tested for equality. */
-                        comparison = CompareIterators
-                            (engine, leftEntry, rightEntry);
-                        break;
-                    }
-
-                    case DataType_Function:
-                    {
-                        bool
-                            leftIsApp = AspDataGetFunctionIsApp(leftEntry),
-                            rightIsApp = AspDataGetFunctionIsApp(rightEntry);
-                        if (leftIsApp != rightIsApp)
-                            comparison = leftIsApp < rightIsApp ? -1 : 1;
-                        else if (leftIsApp)
-                        {
-                            int32_t
-                                leftSymbol = AspDataGetFunctionSymbol
-                                    (leftEntry),
-                                rightSymbol = AspDataGetFunctionSymbol
-                                    (rightEntry);
-                            comparison =
-                                leftSymbol == rightSymbol ? 0 :
-                                leftSymbol < rightSymbol ? -1 : 1;
-                        }
-                        else
-                        {
-                            uint32_t
-                                leftAddress = AspDataGetFunctionCodeAddress
-                                    (leftEntry),
-                                rightAddress = AspDataGetFunctionCodeAddress
-                                    (rightEntry);
-                            comparison =
-                                leftAddress == rightAddress ? 0 :
-                                leftAddress < rightAddress ? -1 : 1;
-                        }
-
-                        break;
-                    }
-
                     case DataType_Object:
                     {
                         uint32_t
@@ -429,55 +387,6 @@ AspRunResult AspCompare
                         comparison =
                             leftValue == rightValue ? 0 :
                             leftValue < rightValue ? -1 : 1;
-                        break;
-                    }
-
-                    case DataType_Module:
-                    {
-                        uint32_t
-                            leftValue = AspDataGetModuleCodeAddress
-                                (leftEntry),
-                            rightValue = AspDataGetModuleCodeAddress
-                                (rightEntry);
-                        comparison =
-                            leftValue == rightValue ? 0 :
-                            leftValue < rightValue ? -1 : 1;
-                        break;
-                    }
-
-                    case DataType_AppIntegerObject:
-                    {
-                        int16_t
-                            leftType = AspDataGetAppObjectType(leftEntry),
-                            rightType = AspDataGetAppObjectType(rightEntry);
-                        int32_t
-                            leftValue = AspDataGetAppIntegerObjectValue
-                                (leftEntry),
-                            rightValue = AspDataGetAppIntegerObjectValue
-                                (rightEntry);
-                        comparison =
-                            leftType == rightType ?
-                            leftValue == rightValue ? 0 :
-                            leftValue < rightValue ? -1 : 1 :
-                            leftType < rightType ? -1 : 1;
-                        break;
-                    }
-
-                    case DataType_AppPointerObject:
-                    {
-                        int16_t
-                            leftType = AspDataGetAppObjectType(leftEntry),
-                            rightType = AspDataGetAppObjectType(rightEntry);
-                        const void
-                            *leftValue = AspDataGetAppPointerObjectValue
-                                (leftEntry),
-                            *rightValue = AspDataGetAppPointerObjectValue
-                                (rightEntry);
-                        comparison =
-                            leftType == rightType ?
-                            leftValue == rightValue ? 0 :
-                            leftValue < rightValue ? -1 : 1 :
-                            leftType < rightType ? -1 : 1;
                         break;
                     }
 
@@ -516,6 +425,97 @@ AspRunResult AspCompare
                             leftObjectIndex == rightObjectIndex ? 0 :
                             leftObjectIndex < rightObjectIndex ? -1 : 1 :
                             leftFunctionIndex < rightFunctionIndex ? -1 : 1;
+                        break;
+                    }
+
+                    case DataType_Function:
+                    {
+                        bool
+                            leftIsApp = AspDataGetFunctionIsApp(leftEntry),
+                            rightIsApp = AspDataGetFunctionIsApp(rightEntry);
+                        if (leftIsApp != rightIsApp)
+                            comparison = leftIsApp < rightIsApp ? -1 : 1;
+                        else if (leftIsApp)
+                        {
+                            int32_t
+                                leftSymbol = AspDataGetFunctionSymbol
+                                    (leftEntry),
+                                rightSymbol = AspDataGetFunctionSymbol
+                                    (rightEntry);
+                            comparison =
+                                leftSymbol == rightSymbol ? 0 :
+                                leftSymbol < rightSymbol ? -1 : 1;
+                        }
+                        else
+                        {
+                            uint32_t
+                                leftAddress = AspDataGetFunctionCodeAddress
+                                    (leftEntry),
+                                rightAddress = AspDataGetFunctionCodeAddress
+                                    (rightEntry);
+                            comparison =
+                                leftAddress == rightAddress ? 0 :
+                                leftAddress < rightAddress ? -1 : 1;
+                        }
+
+                        break;
+                    }
+
+                    case DataType_Module:
+                    {
+                        uint32_t
+                            leftValue = AspDataGetModuleCodeAddress
+                                (leftEntry),
+                            rightValue = AspDataGetModuleCodeAddress
+                                (rightEntry);
+                        comparison =
+                            leftValue == rightValue ? 0 :
+                            leftValue < rightValue ? -1 : 1;
+                        break;
+                    }
+
+                    case DataType_ReverseIterator:
+                    case DataType_ForwardIterator:
+                    {
+                        /* Iterators are only ever tested for equality. */
+                        comparison = CompareIterators
+                            (engine, leftEntry, rightEntry);
+                        break;
+                    }
+
+                    case DataType_AppIntegerObject:
+                    {
+                        int16_t
+                            leftType = AspDataGetAppObjectType(leftEntry),
+                            rightType = AspDataGetAppObjectType(rightEntry);
+                        int32_t
+                            leftValue = AspDataGetAppIntegerObjectValue
+                                (leftEntry),
+                            rightValue = AspDataGetAppIntegerObjectValue
+                                (rightEntry);
+                        comparison =
+                            leftType == rightType ?
+                            leftValue == rightValue ? 0 :
+                            leftValue < rightValue ? -1 : 1 :
+                            leftType < rightType ? -1 : 1;
+                        break;
+                    }
+
+                    case DataType_AppPointerObject:
+                    {
+                        int16_t
+                            leftType = AspDataGetAppObjectType(leftEntry),
+                            rightType = AspDataGetAppObjectType(rightEntry);
+                        const void
+                            *leftValue = AspDataGetAppPointerObjectValue
+                                (leftEntry),
+                            *rightValue = AspDataGetAppPointerObjectValue
+                                (rightEntry);
+                        comparison =
+                            leftType == rightType ?
+                            leftValue == rightValue ? 0 :
+                            leftValue < rightValue ? -1 : 1 :
+                            leftType < rightType ? -1 : 1;
                         break;
                     }
 

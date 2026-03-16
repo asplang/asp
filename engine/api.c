@@ -151,6 +151,16 @@ bool AspIsClassInstance(const AspDataEntry *entry)
         AspDataGetObjectClassIndex(entry) != 0;
 }
 
+bool AspIsClass(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Class;
+}
+
+bool AspIsBoundMethod(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_BoundMethod;
+}
+
 bool AspIsFunction(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Function;
@@ -161,14 +171,14 @@ bool AspIsModule(const AspDataEntry *entry)
     return entry != 0 && AspDataGetType(entry) == DataType_Module;
 }
 
-bool AspIsForwardIterator(const AspDataEntry *entry)
-{
-    return entry != 0 && AspDataGetType(entry) == DataType_ForwardIterator;
-}
-
 bool AspIsReverseIterator(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_ReverseIterator;
+}
+
+bool AspIsForwardIterator(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_ForwardIterator;
 }
 
 bool AspIsIterator(const AspDataEntry *entry)
@@ -176,8 +186,8 @@ bool AspIsIterator(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        (type == DataType_ForwardIterator ||
-         type == DataType_ReverseIterator);
+        (type == DataType_ReverseIterator ||
+         type == DataType_ForwardIterator);
 }
 
 bool AspIsIterable(const AspDataEntry *entry)
@@ -193,8 +203,8 @@ bool AspIsIterable(const AspDataEntry *entry)
          type == DataType_Set ||
          type == DataType_Dictionary ||
          type == DataType_Object ||
-         type == DataType_Module ||
-         type == DataType_Class);
+         type == DataType_Class ||
+         type == DataType_Module);
 }
 
 bool AspIsAppIntegerObject(const AspDataEntry *entry)
@@ -214,16 +224,6 @@ bool AspIsAppObject(const AspDataEntry *entry)
         entry != 0 &&
         (type == DataType_AppIntegerObject ||
          type == DataType_AppPointerObject);
-}
-
-bool AspIsClass(const AspDataEntry *entry)
-{
-    return entry != 0 && AspDataGetType(entry) == DataType_Class;
-}
-
-bool AspIsBoundMethod(const AspDataEntry *entry)
-{
-    return entry != 0 && AspDataGetType(entry) == DataType_BoundMethod;
 }
 
 bool AspIsType(const AspDataEntry *entry)

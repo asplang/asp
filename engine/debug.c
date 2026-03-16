@@ -136,14 +136,14 @@ static TypeName gTypeNames[] =
     {DataType_Set, "set"},
     {DataType_Dictionary, "dict"},
     {DataType_Object, "obj"},
+    {DataType_Class, "class"},
+    {DataType_BoundMethod, "method"},
     {DataType_Function, "func"},
     {DataType_Module, "mod"},
     {DataType_ReverseIterator, "iter-rev"},
     {DataType_ForwardIterator, "iter"},
     {DataType_AppIntegerObject, "app-int"},
     {DataType_AppPointerObject, "app-ptr"},
-    {DataType_Class, "class"},
-    {DataType_BoundMethod, "method"},
     {DataType_Type, "type"},
 
     /* Support types. */
@@ -183,6 +183,15 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
     uint8_t t = AspDataGetType(entry);
     fprintf(fp, "0x%07X: t=0x%02X", index, t);
     TypeName keyTypeName = {t, ""};
+    static bool first = true;
+    if (first)
+    {
+        first = false;
+        qsort
+            (gTypeNames,
+             sizeof gTypeNames / sizeof *gTypeNames, sizeof *gTypeNames,
+             CompareTypeNames);
+    }
     const TypeName *nameEntry = (TypeName *)bsearch
         (&keyTypeName, gTypeNames,
          sizeof gTypeNames / sizeof *gTypeNames, sizeof *gTypeNames,
@@ -245,6 +254,22 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fprintf(fp, " class=0x%07X", classIndex);
             break;
         }
+
+        case DataType_Class:
+        {
+            fprintf(fp, " ns=0x%07X",
+                AspDataGetClassNamespaceIndex(entry));
+            uint32_t baseClassIndex = AspDataGetClassBaseClassIndex(entry);
+            if (baseClassIndex)
+                fprintf(fp, " base=0x%07X", baseClassIndex);
+            break;
+        }
+
+        case DataType_BoundMethod:
+            fprintf(fp, " func=0x%07X obj=0x%07X",
+                AspDataGetBoundMethodFunctionIndex(entry),
+                AspDataGetBoundMethodObjectIndex(entry));
+            break;
 
         case DataType_Function:
             if (AspDataGetFunctionIsApp(entry))
@@ -324,22 +349,6 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fprintf(fp, "%p", u.vp);
             }
             #endif
-            break;
-
-        case DataType_Class:
-        {
-            fprintf(fp, " ns=0x%07X",
-                AspDataGetClassNamespaceIndex(entry));
-            uint32_t baseClassIndex = AspDataGetClassBaseClassIndex(entry);
-            if (baseClassIndex)
-                fprintf(fp, " base=0x%07X", baseClassIndex);
-            break;
-        }
-
-        case DataType_BoundMethod:
-            fprintf(fp, " func=0x%07X obj=0x%07X",
-                AspDataGetBoundMethodFunctionIndex(entry),
-                AspDataGetBoundMethodObjectIndex(entry));
             break;
 
         case DataType_Type:
