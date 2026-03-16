@@ -49,8 +49,9 @@ if(BUILD_FOR_TARGET)
         code.c
         data.c
         ref.c
-        range.c
         stack.c
+        range.c
+        string.c
         sequence.c
         tree.c
         iterator.c

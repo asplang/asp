@@ -132,7 +132,9 @@ ASP_API void AspTraceFile(AspEngine *, FILE *);
 ASP_API void AspDump(const AspEngine *, FILE *);
 #endif
 
-/* API for use by application functions. */
+/* API for use by application functions... */
+
+/* API functions for type checking. */
 ASP_API bool AspIsNone(const AspDataEntry *);
 ASP_API bool AspIsEllipsis(const AspDataEntry *);
 ASP_API bool AspIsBoolean(const AspDataEntry *);
@@ -164,6 +166,8 @@ ASP_API bool AspIsClass(const AspDataEntry *);
 ASP_API bool AspIsBoundMethod(const AspDataEntry *);
 ASP_API bool AspIsType(const AspDataEntry *);
 ASP_API bool AspIsTrue(AspEngine *, const AspDataEntry *);
+
+/* API functions for value extraction. */
 ASP_API bool AspIntegerValue(const AspDataEntry *, int32_t *);
 ASP_API bool AspFloatValue(const AspDataEntry *, double *);
 ASP_API bool AspSymbolValue(const AspDataEntry *, int32_t *);
@@ -173,8 +177,18 @@ ASP_API bool AspRangeValues
 ASP_API bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);
+ASP_API bool AspAppObjectTypeValue
+    (AspEngine *, const AspDataEntry *, int16_t *);
+ASP_API bool AspAppIntegerObjectValues
+    (AspEngine *, const AspDataEntry *, int16_t *appType, int32_t *value);
+ASP_API bool AspAppPointerObjectValues
+    (AspEngine *, const AspDataEntry *, int16_t *appType, void **value);
+
+/* API functions for conversion to string. */
 ASP_API AspDataEntry *AspToString(AspEngine *, AspDataEntry *);
 ASP_API AspDataEntry *AspToRepr(AspEngine *, const AspDataEntry *);
+
+/* API functions for collection information. */
 ASP_API AspRunResult AspCount
     (AspEngine *, const AspDataEntry *, int32_t *count);
 ASP_API AspDataEntry *AspElement
@@ -193,12 +207,8 @@ ASP_API bool AspAtSame
      const AspDataEntry *iterator1, const AspDataEntry *iterator2);
 ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
 ASP_API AspDataEntry *AspIterable(AspEngine *, const AspDataEntry *iterator);
-ASP_API bool AspAppObjectTypeValue
-    (AspEngine *, const AspDataEntry *, int16_t *);
-ASP_API bool AspAppIntegerObjectValues
-    (AspEngine *, const AspDataEntry *, int16_t *appType, int32_t *value);
-ASP_API bool AspAppPointerObjectValues
-    (AspEngine *, const AspDataEntry *, int16_t *appType, void **value);
+
+/* API functions for object creation. */
 ASP_API AspDataEntry *AspNewNone(AspEngine *);
 ASP_API AspDataEntry *AspNewEllipsis(AspEngine *);
 ASP_API AspDataEntry *AspNewBoolean(AspEngine *, bool);
@@ -225,6 +235,8 @@ ASP_API AspDataEntry *AspNewAppPointerObject
     (AspEngine *, int16_t appType, void *value,
      void (*destructor)(AspEngine *, int16_t appType, void *value));
 ASP_API AspDataEntry *AspNewType(AspEngine *, const AspDataEntry *);
+
+/* API functions for sequence manipulation. */
 ASP_API bool AspTupleAppend
     (AspEngine *, AspDataEntry *tuple, AspDataEntry *value, bool take);
 ASP_API bool AspListAppend
@@ -236,9 +248,13 @@ ASP_API bool AspListErase(AspEngine *, AspDataEntry *list, int32_t index);
 ASP_API bool AspInsertAt
     (AspEngine *, AspDataEntry *iterator, AspDataEntry *value, bool take);
 ASP_API bool AspEraseAt(AspEngine *, AspDataEntry *iterator);
+
+/* API function for building strings. */
 ASP_API bool AspStringAppend
     (AspEngine *, AspDataEntry *str,
      const char *buffer, size_t bufferSize);
+
+/* API functions for set, dictionary, object, and module manipulation. */
 ASP_API bool AspSetInsert
     (AspEngine *, AspDataEntry *set, AspDataEntry *key, bool take);
 ASP_API bool AspSetErase
@@ -253,6 +269,18 @@ ASP_API bool AspObjectInsert
      int32_t symbol, AspDataEntry *value, bool take);
 ASP_API bool AspObjectErase
     (AspEngine *, AspDataEntry *object, int32_t symbol);
+
+/* API functions for reference counting. */
+ASP_API void AspRef(AspEngine *, AspDataEntry *);
+ASP_API void AspUnref(AspEngine *, AspDataEntry *);
+
+/* API function for script arguments access. */
+ASP_API AspDataEntry *AspArguments(AspEngine *);
+ASP_API void *AspContext(const AspEngine *);
+ASP_API bool AspAgain(const AspEngine *);
+ASP_API AspRunResult AspAssert(AspEngine *, bool);
+
+/* API functions for calling script functions from application functions. */
 ASP_API bool AspAddPositionalArgument
     (AspEngine *, AspDataEntry *value, bool take);
 ASP_API bool AspAddNamedArgument
@@ -269,12 +297,6 @@ ASP_API AspDataEntry *AspLoadLocal(AspEngine *, int32_t symbol);
 ASP_API bool AspStoreLocal
     (AspEngine *, int32_t symbol, AspDataEntry *value, bool take);
 ASP_API bool AspEraseLocal(AspEngine *, int32_t symbol);
-ASP_API void AspRef(AspEngine *, AspDataEntry *);
-ASP_API void AspUnref(AspEngine *, AspDataEntry *);
-ASP_API AspDataEntry *AspArguments(AspEngine *);
-ASP_API void *AspContext(const AspEngine *);
-ASP_API bool AspAgain(const AspEngine *);
-ASP_API AspRunResult AspAssert(AspEngine *, bool);
 
 #ifdef __cplusplus
 }

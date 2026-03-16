@@ -40,6 +40,8 @@ AspSequenceResult AspSequenceNext
      const AspDataEntry *element, bool right);
 AspRunResult AspStringAppendBuffer
     (AspEngine *, AspDataEntry *str, const char *buffer, size_t bufferSize);
+AspRunResult AspStringIndex
+    (AspEngine *engine, const AspDataEntry *str, int32_t index, char *c);
 
 #ifdef __cplusplus
 }

@@ -348,6 +348,57 @@ AspRunResult AspStringAppendBuffer
     return result;
 }
 
+AspRunResult AspStringIndex
+    (AspEngine *engine, const AspDataEntry *str, int32_t index, char *c)
+{
+    AspRunResult result = AspRunResult_OK;
+
+    result = AspAssert
+        (engine, str != 0 && AspDataGetType(str) == DataType_String);
+    if (result != AspRunResult_OK)
+        return result;
+
+    if (c != 0)
+        *c = '\0';
+
+    /* Treat negative indices as counting backwards from the end. */
+    if (index < 0)
+    {
+        index += AspDataGetSequenceCount(str);
+        if (index < 0)
+            return AspRunResult_ValueOutOfRange;
+    }
+
+    /* Locate the character within the applicable fragment. */
+    AspSequenceResult nextResult = AspSequenceNext(engine, str, 0, true);
+    uint32_t iterationCount = 0;
+    for (;
+         iterationCount < engine->cycleDetectionLimit &&
+         nextResult.element != 0;
+         iterationCount++,
+         nextResult = AspSequenceNext(engine, str, nextResult.element, true))
+    {
+        AspDataEntry *fragment = nextResult.value;
+        uint32_t uFragmentSize = AspDataGetStringFragmentSize(fragment);
+        int32_t fragmentSize = *(int32_t *)&uFragmentSize;
+        if (index >= fragmentSize)
+        {
+            index -= fragmentSize;
+            continue;
+        }
+
+        const uint8_t *stringData = (const uint8_t *)
+            AspDataGetStringFragmentData(fragment);
+        if (c != 0)
+            *c = (char)stringData[index];
+        break;
+    }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
+
+    return result;
+}
+
 static bool IsSequenceType(DataType type)
 {
     return
