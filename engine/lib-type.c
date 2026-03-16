@@ -21,6 +21,14 @@ ASP_LIB_API AspRunResult AspLib_type
      AspDataEntry *object,
      AspDataEntry **returnValue)
 {
+    /* For class instances, return the class. */
+    if (AspIsClassInstance(object))
+    {
+        *returnValue = AspInstanceClass(engine, object);
+        AspRef(engine, *returnValue);
+        return AspRunResult_OK;
+    }
+
     AspDataEntry *typeEntry = AspAllocEntry(engine, DataType_Type);
     if (typeEntry == 0)
         return AspRunResult_OutOfDataMemory;

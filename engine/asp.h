@@ -207,6 +207,8 @@ ASP_API bool AspAtSame
      const AspDataEntry *iterator1, const AspDataEntry *iterator2);
 ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
 ASP_API AspDataEntry *AspIterable(AspEngine *, const AspDataEntry *iterator);
+ASP_API AspDataEntry *AspInstanceClass
+    (AspEngine *, const AspDataEntry *instance);
 
 /* API functions for object creation. */
 ASP_API AspDataEntry *AspNewNone(AspEngine *);

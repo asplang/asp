@@ -144,7 +144,7 @@ bool AspIsSimpleObject(const AspDataEntry *entry)
         AspDataGetObjectClassIndex(entry) == 0;
 }
 
-bool AspIsClassInstruction(const AspDataEntry *entry)
+bool AspIsClassInstance(const AspDataEntry *entry)
 {
     return
         entry != 0 && AspDataGetType(entry) == DataType_Object &&
@@ -560,6 +560,15 @@ AspDataEntry *AspIterable(AspEngine *engine, const AspDataEntry *iterator)
         return 0;
     return AspValueEntry
         (engine, AspDataGetIteratorIterableIndex(iterator));
+}
+
+ASP_API AspDataEntry *AspInstanceClass
+    (AspEngine *engine, const AspDataEntry *instance)
+{
+    if (!AspIsClassInstance(instance))
+        return 0;
+    return AspValueEntry
+        (engine, AspDataGetObjectClassIndex(instance));
 }
 
 AspDataEntry *AspNewNone(AspEngine *engine)
