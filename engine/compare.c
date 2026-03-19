@@ -114,6 +114,7 @@ AspRunResult AspCompare
                         type == DataType_Object ||
                         type == DataType_Class ||
                         type == DataType_BoundMethod ||
+                        type == DataType_Super ||
                         type == DataType_Function ||
                         type == DataType_Module ||
                         type == DataType_ReverseIterator ||
@@ -380,13 +381,13 @@ AspRunResult AspCompare
                     case DataType_Object:
                     {
                         uint32_t
-                            leftValue = AspDataGetObjectNamespaceIndex
+                            leftNamespaceIndex = AspDataGetObjectNamespaceIndex
                                 (leftEntry),
-                            rightValue = AspDataGetObjectNamespaceIndex
+                            rightNamespaceIndex = AspDataGetObjectNamespaceIndex
                                 (rightEntry);
                         comparison =
-                            leftValue == rightValue ? 0 :
-                            leftValue < rightValue ? -1 : 1;
+                            leftNamespaceIndex == rightNamespaceIndex ? 0 :
+                            leftNamespaceIndex < rightNamespaceIndex ? -1 : 1;
                         break;
                     }
 
@@ -396,15 +397,9 @@ AspRunResult AspCompare
                             leftNamespaceIndex = AspDataGetClassNamespaceIndex
                                 (leftEntry),
                             rightNamespaceIndex = AspDataGetClassNamespaceIndex
-                                (rightEntry),
-                            leftBaseClassIndex = AspDataGetClassBaseClassIndex
-                                (leftEntry),
-                            rightBaseClassIndex = AspDataGetClassBaseClassIndex
                                 (rightEntry);
                         comparison =
-                            leftNamespaceIndex == rightNamespaceIndex ?
-                            leftBaseClassIndex == rightBaseClassIndex ? 0 :
-                            leftBaseClassIndex < rightBaseClassIndex ? -1 : 1 :
+                            leftNamespaceIndex == rightNamespaceIndex ? 0 :
                             leftNamespaceIndex < rightNamespaceIndex ? -1 : 1;
                         break;
                     }
@@ -416,15 +411,40 @@ AspRunResult AspCompare
                                 AspDataGetBoundMethodFunctionIndex(leftEntry),
                             rightFunctionIndex =
                                 AspDataGetBoundMethodFunctionIndex(rightEntry),
-                            leftObjectIndex =
-                                AspDataGetBoundMethodObjectIndex(leftEntry),
-                            rightObjectIndex =
-                                AspDataGetBoundMethodObjectIndex(rightEntry),
+                            leftInstanceIndex =
+                                AspDataGetBoundMethodInstanceIndex(leftEntry),
+                            rightInstanceIndex =
+                                AspDataGetBoundMethodInstanceIndex(rightEntry),
+                            leftClassIndex =
+                                AspDataGetBoundMethodClassIndex(leftEntry),
+                            rightClassIndex =
+                                AspDataGetBoundMethodClassIndex(rightEntry);
                         comparison =
                             leftFunctionIndex == rightFunctionIndex ?
-                            leftObjectIndex == rightObjectIndex ? 0 :
-                            leftObjectIndex < rightObjectIndex ? -1 : 1 :
+                            leftInstanceIndex == rightInstanceIndex ?
+                            leftClassIndex == rightClassIndex ? 0 :
+                            leftClassIndex < rightClassIndex ? -1 : 1 :
+                            leftInstanceIndex < rightInstanceIndex ? -1 : 1 :
                             leftFunctionIndex < rightFunctionIndex ? -1 : 1;
+                        break;
+                    }
+
+                    case DataType_Super:
+                    {
+                        uint32_t
+                            leftClassIndex =
+                                AspDataGetSuperClassIndex(leftEntry),
+                            rightClassIndex =
+                                AspDataGetSuperClassIndex(rightEntry),
+                            leftInstanceIndex =
+                                AspDataGetSuperInstanceIndex(leftEntry),
+                            rightInstanceIndex =
+                                AspDataGetSuperInstanceIndex(rightEntry);
+                        comparison =
+                            leftClassIndex == rightClassIndex ?
+                            leftInstanceIndex == rightInstanceIndex ? 0 :
+                            leftInstanceIndex < rightInstanceIndex ? -1 : 1 :
+                            leftClassIndex < rightClassIndex ? -1 : 1;
                         break;
                     }
 

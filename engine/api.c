@@ -161,6 +161,11 @@ bool AspIsBoundMethod(const AspDataEntry *entry)
     return entry != 0 && AspDataGetType(entry) == DataType_BoundMethod;
 }
 
+bool AspIsSuper(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Super;
+}
+
 bool AspIsFunction(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Function;
@@ -275,6 +280,37 @@ bool AspIsTrue(AspEngine *engine, const AspDataEntry *entry)
 
         case DataType_Type:
             return AspDataGetTypeValue(entry) != DataType_None;
+    }
+}
+
+bool AspIsTypeOf
+    (AspEngine *engine, const AspDataEntry *object, const AspDataEntry *type)
+{
+    if (AspIsClassInstance(object) && AspIsClass(type))
+    {
+        uint32_t classIndex = AspIndex(engine, type);
+        uint32_t iterationCount = 0;
+        for (uint32_t objectClassIndex = AspDataGetObjectClassIndex(object);
+             iterationCount < engine->cycleDetectionLimit;
+             iterationCount++,
+             objectClassIndex = AspDataGetClassBaseClassIndex
+                (AspValueEntry(engine, objectClassIndex)))
+        {
+            if (objectClassIndex == 0)
+                break;
+            if (objectClassIndex == classIndex)
+                return true;
+        }
+        if (iterationCount >= engine->cycleDetectionLimit)
+            return AspRunResult_CycleDetected;
+
+        return false;
+    }
+    else
+    {
+        return
+            AspIsType(type) &&
+            AspDataGetType(object) == AspDataGetTypeValue(type);
     }
 }
 
@@ -1197,7 +1233,7 @@ AspRunResult AspCall
     /* Consume the argument list and call the function. */
     AspDataEntry *argumentList = engine->argumentList;
     engine->argumentList = 0;
-    return AspCallFunction(engine, function, argumentList, true, 0);
+    return AspCallFunction(engine, function, argumentList, true, 0, 0);
 }
 
 AspRunResult AspReturnValue(AspEngine *engine, AspDataEntry **returnValue)

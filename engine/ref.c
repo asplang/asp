@@ -171,9 +171,23 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     (engine, AspDataGetBoundMethodFunctionIndex(entry));
                 AspPushNoUse(engine, function);
 
-                const AspDataEntry *object = AspValueEntry
-                    (engine, AspDataGetBoundMethodObjectIndex(entry));
-                AspPushNoUse(engine, object);
+                const AspDataEntry *instance = AspValueEntry
+                    (engine, AspDataGetBoundMethodInstanceIndex(entry));
+                AspPushNoUse(engine, instance);
+
+                const AspDataEntry *cls = AspValueEntry
+                    (engine, AspDataGetBoundMethodClassIndex(entry));
+                AspPushNoUse(engine, cls);
+            }
+            else if (t == DataType_Super)
+            {
+                const AspDataEntry *cls = AspValueEntry
+                    (engine, AspDataGetSuperClassIndex(entry));
+                AspPushNoUse(engine, cls);
+
+                const AspDataEntry *instance = AspValueEntry
+                    (engine, AspDataGetSuperInstanceIndex(entry));
+                AspPushNoUse(engine, instance);
             }
             else if (t == DataType_Function)
             {
@@ -244,10 +258,21 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     (engine, AspDataGetFrameModuleIndex(entry));
                 AspPushNoUse(engine, module);
 
-                uint32_t objectIndex = AspDataGetFrameObjectIndex(entry);
-                if (objectIndex != 0)
-                    AspPushNoUse
-                        (engine, AspValueEntry(engine, objectIndex));
+                uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
+                if (contextIndex != 0)
+                {
+                    AspDataEntry *context = AspEntry(engine, contextIndex);
+
+                    const AspDataEntry *cls = AspValueEntry
+                        (engine, AspDataGetContextClassIndex(context));
+                    AspPushNoUse(engine, cls);
+
+                    const AspDataEntry *instance = AspValueEntry
+                        (engine, AspDataGetContextInstanceIndex(context));
+                    AspPushNoUse(engine, instance);
+
+                    AspUnref(engine, context);
+                }
             }
             else if (t == DataType_KeyValuePair)
             {

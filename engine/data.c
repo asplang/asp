@@ -123,8 +123,8 @@ AspRunResult AspCheckIsImmutableObject
         return AspRunResult_OK;
     }
 
-    /* For tuples, we must examine the contents. Avoid recursion by using
-       the engine's stack. */
+    /* For tuples, we must examine the contents. Avoid recursion by using the
+       engine's stack. */
     bool isImmutable = true;
     const AspDataEntry *startStackTop = engine->stackTop;
     uint32_t iterationCount = 0;

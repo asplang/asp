@@ -257,7 +257,7 @@ AspRunResult AspExpandDictionaryGroupArgument
 
 AspRunResult AspCallFunction
     (AspEngine *engine, AspDataEntry *function, AspDataEntry *argumentList,
-     bool fromApp, AspDataEntry *object)
+     bool fromApp, AspDataEntry *cls, AspDataEntry *instance)
 {
     /* Redirect any direct calls from the application through the CALL
        instruction in order to keep the application's stack usage under
@@ -327,10 +327,22 @@ AspRunResult AspCallFunction
             (frame, AspIndex(engine, engine->module));
         AspDataSetFrameLocalNamespaceIndex
             (frame, AspIndex(engine, engine->localNamespace));
-        if (object != 0)
+        if (cls != 0 || instance != 0)
         {
-            AspRef(engine, object);
-            AspDataSetFrameObjectIndex(frame, AspIndex(engine, object));
+            if (cls == 0 || instance == 0)
+            {
+                #ifdef ASP_DEBUG
+                puts("Class and instance must be specified together in call");
+                #endif
+                return AspRunResult_InternalError;
+            }
+
+            AspDataEntry *context = AspAllocEntry(engine, DataType_Context);
+            if (context == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspDataSetContextClassIndex(context, AspIndex(engine, cls));
+            AspDataSetContextInstanceIndex(context, AspIndex(engine, instance));
+            AspDataSetFrameContextIndex(frame, AspIndex(engine, context));
         }
         const AspDataEntry *newTop = AspPush(engine, frame);
         if (newTop == 0)
@@ -832,10 +844,16 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
         (engine, AspDataGetFrameModuleIndex(frame));
     engine->globalNamespace = AspValueEntry
         (engine, AspDataGetModuleNamespaceIndex(engine->module));
-    uint32_t objectIndex = AspDataGetFrameObjectIndex(frame);
+    uint32_t instanceIndex = 0;
+    uint32_t contextIndex = AspDataGetFrameContextIndex(frame);
+    if (contextIndex != 0)
+    {
+        const AspDataEntry *context = AspEntry(engine, contextIndex);
+        instanceIndex = AspDataGetContextInstanceIndex(context);
+    }
 
-    /* Replace the return value with an object if specified. */
-    if (objectIndex != 0)
+    /* Replace the return value with a class instance if specified. */
+    if (instanceIndex != 0)
     {
         /* Ensure that the function returned None. */
         if (AspDataGetType(*returnValue) != DataType_None)
@@ -847,7 +865,7 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
         }
 
         AspUnref(engine, *returnValue);
-        *returnValue = AspValueEntry(engine, objectIndex);
+        *returnValue = AspValueEntry(engine, instanceIndex);
         AspRef(engine, *returnValue);
     }
 

@@ -457,11 +457,11 @@ static AspDataEntry *ToString
                     else
                     {
                         count += snprintf
-                            (buffer + count, sizeof buffer - count, ":");
+                            (buffer + count, sizeof buffer - count, ",");
 
-                        AspDataEntry *classEntry = AspValueEntry
+                        AspDataEntry *cls = AspValueEntry
                             (engine, AspDataGetObjectClassIndex(entry));
-                        if (AspDataGetType(classEntry) != DataType_Class)
+                        if (AspDataGetType(cls) != DataType_Class)
                         {
                             count += snprintf
                                 (buffer + count, sizeof buffer - count, "?");
@@ -474,7 +474,7 @@ static AspDataEntry *ToString
                             AspDataEntry *entryStackEntry = AspPushNoUse
                                 (engine, entry);
                             const AspDataEntry *classStackEntry = AspPushNoUse
-                                (engine, classEntry);
+                                (engine, cls);
                             if (entryStackEntry == 0 || classStackEntry == 0)
                             {
                                 AspUnref(engine, result);
@@ -596,15 +596,50 @@ static AspDataEntry *ToString
             {
                 strcpy
                     (buffer,
-                     state == 0 ? "<method:" : state == 1 ? ":" : ">");
+                     state == 0 ? "<method:" :
+                     state == 1 ? "." :
+                     state == 2 ? "," : ">");
+                if (state >= 3)
+                    break;
+
+                next = AspValueEntry
+                    (engine,
+                     state == 0 ?
+                     AspDataGetBoundMethodClassIndex(entry) :
+                     state == 1 ?
+                     AspDataGetBoundMethodFunctionIndex(entry) :
+                     AspDataGetBoundMethodInstanceIndex(entry));
+
+                /* Save state and defer the components to the next
+                   iteration. */
+                AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
+                const AspDataEntry *valueStackEntry = AspPushNoUse
+                    (engine, next);
+                if (entryStackEntry == 0 || valueStackEntry == 0)
+                {
+                    AspUnref(engine, result);
+                    result = 0;
+                    break;
+                }
+                AspDataSetStackEntryState(entryStackEntry, state + 1);
+
+                break;
+            }
+
+            case DataType_Super:
+            {
+                strcpy
+                    (buffer,
+                     state == 0 ? "<super:" :
+                     state == 1 ? "," : ">");
                 if (state >= 2)
                     break;
 
                 next = AspValueEntry
                     (engine,
                      state == 0 ?
-                     AspDataGetBoundMethodFunctionIndex(entry) :
-                     AspDataGetBoundMethodObjectIndex(entry));
+                     AspDataGetSuperClassIndex(entry) :
+                     AspDataGetSuperInstanceIndex(entry));
 
                 /* Save state and defer the components to the next
                    iteration. */

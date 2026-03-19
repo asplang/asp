@@ -37,6 +37,7 @@ typedef enum
     DataType_Object = 0x0E,
     DataType_Class = 0x1C,
     DataType_BoundMethod = 0x1D,
+    DataType_Super = 0x1E,
     DataType_Function = 0x1F,
     DataType_Module = 0x20,
     DataType_ReverseIterator = 0x25,
@@ -49,6 +50,7 @@ typedef enum
     /* Support types. */
     DataType_StackEntry = 0x50,
     DataType_Frame = 0x52,
+    DataType_Context = 0x53,
     DataType_AppFrame = 0x54,
     DataType_Element = 0x62,
     DataType_StringFragment = 0x64,
@@ -311,9 +313,23 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord0((eptr), (value)))
 #define AspDataGetBoundMethodFunctionIndex(eptr) \
     (AspDataGetWord0((eptr)))
-#define AspDataSetBoundMethodObjectIndex(eptr, value) \
+#define AspDataSetBoundMethodInstanceIndex(eptr, value) \
     (AspDataSetWord1((eptr), (value)))
-#define AspDataGetBoundMethodObjectIndex(eptr) \
+#define AspDataGetBoundMethodInstanceIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+#define AspDataSetBoundMethodClassIndex(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetBoundMethodClassIndex(eptr) \
+    (AspDataGetWord3((eptr)))
+
+/* Super entry field access. */
+#define AspDataSetSuperClassIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetSuperClassIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetSuperInstanceIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetSuperInstanceIndex(eptr) \
     (AspDataGetWord1((eptr)))
 
 /* Module entry field access. */
@@ -416,10 +432,20 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord2((eptr), (value)))
 #define AspDataGetFrameLocalNamespaceIndex(eptr) \
     (AspDataGetWord2((eptr)))
-#define AspDataSetFrameObjectIndex(eptr, value) \
+#define AspDataSetFrameContextIndex(eptr, value) \
     (AspDataSetWord3((eptr), (value)))
-#define AspDataGetFrameObjectIndex(eptr) \
+#define AspDataGetFrameContextIndex(eptr) \
     (AspDataGetWord3((eptr)))
+
+/* Context entry field access. */
+#define AspDataSetContextClassIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetContextClassIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetContextInstanceIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetContextInstanceIndex(eptr) \
+    (AspDataGetWord1((eptr)))
 
 /* Application function frame entry field access. */
 #define AspDataSetAppFrameFunctionIndex(eptr, value) \

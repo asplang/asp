@@ -138,6 +138,7 @@ static TypeName gTypeNames[] =
     {DataType_Object, "obj"},
     {DataType_Class, "class"},
     {DataType_BoundMethod, "method"},
+    {DataType_Super, "super"},
     {DataType_Function, "func"},
     {DataType_Module, "mod"},
     {DataType_ReverseIterator, "iter-rev"},
@@ -149,6 +150,7 @@ static TypeName gTypeNames[] =
     /* Support types. */
     {DataType_StackEntry, "stkent"},
     {DataType_Frame, "frame"},
+    {DataType_Context, "context"},
     {DataType_AppFrame, "appframe"},
     {DataType_Element, "elem"},
     {DataType_StringFragment, "strfrag"},
@@ -251,7 +253,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetObjectNamespaceIndex(entry));
             uint32_t classIndex = AspDataGetObjectClassIndex(entry);
             if (classIndex)
-                fprintf(fp, " class=0x%07X", classIndex);
+                fprintf(fp, " cls=0x%07X", classIndex);
             break;
         }
 
@@ -266,9 +268,16 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         }
 
         case DataType_BoundMethod:
-            fprintf(fp, " func=0x%07X obj=0x%07X",
+            fprintf(fp, " func=0x%07X inst=0x%07X cls=0x%07X",
                 AspDataGetBoundMethodFunctionIndex(entry),
-                AspDataGetBoundMethodObjectIndex(entry));
+                AspDataGetBoundMethodInstanceIndex(entry),
+                AspDataGetBoundMethodClassIndex(entry));
+            break;
+
+        case DataType_Super:
+            fprintf(fp, " cls=0x%07X inst=0x%07X",
+                AspDataGetSuperClassIndex(entry),
+                AspDataGetSuperInstanceIndex(entry));
             break;
 
         case DataType_Function:
@@ -373,14 +382,24 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         }
 
         case DataType_Frame:
+        {
             fprintf(fp, " ra=0x%07X mod=0x%07X locns=0x%07X",
                 AspDataGetFrameReturnAddress(entry),
                 AspDataGetFrameModuleIndex(entry),
                 AspDataGetFrameLocalNamespaceIndex(entry));
-            uint32_t objectIndex = AspDataGetFrameObjectIndex(entry);
-            if (objectIndex)
-                fprintf(fp, " obj=0x%07X", objectIndex);
+            uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
+            if (contextIndex)
+                fprintf(fp, " ctx=0x%07X", contextIndex);
             break;
+        }
+
+        case DataType_Context:
+        {
+            fprintf(fp, " cls=0x%07X inst=0x%07X",
+                AspDataGetContextClassIndex(entry),
+                AspDataGetContextInstanceIndex(entry));
+            break;
+        }
 
         case DataType_AppFrame:
             fprintf(fp, " func=0x%07X locns=0x%07X",

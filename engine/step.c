@@ -1448,8 +1448,8 @@ static AspRunResult Step(AspEngine *engine)
             fputc('\n', engine->traceFile);
             #endif
 
-            AspDataEntry *callable = 0, *arguments = 0, *object = 0;
-            bool initializeObject = false;
+            AspDataEntry
+                *callable = 0, *arguments = 0, *cls = 0, *instance = 0;
             uint8_t callableType = DataType_Function;
             if (!engine->again)
             {
@@ -1473,23 +1473,22 @@ static AspRunResult Step(AspEngine *engine)
                 if (callableType == DataType_Class)
                 {
                     /* Create an instance of the class. */
-                    object = AspNewSimpleObject(engine);
-                    if (object == 0)
+                    instance = AspNewSimpleObject(engine);
+                    if (instance == 0)
                         return AspRunResult_OutOfDataMemory;
                     AspDataSetObjectClassIndex
-                        (object, AspIndex(engine, callable));
+                        (instance, AspIndex(engine, callable));
 
                     /* Search for an initialization function in the class and
                        its base(s). */
-                    const AspDataEntry *classEntry = callable;
+                    cls = callable;
                     AspDataEntry *initializationFunction = 0;
                     uint32_t iterationCount = 0;
                     for (; iterationCount < engine->cycleDetectionLimit;
                          iterationCount++)
                     {
                         AspDataEntry *ns = AspEntry
-                            (engine,
-                             AspDataGetClassNamespaceIndex(classEntry));
+                            (engine, AspDataGetClassNamespaceIndex(cls));
                         if (AspDataGetType(ns) != DataType_Namespace)
                             return AspRunResult_UnexpectedType;
                         AspTreeResult findResult = AspFindSymbol
@@ -1504,11 +1503,11 @@ static AspRunResult Step(AspEngine *engine)
 
                         /* Keep searching. */
                         uint32_t baseClassIndex =
-                            AspDataGetClassBaseClassIndex(classEntry);
+                            AspDataGetClassBaseClassIndex(cls);
                         if (baseClassIndex == 0)
                             break;
-                        classEntry = AspValueEntry(engine, baseClassIndex);
-                        if (AspDataGetType(classEntry) != DataType_Class)
+                        cls = AspValueEntry(engine, baseClassIndex);
+                        if (AspDataGetType(cls) != DataType_Class)
                             return AspRunResult_UnexpectedType;
                     }
                     if (iterationCount >= engine->cycleDetectionLimit)
@@ -1518,7 +1517,7 @@ static AspRunResult Step(AspEngine *engine)
                        present. */
                     if (initializationFunction != 0)
                     {
-                        initializeObject = true;
+                        AspRef(engine, cls);
                         callable = initializationFunction;
                         AspRef(engine, callable);
                         callableType = AspDataGetType(callable);
@@ -1527,48 +1526,53 @@ static AspRunResult Step(AspEngine *engine)
                         return AspRunResult_MalformedFunctionCall;
                     else
                     {
-                        /* Object has been created, and there is no
-                           initialization function to call, so push the object
-                           onto the stack and delete the empty argument
-                           list. */
+                        /* An instance has been created, and there is no
+                           initialization function to call, so push the
+                           instance onto the stack and delete the empty
+                           argument list. */
                         const AspDataEntry *stackEntry = AspPush
-                            (engine, object);
+                            (engine, instance);
                         if (stackEntry == 0)
                             return AspRunResult_OutOfDataMemory;
-                        AspUnref(engine, object);
+                        AspUnref(engine, instance);
                         AspUnref(engine, arguments);
                         break;
                     }
                 }
                 else if (callableType == DataType_BoundMethod)
                 {
-                    /* Prepare to call the function on behalf of the object. */
+                    /* Prepare to call the function on behalf of the
+                       instance. */
                     AspDataEntry *function = AspValueEntry
                         (engine, AspDataGetBoundMethodFunctionIndex(callable));
                     AspRef(engine, function);
-                    object = AspValueEntry
-                        (engine, AspDataGetBoundMethodObjectIndex(callable));
-                    AspRef(engine, object);
+                    cls = AspValueEntry
+                        (engine, AspDataGetBoundMethodClassIndex(callable));
+                    AspRef(engine, cls);
+                    instance = AspValueEntry
+                        (engine, AspDataGetBoundMethodInstanceIndex(callable));
+                    AspRef(engine, instance);
                     AspUnref(engine, callable);
                     callable = function;
                     callableType = AspDataGetType(callable);
                 }
 
-                /* Insert any object at the head of the argument list. */
-                if (object != 0)
+                /* Insert any instance at the head of the argument list. */
+                if (instance != 0)
                 {
-                    /* Create an argument for the object. */
-                    AspDataEntry *objectArgument = AspAllocEntry
+                    /* Create an argument for the instance. */
+                    AspDataEntry *instanceArgument = AspAllocEntry
                         (engine, DataType_Argument);
-                    if (objectArgument == 0)
+                    if (instanceArgument == 0)
                         return AspRunResult_OutOfDataMemory;
                     AspDataSetArgumentValueIndex
-                        (objectArgument, AspIndex(engine, object));
+                        (instanceArgument, AspIndex(engine, instance));
 
                     AspSequenceResult insertResult = AspSequenceInsertByIndex
-                        (engine, arguments, 0, objectArgument);
+                        (engine, arguments, 0, instanceArgument);
                     if (insertResult.result != AspRunResult_OK)
                         return insertResult.result;
+                    AspRef(engine, instance);
                 }
 
                 if (callableType != DataType_Function)
@@ -1577,7 +1581,7 @@ static AspRunResult Step(AspEngine *engine)
 
             AspRunResult callResult = AspCallFunction
                 (engine, callable, arguments, engine->callFromApp,
-                 initializeObject ? object : 0);
+                 cls, instance);
             if (callResult != AspRunResult_OK)
                 return callResult;
 
@@ -1962,7 +1966,8 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Create a parameter. */
-            AspDataEntry *parameter = AspAllocEntry(engine, DataType_Parameter);
+            AspDataEntry *parameter = AspAllocEntry
+                (engine, DataType_Parameter);
             if (parameter == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetParameterSymbol(parameter, parameterSymbol);
@@ -2011,7 +2016,8 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_UnexpectedType;
 
             /* Create a parameter with a default. */
-            AspDataEntry *parameter = AspAllocEntry(engine, DataType_Parameter);
+            AspDataEntry *parameter = AspAllocEntry
+                (engine, DataType_Parameter);
             if (parameter == 0)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetParameterSymbol(parameter, parameterSymbol);
@@ -2050,23 +2056,23 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_UnexpectedType;
 
             /* Create a class. */
-            AspDataEntry *classEntry = AspAllocEntry(engine, DataType_Class);
-            if (classEntry == 0)
+            AspDataEntry *cls = AspAllocEntry(engine, DataType_Class);
+            if (cls == 0)
                 return AspRunResult_OutOfDataMemory;
             if (baseClass != 0)
                 AspDataSetClassBaseClassIndex
-                    (classEntry, AspIndex(engine, baseClass));
+                    (cls, AspIndex(engine, baseClass));
 
             /* Transfer the local namespace into the class, preventing it from
                destruction when returning from the class definition
                function. */
             AspDataSetClassNamespaceIndex
-                (classEntry, AspIndex(engine, engine->localNamespace));
+                (cls, AspIndex(engine, engine->localNamespace));
             engine->localNamespace = 0;
 
             /* Replace the top stack entry with the class. */
             AspDataSetStackEntryValueIndex
-                (engine->stackTop, AspIndex(engine, classEntry));
+                (engine->stackTop, AspIndex(engine, cls));
 
             break;
         }
@@ -2978,7 +2984,8 @@ static AspRunResult Step(AspEngine *engine)
                                 if (select != 0)
                                     continue;
 
-                                /* Append the value or address as applicable. */
+                                /* Append the value or address as
+                                   applicable. */
                                 AspDataEntry *value =
                                     opCode == OpCode_IDX ?
                                     nextResult.value : nextResult.element;
@@ -3201,19 +3208,46 @@ static AspRunResult Step(AspEngine *engine)
                 {
                     default:
                         return AspRunResult_UnexpectedType;
+
                     case DataType_Object:
                         ns = AspEntry
-                            (engine, AspDataGetObjectNamespaceIndex(container));
+                            (engine,
+                             AspDataGetObjectNamespaceIndex(container));
                         break;
+
                     case DataType_Class:
                         ns = AspEntry
-                            (engine, AspDataGetClassNamespaceIndex(container));
+                            (engine,
+                             AspDataGetClassNamespaceIndex(container));
                         break;
+
+                    case DataType_Super:
+                    {
+                        /* Start the search at the class' base class. */
+                        AspDataEntry *cls = AspValueEntry
+                            (engine, AspDataGetSuperClassIndex(container));
+                        if (AspDataGetType(cls) != DataType_Class)
+                            return AspRunResult_UnexpectedType;
+                        uint32_t baseClassIndex =
+                            AspDataGetClassBaseClassIndex(cls);
+                        if (baseClassIndex == 0)
+                            break;
+                        container = AspValueEntry(engine, baseClassIndex);
+                        containerType = AspDataGetType(container);
+                        ns = AspEntry
+                            (engine,
+                             AspDataGetClassNamespaceIndex(container));
+                        break;
+                    }
+
                     case DataType_Module:
                         ns = AspEntry
-                            (engine, AspDataGetModuleNamespaceIndex(container));
+                            (engine,
+                             AspDataGetModuleNamespaceIndex(container));
                         break;
                 }
+                if (ns == 0)
+                    break;
                 if (AspDataGetType(ns) != DataType_Namespace)
                     return AspRunResult_UnexpectedType;
 
@@ -3241,6 +3275,8 @@ static AspRunResult Step(AspEngine *engine)
                 uint32_t nextContainerIndex = 0;
                 switch (containerType)
                 {
+                    default:
+                        return AspRunResult_InternalError;
                     case DataType_Object:
                         nextContainerIndex = AspDataGetObjectClassIndex
                             (container);
@@ -3276,19 +3312,35 @@ static AspRunResult Step(AspEngine *engine)
                         (shadowingMember, AspIndex(engine, foundMember));
                     member = shadowingMember;
                 }
-                else if (originalContainerType == DataType_Object &&
+                else if ((originalContainerType == DataType_Object ||
+                          originalContainerType == DataType_Super) &&
                          AspDataGetType(foundMember) == DataType_Function)
                 {
-                    /* Create a bound method, binding the original object to
+                    AspDataEntry *instance = originalContainer;
+                    if (originalContainerType == DataType_Super)
+                    {
+                        /* Extract the underlying instance from the super
+                           object. */
+                        instance = AspValueEntry
+                            (engine,
+                             AspDataGetSuperInstanceIndex(originalContainer));
+                        if (AspDataGetType(instance) != DataType_Object)
+                            return AspRunResult_UnexpectedType;
+                    }
+
+                    /* Create a bound method, binding the original instance to
                        the found member function. */
                     AspDataEntry *boundMethod = AspAllocEntry
                         (engine, DataType_BoundMethod);
-                    AspRef(engine, originalContainer);
-                    AspDataSetBoundMethodObjectIndex
-                        (boundMethod, AspIndex(engine, originalContainer));
                     AspRef(engine, foundMember);
                     AspDataSetBoundMethodFunctionIndex
                         (boundMethod, AspIndex(engine, foundMember));
+                    AspRef(engine, instance);
+                    AspDataSetBoundMethodInstanceIndex
+                        (boundMethod, AspIndex(engine, instance));
+                    AspRef(engine, container);
+                    AspDataSetBoundMethodClassIndex
+                        (boundMethod, AspIndex(engine, container));
                     member = boundMethod;
                     newMemberValue = true;
                 }

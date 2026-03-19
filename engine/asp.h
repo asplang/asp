@@ -155,6 +155,7 @@ ASP_API bool AspIsSimpleObject(const AspDataEntry *);
 ASP_API bool AspIsClassInstance(const AspDataEntry *);
 ASP_API bool AspIsClass(const AspDataEntry *);
 ASP_API bool AspIsBoundMethod(const AspDataEntry *);
+ASP_API bool AspIsSuper(const AspDataEntry *);
 ASP_API bool AspIsFunction(const AspDataEntry *);
 ASP_API bool AspIsModule(const AspDataEntry *);
 ASP_API bool AspIsReverseIterator(const AspDataEntry *);
@@ -166,6 +167,8 @@ ASP_API bool AspIsAppPointerObject(const AspDataEntry *);
 ASP_API bool AspIsAppObject(const AspDataEntry *);
 ASP_API bool AspIsType(const AspDataEntry *);
 ASP_API bool AspIsTrue(AspEngine *, const AspDataEntry *);
+ASP_API bool AspIsTypeOf
+    (AspEngine *, const AspDataEntry *object, const AspDataEntry *type);
 
 /* API functions for value extraction. */
 ASP_API bool AspIntegerValue(const AspDataEntry *, int32_t *);
