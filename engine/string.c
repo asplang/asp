@@ -449,7 +449,7 @@ static AspDataEntry *ToString
                 {
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "<obj:0x%07X", AspIndex(engine, entry));
+                         "<object at 0x%07X", AspIndex(engine, entry));
                     uint32_t classIndex = AspDataGetObjectClassIndex
                         (entry);
                     if (classIndex == 0)
@@ -457,7 +457,7 @@ static AspDataEntry *ToString
                     else
                     {
                         count += snprintf
-                            (buffer + count, sizeof buffer - count, ",");
+                            (buffer + count, sizeof buffer - count, " of ");
 
                         AspDataEntry *cls = AspValueEntry
                             (engine, AspDataGetObjectClassIndex(entry));
@@ -496,16 +496,15 @@ static AspDataEntry *ToString
             case DataType_Function:
             {
                 int count = 0;
-                count += snprintf
-                    (buffer + count, sizeof buffer - count, "<func:");
                 if (AspDataGetFunctionIsApp(entry))
                     count += snprintf
-                        (buffer + count, sizeof buffer - count, "app:%d",
+                        (buffer + count, sizeof buffer - count,
+                         "<app function %d",
                          AspDataGetFunctionSymbol(entry));
                 else
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "0x%07X@0x%07X",
+                         "<function at 0x%07X, code @0x%07X",
                          AspIndex(engine, entry),
                          AspDataGetFunctionCodeAddress(entry));
                 count += snprintf
@@ -516,16 +515,15 @@ static AspDataEntry *ToString
             case DataType_Module:
             {
                 int count = 0;
-                count += snprintf
-                    (buffer + count, sizeof buffer - count, "<mod:");
                 if (AspDataGetModuleIsApp(entry))
                     count += snprintf
-                        (buffer + count, sizeof buffer - count, "app:%d",
+                        (buffer + count, sizeof buffer - count,
+                         "<app module %d",
                          AspDataGetModuleSymbol(entry));
                 else
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "0x%07X@0x%07X",
+                         "<module at 0x%07X, code @0x%07X",
                          AspIndex(engine, entry),
                          AspDataGetModuleCodeAddress(entry));
                 count += snprintf
@@ -542,10 +540,10 @@ static AspDataEntry *ToString
                 const AspDataEntry *iterable = AspValueEntry
                     (engine, iterableIndex);
                 count += snprintf
-                    (buffer + count, sizeof buffer - count, "<%s:%s",
-                     TypeString(type),
+                    (buffer + count, sizeof buffer - count, "<%s %s",
                      iterable == 0 ? "?" :
-                     TypeString(AspDataGetType(iterable)));
+                     TypeString(AspDataGetType(iterable)),
+                     TypeString(type));
                 uint32_t memberIndex = AspDataGetIteratorMemberIndex(entry);
                 if (memberIndex == 0)
                     count += snprintf
@@ -562,7 +560,8 @@ static AspDataEntry *ToString
                 const AspDataEntry *infoEntry = AspAppObjectInfoEntry
                     (engine, (AspDataEntry *)entry);
                 count += snprintf
-                    (buffer + count, sizeof buffer - count, "<app-%s:%d:",
+                    (buffer + count, sizeof buffer - count,
+                     "<app-%s of type %d, value ",
                      type == DataType_AppIntegerObject ? "int" : "ptr",
                      AspDataGetAppObjectType(infoEntry));
                 if (infoEntry == 0)
@@ -589,16 +588,16 @@ static AspDataEntry *ToString
             case DataType_Class:
                 snprintf
                     (buffer, sizeof buffer,
-                     "<class:0x%07X>", AspIndex(engine, entry));
+                     "<class at 0x%07X>", AspIndex(engine, entry));
                 break;
 
             case DataType_BoundMethod:
             {
                 strcpy
                     (buffer,
-                     state == 0 ? "<method:" :
+                     state == 0 ? "<bound method " :
                      state == 1 ? "." :
-                     state == 2 ? "," : ">");
+                     state == 2 ? " of " : ">");
                 if (state >= 3)
                     break;
 
@@ -630,8 +629,8 @@ static AspDataEntry *ToString
             {
                 strcpy
                     (buffer,
-                     state == 0 ? "<super:" :
-                     state == 1 ? "," : ">");
+                     state == 0 ? "<super: " :
+                     state == 1 ? ", " : ">");
                 if (state >= 2)
                     break;
 
@@ -659,9 +658,9 @@ static AspDataEntry *ToString
 
             case DataType_Type:
             {
-                strcpy(buffer, "<type:");
+                strcpy(buffer, "<type '");
                 strcat(buffer, TypeString(AspDataGetTypeValue(entry)));
-                strcat(buffer, ">");
+                strcat(buffer, "'>");
                 break;
             }
         }
@@ -746,23 +745,25 @@ static const char *TypeString(DataType type)
         case DataType_Dictionary:
             return "dict";
         case DataType_Object:
-            return "obj";
+            return "object";
+        case DataType_Class:
+            return "class";
+        case DataType_BoundMethod:
+            return "bound method";
+        case DataType_Super:
+            return "super";
         case DataType_Function:
-            return "func";
+            return "function";
         case DataType_Module:
-            return "mod";
+            return "module";
         case DataType_ReverseIterator:
-            return "iter-rev";
+            return "reverse iterator";
         case DataType_ForwardIterator:
-            return "iter";
+            return "iterator";
         case DataType_AppIntegerObject:
             return "app-int";
         case DataType_AppPointerObject:
             return "app-ptr";
-        case DataType_Class:
-            return "class";
-        case DataType_BoundMethod:
-            return "method";
         case DataType_Type:
             return "type";
     }
