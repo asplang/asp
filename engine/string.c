@@ -449,7 +449,8 @@ static AspDataEntry *ToString
                 {
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "<object at 0x%07X", AspIndex(engine, entry));
+                         "<%s at 0x%07X",
+                         TypeString(type), AspIndex(engine, entry));
                     uint32_t classIndex = AspDataGetObjectClassIndex
                         (entry);
                     if (classIndex == 0)
@@ -493,19 +494,100 @@ static AspDataEntry *ToString
                 break;
             }
 
+            case DataType_Class:
+                snprintf
+                    (buffer, sizeof buffer,
+                     "<%s at 0x%07X>",
+                     TypeString(type), AspIndex(engine, entry));
+                break;
+
+            case DataType_BoundMethod:
+            {
+                if (state == 0)
+                    snprintf
+                        (buffer, sizeof buffer, "<%s ", TypeString(type));
+                else if (state == 1)
+                    strcpy(buffer, ".");
+                else if (state == 2)
+                    strcpy(buffer, " of ");
+                else
+                {
+                    strcpy(buffer, ">");
+                    break;
+                }
+
+                next = AspValueEntry
+                    (engine,
+                     state == 0 ?
+                     AspDataGetBoundMethodClassIndex(entry) :
+                     state == 1 ?
+                     AspDataGetBoundMethodFunctionIndex(entry) :
+                     AspDataGetBoundMethodInstanceIndex(entry));
+
+                /* Save state and defer the components to the next
+                   iteration. */
+                AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
+                const AspDataEntry *valueStackEntry = AspPushNoUse
+                    (engine, next);
+                if (entryStackEntry == 0 || valueStackEntry == 0)
+                {
+                    AspUnref(engine, result);
+                    result = 0;
+                    break;
+                }
+                AspDataSetStackEntryState(entryStackEntry, state + 1);
+
+                break;
+            }
+
+            case DataType_Super:
+            {
+                if (state == 0)
+                    snprintf
+                        (buffer, sizeof buffer, "<%s:", TypeString(type));
+                else if (state == 1)
+                     strcpy(buffer, ", ");
+                else
+                {
+                     strcpy(buffer, ">");
+                     break;
+                }
+
+                next = AspValueEntry
+                    (engine,
+                     state == 0 ?
+                     AspDataGetSuperClassIndex(entry) :
+                     AspDataGetSuperInstanceIndex(entry));
+
+                /* Save state and defer the components to the next
+                   iteration. */
+                AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
+                const AspDataEntry *valueStackEntry = AspPushNoUse
+                    (engine, next);
+                if (entryStackEntry == 0 || valueStackEntry == 0)
+                {
+                    AspUnref(engine, result);
+                    result = 0;
+                    break;
+                }
+                AspDataSetStackEntryState(entryStackEntry, state + 1);
+
+                break;
+            }
+
             case DataType_Function:
             {
                 int count = 0;
                 if (AspDataGetFunctionIsApp(entry))
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "<app function %d",
-                         AspDataGetFunctionSymbol(entry));
+                         "<app %s %d",
+                         TypeString(type), AspDataGetFunctionSymbol(entry));
                 else
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "<function at 0x%07X, code @0x%07X",
-                         AspIndex(engine, entry),
+                         "<%s at 0x%07X, code @0x%07X",
+                         TypeString(type), AspIndex(engine, entry),
                          AspDataGetFunctionCodeAddress(entry));
                 count += snprintf
                     (buffer + count, sizeof buffer - count, ">");
@@ -518,13 +600,13 @@ static AspDataEntry *ToString
                 if (AspDataGetModuleIsApp(entry))
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "<app module %d",
-                         AspDataGetModuleSymbol(entry));
+                         "<app %s %d",
+                         TypeString(type), AspDataGetModuleSymbol(entry));
                 else
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
-                         "<module at 0x%07X, code @0x%07X",
-                         AspIndex(engine, entry),
+                         "<%s at 0x%07X, code @0x%07X",
+                         TypeString(type), AspIndex(engine, entry),
                          AspDataGetModuleCodeAddress(entry));
                 count += snprintf
                     (buffer + count, sizeof buffer - count, ">");
@@ -561,9 +643,8 @@ static AspDataEntry *ToString
                     (engine, (AspDataEntry *)entry);
                 count += snprintf
                     (buffer + count, sizeof buffer - count,
-                     "<app-%s of type %d, value ",
-                     type == DataType_AppIntegerObject ? "int" : "ptr",
-                     AspDataGetAppObjectType(infoEntry));
+                     "<%s of type %d, value ",
+                     TypeString(type), AspDataGetAppObjectType(infoEntry));
                 if (infoEntry == 0)
                     count += snprintf
                         (buffer + count, sizeof buffer - count, "?");
@@ -585,84 +666,11 @@ static AspDataEntry *ToString
                 break;
             }
 
-            case DataType_Class:
-                snprintf
-                    (buffer, sizeof buffer,
-                     "<class at 0x%07X>", AspIndex(engine, entry));
-                break;
-
-            case DataType_BoundMethod:
-            {
-                strcpy
-                    (buffer,
-                     state == 0 ? "<bound method " :
-                     state == 1 ? "." :
-                     state == 2 ? " of " : ">");
-                if (state >= 3)
-                    break;
-
-                next = AspValueEntry
-                    (engine,
-                     state == 0 ?
-                     AspDataGetBoundMethodClassIndex(entry) :
-                     state == 1 ?
-                     AspDataGetBoundMethodFunctionIndex(entry) :
-                     AspDataGetBoundMethodInstanceIndex(entry));
-
-                /* Save state and defer the components to the next
-                   iteration. */
-                AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
-                const AspDataEntry *valueStackEntry = AspPushNoUse
-                    (engine, next);
-                if (entryStackEntry == 0 || valueStackEntry == 0)
-                {
-                    AspUnref(engine, result);
-                    result = 0;
-                    break;
-                }
-                AspDataSetStackEntryState(entryStackEntry, state + 1);
-
-                break;
-            }
-
-            case DataType_Super:
-            {
-                strcpy
-                    (buffer,
-                     state == 0 ? "<super: " :
-                     state == 1 ? ", " : ">");
-                if (state >= 2)
-                    break;
-
-                next = AspValueEntry
-                    (engine,
-                     state == 0 ?
-                     AspDataGetSuperClassIndex(entry) :
-                     AspDataGetSuperInstanceIndex(entry));
-
-                /* Save state and defer the components to the next
-                   iteration. */
-                AspDataEntry *entryStackEntry = AspPushNoUse(engine, entry);
-                const AspDataEntry *valueStackEntry = AspPushNoUse
-                    (engine, next);
-                if (entryStackEntry == 0 || valueStackEntry == 0)
-                {
-                    AspUnref(engine, result);
-                    result = 0;
-                    break;
-                }
-                AspDataSetStackEntryState(entryStackEntry, state + 1);
-
-                break;
-            }
-
             case DataType_Type:
-            {
-                strcpy(buffer, "<type '");
-                strcat(buffer, TypeString(AspDataGetTypeValue(entry)));
-                strcat(buffer, "'>");
+                snprintf
+                    (buffer, sizeof buffer, "<%s '%s'>",
+                     TypeString(type), TypeString(AspDataGetTypeValue(entry)));
                 break;
-            }
         }
 
         /* Check for error. */
@@ -761,9 +769,9 @@ static const char *TypeString(DataType type)
         case DataType_ForwardIterator:
             return "iterator";
         case DataType_AppIntegerObject:
-            return "app-int";
+            return "app int object";
         case DataType_AppPointerObject:
-            return "app-ptr";
+            return "app pointer object";
         case DataType_Type:
             return "type";
     }
