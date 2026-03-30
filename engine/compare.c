@@ -504,38 +504,14 @@ AspRunResult AspCompare
                     }
 
                     case DataType_AppIntegerObject:
-                    {
-                        int16_t
-                            leftType = AspDataGetAppObjectType(leftEntry),
-                            rightType = AspDataGetAppObjectType(rightEntry);
-                        int32_t
-                            leftValue = AspDataGetAppIntegerObjectValue
-                                (leftEntry),
-                            rightValue = AspDataGetAppIntegerObjectValue
-                                (rightEntry);
-                        comparison =
-                            leftType == rightType ?
-                            leftValue == rightValue ? 0 :
-                            leftValue < rightValue ? -1 : 1 :
-                            leftType < rightType ? -1 : 1;
-                        break;
-                    }
-
                     case DataType_AppPointerObject:
                     {
-                        int16_t
-                            leftType = AspDataGetAppObjectType(leftEntry),
-                            rightType = AspDataGetAppObjectType(rightEntry);
-                        const void
-                            *leftValue = AspDataGetAppPointerObjectValue
-                                (leftEntry),
-                            *rightValue = AspDataGetAppPointerObjectValue
-                                (rightEntry);
+                        uint32_t
+                            leftAddress = AspIndex(engine, leftEntry),
+                            rightAddress = AspIndex(engine, rightEntry);
                         comparison =
-                            leftType == rightType ?
-                            leftValue == rightValue ? 0 :
-                            leftValue < rightValue ? -1 : 1 :
-                            leftType < rightType ? -1 : 1;
+                            leftAddress == rightAddress ? 0 :
+                            leftAddress < rightAddress ? -1 : 1;
                         break;
                     }
 

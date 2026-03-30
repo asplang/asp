@@ -5,9 +5,12 @@
 #include "data.h"
 #include "stack.h"
 #include "sequence.h"
+#include "search.h"
 #include "asp-priv.h"
 #include <string.h>
 
+static AspRunResult SimpleImmutableObjectPredicate
+    (const AspDataEntry *, void *context, bool *done);
 static bool IsSimpleImmutableObject(const AspDataEntry *);
 
 void AspDataSetWord3(AspDataEntry *entry, uint32_t value)
@@ -123,82 +126,51 @@ AspRunResult AspCheckIsImmutableObject
         return AspRunResult_OK;
     }
 
-    /* For tuples, we must examine the contents. Avoid recursion by using the
-       engine's stack. */
-    bool isImmutable = true;
-    const AspDataEntry *startStackTop = engine->stackTop;
-    uint32_t iterationCount = 0;
-    for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
+    *result = true;
+    return AspSearchNestedSequence
+        (engine, entry, SimpleImmutableObjectPredicate, AspIsTuple, result);
+}
+
+static AspRunResult SimpleImmutableObjectPredicate
+    (const AspDataEntry *entry, void *context, bool *done)
+{
+    if (!IsSimpleImmutableObject(entry))
     {
-        uint32_t iterationCount = 0;
-        for (AspSequenceResult nextResult = AspSequenceNext
-                (engine, entry, 0, true);
-             iterationCount < engine->cycleDetectionLimit &&
-             nextResult.element != 0;
-             iterationCount++,
-             nextResult = AspSequenceNext
-                (engine, entry, nextResult.element, true))
-        {
-            const AspDataEntry *value = nextResult.value;
-
-            if (AspDataGetType(value) == DataType_Tuple)
-            {
-                if (AspPushNoUse(engine, nextResult.value) == 0)
-                    return AspRunResult_OutOfDataMemory;
-            }
-            else if (!IsSimpleImmutableObject(value))
-            {
-                isImmutable = false;
-                break;
-            }
-        }
-        if (iterationCount >= engine->cycleDetectionLimit)
-            return AspRunResult_CycleDetected;
-        if (!isImmutable)
-            break;
-
-        /* Check if there's more to do. */
-        if (engine->stackTop == startStackTop ||
-            engine->runResult != AspRunResult_OK)
-            break;
-
-        /* Fetch the next item from the stack. */
-        entry = AspTopValue(engine);
-        AspPopNoErase(engine);
+       *(bool *)context = false;
+       *done = true;
     }
-    if (iterationCount >= engine->cycleDetectionLimit)
-        return AspRunResult_CycleDetected;
-
-    /* Unwind the working stack if necessary. */
-    if (engine->runResult == AspRunResult_OK)
-    {
-        uint32_t iterationCount = 0;
-        for (;
-             iterationCount < engine->cycleDetectionLimit &&
-             engine->stackTop != startStackTop;
-             iterationCount++)
-        {
-            AspPopNoErase(engine);
-        }
-        if (iterationCount >= engine->cycleDetectionLimit)
-            return AspRunResult_CycleDetected;
-    }
-
-    *result = isImmutable;
     return AspRunResult_OK;
 }
 
 static bool IsSimpleImmutableObject(const AspDataEntry *entry)
 {
     uint8_t type = AspDataGetType(entry);
-    return
-        AspIsObject(entry) &&
-        type != DataType_Tuple &&
-        type != DataType_List &&
-        type != DataType_Set &&
-        type != DataType_Dictionary &&
-        type != DataType_ForwardIterator &&
-        type != DataType_ReverseIterator;
+    static uint8_t immutableTypes[] =
+    {
+        DataType_None,
+        DataType_Ellipsis,
+        DataType_Boolean,
+        DataType_Integer,
+        DataType_Float,
+        DataType_Symbol,
+        DataType_Range,
+        DataType_String,
+        DataType_Object,
+        DataType_Class,
+        DataType_BoundMethod,
+        DataType_Super,
+        DataType_Function,
+        DataType_Module,
+        DataType_AppIntegerObject,
+        DataType_AppPointerObject,
+        DataType_Type,
+    };
+    for (size_t i = 0; i < sizeof immutableTypes / sizeof *immutableTypes; i++)
+    {
+        if (type == immutableTypes[i])
+            return true;
+    }
+    return false;
 }
 
 AspDataEntry *AspAllocEntry(AspEngine *engine, DataType type)

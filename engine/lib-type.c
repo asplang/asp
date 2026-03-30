@@ -7,10 +7,22 @@
 #include "stack.h"
 #include "range.h"
 #include "sequence.h"
+#include "search.h"
 #include <errno.h>
 #include <ctype.h>
 #include <stdlib.h>
 
+typedef struct
+{
+    AspEngine *engine;
+    const AspDataEntry *object;
+    bool found;
+} TypePredicateContext;
+
+static AspRunResult TypeOfPredicate
+    (const AspDataEntry *type, void *context, bool *done);
+static AspRunResult SubclassOfPredicate
+    (const AspDataEntry *cls, void *context, bool *done);
 static AspRunResult ExtractWord
     (AspEngine *, AspDataEntry *str, char *, size_t *);
 
@@ -47,75 +59,92 @@ ASP_LIB_API AspRunResult AspLib_isinstance
      AspDataEntry **returnValue)
 {
     bool is = false;
-    if (!AspIsTuple(type))
+    if (AspIsClass(type) || AspIsType(type))
+    {
         is = AspIsTypeOf(engine, object, type);
+    }
     else
     {
-        /* For tuples, we must examine the contents. Avoid recursion by using
-           the the engine's stack. */
-        bool isImmutable = true;
-        const AspDataEntry *startStackTop = engine->stackTop;
-        uint32_t iterationCount = 0;
-        for (; iterationCount < engine->cycleDetectionLimit; iterationCount++)
+        TypePredicateContext context =
         {
-            uint32_t iterationCount = 0;
-            for (AspSequenceResult nextResult = AspSequenceNext
-                    (engine, type, 0, true);
-                 iterationCount < engine->cycleDetectionLimit &&
-                 nextResult.element != 0;
-                 iterationCount++,
-                 nextResult = AspSequenceNext
-                    (engine, type, nextResult.element, true))
-            {
-                const AspDataEntry *value = nextResult.value;
-
-                if (AspDataGetType(value) == DataType_Tuple)
-                {
-                    if (AspPushNoUse(engine, nextResult.value) == 0)
-                        return AspRunResult_OutOfDataMemory;
-                }
-                else if (AspIsTypeOf(engine, object, value))
-                {
-                    is = true;
-                    break;
-                }
-            }
-            if (iterationCount >= engine->cycleDetectionLimit)
-                return AspRunResult_CycleDetected;
-            if (is)
-                break;
-
-            /* Check if there's more to do. */
-            if (engine->stackTop == startStackTop ||
-                engine->runResult != AspRunResult_OK)
-                break;
-
-            /* Fetch the next item from the stack. */
-            type = AspTopValue(engine);
-            AspPopNoErase(engine);
-        }
-        if (iterationCount >= engine->cycleDetectionLimit)
-            return AspRunResult_CycleDetected;
-
-        /* Unwind the working stack if necessary. */
-        if (engine->runResult == AspRunResult_OK)
-        {
-            uint32_t iterationCount = 0;
-            for (;
-                 iterationCount < engine->cycleDetectionLimit &&
-                 engine->stackTop != startStackTop;
-                 iterationCount++)
-            {
-                AspPopNoErase(engine);
-            }
-            if (iterationCount >= engine->cycleDetectionLimit)
-                return AspRunResult_CycleDetected;
-        }
+            .engine = engine,
+            .object = object,
+            .found = false,
+        };
+        AspRunResult searchResult = AspSearchNestedSequence
+            (engine, type, TypeOfPredicate, AspIsTuple, &context);
+        if (searchResult != AspRunResult_OK)
+            return searchResult;
+        is = context.found;
     }
 
     return
         (*returnValue = AspNewBoolean(engine, is)) == 0 ?
         AspRunResult_OutOfDataMemory : AspRunResult_OK;
+}
+
+static AspRunResult TypeOfPredicate
+    (const AspDataEntry *type, void *genericContext, bool *done)
+{
+    TypePredicateContext *context = (TypePredicateContext *)genericContext;
+    if (!AspIsClass(type) && !AspIsType(type))
+        return AspRunResult_UnexpectedType;
+    if (AspIsTypeOf(context->engine, context->object, type))
+    {
+        context->found = true;
+        *done = true;
+    }
+    return AspRunResult_OK;
+}
+
+/* issubclass(object, type)
+ * Return True if the class is a subclass of the given class(es).
+ */
+ASP_LIB_API AspRunResult AspLib_issubclass
+    (AspEngine *engine,
+     AspDataEntry *class1, AspDataEntry *class2,
+     AspDataEntry **returnValue)
+{
+    if (!AspIsClass(class1))
+        return AspRunResult_UnexpectedType;
+
+    bool is = false;
+    if (AspIsClass(class2))
+    {
+        is = AspIsSubclassOf(engine, class1, class2);
+    }
+    else
+    {
+        TypePredicateContext context =
+        {
+            .engine = engine,
+            .object = class1,
+            .found = false,
+        };
+        AspRunResult searchResult = AspSearchNestedSequence
+            (engine, class2, SubclassOfPredicate, AspIsTuple, &context);
+        if (searchResult != AspRunResult_OK)
+            return searchResult;
+        is = context.found;
+    }
+
+    return
+        (*returnValue = AspNewBoolean(engine, is)) == 0 ?
+        AspRunResult_OutOfDataMemory : AspRunResult_OK;
+}
+
+static AspRunResult SubclassOfPredicate
+    (const AspDataEntry *cls, void *genericContext, bool *done)
+{
+    TypePredicateContext *context = (TypePredicateContext *)genericContext;
+    if (!AspIsClass(cls))
+        return AspRunResult_UnexpectedType;
+    if (AspIsSubclassOf(context->engine, context->object, cls))
+    {
+        context->found = true;
+        *done = true;
+    }
+    return AspRunResult_OK;
 }
 
 /* super(type, object)

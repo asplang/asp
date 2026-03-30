@@ -169,6 +169,8 @@ ASP_API bool AspIsType(const AspDataEntry *);
 ASP_API bool AspIsTrue(AspEngine *, const AspDataEntry *);
 ASP_API bool AspIsTypeOf
     (AspEngine *, const AspDataEntry *object, const AspDataEntry *type);
+ASP_API bool AspIsSubclassOf
+    (AspEngine *, const AspDataEntry *class1, const AspDataEntry *class2);
 
 /* API functions for value extraction. */
 ASP_API bool AspIntegerValue(const AspDataEntry *, int32_t *);

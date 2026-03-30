@@ -53,6 +53,7 @@ if(BUILD_FOR_TARGET)
         range.c
         string.c
         sequence.c
+        search.c
         tree.c
         iterator.c
         assign.c

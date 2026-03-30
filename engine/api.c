@@ -13,7 +13,6 @@
 #include "reserved.h"
 #include "compare.h"
 #include <math.h>
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
@@ -312,6 +311,31 @@ bool AspIsTypeOf
             AspIsType(type) &&
             AspDataGetType(object) == AspDataGetTypeValue(type);
     }
+}
+
+bool AspIsSubclassOf
+    (AspEngine *engine, const AspDataEntry *class1, const AspDataEntry *class2)
+{
+    if (!AspIsClassInstance(class1) || !AspIsClassInstance(class2))
+        return false;
+
+    uint32_t class1Index = AspIndex(engine, class1);
+    uint32_t iterationCount = 0;
+    for (uint32_t class2Index = AspIndex(engine, class2);
+         iterationCount < engine->cycleDetectionLimit;
+         iterationCount++,
+         class2Index = AspDataGetClassBaseClassIndex
+            (AspValueEntry(engine, class2Index)))
+    {
+        if (class2Index == 0)
+            break;
+        if (class2Index == class1Index)
+            return true;
+    }
+    if (iterationCount >= engine->cycleDetectionLimit)
+        return AspRunResult_CycleDetected;
+
+    return false;
 }
 
 bool AspIntegerValue(const AspDataEntry *entry, int32_t *result)
