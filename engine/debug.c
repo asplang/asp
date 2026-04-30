@@ -136,9 +136,11 @@ static TypeName gTypeNames[] =
     {DataType_Set, "set"},
     {DataType_Dictionary, "dict"},
     {DataType_Object, "obj"},
+    #ifdef ASP_FEATURE_CLASS
     {DataType_Class, "class"},
     {DataType_BoundMethod, "method"},
     {DataType_Super, "super"},
+    #endif
     {DataType_Function, "func"},
     {DataType_Module, "mod"},
     {DataType_ReverseIterator, "iter-rev"},
@@ -150,7 +152,9 @@ static TypeName gTypeNames[] =
     /* Support types. */
     {DataType_StackEntry, "stkent"},
     {DataType_Frame, "frame"},
+    #ifdef ASP_FEATURE_CLASS
     {DataType_Context, "context"},
+    #endif
     {DataType_AppFrame, "appframe"},
     {DataType_Element, "elem"},
     {DataType_StringFragment, "strfrag"},
@@ -167,7 +171,9 @@ static TypeName gTypeNames[] =
     {DataType_ArgumentList, "args"},
     {DataType_AppIntegerObjectInfo, "app-ii"},
     {DataType_AppPointerObjectInfo, "app-pi"},
+    #ifdef ASP_FEATURE_CLASS
     {DataType_ShadowingMember, "shadow"},
+    #endif
     {DataType_Free, "free"},
 };
 
@@ -251,11 +257,16 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         {
             fprintf(fp, " ns=0x%07X",
                 AspDataGetObjectNamespaceIndex(entry));
+            #ifdef ASP_FEATURE_CLASS
             uint32_t classIndex = AspDataGetObjectClassIndex(entry);
             if (classIndex)
                 fprintf(fp, " cls=0x%07X", classIndex);
+            #endif
+
             break;
         }
+
+        #ifdef ASP_FEATURE_CLASS
 
         case DataType_Class:
         {
@@ -279,6 +290,8 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetSuperClassIndex(entry),
                 AspDataGetSuperInstanceIndex(entry));
             break;
+
+        #endif
 
         case DataType_Function:
             if (AspDataGetFunctionIsApp(entry))
@@ -387,11 +400,16 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetFrameReturnAddress(entry),
                 AspDataGetFrameModuleIndex(entry),
                 AspDataGetFrameLocalNamespaceIndex(entry));
+            #ifdef ASP_FEATURE_CLASS
             uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
             if (contextIndex)
                 fprintf(fp, " ctx=0x%07X", contextIndex);
+            #endif
+
             break;
         }
+
+        #ifdef ASP_FEATURE_CLASS
 
         case DataType_Context:
         {
@@ -400,6 +418,8 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetContextInstanceIndex(entry));
             break;
         }
+
+        #endif
 
         case DataType_AppFrame:
             fprintf(fp, " func=0x%07X locns=0x%07X",
@@ -525,11 +545,15 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             #endif
             break;
 
+        #ifdef ASP_FEATURE_CLASS
+
         case DataType_ShadowingMember:
             fprintf(fp, " tgt=0x%07X src=0x%07X",
                 AspDataGetShadowingMemberTargetIndex(entry),
                 AspDataGetShadowingMemberSourceIndex(entry));
             break;
+
+        #endif
 
         case DataType_Free:
             fprintf(fp, " next=0x%07X", AspDataGetFreeNext(entry));

@@ -4,7 +4,11 @@
 
 #include "asp.h"
 #include "asp-info.h"
+#ifdef ASP_FEATURE_CLASS
+#include "standalone-oo.h"
+#else
 #include "standalone.h"
+#endif
 #include "context.h"
 #include <ctime>
 #include <csignal>
@@ -459,7 +463,12 @@ int main(int argc, char **argv)
         (&engine,
          code.get(), codeByteCount,
          data.get(), dataByteSize,
-         &AspAppSpec_standalone, &context);
+         #ifdef ASP_FEATURE_CLASS
+         &AspAppSpec_standalone_oo,
+         #else
+         &AspAppSpec_standalone,
+         #endif
+         &context);
     if (initializeResult != AspRunResult_OK)
     {
         cerr

@@ -832,6 +832,8 @@ static AspRunResult Step(AspEngine *engine)
                 AspRef(engine, address);
             AspPop(engine);
 
+            #ifdef ASP_FEATURE_CLASS
+
             /* Handle shadowing member if applicable. */
             if (AspDataGetType(address) == DataType_ShadowingMember)
             {
@@ -840,6 +842,8 @@ static AspRunResult Step(AspEngine *engine)
                 AspUnref(engine, address);
                 address = shadowingAddress;
             }
+
+            #endif
 
             /* Access value entry on the top of the stack. */
             AspDataEntry *newValue = AspTopValue(engine);
@@ -887,11 +891,15 @@ static AspRunResult Step(AspEngine *engine)
                         (engine, AspDataGetTreeNodeValueIndex(address));
                     break;
 
+                #ifdef ASP_FEATURE_CLASS
+
                 case DataType_ShadowingMember:
                     value = AspEntry
                         (engine,
                          AspDataGetShadowingMemberSourceIndex(address));
                     break;
+
+                #endif
             }
 
             /* Push the value onto the stack. */
@@ -1048,7 +1056,9 @@ static AspRunResult Step(AspEngine *engine)
                 }
 
                 case DataType_Object:
+                #ifdef ASP_FEATURE_CLASS
                 case DataType_Class:
+                #endif
                 case DataType_Module:
                 {
                     /* Access the underlying namespace. */
@@ -1056,8 +1066,10 @@ static AspRunResult Step(AspEngine *engine)
                         (engine,
                          containerType == DataType_Object ?
                          AspDataGetObjectNamespaceIndex(container) :
+                         #ifdef ASP_FEATURE_CLASS
                          containerType == DataType_Class ?
                          AspDataGetClassNamespaceIndex(container) :
+                         #endif
                          AspDataGetModuleNamespaceIndex(container));
 
                     /* Ensure the index is a symbol. */
@@ -1448,8 +1460,10 @@ static AspRunResult Step(AspEngine *engine)
             fputc('\n', engine->traceFile);
             #endif
 
-            AspDataEntry
-                *callable = 0, *arguments = 0, *cls = 0, *instance = 0;
+            AspDataEntry *callable = 0, *arguments = 0;
+            #ifdef ASP_FEATURE_CLASS
+            AspDataEntry *cls = 0, *instance = 0;
+            #endif
             uint8_t callableType = DataType_Function;
             if (!engine->again)
             {
@@ -1468,6 +1482,8 @@ static AspRunResult Step(AspEngine *engine)
                 callableType = AspDataGetType(callable);
                 AspRef(engine, callable);
                 AspPop(engine);
+
+                #ifdef ASP_FEATURE_CLASS
 
                 /* Handle the different types of callables. */
                 if (callableType == DataType_Class)
@@ -1575,13 +1591,18 @@ static AspRunResult Step(AspEngine *engine)
                     AspRef(engine, instance);
                 }
 
+                #endif
+
                 if (callableType != DataType_Function)
                     return AspRunResult_UnexpectedType;
             }
 
             AspRunResult callResult = AspCallFunction
-                (engine, callable, arguments, engine->callFromApp,
-                 cls, instance);
+                (engine, callable, arguments, engine->callFromApp
+                 #ifdef ASP_FEATURE_CLASS
+                 , cls, instance
+                 #endif
+                );
             if (callResult != AspRunResult_OK)
                 return callResult;
 
@@ -2032,6 +2053,8 @@ static AspRunResult Step(AspEngine *engine)
             break;
         }
 
+        #ifdef ASP_FEATURE_CLASS
+
         case OpCode_MKCLS:
         {
             #ifdef ASP_DEBUG
@@ -2076,6 +2099,8 @@ static AspRunResult Step(AspEngine *engine)
 
             break;
         }
+
+        #endif
 
         case OpCode_MKOBJ:
         {
@@ -3192,14 +3217,16 @@ static AspRunResult Step(AspEngine *engine)
             uint8_t originalContainerType = AspDataGetType(originalContainer);
             AspPop(engine);
 
-            /* Search the container and its ancestors, if applicable, for the
+            /* Search the container and if applicable, its ancestors, for the
                member. */
             AspDataEntry *container = originalContainer;
             bool createAddress = isAddressInstruction;
             AspDataEntry *member = 0, *foundMember = 0;
+            #ifdef ASP_FEATURE_CLASS
             uint32_t iterationCount = 0;
             for (; iterationCount < engine->cycleDetectionLimit;
                  iterationCount++)
+            #endif
             {
                 /* Access the container's namespace. */
                 AspDataEntry *ns = 0;
@@ -3214,6 +3241,8 @@ static AspRunResult Step(AspEngine *engine)
                             (engine,
                              AspDataGetObjectNamespaceIndex(container));
                         break;
+
+                    #ifdef ASP_FEATURE_CLASS
 
                     case DataType_Class:
                         ns = AspEntry
@@ -3240,6 +3269,8 @@ static AspRunResult Step(AspEngine *engine)
                         break;
                     }
 
+                    #endif
+
                     case DataType_Module:
                         ns = AspEntry
                             (engine,
@@ -3252,7 +3283,7 @@ static AspRunResult Step(AspEngine *engine)
                     return AspRunResult_UnexpectedType;
 
                 /* Look up the variable in the namespace, creating it for an
-                   address lookup if it doesn't exist. */
+                   address lookup, if applicable, if it doesn't exist. */
                 AspTreeResult memberResult = createAddress ?
                     AspTreeTryInsertBySymbol
                         (engine, ns, variableSymbol, engine->noneSingleton) :
@@ -3264,6 +3295,8 @@ static AspRunResult Step(AspEngine *engine)
                     memberResult.node : memberResult.value;
                 if (container == originalContainer)
                     member = foundMember;
+
+                #ifdef ASP_FEATURE_CLASS
 
                 /* End the search if the member was found or the container is
                    a module, in which case there's nowhere else to search. */
@@ -3277,10 +3310,12 @@ static AspRunResult Step(AspEngine *engine)
                 {
                     default:
                         return AspRunResult_InternalError;
+
                     case DataType_Object:
                         nextContainerIndex = AspDataGetObjectClassIndex
                             (container);
                         break;
+
                     case DataType_Class:
                         nextContainerIndex = AspDataGetClassBaseClassIndex
                             (container);
@@ -3290,9 +3325,15 @@ static AspRunResult Step(AspEngine *engine)
                     break;
                 container = AspValueEntry(engine, nextContainerIndex);
                 createAddress = false;
+
+                #endif
             }
+            #ifdef ASP_FEATURE_CLASS
             if (iterationCount >= engine->cycleDetectionLimit)
                 return AspRunResult_CycleDetected;
+            #endif
+
+            #ifdef ASP_FEATURE_CLASS
 
             /* Handle cases where a member is found in an inherited
                container (i.e., an instances's class or a class' base). */
@@ -3348,6 +3389,8 @@ static AspRunResult Step(AspEngine *engine)
                     member = foundMember;
             }
 
+            #endif
+
             if (member == 0)
                 return AspRunResult_NameNotFound;
 
@@ -3356,8 +3399,10 @@ static AspRunResult Step(AspEngine *engine)
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
+            #ifdef ASP_FEATURE_CLASS
             if (newMemberValue)
                 AspUnref(engine, member);
+            #endif
             AspUnref(engine, originalContainer);
 
             break;

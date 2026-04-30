@@ -1,0 +1,6 @@
+#
+# Standalone Asp application function specifications, including class support.
+#
+
+include standalone
+include 'class'

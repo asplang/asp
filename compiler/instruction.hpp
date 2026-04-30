@@ -556,6 +556,8 @@ class MakeParameterInstruction : public Instruction
         std::int32_t symbol;
 };
 
+#ifdef ASP_FEATURE_CLASS
+
 class MakeClassInstruction : public SimpleInstruction
 {
     public:
@@ -563,6 +565,8 @@ class MakeClassInstruction : public SimpleInstruction
         explicit MakeClassInstruction
             (const std::string &comment = "");
 };
+
+#endif
 
 class MakeObjectInstruction : public SimpleInstruction
 {

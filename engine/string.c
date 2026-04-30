@@ -178,18 +178,15 @@ static AspDataEntry *ToString
                 AspGetRange(engine, entry, &start, &end, &step, &bounded);
                 if (start != (step < 0 ? -1 : 0))
                     count += snprintf
-                        (buffer + count, sizeof buffer - count,
-                         "%d", start);
+                        (buffer + count, sizeof buffer - count, "%d", start);
                 count += snprintf
                     (buffer + count, sizeof buffer - count, "..");
                 if (bounded)
                     count += snprintf
-                        (buffer + count, sizeof buffer - count,
-                         "%d", end);
+                        (buffer + count, sizeof buffer - count, "%d", end);
                 if (step != 1)
                     count += snprintf
-                        (buffer + count, sizeof buffer - count,
-                         ":%d", step);
+                        (buffer + count, sizeof buffer - count, ":%d", step);
                 break;
             }
 
@@ -444,13 +441,23 @@ static AspDataEntry *ToString
 
             case DataType_Object:
             {
+                #ifndef ASP_FEATURE_CLASS
+
+                snprintf
+                    (buffer, sizeof buffer, "<%s at 0x%07X>",
+                     TypeString(type), AspIndex(engine, entry));
+
+                #else
+
                 int count = 0;
+
                 if (!flag)
                 {
                     count += snprintf
                         (buffer + count, sizeof buffer - count,
                          "<%s at 0x%07X",
                          TypeString(type), AspIndex(engine, entry));
+
                     uint32_t classIndex = AspDataGetObjectClassIndex
                         (entry);
                     if (classIndex == 0)
@@ -491,13 +498,16 @@ static AspDataEntry *ToString
                     count += snprintf
                         (buffer + count, sizeof buffer - count, ">");
 
+                #endif
+
                 break;
             }
 
+            #ifdef ASP_FEATURE_CLASS
+
             case DataType_Class:
                 snprintf
-                    (buffer, sizeof buffer,
-                     "<%s at 0x%07X>",
+                    (buffer, sizeof buffer, "<%s at 0x%07X>",
                      TypeString(type), AspIndex(engine, entry));
                 break;
 
@@ -575,13 +585,14 @@ static AspDataEntry *ToString
                 break;
             }
 
+            #endif
+
             case DataType_Function:
             {
                 int count = 0;
                 if (AspDataGetFunctionIsApp(entry))
                     count += snprintf
-                        (buffer + count, sizeof buffer - count,
-                         "<app %s %d",
+                        (buffer + count, sizeof buffer - count, "<app %s %d",
                          TypeString(type), AspDataGetFunctionSymbol(entry));
                 else
                     count += snprintf
@@ -599,8 +610,7 @@ static AspDataEntry *ToString
                 int count = 0;
                 if (AspDataGetModuleIsApp(entry))
                     count += snprintf
-                        (buffer + count, sizeof buffer - count,
-                         "<app %s %d",
+                        (buffer + count, sizeof buffer - count, "<app %s %d",
                          TypeString(type), AspDataGetModuleSymbol(entry));
                 else
                     count += snprintf
@@ -754,12 +764,14 @@ static const char *TypeString(DataType type)
             return "dict";
         case DataType_Object:
             return "object";
+        #ifdef ASP_FEATURE_CLASS
         case DataType_Class:
             return "class";
         case DataType_BoundMethod:
             return "bound method";
         case DataType_Super:
             return "super";
+        #endif
         case DataType_Function:
             return "function";
         case DataType_Module:

@@ -10,7 +10,9 @@ static AspReservedNameEntry ReservedNameEntries[] =
     {AspReservedSymbol_SystemModule, "sys"},
     {AspReservedSymbol_SystemArguments, "args"},
     {AspReservedSymbol_MainModule, "__main__"},
+    #ifdef ASP_FEATURE_CLASS
     {AspReservedSymbol_ClassInitialize, "__init__"},
+    #endif
 
     /* Final entry. */
     {AspReservedSymbol_End, ""}

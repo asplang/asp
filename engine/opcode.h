@@ -143,7 +143,9 @@ typedef enum OpCode
     OpCode_MKNVP4 = 0xCB, /* make name/value pair with 4-byte symbol */
 
     /* Class and object creation operations. */
+    #ifdef ASP_FEATURE_CLASS
     OpCode_MKCLS = 0xCC, /* make class */
+    #endif
     OpCode_MKOBJ = 0xCD, /* make simple object */
 
     /* Function parameter operations. */

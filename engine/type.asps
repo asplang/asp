@@ -7,11 +7,6 @@ lib
 # Object type function.
 def type(object) = AspLib_type
 
-# Class support functions.
-def isinstance(obj, type) = AspLib_isinstance
-def issubclass(class1, class2) = AspLib_issubclass
-def super(cls = None, obj = None) = AspLib_super
-
 # Container length function.
 def len(object) = AspLib_len
 

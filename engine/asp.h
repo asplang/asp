@@ -152,10 +152,12 @@ ASP_API bool AspIsSequence(const AspDataEntry *);
 ASP_API bool AspIsSet(const AspDataEntry *);
 ASP_API bool AspIsDictionary(const AspDataEntry *);
 ASP_API bool AspIsSimpleObject(const AspDataEntry *);
+#ifdef ASP_FEATURE_CLASS
 ASP_API bool AspIsClassInstance(const AspDataEntry *);
 ASP_API bool AspIsClass(const AspDataEntry *);
 ASP_API bool AspIsBoundMethod(const AspDataEntry *);
 ASP_API bool AspIsSuper(const AspDataEntry *);
+#endif
 ASP_API bool AspIsFunction(const AspDataEntry *);
 ASP_API bool AspIsModule(const AspDataEntry *);
 ASP_API bool AspIsReverseIterator(const AspDataEntry *);
@@ -169,8 +171,10 @@ ASP_API bool AspIsType(const AspDataEntry *);
 ASP_API bool AspIsTrue(AspEngine *, const AspDataEntry *);
 ASP_API bool AspIsTypeOf
     (AspEngine *, const AspDataEntry *object, const AspDataEntry *type);
+#ifdef ASP_FEATURE_CLASS
 ASP_API bool AspIsSubclassOf
     (AspEngine *, const AspDataEntry *class1, const AspDataEntry *class2);
+#endif
 
 /* API functions for value extraction. */
 ASP_API bool AspIntegerValue(const AspDataEntry *, int32_t *);
@@ -212,8 +216,10 @@ ASP_API bool AspAtSame
      const AspDataEntry *iterator1, const AspDataEntry *iterator2);
 ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
 ASP_API AspDataEntry *AspIterable(AspEngine *, const AspDataEntry *iterator);
+#ifdef ASP_FEATURE_CLASS
 ASP_API AspDataEntry *AspInstanceClass
     (AspEngine *, const AspDataEntry *instance);
+#endif
 
 /* API functions for object creation. */
 ASP_API AspDataEntry *AspNewNone(AspEngine *);

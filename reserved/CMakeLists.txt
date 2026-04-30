@@ -12,3 +12,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 add_library(reserved STATIC
     reserved.c
     )
+
+target_compile_definitions(reserved PRIVATE
+    $<$<BOOL:${ENABLE_FEATURE_CLASS}>:ASP_FEATURE_CLASS>
+    )

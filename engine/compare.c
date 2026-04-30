@@ -112,9 +112,11 @@ AspRunResult AspCompare
                         type == DataType_Set ||
                         type == DataType_Dictionary ||
                         type == DataType_Object ||
+                        #ifdef ASP_FEATURE_CLASS
                         type == DataType_Class ||
                         type == DataType_BoundMethod ||
                         type == DataType_Super ||
+                        #endif
                         type == DataType_Function ||
                         type == DataType_Module ||
                         type == DataType_ReverseIterator ||
@@ -391,6 +393,8 @@ AspRunResult AspCompare
                         break;
                     }
 
+                    #ifdef ASP_FEATURE_CLASS
+
                     case DataType_Class:
                     {
                         uint32_t
@@ -447,6 +451,8 @@ AspRunResult AspCompare
                             leftClassIndex < rightClassIndex ? -1 : 1;
                         break;
                     }
+
+                    #endif
 
                     case DataType_Function:
                     {

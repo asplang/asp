@@ -1401,7 +1401,9 @@ static AspOperationResult PerformMembershipOperation
 
         case DataType_Ellipsis:
         case DataType_Object:
+        #ifdef ASP_FEATURE_CLASS
         case DataType_Class:
+        #endif
         case DataType_Module:
         {
             int32_t symbol;
@@ -1414,8 +1416,10 @@ static AspOperationResult PerformMembershipOperation
             const AspDataEntry *ns =
                 rightType == DataType_Object ?
                 AspValueEntry(engine, AspDataGetObjectNamespaceIndex(right)) :
+                #ifdef ASP_FEATURE_CLASS
                 rightType == DataType_Class ?
                 AspValueEntry(engine, AspDataGetClassNamespaceIndex(right)) :
+                #endif
                 rightType == DataType_Module ?
                 AspValueEntry(engine, AspDataGetModuleNamespaceIndex(right)) :
                 engine->localNamespace;

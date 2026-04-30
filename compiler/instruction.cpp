@@ -235,7 +235,9 @@ void SimpleInstruction::PrintCode(ostream &os) const
         {OpCode_CALL, "CALL"},
         {OpCode_RET, "RET"},
         {OpCode_XMOD, "XMOD"},
+        #ifdef ASP_FEATURE_CLASS
         {OpCode_MKCLS, "MKCLS"},
+        #endif
         {OpCode_MKOBJ, "MKOBJ"},
         {OpCode_MKFUN, "MKFUN"},
         {OpCode_MKKVP, "MKKVP"},
@@ -824,11 +826,15 @@ void MakeParameterInstruction::PrintCode(ostream &os) const
     os << "PAR " << symbol;
 }
 
+#ifdef ASP_FEATURE_CLASS
+
 MakeClassInstruction::MakeClassInstruction
     (const string &comment) :
     SimpleInstruction(OpCode_MKCLS, comment)
 {
 }
+
+#endif
 
 MakeObjectInstruction::MakeObjectInstruction
     (const string &comment) :

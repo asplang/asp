@@ -257,7 +257,11 @@ AspRunResult AspExpandDictionaryGroupArgument
 
 AspRunResult AspCallFunction
     (AspEngine *engine, AspDataEntry *function, AspDataEntry *argumentList,
-     bool fromApp, AspDataEntry *cls, AspDataEntry *instance)
+     bool fromApp
+     #ifdef ASP_FEATURE_CLASS
+     , AspDataEntry *cls, AspDataEntry *instance
+     #endif
+     )
 {
     /* Redirect any direct calls from the application through the CALL
        instruction in order to keep the application's stack usage under
@@ -327,6 +331,7 @@ AspRunResult AspCallFunction
             (frame, AspIndex(engine, engine->module));
         AspDataSetFrameLocalNamespaceIndex
             (frame, AspIndex(engine, engine->localNamespace));
+        #ifdef ASP_FEATURE_CLASS
         if (cls != 0 || instance != 0)
         {
             if (cls == 0 || instance == 0)
@@ -344,6 +349,7 @@ AspRunResult AspCallFunction
             AspDataSetContextInstanceIndex(context, AspIndex(engine, instance));
             AspDataSetFrameContextIndex(frame, AspIndex(engine, context));
         }
+        #endif
         const AspDataEntry *newTop = AspPush(engine, frame);
         if (newTop == 0)
             return AspRunResult_OutOfDataMemory;
@@ -844,6 +850,9 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
         (engine, AspDataGetFrameModuleIndex(frame));
     engine->globalNamespace = AspValueEntry
         (engine, AspDataGetModuleNamespaceIndex(engine->module));
+
+    #ifdef ASP_FEATURE_CLASS
+
     uint32_t instanceIndex = 0;
     uint32_t contextIndex = AspDataGetFrameContextIndex(frame);
     if (contextIndex != 0)
@@ -868,6 +877,8 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
         *returnValue = AspValueEntry(engine, instanceIndex);
         AspRef(engine, *returnValue);
     }
+
+    #endif
 
     /* Return control back to the caller. */
     engine->pc = AspDataGetFrameReturnAddress(frame);

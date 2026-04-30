@@ -156,9 +156,11 @@ static bool IsSimpleImmutableObject(const AspDataEntry *entry)
         DataType_Range,
         DataType_String,
         DataType_Object,
+        #ifdef ASP_FEATURE_CLASS
         DataType_Class,
         DataType_BoundMethod,
         DataType_Super,
+        #endif
         DataType_Function,
         DataType_Module,
         DataType_AppIntegerObject,

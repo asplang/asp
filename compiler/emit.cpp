@@ -792,6 +792,8 @@ void DefStatement::Emit(Executable &executable) const
          sourceLocation);
 }
 
+#ifdef ASP_FEATURE_CLASS
+
 void ClassStatement::Emit(Executable &executable) const
 {
     auto entryLocation = executable.Insert
@@ -851,6 +853,8 @@ void ClassStatement::Emit(Executable &executable) const
         (new SetInstruction(true, "Assign function with pop"),
          sourceLocation);
 }
+
+#endif
 
 void AssignmentExpression::Emit
     (Executable &executable, EmitType emitType) const

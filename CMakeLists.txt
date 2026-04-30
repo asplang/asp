@@ -38,6 +38,11 @@ option(BUILD_TEST_TARGETS
     "Enable/disable building of tests"
     FALSE)
 
+# Feature options.
+option(ENABLE_FEATURE_CLASS
+    "Enable/disable optional support for object-oriented classes"
+    FALSE)
+
 # Debug option.
 option(ENABLE_DEBUG
     "Enable/disable debug output for the engine and standalone application"

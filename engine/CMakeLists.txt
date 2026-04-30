@@ -21,11 +21,6 @@ if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
         )
 endif()
 
-project(aspm
-    VERSION ${aspe_VERSION}
-    LANGUAGES C
-    )
-
 math(EXPR VERSION_VALUE
     "(${aspe_VERSION_MAJOR} << 24) +
      (${aspe_VERSION_MINOR} << 16) +
@@ -41,7 +36,7 @@ if(BUILD_FOR_TARGET)
     set(CMAKE_C_STANDARD 99)
     set(CMAKE_C_STANDARD_REQUIRED True)
 
-    add_library(aspe
+    set(COMMON_SOURCES
         engine.c
         step.c
         bits.c
@@ -68,6 +63,10 @@ if(BUILD_FOR_TARGET)
         integer.c
         integer-result.c
         $<$<BOOL:${ENABLE_DEBUG}>:debug.c>
+        )
+
+    add_library(aspe
+        ${COMMON_SOURCES}
         )
 
     if(ENABLE_DEBUG)
@@ -102,6 +101,48 @@ if(BUILD_FOR_TARGET)
         "${reserved_SOURCE_DIR}"
         )
 
+    if(ENABLE_FEATURE_CLASS)
+
+        add_library(aspe-oo
+            ${COMMON_SOURCES}
+            lib-class.c
+            )
+
+        if(ENABLE_DEBUG)
+            set_property(TARGET aspe-oo
+                PROPERTY OUTPUT_NAME aspe-oo-d
+                )
+        endif()
+        set_property(TARGET aspe-oo
+            PROPERTY VERSION ${ABI_VERSION}
+            )
+        if(BUILD_SHARED_LIBS)
+            set_property(TARGET aspe-oo
+                PROPERTY C_VISIBILITY_PRESET hidden
+                )
+        endif()
+
+        target_compile_definitions(aspe-oo PRIVATE
+            $<$<BOOL:${ENABLE_DEBUG}>:ASP_DEBUG>
+            $<$<BOOL:${BUILD_FOR_REGRESSION_TEST}>:ASP_DEBUG_NO_PTRS>
+            $<$<BOOL:${BUILD_TEST_TARGETS}>:ASP_TEST>
+            ASP_ENGINE_VERSION_MAJOR=${aspe_VERSION_MAJOR}
+            ASP_ENGINE_VERSION_MINOR=${aspe_VERSION_MINOR}
+            ASP_ENGINE_VERSION_PATCH=${aspe_VERSION_PATCH}
+            ASP_ENGINE_VERSION_TWEAK=${aspe_VERSION_TWEAK}
+            ASP_FEATURE_CLASS
+            $<$<BOOL:${BUILD_SHARED_LIBS}>:USING_SHARED_LIBS>
+            ASP_EXPORT_API ASP_EXPORT_LIB_API
+            )
+
+        target_include_directories(aspe-oo PUBLIC
+            "${CMAKE_CURRENT_BINARY_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+            "${reserved_SOURCE_DIR}"
+            )
+
+    endif()
+
     add_library(aspm
         lib-math.c
         )
@@ -125,14 +166,18 @@ if(BUILD_FOR_TARGET)
         ASP_EXPORT_API ASP_EXPORT_LIB_API
         )
 
-    target_link_libraries(aspm PUBLIC
-        aspe
+    target_include_directories(aspm PUBLIC
+        "${CMAKE_CURRENT_BINARY_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}"
         )
 
     set(LIBS
         aspe
         aspm
         )
+    if(ENABLE_FEATURE_CLASS)
+        list(APPEND LIBS aspe-oo)
+    endif()
 
     if(WIN32)
 
@@ -203,6 +248,9 @@ if(INSTALL_DEV)
         iter.asps
         math.asps
         )
+    if(ENABLE_FEATURE_CLASS)
+        list(APPEND ASPS_FILES class.asps)
+    endif()
 
     if(WIN32)
 

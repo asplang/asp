@@ -494,6 +494,8 @@ class DefStatement : public Statement
         Block *block;
 };
 
+#ifdef ASP_FEATURE_CLASS
+
 class ClassStatement : public Statement
 {
     public:
@@ -509,5 +511,7 @@ class ClassStatement : public Statement
         Argument *baseClassArgument;
         Block *block;
 };
+
+#endif
 
 #endif

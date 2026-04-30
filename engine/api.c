@@ -139,9 +139,14 @@ bool AspIsDictionary(const AspDataEntry *entry)
 bool AspIsSimpleObject(const AspDataEntry *entry)
 {
     return
-        entry != 0 && AspDataGetType(entry) == DataType_Object &&
-        AspDataGetObjectClassIndex(entry) == 0;
+        entry != 0 && AspDataGetType(entry) == DataType_Object
+        #ifdef ASP_FEATURE_CLASS
+        && AspDataGetObjectClassIndex(entry) == 0
+        #endif
+        ;
 }
+
+#ifdef ASP_FEATURE_CLASS
 
 bool AspIsClassInstance(const AspDataEntry *entry)
 {
@@ -164,6 +169,8 @@ bool AspIsSuper(const AspDataEntry *entry)
 {
     return entry != 0 && AspDataGetType(entry) == DataType_Super;
 }
+
+#endif
 
 bool AspIsFunction(const AspDataEntry *entry)
 {
@@ -207,7 +214,9 @@ bool AspIsIterable(const AspDataEntry *entry)
          type == DataType_Set ||
          type == DataType_Dictionary ||
          type == DataType_Object ||
+         #ifdef ASP_FEATURE_CLASS
          type == DataType_Class ||
+         #endif
          type == DataType_Module);
 }
 
@@ -285,6 +294,7 @@ bool AspIsTrue(AspEngine *engine, const AspDataEntry *entry)
 bool AspIsTypeOf
     (AspEngine *engine, const AspDataEntry *object, const AspDataEntry *type)
 {
+    #ifdef ASP_FEATURE_CLASS
     if (AspIsClassInstance(object) && AspIsClass(type))
     {
         uint32_t classIndex = AspIndex(engine, type);
@@ -307,11 +317,16 @@ bool AspIsTypeOf
     }
     else
     {
+    #endif
         return
             AspIsType(type) &&
             AspDataGetType(object) == AspDataGetTypeValue(type);
+    #ifdef ASP_FEATURE_CLASS
     }
+    #endif
 }
+
+#ifdef ASP_FEATURE_CLASS
 
 bool AspIsSubclassOf
     (AspEngine *engine, const AspDataEntry *class1, const AspDataEntry *class2)
@@ -337,6 +352,8 @@ bool AspIsSubclassOf
 
     return false;
 }
+
+#endif
 
 bool AspIntegerValue(const AspDataEntry *entry, int32_t *result)
 {
@@ -622,6 +639,8 @@ AspDataEntry *AspIterable(AspEngine *engine, const AspDataEntry *iterator)
         (engine, AspDataGetIteratorIterableIndex(iterator));
 }
 
+#ifdef ASP_FEATURE_CLASS
+
 ASP_API AspDataEntry *AspInstanceClass
     (AspEngine *engine, const AspDataEntry *instance)
 {
@@ -630,6 +649,8 @@ ASP_API AspDataEntry *AspInstanceClass
     return AspValueEntry
         (engine, AspDataGetObjectClassIndex(instance));
 }
+
+#endif
 
 AspDataEntry *AspNewNone(AspEngine *engine)
 {
@@ -1257,7 +1278,12 @@ AspRunResult AspCall
     /* Consume the argument list and call the function. */
     AspDataEntry *argumentList = engine->argumentList;
     engine->argumentList = 0;
-    return AspCallFunction(engine, function, argumentList, true, 0, 0);
+    return AspCallFunction
+        (engine, function, argumentList, true
+         #ifdef ASP_FEATURE_CLASS
+         , 0, 0
+         #endif
+        );
 }
 
 AspRunResult AspReturnValue(AspEngine *engine, AspDataEntry **returnValue)

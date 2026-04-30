@@ -141,13 +141,17 @@ AspIteratorResult AspIteratorCreate
 
         case DataType_Ellipsis:
         case DataType_Object:
+        #ifdef ASP_FEATURE_CLASS
         case DataType_Class:
+        #endif
         case DataType_Module:
             iterable =
                 iterableType == DataType_Object ?
                 AspEntry(engine, AspDataGetObjectNamespaceIndex(iterable)) :
+                #ifdef ASP_FEATURE_CLASS
                 iterableType == DataType_Class ?
                 AspEntry(engine, AspDataGetClassNamespaceIndex(iterable)) :
+                #endif
                 iterableType == DataType_Module ?
                 AspEntry(engine, AspDataGetModuleNamespaceIndex(iterable)) :
                 engine->localNamespace;
@@ -342,14 +346,18 @@ AspRunResult AspIteratorNext
 
         case DataType_Ellipsis:
         case DataType_Object:
+        #ifdef ASP_FEATURE_CLASS
         case DataType_Class:
+        #endif
         case DataType_Module:
             iterable = AspEntry
                 (engine,
                  iterableType == DataType_Object ?
                  AspDataGetObjectNamespaceIndex(iterable) :
+                 #ifdef ASP_FEATURE_CLASS
                  iterableType == DataType_Class ?
                  AspDataGetClassNamespaceIndex(iterable) :
+                 #endif
                  iterableType == DataType_Module ?
                  AspDataGetModuleNamespaceIndex(iterable) :
                  AspDataGetIteratorCollectionIndex(iterator));
@@ -495,14 +503,18 @@ AspIteratorResult AspIteratorDereference
 
         case DataType_Ellipsis:
         case DataType_Object:
+        #ifdef ASP_FEATURE_CLASS
         case DataType_Class:
+        #endif
         case DataType_Module:
             iterable = AspEntry
                 (engine,
                  iterableType == DataType_Object ?
                  AspDataGetObjectNamespaceIndex(iterable) :
+                 #ifdef ASP_FEATURE_CLASS
                  iterableType == DataType_Class ?
                  AspDataGetClassNamespaceIndex(iterable) :
+                 #endif
                  iterableType == DataType_Module ?
                  AspDataGetModuleNamespaceIndex(iterable) :
                  AspDataGetIteratorCollectionIndex(iterator));

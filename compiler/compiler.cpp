@@ -872,6 +872,13 @@ DEFINE_ACTION
 {
     Statement *result = nullptr;
 
+    #ifndef ASP_FEATURE_CLASS
+
+    ReportError("Classes are not supported");
+    return result;
+
+    #else
+
     if (block != nullptr)
     {
         try
@@ -913,6 +920,8 @@ DEFINE_ACTION
 
     delete nameToken;
     return result;
+
+    #endif
 }
 
 DEFINE_ACTION

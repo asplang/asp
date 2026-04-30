@@ -150,10 +150,13 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     (engine, AspDataGetObjectNamespaceIndex(entry));
                 AspPushNoUse(engine, ns);
 
+                #ifdef ASP_FEATURE_CLASS
                 uint32_t classIndex = AspDataGetObjectClassIndex(entry);
                 if (classIndex != 0)
                     AspPushNoUse(engine, AspValueEntry(engine, classIndex));
+                #endif
             }
+            #ifdef ASP_FEATURE_CLASS
             else if (t == DataType_Class)
             {
                 const AspDataEntry *ns = AspValueEntry
@@ -189,6 +192,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     (engine, AspDataGetSuperInstanceIndex(entry));
                 AspPushNoUse(engine, instance);
             }
+            #endif
             else if (t == DataType_Function)
             {
                 const AspDataEntry *module = AspValueEntry
@@ -258,6 +262,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                     (engine, AspDataGetFrameModuleIndex(entry));
                 AspPushNoUse(engine, module);
 
+                #ifdef ASP_FEATURE_CLASS
                 uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
                 if (contextIndex != 0)
                 {
@@ -273,6 +278,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
 
                     AspUnref(engine, context);
                 }
+                #endif
             }
             else if (t == DataType_KeyValuePair)
             {
@@ -320,6 +326,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 else
                     AspPushNoUse(engine, value);
             }
+            #ifdef ASP_FEATURE_CLASS
             else if (t == DataType_ShadowingMember)
             {
                 AspDataEntry *shadowingSource = AspValueEntry
@@ -329,6 +336,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 else
                     AspPushNoUse(engine, shadowingSource);
             }
+            #endif
 
             /* Free the entry. */
             if (t != DataType_Free)

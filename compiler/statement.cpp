@@ -39,9 +39,15 @@ const LoopStatement *Statement::ParentLoop() const
     {
         auto defStatement =
             dynamic_cast<const DefStatement *>(parentStatement);
+        #ifdef ASP_FEATURE_CLASS
         auto classStatement =
             dynamic_cast<const ClassStatement *>(parentStatement);
-        if (defStatement != nullptr || classStatement != nullptr)
+        #endif
+        if (defStatement != nullptr
+        #ifdef ASP_FEATURE_CLASS
+            || classStatement != nullptr
+        #endif
+           )
             break;
     }
     return loopStatement;
@@ -57,10 +63,12 @@ const DefStatement *Statement::ParentDef() const
          defStatement = dynamic_cast<const DefStatement *>(parentStatement),
          parentStatement = parentStatement->Parent()->Parent())
     {
+        #ifdef ASP_FEATURE_CLASS
         auto classStatement =
             dynamic_cast<const ClassStatement *>(parentStatement);
         if (classStatement != nullptr)
             break;
+        #endif
     }
     return defStatement;
 }
@@ -610,6 +618,8 @@ DefStatement::~DefStatement()
     delete block;
 }
 
+#ifdef ASP_FEATURE_CLASS
+
 ClassStatement::ClassStatement
     (const Token &nameToken, Argument *baseClassArgument, Block *block) :
     Statement(nameToken),
@@ -627,3 +637,5 @@ ClassStatement::~ClassStatement()
     delete baseClassArgument;
     delete block;
 }
+
+#endif
