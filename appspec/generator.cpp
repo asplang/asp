@@ -102,9 +102,14 @@ void Generator::Finalize()
     // Reserve system symbols.
     symbolTable.ReserveSystemSymbols(featureBits);
 
-    // Prepare to write the feature bits to the app spec file if applicable.
+    // Prepare to write the feature bits to the app spec files if applicable.
     if (featureBits != 0)
-        compilerAppSpecVersion = 3u;
+    {
+        if (compilerAppSpecVersion < 3u)
+            compilerAppSpecVersion = 3u;
+        if (engineAppSpecVersion < 2u)
+            engineAppSpecVersion = 2u;
+    }
 
     // Reorganize modules into a well-defined order that does not depend on
     // the module names, but rather the set of associated import names,

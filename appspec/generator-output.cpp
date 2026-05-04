@@ -374,6 +374,11 @@ void Generator::WriteApplicationCode(ostream &os) const
         specByteCount += 2;
         WriteStringEscapedHex(os, engineAppSpecVersion);
         specByteCount += sizeof engineAppSpecVersion;
+        if (engineAppSpecVersion >= 2u)
+        {
+            WriteStringEscapedHex(os, featureBits);
+            specByteCount += sizeof featureBits;
+        }
         auto moduleCount = static_cast<uint32_t>
             (definitionsByModuleKey.size()) - 1u;
         WriteStringEscapedHex(os, moduleCount);

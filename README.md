@@ -50,7 +50,10 @@ OS-based applications. The engine is implemented entirely in C.
       they are both on (or both off) all targets are built.
     - `INSTALL_DEV` - Enables installation of development libraries. If not
       enabled, only tools will be installed.
-    - `BUILD_SHARED_LIBS` - Build shared libraries vs. static libraries.
+    - `BUILD_SHARED_LIBS` - Builds shared libraries vs. static libraries.
+    - `ENABLE_FEATURE_CLASS` - Enables support for classes. Even when enabled
+       for the build, class support can be enable/disabled via the app spec,
+       but disabling it from the build produces a smaller engine library.
     - `ENABLE_DEBUG` - Adds debug API functions in the engine. Also, when on,
       the file names of some targets are appended with "-d".
 

@@ -511,8 +511,12 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
         specIndex += 2;
         version = spec[specIndex++];
     }
-    if (version > 1u)
+    if (version > 2u)
         return AspRunResult_InitializationError;
+
+    /* Enable applicable features. */
+    if (version >= 2u)
+        engine->featureBits = spec[specIndex++];
 
     /* Create application modules if applicable. */
     int32_t appModuleCount = 0;
