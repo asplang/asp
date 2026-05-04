@@ -4,6 +4,9 @@
 
 lib
 
+# Class support feature.
++class
+
 # Class support functions.
 def isinstance(obj, type) = AspLib_isinstance
 def issubclass(class1, class2) = AspLib_issubclass

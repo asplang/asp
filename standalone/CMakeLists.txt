@@ -23,6 +23,26 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
+add_custom_command(
+    OUTPUT
+        "${PROJECT_BINARY_DIR}/standalone.aspec"
+        "${PROJECT_BINARY_DIR}/standalone.c"
+        "${PROJECT_BINARY_DIR}/standalone.h"
+    DEPENDS
+        aspg
+        "${PROJECT_SOURCE_DIR}/standalone.asps"
+        "${aspe_SOURCE_DIR}/sys.asps"
+        "${aspe_SOURCE_DIR}/type.asps"
+        "${aspe_SOURCE_DIR}/collect.asps"
+        "${aspe_SOURCE_DIR}/iter.asps"
+        "${aspe_SOURCE_DIR}/math.asps"
+    COMMAND
+        ${CMAKE_COMMAND} -E env
+        "ASP_SPEC_INCLUDE=${PROJECT_SOURCE_DIR}${PATH_NAME_SEPARATOR}${aspe_SOURCE_DIR}"
+        "$<TARGET_FILE:aspg>" "-q"
+        "${PROJECT_SOURCE_DIR}/standalone.asps"
+    )
+
 if(ENABLE_FEATURE_CLASS)
 
     add_custom_command(
@@ -46,33 +66,12 @@ if(ENABLE_FEATURE_CLASS)
             "${PROJECT_SOURCE_DIR}/standalone-oo.asps"
         )
 
-else()
-
-    add_custom_command(
-        OUTPUT
-            "${PROJECT_BINARY_DIR}/standalone.aspec"
-            "${PROJECT_BINARY_DIR}/standalone.c"
-            "${PROJECT_BINARY_DIR}/standalone.h"
-        DEPENDS
-            aspg
-            "${PROJECT_SOURCE_DIR}/standalone.asps"
-            "${aspe_SOURCE_DIR}/sys.asps"
-            "${aspe_SOURCE_DIR}/type.asps"
-            "${aspe_SOURCE_DIR}/collect.asps"
-            "${aspe_SOURCE_DIR}/iter.asps"
-            "${aspe_SOURCE_DIR}/math.asps"
-        COMMAND
-            ${CMAKE_COMMAND} -E env
-            "ASP_SPEC_INCLUDE=${PROJECT_SOURCE_DIR}${PATH_NAME_SEPARATOR}${aspe_SOURCE_DIR}"
-            "$<TARGET_FILE:aspg>" "-q"
-            "${PROJECT_SOURCE_DIR}/standalone.asps"
-        )
-
 endif()
 
 add_executable(asps
     main.cpp
-    $<IF:$<BOOL:${ENABLE_FEATURE_CLASS}>,standalone-oo.c,standalone.c>
+    standalone.c
+    $<$<BOOL:${ENABLE_FEATURE_CLASS}>:standalone-oo.c>
     functions-print.cpp
     functions-sleep.cpp
     )
@@ -113,35 +112,38 @@ install(TARGETS asps
     COMPONENT Runtime
     )
 
+set(ASPEC_NAMES standalone)
 if(ENABLE_FEATURE_CLASS)
-    set(aspec_name standalone-oo)
-else()
-    set(aspec_name standalone)
+    list(APPEND ASPEC_NAMES standalone-oo)
 endif()
 
-if(WIN32)
+foreach (aspec_name ${ASPEC_NAMES})
 
-    install(FILES "${PROJECT_BINARY_DIR}/${aspec_name}.aspec"
+    if(WIN32)
+
+        install(FILES "${PROJECT_BINARY_DIR}/${aspec_name}.aspec"
         DESTINATION etc/asp
         COMPONENT Runtime
         )
 
-else()
+    else()
 
-    install(FILES "${PROJECT_BINARY_DIR}/${aspec_name}.aspec"
-        DESTINATION etc/asp
-        RENAME ${aspec_name}-${ABI_VERSION}.aspec
-        COMPONENT Runtime
-        )
+        install(FILES "${PROJECT_BINARY_DIR}/${aspec_name}.aspec"
+            DESTINATION etc/asp
+            RENAME ${aspec_name}-${ABI_VERSION}.aspec
+            COMPONENT Runtime
+            )
 
-    install(
-        CODE
-            "execute_process(
-            COMMAND ${CMAKE_COMMAND} -E create_symlink
-            \"${aspec_name}-${ABI_VERSION}.aspec\"
-            \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/etc/asp/${aspec_name}.aspec\"
-            )"
-        COMPONENT Runtime
-        )
+        install(
+            CODE
+                "execute_process(
+                COMMAND ${CMAKE_COMMAND} -E create_symlink
+                \"${aspec_name}-${ABI_VERSION}.aspec\"
+                \"\$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/etc/asp/${aspec_name}.aspec\"
+                )"
+            COMPONENT Runtime
+            )
 
-endif()
+    endif()
+
+endforeach()

@@ -167,9 +167,11 @@ class Compiler
     DECLARE_METHOD
         (MakeDefStatement, Statement *,
          Token *, ParameterList *, Block *)
+    #ifdef ASP_FEATURE_CLASS
     DECLARE_METHOD
         (MakeClassStatement, Statement *,
          Token *, ArgumentList *, Block *)
+    #endif
     DECLARE_METHOD
         (MakeBlockStatement, Statement *, Block *)
     DECLARE_METHOD
@@ -366,6 +368,9 @@ class Compiler
         SymbolTable &symbolTable;
         Executable &executable;
         Executable::Location topLocation;
+
+        // Feature data.
+        AspFeatureBits featureBits = 0;
 
         // Import data.
         std::map

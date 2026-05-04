@@ -127,10 +127,14 @@ compound_statement(result) ::= def(statement).
     result = ACTION(AssignStatement, (Statement *)statement);
 }
 
+%ifdef ASP_FEATURE_CLASS
+
 compound_statement(result) ::= class(statement).
 {
     result = ACTION(AssignStatement, (Statement *)statement);
 }
+
+%endif
 
 %type if {IfStatement *}
 
@@ -345,6 +349,8 @@ parameter(result) ::=
     result = ACTION(MakeDictionaryGroupParameter, nameToken);
 }
 
+%ifdef ASP_FEATURE_CLASS
+
 %type class {Statement *}
 
 class(result) ::=
@@ -362,6 +368,8 @@ class(result) ::=
 {
     result = ACTION(MakeClassStatement, nameToken, argumentList, block);
 }
+
+%endif
 
 %type block {Block *}
 

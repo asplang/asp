@@ -837,6 +837,9 @@ static AspRunResult Step(AspEngine *engine)
             /* Handle shadowing member if applicable. */
             if (AspDataGetType(address) == DataType_ShadowingMember)
             {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                    return AspRunResult_UnexpectedType;
+
                 AspDataEntry *shadowingAddress = AspEntry
                     (engine, AspDataGetShadowingMemberTargetIndex(address));
                 AspUnref(engine, address);
@@ -894,6 +897,8 @@ static AspRunResult Step(AspEngine *engine)
                 #ifdef ASP_FEATURE_CLASS
 
                 case DataType_ShadowingMember:
+                    if (!AspIsFeature(engine, AspFeatureBit_Class))
+                        return AspRunResult_UnexpectedType;
                     value = AspEntry
                         (engine,
                          AspDataGetShadowingMemberSourceIndex(address));
@@ -1061,6 +1066,12 @@ static AspRunResult Step(AspEngine *engine)
                 #endif
                 case DataType_Module:
                 {
+                    #ifdef ASP_FEATURE_CLASS
+                    if (containerType == DataType_Class &&
+                        !AspIsFeature(engine, AspFeatureBit_Class))
+                        return AspRunResult_UnexpectedType;
+                    #endif
+
                     /* Access the underlying namespace. */
                     AspDataEntry *ns = AspEntry
                         (engine,
@@ -1488,6 +1499,9 @@ static AspRunResult Step(AspEngine *engine)
                 /* Handle the different types of callables. */
                 if (callableType == DataType_Class)
                 {
+                    if (!AspIsFeature(engine, AspFeatureBit_Class))
+                        return AspRunResult_UnexpectedType;
+
                     /* Create an instance of the class. */
                     instance = AspNewSimpleObject(engine);
                     if (instance == 0)
@@ -1557,6 +1571,9 @@ static AspRunResult Step(AspEngine *engine)
                 }
                 else if (callableType == DataType_BoundMethod)
                 {
+                    if (!AspIsFeature(engine, AspFeatureBit_Class))
+                        return AspRunResult_UnexpectedType;
+
                     /* Prepare to call the function on behalf of the
                        instance. */
                     AspDataEntry *function = AspValueEntry
@@ -2057,6 +2074,9 @@ static AspRunResult Step(AspEngine *engine)
 
         case OpCode_MKCLS:
         {
+            if (!AspIsFeature(engine, AspFeatureBit_Class))
+                return AspRunResult_InvalidInstruction;
+
             #ifdef ASP_DEBUG
             fputs("MKCLS\n", engine->traceFile);
             #endif
@@ -3245,13 +3265,21 @@ static AspRunResult Step(AspEngine *engine)
                     #ifdef ASP_FEATURE_CLASS
 
                     case DataType_Class:
+                    {
+                        if (!AspIsFeature(engine, AspFeatureBit_Class))
+                            return AspRunResult_UnexpectedType;
+
                         ns = AspEntry
                             (engine,
                              AspDataGetClassNamespaceIndex(container));
                         break;
+                    }
 
                     case DataType_Super:
                     {
+                        if (!AspIsFeature(engine, AspFeatureBit_Class))
+                            return AspRunResult_UnexpectedType;
+
                         /* Start the search at the class' base class. */
                         AspDataEntry *cls = AspValueEntry
                             (engine, AspDataGetSuperClassIndex(container));

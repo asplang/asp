@@ -464,6 +464,12 @@ static AspDataEntry *ToString
                         flag = true;
                     else
                     {
+                        if (!AspIsFeature(engine, AspFeatureBit_Class))
+                        {
+                            engine->runResult = AspRunResult_UnexpectedType;
+                            break;
+                        }
+
                         count += snprintf
                             (buffer + count, sizeof buffer - count, " of ");
 
@@ -506,13 +512,28 @@ static AspDataEntry *ToString
             #ifdef ASP_FEATURE_CLASS
 
             case DataType_Class:
+            {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                {
+                    engine->runResult = AspRunResult_UnexpectedType;
+                    break;
+                }
+
                 snprintf
                     (buffer, sizeof buffer, "<%s at 0x%07X>",
                      TypeString(type), AspIndex(engine, entry));
+
                 break;
+            }
 
             case DataType_BoundMethod:
             {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                {
+                    engine->runResult = AspRunResult_UnexpectedType;
+                    break;
+                }
+
                 if (state == 0)
                     snprintf
                         (buffer, sizeof buffer, "<%s ", TypeString(type));
@@ -552,6 +573,12 @@ static AspDataEntry *ToString
 
             case DataType_Super:
             {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                {
+                    engine->runResult = AspRunResult_UnexpectedType;
+                    break;
+                }
+
                 if (state == 0)
                     snprintf
                         (buffer, sizeof buffer, "<%s:", TypeString(type));

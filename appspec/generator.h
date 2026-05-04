@@ -94,6 +94,8 @@ class Generator
     DECLARE_METHOD
         (ImportModule, NonTerminal *, Token *, Token *)
     DECLARE_METHOD
+        (UpdateFeatures, NonTerminal *, Token *, int)
+    DECLARE_METHOD
         (MakeAssignment, NonTerminal *, Token *, Literal *)
     DECLARE_METHOD
         (MakeFunction, NonTerminal *, Token *, ParameterList *, Token *)
@@ -237,6 +239,9 @@ class Generator
             definitionsByModuleKey;
         bool finalized = false, symbolsAssigned = false;
         std::uint32_t checkValue = 0;
+
+        // Feature data.
+        AspFeatureBits featureBits = 0;
 };
 
 } // extern "C"

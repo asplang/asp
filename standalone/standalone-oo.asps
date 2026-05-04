@@ -1,5 +1,5 @@
 #
-# Standalone Asp application function specifications, including class support.
+# Standalone Asp application specification with class support.
 #
 
 include standalone

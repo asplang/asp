@@ -4,18 +4,19 @@
 
 #include "asp.h"
 #include "asp-info.h"
+#include "standalone.h"
 #ifdef ASP_FEATURE_CLASS
 #include "standalone-oo.h"
-#else
-#include "standalone.h"
 #endif
 #include "context.h"
 #include <ctime>
 #include <csignal>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <cstdio>
 #include <set>
+#include <vector>
 #include <string>
 #include <new>
 #include <cstring>
@@ -93,8 +94,8 @@ static void Usage()
         << COMMAND_OPTION_PREFIXES[0]
         << "p n        Code page size, in bytes. The default is 0, which"
         << " disables paging\n"
-        << "            mode. The number of pages is this value divided by the"
-        << " code size.\n"
+        << "            mode. The number of pages is the code size divided by"
+        << " this value.\n"
         #ifdef ASP_DEBUG
         << COMMAND_OPTION_PREFIXES[0]
         << "t file     Trace output file."
@@ -459,101 +460,86 @@ int main(int argc, char **argv)
         CloseFiles(openedFiles);
         return 2;
     }
-    AspRunResult initializeResult = AspInitialize
-        (&engine,
-         code.get(), codeByteCount,
-         data.get(), dataByteSize,
-         #ifdef ASP_FEATURE_CLASS
-         &AspAppSpec_standalone_oo,
-         #else
-         &AspAppSpec_standalone,
-         #endif
-         &context);
-    if (initializeResult != AspRunResult_OK)
-    {
-        cerr
-            << "Initialize error 0x" << hex << uppercase << setfill('0')
-            << setw(2) << initializeResult << ": "
-            << AspRunResultToString(static_cast<int>(initializeResult))
-            << endl;
-        CloseFiles(openedFiles);
-        return 2;
-    }
 
-    // Assign the trace output file.
-    #ifdef ASP_DEBUG
-    AspTraceFile(&engine, traceFile);
+    struct AppSpecEntry
+    {
+        const AspAppSpec *appSpec;
+        string description;
+    };
+    vector<AppSpecEntry> appSpecEntries =
+        {{&AspAppSpec_standalone, "standalone (standard)"}};
+    #ifdef ASP_FEATURE_CLASS
+    appSpecEntries.push_back
+        ({&AspAppSpec_standalone_oo, "standalone-oo (with class support)"});
     #endif
-
-    // Load the executable using one of three methods.
+    AspRunResult initializeResult = AspRunResult_OK;
     auto externalCode = unique_ptr<char[]>();
-    if (codeByteCount == 0)
+    AspAddCodeResult addCodeResult = AspAddCodeResult_OK;
+    string addCodeErrorMessage;
+    const AppSpecEntry *selectedAppSpecEntry = 0;
+    for (const auto &appSpecEntry : appSpecEntries)
     {
-        if (codePageByteCount != 0)
-        {
-            cerr << "WARNING: Code page size ignored" << endl;
-            codePageByteCount = 0;
-        }
+        auto appSpec = appSpecEntry.appSpec;
+        const auto &appSpecDescription = appSpecEntry.description;
 
-        // Determine the size of the executable file.
-        int seekResult = fseek(executableFile, 0, SEEK_END);
-        long tellResult = 0;
-        if (seekResult == 0)
-            tellResult = ftell(executableFile);
-        if (seekResult != 0 || tellResult < 0)
+        initializeResult = AspInitialize
+            (&engine,
+             code.get(), codeByteCount,
+             data.get(), dataByteSize,
+             appSpec, &context);
+        if (initializeResult != AspRunResult_OK)
         {
             cerr
-                << "Error determining size of " << executableFileName
-                << ": " << strerror(errno) << endl;
-            CloseFiles(openedFiles);
-            return 2;
-        }
-        auto externalCodeSize = static_cast<size_t>(tellResult);
-        externalCode.reset(new (nothrow) char[externalCodeSize]);
-        if (externalCode == nullptr)
-        {
-            cerr << "Error allocating memory for executable code" << endl;
-            CloseFiles(openedFiles);
-            return 2;
-        }
-        rewind(executableFile);
-
-        // Read the entire executable into memory.
-        size_t readResult = fread
-            (externalCode.get(), externalCodeSize, 1U, executableFile);
-        if (readResult != 1U || feof(executableFile) || ferror(executableFile))
-        {
-            cerr
-                << "Error reading " << executableFileName
-                << ": " << strerror(errno) << endl;
-            CloseFiles(openedFiles);
-            return 2;
-        }
-        openedFiles.erase(executableFile);
-        fclose(executableFile);
-        executableFile = nullptr;
-
-        AspAddCodeResult sealResult = AspSealCode
-            (&engine, externalCode.get(), externalCodeSize);
-        if (sealResult != AspAddCodeResult_OK)
-        {
-            cerr
-                << "Seal error 0x" << hex << uppercase << setfill('0')
-                << setw(2) << sealResult << ": "
-                << AspAddCodeResultToString(static_cast<int>(sealResult))
+                << "Initialize error 0x" << hex << uppercase << setfill('0')
+                << setw(2) << initializeResult << ": "
+                << AspRunResultToString(static_cast<int>(initializeResult))
                 << endl;
             CloseFiles(openedFiles);
             return 2;
         }
-    }
-    else if (codePageByteCount == 0)
-    {
-        while (true)
+
+        // Assign the trace output file.
+        #ifdef ASP_DEBUG
+        AspTraceFile(&engine, traceFile);
+        #endif
+
+        // Load the executable using one of three methods.
+        if (codeByteCount == 0)
         {
-            auto c = static_cast<char>(fgetc(executableFile));
-            if (feof(executableFile))
-                break;
-            if (ferror(executableFile))
+            if (codePageByteCount != 0)
+            {
+                cerr << "WARNING: Code page size ignored" << endl;
+                codePageByteCount = 0;
+            }
+
+            // Determine the size of the executable file.
+            int seekResult = fseek(executableFile, 0, SEEK_END);
+            long tellResult = 0;
+            if (seekResult == 0)
+                tellResult = ftell(executableFile);
+            if (seekResult != 0 || tellResult < 0)
+            {
+                cerr
+                    << "Error determining size of " << executableFileName
+                    << ": " << strerror(errno) << endl;
+                CloseFiles(openedFiles);
+                return 2;
+            }
+            auto externalCodeSize = static_cast<size_t>(tellResult);
+            externalCode.reset(new (nothrow) char[externalCodeSize]);
+            if (externalCode == nullptr)
+            {
+                cerr << "Error allocating memory for executable code" << endl;
+                CloseFiles(openedFiles);
+                return 2;
+            }
+            rewind(executableFile);
+
+            // Read the entire executable into memory.
+            size_t readResult = fread
+                (externalCode.get(), externalCodeSize, 1U, executableFile);
+            if (readResult != 1U ||
+                feof(executableFile) || ferror(executableFile))
             {
                 cerr
                     << "Error reading " << executableFileName
@@ -561,80 +547,144 @@ int main(int argc, char **argv)
                 CloseFiles(openedFiles);
                 return 2;
             }
-            AspAddCodeResult addResult = AspAddCode(&engine, &c, 1);
-            if (addResult != AspAddCodeResult_OK)
+
+            addCodeResult = AspSealCode
+                (&engine, externalCode.get(), externalCodeSize);
+            if (addCodeResult == AspAddCodeResult_OK)
+            {
+                openedFiles.erase(executableFile);
+                fclose(executableFile);
+                executableFile = nullptr;
+            }
+            else
+            {
+                externalCode.reset();
+                ostringstream oss;
+                oss
+                    << "Seal error 0x" << hex << uppercase << setfill('0')
+                    << setw(2) << addCodeResult << ": "
+                    << AspAddCodeResultToString
+                       (static_cast<int>(addCodeResult));
+                addCodeErrorMessage = oss.str();
+            }
+        }
+        else if (codePageByteCount == 0)
+        {
+            while (true)
+            {
+                auto c = static_cast<char>(fgetc(executableFile));
+                if (feof(executableFile))
+                    break;
+                if (ferror(executableFile))
+                {
+                    cerr
+                        << "Error reading " << executableFileName
+                        << ": " << strerror(errno) << endl;
+                    CloseFiles(openedFiles);
+                    return 2;
+                }
+                addCodeResult = AspAddCode(&engine, &c, 1);
+                if (addCodeResult != AspAddCodeResult_OK)
+                {
+                    ostringstream oss;
+                    oss
+                        << "Load error 0x" << hex << uppercase << setfill('0')
+                        << setw(2) << addCodeResult << ": "
+                        << AspAddCodeResultToString
+                           (static_cast<int>(addCodeResult));
+                    addCodeErrorMessage = oss.str();
+                    break;
+                }
+            }
+
+            if (addCodeResult == AspAddCodeResult_OK)
+                addCodeResult = AspSeal(&engine);
+            if (addCodeResult == AspAddCodeResult_OK)
+            {
+                openedFiles.erase(executableFile);
+                fclose(executableFile);
+                executableFile = nullptr;
+            }
+            else
+            {
+                ostringstream oss;
+                oss
+                    << "Seal error 0x" << hex << uppercase << setfill('0')
+                    << setw(2) << addCodeResult << ": "
+                    << AspAddCodeResultToString
+                       (static_cast<int>(addCodeResult));
+                addCodeErrorMessage = oss.str();
+            }
+        }
+        else
+        {
+            size_t computedCodePageCount = codeByteCount / codePageByteCount;
+            if (computedCodePageCount == 0)
             {
                 cerr
-                    << "Load error 0x" << hex << uppercase << setfill('0')
-                    << setw(2) << addResult << ": "
-                    << AspAddCodeResultToString(static_cast<int>(addResult))
+                    << "Code page size is larger than available code area."
                     << endl;
                 CloseFiles(openedFiles);
                 return 2;
             }
-        }
-        openedFiles.erase(executableFile);
-        fclose(executableFile);
-        executableFile = nullptr;
+            auto codePageCount = static_cast<uint8_t>(computedCodePageCount);
+            if (codePageCount != computedCodePageCount)
+                cerr
+                    << "WARNING: Number of code pages limited to "
+                    << static_cast<unsigned>(codePageCount) << endl;
 
-        AspAddCodeResult sealResult = AspSeal(&engine);
-        if (sealResult != AspAddCodeResult_OK)
-        {
-            cerr
-                << "Seal error 0x" << hex << uppercase << setfill('0')
-                << setw(2) << sealResult << ": "
-                << AspAddCodeResultToString(static_cast<int>(sealResult))
-                << endl;
-            CloseFiles(openedFiles);
-            return 2;
+            AspRunResult setPagingResult = AspSetCodePaging
+                (&engine, codePageCount, codePageByteCount, LoadCodePage);
+            if (setPagingResult != AspRunResult_OK)
+            {
+                cerr
+                    << "Error 0x" << hex << uppercase << setfill('0')
+                    << setw(2) << setPagingResult
+                    << " initializing code paging: "
+                    << AspRunResultToString(static_cast<int>(setPagingResult))
+                    << endl;
+                CloseFiles(openedFiles);
+                return 2;
+            }
+
+            addCodeResult = AspPageCode(&engine, executableFile);
+            if (addCodeResult != AspAddCodeResult_OK)
+            {
+                ostringstream oss;
+                oss
+                    << "Error 0x" << hex << uppercase << setfill('0')
+                    << setw(2) << addCodeResult << " loading paged code: "
+                    << AspAddCodeResultToString
+                       (static_cast<int>(addCodeResult));
+                addCodeErrorMessage = oss.str();
+            }
         }
+
+        /* Try loading with a different app spec if the failure was due to an
+           invalid check value. */
+        if (addCodeResult != AspAddCodeResult_InvalidCheckValue)
+        {
+            selectedAppSpecEntry = &appSpecEntry;
+            break;
+        }
+        rewind(executableFile);
     }
-    else
+
+    if (addCodeResult != AspAddCodeResult_OK)
     {
-        size_t computedCodePageCount = codeByteCount / codePageByteCount;
-        if (computedCodePageCount == 0)
-        {
-            cerr
-                << "Code page size is larger than available code area."
-                << endl;
-            CloseFiles(openedFiles);
-            return 2;
-        }
-        auto codePageCount = static_cast<uint8_t>(computedCodePageCount);
-        if (codePageCount != computedCodePageCount)
-            cerr
-                << "WARNING: Number of code pages limited to "
-                << static_cast<unsigned>(codePageCount) << endl;
-
-        AspRunResult setPagingResult = AspSetCodePaging
-            (&engine, codePageCount, codePageByteCount, LoadCodePage);
-        if (setPagingResult != AspRunResult_OK)
-        {
-            cerr
-                << "Error 0x" << hex << uppercase << setfill('0')
-                << setw(2) << setPagingResult << " initializing code paging: "
-                << AspRunResultToString(static_cast<int>(setPagingResult))
-                << endl;
-            CloseFiles(openedFiles);
-            return 2;
-        }
-
-        AspAddCodeResult pageResult = AspPageCode(&engine, executableFile);
-        if (pageResult != AspAddCodeResult_OK)
-        {
-            cerr
-                << "Error 0x" << hex << uppercase << setfill('0')
-                << setw(2) << pageResult << " loading paged code: "
-                << AspAddCodeResultToString(static_cast<int>(pageResult))
-                << endl;
-            CloseFiles(openedFiles);
-            return 2;
-        }
+        cerr << addCodeErrorMessage << endl;
+        CloseFiles(openedFiles);
+        return 2;
     }
 
-    // Report code version information.
     if (verbose)
     {
+        // Report selected application specification.
+        fprintf
+            (reportFile, "App spec: %s\n",
+             selectedAppSpecEntry->description.c_str());
+
+        // Report code version information.
         uint8_t codeVersion[4];
         AspCodeVersion(&engine, codeVersion);
         fputs("Code version: ", reportFile);

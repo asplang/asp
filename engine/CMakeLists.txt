@@ -21,6 +21,9 @@ if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
         )
 endif()
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED True)
+
 math(EXPR VERSION_VALUE
     "(${aspe_VERSION_MAJOR} << 24) +
      (${aspe_VERSION_MINOR} << 16) +
@@ -31,10 +34,20 @@ math(EXPR VERSION_VALUE
 # The template file references the VERSION_VALUE variable.
 configure_file(asp-ver-template.h asp-ver.h)
 
-if(BUILD_FOR_TARGET)
+add_library(reserved STATIC
+    reserved.c
+    )
 
-    set(CMAKE_C_STANDARD 99)
-    set(CMAKE_C_STANDARD_REQUIRED True)
+target_compile_definitions(reserved PRIVATE
+    $<$<BOOL:${ENABLE_FEATURE_CLASS}>:ASP_FEATURE_CLASS>
+    )
+
+target_include_directories(reserved PUBLIC
+    "${CMAKE_CURRENT_BINARY_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
+
+if(BUILD_FOR_TARGET)
 
     set(COMMON_SOURCES
         engine.c
@@ -98,7 +111,6 @@ if(BUILD_FOR_TARGET)
     target_include_directories(aspe PUBLIC
         "${CMAKE_CURRENT_BINARY_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}"
-        "${reserved_SOURCE_DIR}"
         )
 
     if(ENABLE_FEATURE_CLASS)
@@ -138,7 +150,6 @@ if(BUILD_FOR_TARGET)
         target_include_directories(aspe-oo PUBLIC
             "${CMAKE_CURRENT_BINARY_DIR}"
             "${CMAKE_CURRENT_SOURCE_DIR}"
-            "${reserved_SOURCE_DIR}"
             )
 
     endif()

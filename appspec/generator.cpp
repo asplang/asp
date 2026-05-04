@@ -4,6 +4,7 @@
 
 #include "generator.h"
 #include "app.h"
+#include "asp.h"
 #include "function.hpp"
 #include "reserved.h"
 #include "grammar.hpp"
@@ -19,11 +20,10 @@ Generator::Generator
     errorStream(errorStream),
     fileBaseName(fileBaseName),
     variableBaseName(fileBaseName),
-    moduleIdTable(false),
-    symbolTable(true)
+    featureBits(featureBits)
 {
     // Reserve module ID zero for the system module.
-    moduleIdTable.Symbol("");
+    moduleIdTable.ReserveSystemSymbol(0, "");
 
     // Deal with invalid variable name characters in the file name.
     for (string::iterator si = variableBaseName.begin();
@@ -98,6 +98,13 @@ void Generator::Finalize()
 {
     // Discard module names as they are no longer needed.
     moduleNames.clear();
+
+    // Reserve system symbols.
+    symbolTable.ReserveSystemSymbols(featureBits);
+
+    // Prepare to write the feature bits to the app spec file if applicable.
+    if (featureBits != 0)
+        compilerAppSpecVersion = 3u;
 
     // Reorganize modules into a well-defined order that does not depend on
     // the module names, but rather the set of associated import names,
@@ -370,6 +377,31 @@ DEFINE_ACTION
     if (asNameToken != moduleNameToken)
         delete asNameToken;
     delete moduleNameToken;
+
+    return nullptr;
+}
+
+DEFINE_ACTION
+    (UpdateFeatures, NonTerminal *, Token *, featureToken, int, add)
+{
+    AspFeatureBits featureBit = 0;
+    #ifdef ASP_FEATURE_CLASS
+    if (featureToken->s == "class")
+        featureBit = AspFeatureBit_Class;
+    #endif
+    if (featureBit == 0)
+    {
+        ostringstream oss;
+        oss << "Unknown feature '" << featureToken->s << '\'';
+        ReportError(oss.str(), *featureToken);
+    }
+
+    if (add)
+        featureBits |= featureBit;
+    else
+        featureBits &= ~featureBit;
+
+    delete featureToken;
 
     return nullptr;
 }

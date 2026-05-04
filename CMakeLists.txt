@@ -40,8 +40,8 @@ option(BUILD_TEST_TARGETS
 
 # Feature options.
 option(ENABLE_FEATURE_CLASS
-    "Enable/disable optional support for object-oriented classes"
-    FALSE)
+    "Enable/disable support for object-oriented programming (i.e., classes)"
+    TRUE)
 
 # Debug option.
 option(ENABLE_DEBUG
@@ -91,7 +91,6 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
         )
 endif()
 
-add_subdirectory(reserved)
 add_subdirectory(engine)
 
 if(BUILD_FOR_HOST)

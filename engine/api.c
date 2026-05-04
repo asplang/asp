@@ -1353,3 +1353,8 @@ bool AspEraseLocal(AspEngine *engine, int32_t symbol)
         (engine, engine->appFunctionNamespace, findResult.node, false, true);
     return result == AspRunResult_OK;
 }
+
+bool AspIsFeature(const AspEngine *engine, AspFeatureBits featureBits)
+{
+    return (engine->featureBits & featureBits) != 0;
+}

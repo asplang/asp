@@ -70,6 +70,9 @@ struct AspEngine
     /* Floating-point format conversion routine. */
     AspFloatConverter floatConverter;
 
+    /* Features. */
+    AspFeatureBits featureBits;
+
     /* Engine state and status. */
     AspEngineState state;
     uint8_t headerIndex;

@@ -58,9 +58,17 @@ Token *Lexer::Next()
             else
                 token = ProcessNumber();
         }
-        else if ((c == '+' || c == '-') &&
-                 (isdigit(Peek(1)) || Peek(1) == '.' && isdigit(Peek(2))))
-            token = ProcessSignedNumber();
+        else if ((c == '+' || c == '-'))
+        {
+            if (isdigit(Peek(1)) || Peek(1) == '.' && isdigit(Peek(2)))
+                token = ProcessSignedNumber();
+            else
+            {
+                Get();
+                token = new Token
+                    (sourceLocation, c == '+' ? TOKEN_PLUS : TOKEN_MINUS);
+            }
+        }
         else if (c == '=')
         {
             Get();

@@ -5,6 +5,7 @@
 #ifndef SYMBOL_HPP
 #define SYMBOL_HPP
 
+#include "asp-priv.h"
 #include <map>
 #include <string>
 #include <cstdint>
@@ -14,7 +15,11 @@ class SymbolTable
     public:
 
         // Constructor.
-        explicit SymbolTable(bool reserveSystemSymbols = true);
+        SymbolTable();
+
+        // System symbol reservation methods.
+        void ReserveSystemSymbols(AspFeatureBits = 0);
+        void ReserveSystemSymbol(std::int32_t, const std::string &);
 
         // Symbol fetch method. If not found, the symbol is assigned a value.
         std::int32_t Symbol(const std::string &);
@@ -37,7 +42,7 @@ class SymbolTable
 
         // Data.
         Map symbolsByName;
-        std::int32_t nextNamedSymbol = 0;
+        std::int32_t nextNamedSymbol;
         std::int32_t nextUnnamedSymbol = -1;
 };
 

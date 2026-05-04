@@ -97,6 +97,34 @@ statement(result) ::=
 }
 
 statement(result) ::=
+    PLUS NAME(featureToken) LINE_END.
+{
+    result = ACTION(UpdateFeatures, featureToken, 1);
+}
+
+statement(result) ::=
+    MINUS NAME(featureToken) LINE_END.
+{
+    result = ACTION(UpdateFeatures, featureToken, 0);
+}
+
+%ifdef ASP_FEATURE_CLASS
+
+statement(result) ::=
+    PLUS CLASS(featureToken) LINE_END.
+{
+    result = ACTION(UpdateFeatures, featureToken, 1);
+}
+
+statement(result) ::=
+    MINUS CLASS(featureToken) LINE_END.
+{
+    result = ACTION(UpdateFeatures, featureToken, 0);
+}
+
+%endif
+
+statement(result) ::=
     NAME(nameToken) ASSIGN literal(value) LINE_END.
 {
     result = ACTION(MakeAssignment, nameToken, value);

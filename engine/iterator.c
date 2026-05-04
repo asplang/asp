@@ -145,6 +145,16 @@ AspIteratorResult AspIteratorCreate
         case DataType_Class:
         #endif
         case DataType_Module:
+        {
+            #ifdef ASP_FEATURE_CLASS
+            if (iterableType == DataType_Class &&
+                !AspIsFeature(engine, AspFeatureBit_Class))
+            {
+                result.result = AspRunResult_UnexpectedType;
+                return result;
+            }
+            #endif
+
             iterable =
                 iterableType == DataType_Object ?
                 AspEntry(engine, AspDataGetObjectNamespaceIndex(iterable)) :
@@ -163,6 +173,7 @@ AspIteratorResult AspIteratorCreate
                     (iterator, AspIndex(engine, iterable));
 
             /* Fall through... */
+        }
 
         case DataType_Set:
         case DataType_Dictionary:
@@ -350,6 +361,13 @@ AspRunResult AspIteratorNext
         case DataType_Class:
         #endif
         case DataType_Module:
+        {
+            #ifdef ASP_FEATURE_CLASS
+            if (iterableType == DataType_Class &&
+                !AspIsFeature(engine, AspFeatureBit_Class))
+                return AspRunResult_UnexpectedType;
+            #endif
+
             iterable = AspEntry
                 (engine,
                  iterableType == DataType_Object ?
@@ -369,6 +387,7 @@ AspRunResult AspIteratorNext
                 return AspRunResult_InvalidContext;
 
             /* Fall through... */
+        }
 
         case DataType_Set:
         case DataType_Dictionary:
@@ -507,6 +526,16 @@ AspIteratorResult AspIteratorDereference
         case DataType_Class:
         #endif
         case DataType_Module:
+        {
+            #ifdef ASP_FEATURE_CLASS
+            if (iterableType == DataType_Class &&
+                !AspIsFeature(engine, AspFeatureBit_Class))
+            {
+                result.result = AspRunResult_UnexpectedType;
+                return result;
+            }
+            #endif
+
             iterable = AspEntry
                 (engine,
                  iterableType == DataType_Object ?
@@ -529,6 +558,7 @@ AspIteratorResult AspIteratorDereference
             }
 
             /* Fall through... */
+        }
 
         case DataType_Dictionary:
         {

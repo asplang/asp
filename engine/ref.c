@@ -153,12 +153,25 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 #ifdef ASP_FEATURE_CLASS
                 uint32_t classIndex = AspDataGetObjectClassIndex(entry);
                 if (classIndex != 0)
+                {
+                    if (!AspIsFeature(engine, AspFeatureBit_Class))
+                    {
+                        engine->runResult = AspRunResult_UnexpectedType;
+                        break;
+                    }
                     AspPushNoUse(engine, AspValueEntry(engine, classIndex));
+                }
                 #endif
             }
             #ifdef ASP_FEATURE_CLASS
             else if (t == DataType_Class)
             {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                {
+                    engine->runResult = AspRunResult_UnexpectedType;
+                    break;
+                }
+
                 const AspDataEntry *ns = AspValueEntry
                     (engine, AspDataGetClassNamespaceIndex(entry));
                 AspPushNoUse(engine, ns);
@@ -170,6 +183,12 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             }
             else if (t == DataType_BoundMethod)
             {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                {
+                    engine->runResult = AspRunResult_UnexpectedType;
+                    break;
+                }
+
                 const AspDataEntry *function = AspValueEntry
                     (engine, AspDataGetBoundMethodFunctionIndex(entry));
                 AspPushNoUse(engine, function);
@@ -184,6 +203,12 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             }
             else if (t == DataType_Super)
             {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                {
+                    engine->runResult = AspRunResult_UnexpectedType;
+                    break;
+                }
+
                 const AspDataEntry *cls = AspValueEntry
                     (engine, AspDataGetSuperClassIndex(entry));
                 AspPushNoUse(engine, cls);
@@ -266,6 +291,12 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
                 if (contextIndex != 0)
                 {
+                    if (!AspIsFeature(engine, AspFeatureBit_Class))
+                    {
+                        engine->runResult = AspRunResult_UnexpectedType;
+                        break;
+                    }
+
                     AspDataEntry *context = AspEntry(engine, contextIndex);
 
                     const AspDataEntry *cls = AspValueEntry
@@ -329,6 +360,12 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             #ifdef ASP_FEATURE_CLASS
             else if (t == DataType_ShadowingMember)
             {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                {
+                    engine->runResult = AspRunResult_UnexpectedType;
+                    break;
+                }
+
                 AspDataEntry *shadowingSource = AspValueEntry
                     (engine, AspDataGetShadowingMemberSourceIndex(entry));
                 if (IsTerminal(shadowingSource))

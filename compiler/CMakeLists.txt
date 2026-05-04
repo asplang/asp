@@ -32,6 +32,7 @@ add_custom_command(
     COMMAND
         "$<TARGET_FILE:lemon>" "-d${PROJECT_BINARY_DIR}"
         "-T${lemon_SOURCE_DIR}/lempar.c"
+        $<$<BOOL:${ENABLE_FEATURE_CLASS}>:-DASP_FEATURE_CLASS>
         "${PROJECT_SOURCE_DIR}/asp.y"
     )
 
@@ -75,7 +76,6 @@ target_compile_definitions(aspc PRIVATE
 target_include_directories(aspc PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
-    "${reserved_SOURCE_DIR}"
     "${aspe_SOURCE_DIR}"
     )
 

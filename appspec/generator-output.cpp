@@ -60,6 +60,10 @@ void Generator::WriteCompilerSpec(ostream &os)
     os.put(static_cast<char>(compilerAppSpecVersion));
     Write(os, CheckValue());
 
+    // Write the feature bits if applicable.
+    if (compilerAppSpecVersion >= 3u)
+        os.put(static_cast<char>(featureBits));
+
     // If applicable, assign symbols to import names, writing each name only
     // once, all followed by a separator to separate them from the remaining
     // symbol names.
@@ -74,7 +78,7 @@ void Generator::WriteCompilerSpec(ostream &os)
         symbolTable.Symbol(importName);
         os << importName << delim;
     }
-    if (!imports.empty())
+    if (compilerAppSpecVersion >= 2u)
         os << delim;
 
     // Assign symbols, to variable and function names first, then to parameter
@@ -562,12 +566,24 @@ uint32_t Generator::ComputeCheckValue() const
     crc_session_t crcSession;
     crc_start(&crcSpec, &crcSession);
 
-    // Contribute each definition to the check value.
     static const string
+        CheckValueFeatureBitsPrefix = "f",
         CheckValueModulePrefix = ".",
         CheckValueVariablePrefix = "\v",
         CheckValueFunctionPrefix = "\f",
         CheckValueParameterPrefix = "(";
+
+    // Contribute the feature set to the check value if applicable.
+    if (featureBits != 0)
+    {
+        crc_add
+            (&crcSpec, &crcSession,
+             CheckValueFeatureBitsPrefix.c_str(),
+             static_cast<unsigned>(CheckValueFeatureBitsPrefix.size()));
+        crc_add(&crcSpec, &crcSession, &featureBits, 1);
+    }
+
+    // Contribute each definition to the check value.
     for (const auto &moduleEntry: definitionsByModuleKey)
     {
         const auto &moduleKey = moduleEntry.first;

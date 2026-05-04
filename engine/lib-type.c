@@ -26,6 +26,9 @@ ASP_LIB_API AspRunResult AspLib_type
     /* For class instances, return the class. */
     if (AspIsClassInstance(object))
     {
+        if (!AspIsFeature(engine, AspFeatureBit_Class))
+            return AspRunResult_UnexpectedType;
+
         *returnValue = AspInstanceClass(engine, object);
         AspRef(engine, *returnValue);
         return AspRunResult_OK;

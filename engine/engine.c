@@ -58,6 +58,7 @@ AspRunResult AspInitializeEx
 
     engine->context = context;
     engine->floatConverter = floatConverter;
+    engine->featureBits = 0;
     engine->state = AspEngineState_Reset;
     engine->codeArea = code;
     engine->maxCodeSize = codeSize;

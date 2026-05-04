@@ -70,6 +70,12 @@ typedef enum
     AspRunResult_Max = INT32_MAX,
 } AspRunResult;
 
+/* Features bit mask values. */
+typedef uint8_t AspFeatureBits;
+#ifdef ASP_FEATURE_CLASS
+#define AspFeatureBit_Class 0x01
+#endif
+
 /* Floating-point translator type. */
 typedef double (*AspFloatConverter)(uint8_t ieee754_binary64[8]);
 
@@ -310,6 +316,9 @@ ASP_API AspDataEntry *AspLoadLocal(AspEngine *, int32_t symbol);
 ASP_API bool AspStoreLocal
     (AspEngine *, int32_t symbol, AspDataEntry *value, bool take);
 ASP_API bool AspEraseLocal(AspEngine *, int32_t symbol);
+
+/* API function for feature checking. */
+ASP_API bool AspIsFeature(const AspEngine *, AspFeatureBits);
 
 #ifdef __cplusplus
 }

@@ -334,6 +334,9 @@ AspRunResult AspCallFunction
         #ifdef ASP_FEATURE_CLASS
         if (cls != 0 || instance != 0)
         {
+            if (!AspIsFeature(engine, AspFeatureBit_Class))
+                return AspRunResult_InternalError;
+
             if (cls == 0 || instance == 0)
             {
                 #ifdef ASP_DEBUG
@@ -857,6 +860,9 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
     uint32_t contextIndex = AspDataGetFrameContextIndex(frame);
     if (contextIndex != 0)
     {
+        if (!AspIsFeature(engine, AspFeatureBit_Class))
+            return AspRunResult_InternalError;
+
         const AspDataEntry *context = AspEntry(engine, contextIndex);
         instanceIndex = AspDataGetContextInstanceIndex(context);
     }
@@ -864,6 +870,9 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
     /* Replace the return value with a class instance if specified. */
     if (instanceIndex != 0)
     {
+        if (!AspIsFeature(engine, AspFeatureBit_Class))
+            return AspRunResult_InternalError;
+
         /* Ensure that the function returned None. */
         if (AspDataGetType(*returnValue) != DataType_None)
         {

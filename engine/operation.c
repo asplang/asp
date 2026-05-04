@@ -1406,6 +1406,15 @@ static AspOperationResult PerformMembershipOperation
         #endif
         case DataType_Module:
         {
+            #ifdef ASP_FEATURE_CLASS
+            if (rightType == DataType_Class &&
+                !AspIsFeature(engine, AspFeatureBit_Class))
+            {
+                result.result = AspRunResult_UnexpectedType;
+                break;
+            }
+            #endif
+
             int32_t symbol;
             if (!AspSymbolValue(left, &symbol))
             {

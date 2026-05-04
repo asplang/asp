@@ -32,6 +32,7 @@ add_custom_command(
     COMMAND
         lemon "-d${PROJECT_BINARY_DIR}"
         "-T${lemon_SOURCE_DIR}/lempar.c"
+        $<$<BOOL:${ENABLE_FEATURE_CLASS}>:-DASP_FEATURE_CLASS>
         "${PROJECT_SOURCE_DIR}/app.y"
     )
 
@@ -61,6 +62,7 @@ target_compile_definitions(aspg PRIVATE
     ASP_GENERATOR_VERSION_MINOR=${PROJECT_VERSION_MINOR}
     ASP_GENERATOR_VERSION_PATCH=${PROJECT_VERSION_PATCH}
     ASP_GENERATOR_VERSION_TWEAK=${PROJECT_VERSION_TWEAK}
+    $<$<BOOL:${ENABLE_FEATURE_CLASS}>:ASP_FEATURE_CLASS>
     $<$<NOT:$<STREQUAL:${C_PATH_NAME_SEPARATOR},>>:
         PATH_NAME_SEPARATOR=${C_PATH_NAME_SEPARATOR}>
     $<$<NOT:$<STREQUAL:${C_FILE_NAME_SEPARATORS},>>:
@@ -72,7 +74,6 @@ target_compile_definitions(aspg PRIVATE
 target_include_directories(aspg PRIVATE
     "${PROJECT_BINARY_DIR}"
     "${PROJECT_SOURCE_DIR}"
-    "${reserved_SOURCE_DIR}"
     "${aspc_SOURCE_DIR}"
     "${aspe_BINARY_DIR}"
     "${aspe_SOURCE_DIR}"

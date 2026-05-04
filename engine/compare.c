@@ -397,6 +397,9 @@ AspRunResult AspCompare
 
                     case DataType_Class:
                     {
+                        if (!AspIsFeature(engine, AspFeatureBit_Class))
+                            return AspRunResult_UnexpectedType;
+
                         uint32_t
                             leftNamespaceIndex = AspDataGetClassNamespaceIndex
                                 (leftEntry),
@@ -410,6 +413,9 @@ AspRunResult AspCompare
 
                     case DataType_BoundMethod:
                     {
+                        if (!AspIsFeature(engine, AspFeatureBit_Class))
+                            return AspRunResult_UnexpectedType;
+
                         uint32_t
                             leftFunctionIndex =
                                 AspDataGetBoundMethodFunctionIndex(leftEntry),
@@ -435,6 +441,9 @@ AspRunResult AspCompare
 
                     case DataType_Super:
                     {
+                        if (!AspIsFeature(engine, AspFeatureBit_Class))
+                            return AspRunResult_UnexpectedType;
+
                         uint32_t
                             leftClassIndex =
                                 AspDataGetSuperClassIndex(leftEntry),

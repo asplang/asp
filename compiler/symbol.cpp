@@ -10,32 +10,48 @@
 
 using namespace std;
 
-SymbolTable::SymbolTable(bool reserveSystemSymbols)
+SymbolTable::SymbolTable() :
+    nextNamedSymbol(AspReservedSymbol_End)
+{
+}
+
+void SymbolTable::ReserveSystemSymbols(AspFeatureBits featureBits)
 {
     // Reserve symbols used by the system if applicable.
-    if (reserveSystemSymbols)
+    for (const AspReservedNameEntry *entry = AspNextReservedNameEntry(0);
+         entry != 0; entry = AspNextReservedNameEntry(entry))
     {
-        for (const AspReservedNameEntry *entry = AspNextReservedNameEntry(0);
-             entry != 0; entry = AspNextReservedNameEntry(entry))
-        {
-            auto symbol = entry->symbol;
-            auto name = entry->name;
+        auto symbol = entry->symbol;
+        auto name = entry->name;
 
-            if (symbol >= AspReservedSymbol_End)
-            {
-                ostringstream oss;
-                oss
-                    << "Internal error: Symbol for reserved name " << name
-                    << " is out of range";
-                throw string(oss.str());
-            }
+        if (entry->featureBits != 0 &&
+            (entry->featureBits & featureBits) == 0)
+            continue;
 
-            symbolsByName.insert(make_pair(name, symbol));
-        }
-
-        // Set the next symbol to use for a name.
-        nextNamedSymbol = AspReservedSymbol_End;
+        ReserveSystemSymbol(symbol, name);
     }
+}
+
+void SymbolTable::ReserveSystemSymbol(int32_t symbol, const string &name)
+{
+    if (symbol >= AspReservedSymbol_End)
+    {
+        ostringstream oss;
+        oss
+            << "Internal error: Symbol for reserved name " << name
+            << " is out of range: " << symbol;
+        throw string(oss.str());
+    }
+
+    auto iter = symbolsByName.find(name);
+    if (iter != symbolsByName.end())
+    {
+        ostringstream oss;
+        oss << "System symbol name '" << name << "' already defined";
+        throw oss.str();
+    }
+
+    symbolsByName.insert(make_pair(name, symbol));
 }
 
 int32_t SymbolTable::Symbol(const string &name)

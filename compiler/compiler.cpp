@@ -43,7 +43,7 @@ void Compiler::LoadApplicationSpec(istream &specStream)
     // Read and check application spec version.
     uint8_t version;
     specStream >> version;
-    if (version > 2u)
+    if (version > 3u)
     {
         ostringstream oss;
         oss
@@ -57,11 +57,15 @@ void Compiler::LoadApplicationSpec(istream &specStream)
     for (unsigned i = 0; i < 4; i++)
     {
         checkValue <<= 8;
-        checkValue |= specStream.get();
+        checkValue |= static_cast<uint8_t>(specStream.get());
         if (specStream.eof())
             throw string("Invalid format in application spec file");
     }
     executable.SetCheckValue(checkValue);
+
+    // Read and check the feature bits if applicable.
+    if (version >= 3u)
+        featureBits = static_cast<AspFeatureBits>(specStream.get());
 
     // Define symbols for all names used in the application.
     char delim = version >= 2u ? ' ' : '\n';
@@ -81,6 +85,13 @@ void Compiler::LoadApplicationSpec(istream &specStream)
             appModuleNames.insert(name);
         symbolTable.Symbol(name);
     }
+    if (storeAppModuleNames)
+        throw string
+            ("Error reading application specification file"
+             "; premature end of file");
+
+    // Now that the features are known, reserve the applicable symbols.
+    symbolTable.ReserveSystemSymbols(featureBits);
 }
 
 void Compiler::AddModule(const string &moduleName)
@@ -866,18 +877,19 @@ DEFINE_ACTION
     return result;
 }
 
+#ifdef ASP_FEATURE_CLASS
+
 DEFINE_ACTION
     (MakeClassStatement, Statement *,
      Token *, nameToken, ArgumentList *, argumentList, Block *, block)
 {
     Statement *result = nullptr;
 
-    #ifndef ASP_FEATURE_CLASS
-
-    ReportError("Classes are not supported");
-    return result;
-
-    #else
+    if ((featureBits & AspFeatureBit_Class) == 0)
+    {
+        ReportError("Classes are not supported");
+        return result;
+    }
 
     if (block != nullptr)
     {
@@ -920,9 +932,9 @@ DEFINE_ACTION
 
     delete nameToken;
     return result;
-
-    #endif
 }
+
+#endif
 
 DEFINE_ACTION
     (MakeBlockStatement, Statement *, Block *, block)
