@@ -462,6 +462,10 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetContextInstanceIndex(eptr) \
     (AspDataGetWord1((eptr)))
+#define AspDataSetContextInitializeInstanceFlag(eptr, value) \
+    (AspDataSetBit0((eptr), (unsigned)(value)))
+#define AspDataGetContextInitializeInstanceFlag(eptr) \
+    ((bool)(AspDataGetBit0((eptr))))
 
 #endif
 

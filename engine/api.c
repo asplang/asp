@@ -1281,7 +1281,7 @@ AspRunResult AspCall
     return AspCallFunction
         (engine, function, argumentList, true
          #ifdef ASP_FEATURE_CLASS
-         , 0, 0
+         , 0, 0, false
          #endif
         );
 }

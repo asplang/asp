@@ -19,7 +19,7 @@ AspRunResult AspCallFunction
     (AspEngine *, AspDataEntry *function, AspDataEntry *argumentList,
      bool fromApp
      #ifdef ASP_FEATURE_CLASS
-     , AspDataEntry *cls, AspDataEntry *instance
+     , AspDataEntry *cls, AspDataEntry *instance, bool initializeInstance
      #endif
      );
 AspRunResult AspReturnToCaller(AspEngine *, AspDataEntry **returnValue);

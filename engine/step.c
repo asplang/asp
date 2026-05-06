@@ -1474,6 +1474,7 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *callable = 0, *arguments = 0;
             #ifdef ASP_FEATURE_CLASS
             AspDataEntry *cls = 0, *instance = 0;
+            bool initializeInstance = false;
             #endif
             uint8_t callableType = DataType_Function;
             if (!engine->again)
@@ -1551,6 +1552,7 @@ static AspRunResult Step(AspEngine *engine)
                         callable = initializationFunction;
                         AspRef(engine, callable);
                         callableType = AspDataGetType(callable);
+                        initializeInstance = true;
                     }
                     else if (AspDataGetSequenceCount(arguments) != 0)
                         return AspRunResult_MalformedFunctionCall;
@@ -1617,7 +1619,7 @@ static AspRunResult Step(AspEngine *engine)
             AspRunResult callResult = AspCallFunction
                 (engine, callable, arguments, engine->callFromApp
                  #ifdef ASP_FEATURE_CLASS
-                 , cls, instance
+                 , cls, instance, initializeInstance
                  #endif
                 );
             if (callResult != AspRunResult_OK)

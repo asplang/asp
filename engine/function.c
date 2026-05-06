@@ -259,7 +259,7 @@ AspRunResult AspCallFunction
     (AspEngine *engine, AspDataEntry *function, AspDataEntry *argumentList,
      bool fromApp
      #ifdef ASP_FEATURE_CLASS
-     , AspDataEntry *cls, AspDataEntry *instance
+     , AspDataEntry *cls, AspDataEntry *instance, bool initializeInstance
      #endif
      )
 {
@@ -350,6 +350,8 @@ AspRunResult AspCallFunction
                 return AspRunResult_OutOfDataMemory;
             AspDataSetContextClassIndex(context, AspIndex(engine, cls));
             AspDataSetContextInstanceIndex(context, AspIndex(engine, instance));
+            AspDataSetContextInitializeInstanceFlag
+                (context, initializeInstance);
             AspDataSetFrameContextIndex(frame, AspIndex(engine, context));
         }
         #endif
@@ -857,6 +859,7 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
     #ifdef ASP_FEATURE_CLASS
 
     uint32_t instanceIndex = 0;
+    bool instanceInitialized = false;
     uint32_t contextIndex = AspDataGetFrameContextIndex(frame);
     if (contextIndex != 0)
     {
@@ -865,10 +868,11 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
 
         const AspDataEntry *context = AspEntry(engine, contextIndex);
         instanceIndex = AspDataGetContextInstanceIndex(context);
+        instanceInitialized = AspDataGetContextInitializeInstanceFlag(context);
     }
 
     /* Replace the return value with a class instance if specified. */
-    if (instanceIndex != 0)
+    if (instanceIndex != 0 && instanceInitialized)
     {
         if (!AspIsFeature(engine, AspFeatureBit_Class))
             return AspRunResult_InternalError;
