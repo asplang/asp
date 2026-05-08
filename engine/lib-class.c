@@ -25,7 +25,7 @@ static AspRunResult SubclassOfPredicate
     (const AspDataEntry *cls, void *context, bool *done);
 
 /* isinstance(object, type)
- * Return True if the object is of the given type(s).
+ * Return True if the object is of one of the given type(s).
  */
 ASP_LIB_API AspRunResult AspLib_isinstance
     (AspEngine *engine,
@@ -46,7 +46,7 @@ ASP_LIB_API AspRunResult AspLib_isinstance
             .found = false,
         };
         AspRunResult searchResult = AspSearchNestedSequence
-            (engine, type, TypeOfPredicate, AspIsTuple, &context);
+            (engine, type, TypeOfPredicate, AspIsSequence, &context);
         if (searchResult != AspRunResult_OK)
             return searchResult;
         is = context.found;
@@ -72,7 +72,7 @@ static AspRunResult TypeOfPredicate
 }
 
 /* issubclass(object, type)
- * Return True if the class is a subclass of the given class(es).
+ * Return True if the class is a subclass of one of the given class(es).
  */
 ASP_LIB_API AspRunResult AspLib_issubclass
     (AspEngine *engine,
@@ -96,7 +96,7 @@ ASP_LIB_API AspRunResult AspLib_issubclass
             .found = false,
         };
         AspRunResult searchResult = AspSearchNestedSequence
-            (engine, class2, SubclassOfPredicate, AspIsTuple, &context);
+            (engine, class2, SubclassOfPredicate, AspIsSequence, &context);
         if (searchResult != AspRunResult_OK)
             return searchResult;
         is = context.found;
@@ -131,7 +131,7 @@ ASP_LIB_API AspRunResult AspLib_super
 {
     if (!AspIsNone(cls) || !AspIsNone(instance))
     {
-        if (!AspIsClass(cls) || !AspIsClassInstance(instance) ||
+        if (!AspIsClass(cls) || !AspIsInstance(instance) ||
             !AspIsTypeOf(engine, instance, cls))
             return AspRunResult_UnexpectedType;
     }

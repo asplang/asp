@@ -148,11 +148,16 @@ bool AspIsSimpleObject(const AspDataEntry *entry)
 
 #ifdef ASP_FEATURE_CLASS
 
-bool AspIsClassInstance(const AspDataEntry *entry)
+bool AspIsInstance(const AspDataEntry *entry)
 {
     return
         entry != 0 && AspDataGetType(entry) == DataType_Object &&
         AspDataGetObjectClassIndex(entry) != 0;
+}
+
+bool AspIsGenericObject(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Object;
 }
 
 bool AspIsClass(const AspDataEntry *entry)
@@ -295,7 +300,7 @@ bool AspIsTypeOf
     (AspEngine *engine, const AspDataEntry *object, const AspDataEntry *type)
 {
     #ifdef ASP_FEATURE_CLASS
-    if (AspIsClassInstance(object) && AspIsClass(type))
+    if (AspIsInstance(object) && AspIsClass(type))
     {
         uint32_t classIndex = AspIndex(engine, type);
         uint32_t iterationCount = 0;
@@ -644,7 +649,7 @@ AspDataEntry *AspIterable(AspEngine *engine, const AspDataEntry *iterator)
 ASP_API AspDataEntry *AspInstanceClass
     (AspEngine *engine, const AspDataEntry *instance)
 {
-    if (!AspIsClassInstance(instance))
+    if (!AspIsInstance(instance))
         return 0;
     return AspValueEntry
         (engine, AspDataGetObjectClassIndex(instance));
@@ -1138,6 +1143,13 @@ static AspDataEntry *GetNamespace
         case DataType_Object:
             ns = AspEntry(engine, AspDataGetObjectNamespaceIndex(object));
             break;
+
+        #ifdef ASP_FEATURE_CLASS
+        case DataType_Class:
+            if (AspIsFeature(engine, AspFeatureBit_Class))
+                ns = AspEntry(engine, AspDataGetClassNamespaceIndex(object));
+            break;
+        #endif
 
         case DataType_Module:
             ns = AspEntry(engine, AspDataGetModuleNamespaceIndex(object));

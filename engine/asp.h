@@ -159,7 +159,8 @@ ASP_API bool AspIsSet(const AspDataEntry *);
 ASP_API bool AspIsDictionary(const AspDataEntry *);
 ASP_API bool AspIsSimpleObject(const AspDataEntry *);
 #ifdef ASP_FEATURE_CLASS
-ASP_API bool AspIsClassInstance(const AspDataEntry *);
+ASP_API bool AspIsInstance(const AspDataEntry *);
+ASP_API bool AspIsGenericObject(const AspDataEntry *);
 ASP_API bool AspIsClass(const AspDataEntry *);
 ASP_API bool AspIsBoundMethod(const AspDataEntry *);
 ASP_API bool AspIsSuper(const AspDataEntry *);
