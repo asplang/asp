@@ -910,16 +910,25 @@ DEFINE_ACTION
             // Ensure the validity of the base class argument, if present.
             if (argument != 0)
             {
+                // Reject named argument as a base class.
                 if (argument->HasName())
                     ReportError
                         ("Named argument is not allowed as a base class",
                          *argument);
 
+                // Reject group argument as a base class.
                 auto argumentType = argument->GetType();
                 if (argumentType != Argument::Type::NonGroup)
                     ReportError
                         ("Group argument is not allowed as a base class",
                          *argument);
+
+                // Reject any constant expression as a base class.
+                const auto constantExpression =
+                    dynamic_cast<const ConstantExpression *>
+                    (argument->ValueExpression());
+                if (constantExpression != nullptr)
+                    ReportError("Invalid type for base class");
             }
 
             result = new ClassStatement(*nameToken, argument, block);
