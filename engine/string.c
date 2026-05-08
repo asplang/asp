@@ -581,7 +581,7 @@ static AspDataEntry *ToString
 
                 if (state == 0)
                     snprintf
-                        (buffer, sizeof buffer, "<%s:", TypeString(type));
+                        (buffer, sizeof buffer, "<%s: ", TypeString(type));
                 else if (state == 1)
                      strcpy(buffer, ", ");
                 else
