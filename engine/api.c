@@ -331,20 +331,20 @@ bool AspIsTypeOf
 bool AspIsSubclassOf
     (AspEngine *engine, const AspDataEntry *class1, const AspDataEntry *class2)
 {
-    if (!AspIsClassInstance(class1) || !AspIsClassInstance(class2))
+    if (!AspIsClass(class1) || !AspIsClass(class2))
         return false;
 
-    uint32_t class1Index = AspIndex(engine, class1);
+    uint32_t class2Index = AspIndex(engine, class2);
     uint32_t iterationCount = 0;
-    for (uint32_t class2Index = AspIndex(engine, class2);
+    for (uint32_t class1Index = AspIndex(engine, class1);
          iterationCount < engine->cycleDetectionLimit;
          iterationCount++,
-         class2Index = AspDataGetClassBaseClassIndex
-            (AspValueEntry(engine, class2Index)))
+         class1Index = AspDataGetClassBaseClassIndex
+            (AspValueEntry(engine, class1Index)))
     {
-        if (class2Index == 0)
+        if (class1Index == 0)
             break;
-        if (class2Index == class1Index)
+        if (class1Index == class2Index)
             return true;
     }
     if (iterationCount >= engine->cycleDetectionLimit)
