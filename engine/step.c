@@ -2520,9 +2520,23 @@ static AspRunResult Step(AspEngine *engine)
                     break;
 
                 case DataType_Object:
+                #ifdef ASP_FEATURE_CLASS
+                case DataType_Class:
+                #endif
                 case DataType_Module:
+                {
+                    #ifdef ASP_FEATURE_CLASS
+                    if (containerType == DataType_Class &&
+                        !AspIsFeature(engine, AspFeatureBit_Class))
+                        return AspRunResult_UnexpectedType;
+                    #endif
+
                     if (opCode == OpCode_BLD)
                     {
+                        #ifdef ASP_FEATURE_CLASS
+                        if (containerType == DataType_Class)
+                            return AspRunResult_UnexpectedType;
+                        #endif
                         if (containerType == DataType_Module ||
                             itemType != DataType_NameValuePair)
                             return AspRunResult_UnexpectedType;
@@ -2543,6 +2557,7 @@ static AspRunResult Step(AspEngine *engine)
                             (engine, AspDataGetKeyValuePairValueIndex(item));
                     }
                     break;
+                }
 
                 case DataType_ReverseIterator:
                 case DataType_ForwardIterator:
@@ -2682,6 +2697,9 @@ static AspRunResult Step(AspEngine *engine)
                 }
 
                 case DataType_Object:
+                #ifdef ASP_FEATURE_CLASS
+                case DataType_Class:
+                #endif
                 case DataType_Module:
                 {
                     /* Access the underlying namespace. */
@@ -2689,6 +2707,10 @@ static AspRunResult Step(AspEngine *engine)
                         (engine,
                          containerType == DataType_Object ?
                          AspDataGetObjectNamespaceIndex(container) :
+                         #ifdef ASP_FEATURE_CLASS
+                         containerType == DataType_Class ?
+                         AspDataGetClassNamespaceIndex(container) :
+                         #endif
                          AspDataGetModuleNamespaceIndex(container));
                     if (AspDataGetType(ns) != DataType_Namespace)
                         return AspRunResult_UnexpectedType;
@@ -3107,19 +3129,32 @@ static AspRunResult Step(AspEngine *engine)
                 }
 
                 case DataType_Object:
+                #ifdef ASP_FEATURE_CLASS
+                case DataType_Class:
+                #endif
                 case DataType_Module:
                 {
-                    /* Access the underlying namespace. */
-                    AspDataEntry *ns = AspEntry
-                        (engine,
-                         containerType == DataType_Object ?
-                         AspDataGetObjectNamespaceIndex(container) :
-                         AspDataGetModuleNamespaceIndex(container));
+                    #ifdef ASP_FEATURE_CLASS
+                    if (containerType == DataType_Class &&
+                        !AspIsFeature(engine, AspFeatureBit_Class))
+                        return AspRunResult_UnexpectedType;
+                    #endif
 
                     /* Ensure the index is a symbol. */
                     if (AspDataGetType(index) != DataType_Symbol)
                         return AspRunResult_UnexpectedType;
                     int32_t symbol = AspDataGetSymbol(index);
+
+                    /* Access the underlying namespace. */
+                    AspDataEntry *ns = AspEntry
+                        (engine,
+                         containerType == DataType_Object ?
+                         AspDataGetObjectNamespaceIndex(container) :
+                         #ifdef ASP_FEATURE_CLASS
+                         containerType == DataType_Class ?
+                         AspDataGetClassNamespaceIndex(container) :
+                         #endif
+                         AspDataGetModuleNamespaceIndex(container));
 
                     /* Locate the entry. */
                     AspTreeResult findResult = AspFindSymbol
