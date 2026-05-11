@@ -47,8 +47,7 @@ void Generator::AddModule(const string &moduleName)
     }
 }
 
-pair<string, list<pair<string, SourceElement> > >
-Generator::NextModule()
+pair<string, list<pair<string, SourceElement> > > Generator::NextModule()
 {
     // Check if there are any more modules to import.
     if (moduleNamesToImport.empty())
@@ -96,6 +95,34 @@ unsigned Generator::ErrorCount() const
 
 void Generator::Finalize()
 {
+    #ifdef ASP_FEATURE_CLASS
+
+    if ((featureBits & AspFeatureBit_Class) != 0)
+    {
+        // Switch to the system module.
+        currentModuleDefinitions = definitionsByModuleName.find("")->second;
+
+        // If not already defined by the app spec, add a definition for a
+        // function that will serve as the initialization method of the base of
+        // all non-derived classes.
+        const auto &functionName = AspReservedName
+            (AspReservedSymbol_ClassInitialize);
+        auto findDefinitionIter = currentModuleDefinitions->find(functionName);
+        if (findDefinitionIter == currentModuleDefinitions->end())
+        {
+            auto nameToken = new Token(SourceLocation(), functionName);
+            auto selfParameterNameToken = Token(SourceLocation(), "self");
+            auto selfParameter = new Parameter(selfParameterNameToken);
+            auto parameterList = new ParameterList;
+            parameterList->Add(selfParameter);
+            auto internalNameToken = new Token
+                (SourceLocation(), "AspLib_class_init");
+            MakeFunction(nameToken, parameterList, internalNameToken);
+        }
+    }
+
+    #endif
+
     // Discard module names as they are no longer needed.
     moduleNames.clear();
 

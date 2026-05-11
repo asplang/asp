@@ -24,6 +24,17 @@ static AspRunResult TypeOfPredicate
 static AspRunResult SubclassOfPredicate
     (const AspDataEntry *cls, void *context, bool *done);
 
+/* object_class.__init__(self)
+ * Do nothing.
+ */
+ASP_LIB_API AspRunResult AspLib_class_init
+    (AspEngine *engine,
+     AspDataEntry *self,
+     AspDataEntry **returnValue)
+{
+    return AspRunResult_OK;
+}
+
 /* isinstance(object, type)
  * Return True if the object is of one of the given type(s).
  */

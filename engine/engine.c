@@ -434,6 +434,13 @@ static AspRunResult ResetData(AspEngine *engine)
     engine->falseSingleton = 0;
     engine->trueSingleton = 0;
 
+    #ifdef ASP_FEATURE_CLASS
+
+    /* Initialize the base of all non-derived classes. */
+    engine->objectClass = 0;
+
+    #endif
+
     /* Initialize stack. */
     engine->stackTop = 0;
     engine->stackCount = 0;
@@ -770,9 +777,47 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
     }
 
     /* Ensure we read the application spec correctly. */
-    return
-        specIndex != specSize ?
-        AspRunResult_InitializationError : AspRunResult_OK;
+    if (specIndex != specSize)
+        return AspRunResult_InitializationError;
+
+    #ifdef ASP_FEATURE_CLASS
+
+    if (AspIsFeature(engine, AspFeatureBit_Class))
+    {
+        /* Create the common base of all non-derived classes. */
+        engine->objectClass = AspAllocEntry(engine, DataType_Class);
+        if (engine->objectClass == 0)
+            return AspRunResult_OutOfDataMemory;
+        AspDataEntry *objectClassNamespace = AspAllocEntry
+            (engine, DataType_Namespace);
+        if (objectClassNamespace == 0)
+            return AspRunResult_OutOfDataMemory;
+        AspDataSetClassNamespaceIndex
+            (engine->objectClass, AspIndex(engine, objectClassNamespace));
+
+        /* Locate the common base class initialization function in the system
+           module. */
+        AspTreeResult initFunctionFindResult = AspFindSymbol
+            (engine, engine->systemNamespace,
+             AspReservedSymbol_ClassInitialize);
+        if (initFunctionFindResult.result != AspRunResult_OK)
+            return initFunctionFindResult.result;
+        if (initFunctionFindResult.value == 0)
+            return AspRunResult_NameNotFound;
+        if (AspDataGetType(initFunctionFindResult.value) != DataType_Function)
+            return AspRunResult_UnexpectedType;
+
+        /* Insert the initialization function into the common base class. */
+        AspTreeResult insertResult = AspTreeTryInsertBySymbol
+            (engine, objectClassNamespace,
+             AspReservedSymbol_ClassInitialize, initFunctionFindResult.value);
+        if (insertResult.result != AspRunResult_OK)
+            return insertResult.result;
+    }
+
+    #endif
+
+    return AspRunResult_OK;
 }
 
 static AspRunResult LoadValue

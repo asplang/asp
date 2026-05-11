@@ -2095,18 +2095,22 @@ static AspRunResult Step(AspEngine *engine)
             if (baseClassType == DataType_None)
             {
                 AspUnref(engine, baseClass);
-                baseClass = 0;
+
+                /* For non-derived classes, use the common base class. */
+                if (engine->objectClass == 0)
+                    AspRunResult_InternalError;
+                AspRef(engine, engine->objectClass);
+                baseClass = engine->objectClass;
+                baseClassType = AspDataGetType(baseClass);
             }
-            else if (baseClassType != DataType_Class)
+            if (baseClassType != DataType_Class)
                 return AspRunResult_UnexpectedType;
 
             /* Create a class. */
             AspDataEntry *cls = AspAllocEntry(engine, DataType_Class);
             if (cls == 0)
                 return AspRunResult_OutOfDataMemory;
-            if (baseClass != 0)
-                AspDataSetClassBaseClassIndex
-                    (cls, AspIndex(engine, baseClass));
+            AspDataSetClassBaseClassIndex(cls, AspIndex(engine, baseClass));
 
             /* Transfer the local namespace into the class, preventing it from
                destruction when returning from the class definition

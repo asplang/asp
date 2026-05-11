@@ -14,11 +14,11 @@ extern "C" {
 
 enum AspReservedSymbol
 {
-    AspReservedSymbol_SystemModule,
-    AspReservedSymbol_SystemArguments,
-    AspReservedSymbol_MainModule,
+    AspReservedSymbol_SystemModule = 0,
+    AspReservedSymbol_SystemArguments = 1,
+    AspReservedSymbol_MainModule = 2,
     #ifdef ASP_FEATURE_CLASS
-    AspReservedSymbol_ClassInitialize,
+    AspReservedSymbol_ClassInitialize = 3,
     #endif
 
     AspReservedSymbol_End = 64 /* must be last */

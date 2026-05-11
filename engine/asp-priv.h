@@ -111,6 +111,13 @@ struct AspEngine
         *noneSingleton, *ellipsisSingleton,
         *falseSingleton, *trueSingleton;
 
+    #ifdef ASP_FEATURE_CLASS
+
+    /* The base of all non-derived classes. */
+    AspDataEntry *objectClass;
+
+    #endif
+
     /* Stack. */
     AspDataEntry *stackTop;
     unsigned stackCount;
@@ -153,6 +160,10 @@ ASP_API AspDataEntry *AspParameterValue
     (AspEngine *, const AspDataEntry *ns, int32_t symbol);
 ASP_API AspParameterResult AspGroupParameterValue
     (AspEngine *, const AspDataEntry *ns, int32_t symbol, bool dictionary);
+#ifdef ASP_FEATURE_CLASS
+ASP_LIB_API AspRunResult AspLib_class_init
+    (AspEngine *, AspDataEntry *self, AspDataEntry **returnValue);
+#endif
 
 #ifdef __cplusplus
 }
