@@ -295,7 +295,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
 
         case DataType_Function:
             if (AspDataGetFunctionIsApp(entry))
-                fprintf(fp, " s=%d", AspDataGetFunctionSymbol(entry));
+                fprintf(fp, " sym=%d", AspDataGetFunctionSymbol(entry));
             else
                 fprintf(fp, " code=0x%07X",
                     AspDataGetFunctionCodeAddress(entry));
@@ -306,7 +306,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
 
         case DataType_Module:
             if (AspDataGetModuleIsApp(entry))
-                fprintf(fp, " s=%d", AspDataGetModuleSymbol(entry));
+                fprintf(fp, " sym=%d", AspDataGetModuleSymbol(entry));
             else
                 fprintf(fp, " code=0x%07X",
                     AspDataGetModuleCodeAddress(entry));
@@ -506,7 +506,7 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             break;
 
         case DataType_Parameter:
-            fprintf(fp, " s=%u", AspDataGetParameterSymbol(entry));
+            fprintf(fp, " sym=%u", AspDataGetParameterSymbol(entry));
             if (AspDataGetParameterHasDefault(entry))
                 fprintf(fp, " dflt=0x%07X",
                     AspDataGetParameterDefaultIndex(entry));
