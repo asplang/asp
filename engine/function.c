@@ -12,6 +12,7 @@
 #include "integer-result.h"
 #include "code.h"
 #include "data.h"
+#include "reserved.h"
 
 #ifdef ASP_DEBUG
 #include <stdio.h>
@@ -255,14 +256,130 @@ AspRunResult AspExpandDictionaryGroupArgument
     return AspRunResult_OK;
 }
 
-AspRunResult AspCallFunction
-    (AspEngine *engine, AspDataEntry *function, AspDataEntry *argumentList,
-     bool fromApp
-     #ifdef ASP_FEATURE_CLASS
-     , AspDataEntry *cls, AspDataEntry *instance, bool initializeInstance
-     #endif
-     )
+AspRunResult AspCallCallable
+    (AspEngine *engine, AspDataEntry *callable, AspDataEntry *argumentList,
+     bool fromApp)
 {
+    #ifdef ASP_FEATURE_CLASS
+    AspDataEntry *cls = 0, *instance = 0;
+    bool initializeInstance = false;
+    #endif
+    AspDataEntry *function = callable;
+    if (!engine->again)
+    {
+        #ifdef ASP_FEATURE_CLASS
+
+        /* Handle the different types of callables. */
+        uint8_t callableType = AspDataGetType(callable);
+        if (callableType == DataType_Class)
+        {
+            if (!AspIsFeature(engine, AspFeatureBit_Class))
+                return AspRunResult_UnexpectedType;
+
+            /* Create an instance of the class. */
+            instance = AspNewSimpleObject(engine);
+            if (instance == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspRef(engine, callable);
+            AspDataSetObjectClassIndex
+                (instance, AspIndex(engine, callable));
+
+            /* Search for an initialization function in the class and its
+               base(s). */
+            cls = callable;
+            AspDataEntry *initializationFunction = 0;
+            uint32_t iterationCount = 0;
+            for (; iterationCount < engine->cycleDetectionLimit;
+                 iterationCount++)
+            {
+                AspDataEntry *ns = AspEntry
+                    (engine, AspDataGetClassNamespaceIndex(cls));
+                if (AspDataGetType(ns) != DataType_Namespace)
+                    return AspRunResult_UnexpectedType;
+                AspTreeResult findResult = AspFindSymbol
+                    (engine, ns, AspReservedSymbol_ClassInitialize);
+                if (findResult.result != AspRunResult_OK)
+                    return findResult.result;
+                if (findResult.value != 0)
+                {
+                    initializationFunction = findResult.value;
+                    break;
+                }
+
+                /* Keep searching. */
+                uint32_t baseClassIndex =
+                    AspDataGetClassBaseClassIndex(cls);
+                if (baseClassIndex == 0)
+                    break;
+                cls = AspValueEntry(engine, baseClassIndex);
+                if (AspDataGetType(cls) != DataType_Class)
+                    return AspRunResult_UnexpectedType;
+            }
+            if (iterationCount >= engine->cycleDetectionLimit)
+                return AspRunResult_CycleDetected;
+
+            /* Prepare to call the initialization function if present. */
+            if (initializationFunction != 0)
+            {
+                AspRef(engine, cls);
+                function = initializationFunction;
+                initializeInstance = true;
+            }
+            else if (AspDataGetSequenceCount(argumentList) != 0)
+                return AspRunResult_MalformedFunctionCall;
+            else
+            {
+                /* An instance has been created, and there is no initialization
+                   function to call, so push the instance onto the stack,
+                   delete the empty argument list, and exit. */
+                const AspDataEntry *stackEntry = AspPush(engine, instance);
+                if (stackEntry == 0)
+                    return AspRunResult_OutOfDataMemory;
+                AspUnref(engine, instance);
+                AspUnref(engine, argumentList);
+                return AspRunResult_OK;
+            }
+        }
+        else if (callableType == DataType_BoundMethod)
+        {
+            if (!AspIsFeature(engine, AspFeatureBit_Class))
+                return AspRunResult_UnexpectedType;
+
+            /* Prepare to call the function on behalf of the instance. */
+            function = AspValueEntry
+                (engine, AspDataGetBoundMethodFunctionIndex(callable));
+            cls = AspValueEntry
+                (engine, AspDataGetBoundMethodClassIndex(callable));
+            AspRef(engine, cls);
+            instance = AspValueEntry
+                (engine, AspDataGetBoundMethodInstanceIndex(callable));
+            AspRef(engine, instance);
+        }
+
+        /* Insert any instance at the head of the argument list. */
+        if (instance != 0)
+        {
+            /* Create an argument for the instance. */
+            AspDataEntry *instanceArgument = AspAllocEntry
+                (engine, DataType_Argument);
+            if (instanceArgument == 0)
+                return AspRunResult_OutOfDataMemory;
+            AspRef(engine, instance);
+            AspDataSetArgumentValueIndex
+                (instanceArgument, AspIndex(engine, instance));
+
+            AspSequenceResult insertResult = AspSequenceInsertByIndex
+                (engine, argumentList, 0, instanceArgument);
+            if (insertResult.result != AspRunResult_OK)
+                return insertResult.result;
+        }
+
+        #endif
+
+        if (AspDataGetType(function) != DataType_Function)
+            return AspRunResult_UnexpectedType;
+    }
+
     /* Redirect any direct calls from the application through the CALL
        instruction in order to keep the application's stack usage under
        control. */
@@ -345,6 +462,10 @@ AspRunResult AspCallFunction
                 return AspRunResult_InternalError;
             }
 
+            /* Attach a context entry to the frame, allowing the class and
+               instance to be accessible (mostly for the benefit of the super
+               function). Note that the reference counts for the class and
+               instance have already been adjusted accordingly. */
             AspDataEntry *context = AspAllocEntry(engine, DataType_Context);
             if (context == 0)
                 return AspRunResult_OutOfDataMemory;

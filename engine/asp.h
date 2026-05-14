@@ -310,7 +310,7 @@ ASP_API bool AspAddIterableGroupArgument
 ASP_API bool AspAddDictionaryGroupArgument
     (AspEngine *, AspDataEntry *value, bool take);
 ASP_API void AspClearFunctionArguments(AspEngine *);
-ASP_API AspRunResult AspCall(AspEngine *, AspDataEntry *function);
+ASP_API AspRunResult AspCall(AspEngine *, AspDataEntry *callable);
 ASP_API AspRunResult AspReturnValue(AspEngine *, AspDataEntry **);
 ASP_API int32_t AspNextSymbol(AspEngine *);
 ASP_API AspDataEntry *AspLoadLocal(AspEngine *, int32_t symbol);

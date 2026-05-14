@@ -19,8 +19,7 @@ Generator::Generator
      const string &fileBaseName) :
     errorStream(errorStream),
     fileBaseName(fileBaseName),
-    variableBaseName(fileBaseName),
-    featureBits(featureBits)
+    variableBaseName(fileBaseName)
 {
     // Reserve module ID zero for the system module.
     moduleIdTable.ReserveSystemSymbol(0, "");

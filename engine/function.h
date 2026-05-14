@@ -15,13 +15,9 @@ AspRunResult AspExpandIterableGroupArgument
     (AspEngine *, AspDataEntry *argumentList, const AspDataEntry *iterable);
 AspRunResult AspExpandDictionaryGroupArgument
     (AspEngine *, AspDataEntry *argumentList, const AspDataEntry *dictionary);
-AspRunResult AspCallFunction
-    (AspEngine *, AspDataEntry *function, AspDataEntry *argumentList,
-     bool fromApp
-     #ifdef ASP_FEATURE_CLASS
-     , AspDataEntry *cls, AspDataEntry *instance, bool initializeInstance
-     #endif
-     );
+AspRunResult AspCallCallable
+    (AspEngine *, AspDataEntry *callable, AspDataEntry *argumentList,
+     bool fromApp);
 AspRunResult AspReturnToCaller(AspEngine *, AspDataEntry **returnValue);
 
 #ifdef __cplusplus

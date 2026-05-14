@@ -1472,11 +1472,6 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             AspDataEntry *callable = 0, *arguments = 0;
-            #ifdef ASP_FEATURE_CLASS
-            AspDataEntry *cls = 0, *instance = 0;
-            bool initializeInstance = false;
-            #endif
-            uint8_t callableType = DataType_Function;
             if (!engine->again)
             {
                 /* Pop the argument list off the stack. */
@@ -1491,137 +1486,12 @@ static AspRunResult Step(AspEngine *engine)
                 callable = AspTopValue(engine);
                 if (callable == 0)
                     return AspRunResult_StackUnderflow;
-                callableType = AspDataGetType(callable);
                 AspRef(engine, callable);
                 AspPop(engine);
-
-                #ifdef ASP_FEATURE_CLASS
-
-                /* Handle the different types of callables. */
-                if (callableType == DataType_Class)
-                {
-                    if (!AspIsFeature(engine, AspFeatureBit_Class))
-                        return AspRunResult_UnexpectedType;
-
-                    /* Create an instance of the class. */
-                    instance = AspNewSimpleObject(engine);
-                    if (instance == 0)
-                        return AspRunResult_OutOfDataMemory;
-                    AspDataSetObjectClassIndex
-                        (instance, AspIndex(engine, callable));
-
-                    /* Search for an initialization function in the class and
-                       its base(s). */
-                    cls = callable;
-                    AspDataEntry *initializationFunction = 0;
-                    uint32_t iterationCount = 0;
-                    for (; iterationCount < engine->cycleDetectionLimit;
-                         iterationCount++)
-                    {
-                        AspDataEntry *ns = AspEntry
-                            (engine, AspDataGetClassNamespaceIndex(cls));
-                        if (AspDataGetType(ns) != DataType_Namespace)
-                            return AspRunResult_UnexpectedType;
-                        AspTreeResult findResult = AspFindSymbol
-                            (engine, ns, AspReservedSymbol_ClassInitialize);
-                        if (findResult.result != AspRunResult_OK)
-                            return findResult.result;
-                        if (findResult.value != 0)
-                        {
-                            initializationFunction = findResult.value;
-                            break;
-                        }
-
-                        /* Keep searching. */
-                        uint32_t baseClassIndex =
-                            AspDataGetClassBaseClassIndex(cls);
-                        if (baseClassIndex == 0)
-                            break;
-                        cls = AspValueEntry(engine, baseClassIndex);
-                        if (AspDataGetType(cls) != DataType_Class)
-                            return AspRunResult_UnexpectedType;
-                    }
-                    if (iterationCount >= engine->cycleDetectionLimit)
-                        return AspRunResult_CycleDetected;
-
-                    /* Prepare to call the initialization function if
-                       present. */
-                    if (initializationFunction != 0)
-                    {
-                        AspRef(engine, cls);
-                        callable = initializationFunction;
-                        AspRef(engine, callable);
-                        callableType = AspDataGetType(callable);
-                        initializeInstance = true;
-                    }
-                    else if (AspDataGetSequenceCount(arguments) != 0)
-                        return AspRunResult_MalformedFunctionCall;
-                    else
-                    {
-                        /* An instance has been created, and there is no
-                           initialization function to call, so push the
-                           instance onto the stack and delete the empty
-                           argument list. */
-                        const AspDataEntry *stackEntry = AspPush
-                            (engine, instance);
-                        if (stackEntry == 0)
-                            return AspRunResult_OutOfDataMemory;
-                        AspUnref(engine, instance);
-                        AspUnref(engine, arguments);
-                        break;
-                    }
-                }
-                else if (callableType == DataType_BoundMethod)
-                {
-                    if (!AspIsFeature(engine, AspFeatureBit_Class))
-                        return AspRunResult_UnexpectedType;
-
-                    /* Prepare to call the function on behalf of the
-                       instance. */
-                    AspDataEntry *function = AspValueEntry
-                        (engine, AspDataGetBoundMethodFunctionIndex(callable));
-                    AspRef(engine, function);
-                    cls = AspValueEntry
-                        (engine, AspDataGetBoundMethodClassIndex(callable));
-                    AspRef(engine, cls);
-                    instance = AspValueEntry
-                        (engine, AspDataGetBoundMethodInstanceIndex(callable));
-                    AspRef(engine, instance);
-                    AspUnref(engine, callable);
-                    callable = function;
-                    callableType = AspDataGetType(callable);
-                }
-
-                /* Insert any instance at the head of the argument list. */
-                if (instance != 0)
-                {
-                    /* Create an argument for the instance. */
-                    AspDataEntry *instanceArgument = AspAllocEntry
-                        (engine, DataType_Argument);
-                    if (instanceArgument == 0)
-                        return AspRunResult_OutOfDataMemory;
-                    AspDataSetArgumentValueIndex
-                        (instanceArgument, AspIndex(engine, instance));
-
-                    AspSequenceResult insertResult = AspSequenceInsertByIndex
-                        (engine, arguments, 0, instanceArgument);
-                    if (insertResult.result != AspRunResult_OK)
-                        return insertResult.result;
-                    AspRef(engine, instance);
-                }
-
-                #endif
-
-                if (callableType != DataType_Function)
-                    return AspRunResult_UnexpectedType;
             }
 
-            AspRunResult callResult = AspCallFunction
-                (engine, callable, arguments, engine->callFromApp
-                 #ifdef ASP_FEATURE_CLASS
-                 , cls, instance, initializeInstance
-                 #endif
-                );
+            AspRunResult callResult = AspCallCallable
+                (engine, callable, arguments, engine->callFromApp);
             if (callResult != AspRunResult_OK)
                 return callResult;
 
@@ -2098,7 +1968,7 @@ static AspRunResult Step(AspEngine *engine)
 
                 /* For non-derived classes, use the common base class. */
                 if (engine->objectClass == 0)
-                    AspRunResult_InternalError;
+                    return AspRunResult_InternalError;
                 AspRef(engine, engine->objectClass);
                 baseClass = engine->objectClass;
                 baseClassType = AspDataGetType(baseClass);

@@ -1281,7 +1281,7 @@ void AspClearFunctionArguments(AspEngine *engine)
 }
 
 AspRunResult AspCall
-    (AspEngine *engine, AspDataEntry *function)
+    (AspEngine *engine, AspDataEntry *callable)
 {
     /* Ensure an argument list has been prepared. */
     if (!PrepareArgumentList(engine))
@@ -1290,12 +1290,7 @@ AspRunResult AspCall
     /* Consume the argument list and call the function. */
     AspDataEntry *argumentList = engine->argumentList;
     engine->argumentList = 0;
-    return AspCallFunction
-        (engine, function, argumentList, true
-         #ifdef ASP_FEATURE_CLASS
-         , 0, 0, false
-         #endif
-        );
+    return AspCallCallable(engine, callable, argumentList, true);
 }
 
 AspRunResult AspReturnValue(AspEngine *engine, AspDataEntry **returnValue)
