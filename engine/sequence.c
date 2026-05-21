@@ -199,9 +199,14 @@ AspSequenceResult AspSequenceIndex
 {
     AspSequenceResult result = {AspRunResult_OK, 0, 0};
 
+    result.result = AspAssert(engine, sequence != 0);
+    if (result.result != AspRunResult_OK)
+        return result;
     uint8_t type = AspDataGetType(sequence);
     result.result = AspAssert
         (engine, IsSequenceType(type) && type != DataType_String);
+    if (result.result != AspRunResult_OK)
+        return result;
 
     /* Treat negative indices as counting backwards from the end. */
     int32_t count = AspDataGetSequenceCount(sequence);

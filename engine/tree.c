@@ -154,8 +154,8 @@ AspTreeResult AspTreeTryInsertBySymbol
 {
     AspTreeResult result = {AspRunResult_OK, 0, 0, 0, false};
 
-    AspAssert(engine, tree != 0);
-    AspAssert(engine, AspDataGetType(tree) == DataType_Namespace);
+    AspAssert(engine,
+        tree != 0 && AspDataGetType(tree) == DataType_Namespace);
     AspAssert
         (engine, symbol >= AspSignedWordMin && symbol <= AspSignedWordMax);
     result.result = AspAssert
@@ -495,8 +495,8 @@ AspTreeResult AspFindSymbol
 {
     AspTreeResult result = {AspRunResult_OK, 0, 0, 0, false};
 
-    AspAssert(engine, tree != 0);
-    AspAssert(engine, AspDataGetType(tree) == DataType_Namespace);
+    AspAssert
+        (engine, tree != 0 && AspDataGetType(tree) == DataType_Namespace);
     result.result = AspAssert
         (engine, symbol >= AspSignedWordMin && symbol <= AspSignedWordMax);
     if (result.result != AspRunResult_OK)
@@ -534,8 +534,8 @@ AspTreeResult AspTreeNext
 {
     AspTreeResult result = {AspRunResult_OK, 0, 0, 0, false};
 
-    AspAssert(engine, tree != 0);
-    AspAssert(engine, IsTreeType(AspDataGetType(tree)));
+    AspAssert
+        (engine, tree != 0 && IsTreeType(AspDataGetType(tree)));
     result.result = AspAssert
         (engine, node == 0 || IsNodeType(AspDataGetType(node)));
     if (result.result != AspRunResult_OK)
