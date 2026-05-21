@@ -21,9 +21,8 @@ AspDataEntry *AspPushNoUse(AspEngine *engine, const AspDataEntry *value)
 
 static AspDataEntry *Push(AspEngine *engine, AspDataEntry *value, bool use)
 {
-    AspAssert(engine, value != 0);
     AspRunResult assertResult = AspAssert
-        (engine, AspDataGetType(value) != DataType_Free);
+        (engine, value != 0 && AspDataGetType(value) != DataType_Free);
     if (assertResult != AspRunResult_OK)
         return 0;
 
