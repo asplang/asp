@@ -69,6 +69,7 @@ if(BUILD_FOR_TARGET)
         operation.c
         function.c
         arguments.c
+        member.c
         lib-sys.c
         lib-type.c
         lib-collect.c
@@ -117,6 +118,7 @@ if(BUILD_FOR_TARGET)
 
         add_library(aspe-oo
             ${COMMON_SOURCES}
+            class.c
             lib-class.c
             )
 

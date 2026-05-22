@@ -216,17 +216,17 @@ ASP_API char AspStringElement
 ASP_API AspDataEntry *AspFind
     (AspEngine *, const AspDataEntry *tree, const AspDataEntry *key);
 ASP_API AspDataEntry *AspMember
-    (AspEngine *, const AspDataEntry *object, int32_t symbol);
+    (AspEngine *, AspDataEntry *object, int32_t symbol);
+#ifdef ASP_FEATURE_CLASS
+ASP_API AspDataEntry *AspInstanceClass
+    (AspEngine *, const AspDataEntry *instance);
+#endif
 ASP_API AspDataEntry *AspAt(AspEngine *, const AspDataEntry *iterator);
 ASP_API bool AspAtSame
     (AspEngine *,
      const AspDataEntry *iterator1, const AspDataEntry *iterator2);
 ASP_API AspDataEntry *AspNext(AspEngine *, AspDataEntry *iterator);
 ASP_API AspDataEntry *AspIterable(AspEngine *, const AspDataEntry *iterator);
-#ifdef ASP_FEATURE_CLASS
-ASP_API AspDataEntry *AspInstanceClass
-    (AspEngine *, const AspDataEntry *instance);
-#endif
 
 /* API functions for object creation. */
 ASP_API AspDataEntry *AspNewNone(AspEngine *);
@@ -246,6 +246,12 @@ ASP_API AspDataEntry *AspNewList(AspEngine *);
 ASP_API AspDataEntry *AspNewSet(AspEngine *);
 ASP_API AspDataEntry *AspNewDictionary(AspEngine *);
 ASP_API AspDataEntry *AspNewSimpleObject(AspEngine *);
+#ifdef ASP_FEATURE_CLASS
+ASP_API AspDataEntry *AspNewClass(AspEngine *, AspDataEntry *base);
+ASP_API AspDataEntry *AspNewSuper(AspEngine *);
+ASP_API AspDataEntry *AspNewSuperEx
+    (AspEngine *, AspDataEntry *cls, AspDataEntry *instance);
+#endif
 ASP_API AspDataEntry *AspNewIterator
     (AspEngine *, AspDataEntry *iterable, bool reversed);
 ASP_API AspDataEntry *AspNewAppIntegerObject

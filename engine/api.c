@@ -7,9 +7,11 @@
 #include "stack.h"
 #include "sequence.h"
 #include "tree.h"
+#include "class.h"
 #include "iterator.h"
 #include "assign.h"
 #include "function.h"
+#include "member.h"
 #include "reserved.h"
 #include "compare.h"
 #include <math.h>
@@ -596,17 +598,26 @@ AspDataEntry *AspFind
 }
 
 AspDataEntry *AspMember
-    (AspEngine *engine, const AspDataEntry *object, int32_t symbol)
+    (AspEngine *engine, AspDataEntry *object, int32_t symbol)
 {
-    AspDataEntry *ns = GetNamespace(engine, object);
-    if (ns == 0)
-        return 0;
-
-    AspTreeResult result = AspFindSymbol(engine, ns, symbol);
+    AspMemberResult result = AspFindMember(engine, object, symbol, false);
     if (result.result != AspRunResult_OK)
         return 0;
-    return result.value;
+    return result.member;
 }
+
+#ifdef ASP_FEATURE_CLASS
+
+ASP_API AspDataEntry *AspInstanceClass
+    (AspEngine *engine, const AspDataEntry *instance)
+{
+    if (!AspIsInstance(instance))
+        return 0;
+    return AspValueEntry
+        (engine, AspDataGetObjectClassIndex(instance));
+}
+
+#endif
 
 AspDataEntry *AspAt(AspEngine *engine, const AspDataEntry *iterator)
 {
@@ -643,19 +654,6 @@ AspDataEntry *AspIterable(AspEngine *engine, const AspDataEntry *iterator)
     return AspValueEntry
         (engine, AspDataGetIteratorIterableIndex(iterator));
 }
-
-#ifdef ASP_FEATURE_CLASS
-
-ASP_API AspDataEntry *AspInstanceClass
-    (AspEngine *engine, const AspDataEntry *instance)
-{
-    if (!AspIsInstance(instance))
-        return 0;
-    return AspValueEntry
-        (engine, AspDataGetObjectClassIndex(instance));
-}
-
-#endif
 
 AspDataEntry *AspNewNone(AspEngine *engine)
 {
@@ -835,11 +833,57 @@ AspDataEntry *AspNewSimpleObject(AspEngine *engine)
         return 0;
 
     AspDataEntry *object = AspAllocEntry(engine, DataType_Object);
-    if (object != 0)
-        AspDataSetObjectNamespaceIndex(object, AspIndex(engine, ns));
+    if (object == 0)
+    {
+        AspUnref(engine, ns);
+        return 0;
+    }
+
+    AspDataSetObjectNamespaceIndex(object, AspIndex(engine, ns));
 
     return object;
 }
+
+#ifdef ASP_FEATURE_CLASS
+
+ASP_API AspDataEntry *AspNewClass(AspEngine *engine, AspDataEntry *base)
+{
+    if (base != 0 && !AspIsClass(base))
+        return 0;
+
+    AspDataEntry *ns = AspAllocEntry(engine, DataType_Namespace);
+    if (ns == 0)
+        return 0;
+
+    AspDataEntry *cls = AspAllocEntry(engine, DataType_Class);
+    if (cls == 0)
+    {
+        AspUnref(engine, ns);
+        return 0;
+    }
+
+    AspDataSetClassNamespaceIndex(cls, AspIndex(engine, ns));
+    if (base == 0)
+        base = engine->objectClass;
+    AspRef(engine, base);
+    AspDataSetClassBaseClassIndex(cls, AspIndex(engine, base));
+
+    return cls;
+}
+
+ASP_API AspDataEntry *AspNewSuper(AspEngine *engine)
+{
+    return AspNewSuperEx(engine, 0, 0);
+}
+
+ASP_API AspDataEntry *AspNewSuperEx
+    (AspEngine *engine, AspDataEntry *cls, AspDataEntry *instance)
+{
+    AspSuperResult result = AspSuperCreate(engine, cls, instance);
+    return result.result != AspRunResult_OK ? 0 : result.value;
+}
+
+#endif
 
 AspDataEntry *AspNewIterator
     (AspEngine *engine, AspDataEntry *iterable, bool reversed)

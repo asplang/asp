@@ -13,6 +13,7 @@
 #include "iterator.h"
 #include "assign.h"
 #include "function.h"
+#include "member.h"
 #include "operation.h"
 #include "reserved.h"
 #include <string.h>
@@ -3144,208 +3145,27 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Obtain the container from the stack. */
-            AspDataEntry *originalContainer = AspTopValue(engine);
-            if (originalContainer == 0)
+            AspDataEntry *container = AspTopValue(engine);
+            if (container == 0)
                 return AspRunResult_StackUnderflow;
-            AspRef(engine, originalContainer);
-            uint8_t originalContainerType = AspDataGetType(originalContainer);
+            AspRef(engine, container);
             AspPop(engine);
 
-            /* Search the container and if applicable, its ancestors, for the
-               member. */
-            AspDataEntry *container = originalContainer;
-            bool createAddress = isAddressInstruction;
-            AspDataEntry *member = 0, *foundMember = 0;
-            #ifdef ASP_FEATURE_CLASS
-            uint32_t iterationCount = 0;
-            for (; iterationCount < engine->cycleDetectionLimit;
-                 iterationCount++)
-            #endif
-            {
-                /* Access the container's namespace. */
-                AspDataEntry *ns = 0;
-                uint8_t containerType = AspDataGetType(container);
-                switch (containerType)
-                {
-                    default:
-                        return AspRunResult_UnexpectedType;
-
-                    case DataType_Object:
-                        ns = AspEntry
-                            (engine,
-                             AspDataGetObjectNamespaceIndex(container));
-                        break;
-
-                    #ifdef ASP_FEATURE_CLASS
-
-                    case DataType_Class:
-                    {
-                        if (!AspIsFeature(engine, AspFeatureBit_Class))
-                            return AspRunResult_UnexpectedType;
-
-                        ns = AspEntry
-                            (engine,
-                             AspDataGetClassNamespaceIndex(container));
-                        break;
-                    }
-
-                    case DataType_Super:
-                    {
-                        if (!AspIsFeature(engine, AspFeatureBit_Class))
-                            return AspRunResult_UnexpectedType;
-
-                        /* Start the search at the class' base class. */
-                        AspDataEntry *cls = AspValueEntry
-                            (engine, AspDataGetSuperClassIndex(container));
-                        if (AspDataGetType(cls) != DataType_Class)
-                            return AspRunResult_UnexpectedType;
-                        uint32_t baseClassIndex =
-                            AspDataGetClassBaseClassIndex(cls);
-                        if (baseClassIndex == 0)
-                            break;
-                        container = AspValueEntry(engine, baseClassIndex);
-                        containerType = AspDataGetType(container);
-                        ns = AspEntry
-                            (engine,
-                             AspDataGetClassNamespaceIndex(container));
-                        break;
-                    }
-
-                    #endif
-
-                    case DataType_Module:
-                        ns = AspEntry
-                            (engine,
-                             AspDataGetModuleNamespaceIndex(container));
-                        break;
-                }
-                if (ns == 0)
-                    break;
-                if (AspDataGetType(ns) != DataType_Namespace)
-                    return AspRunResult_UnexpectedType;
-
-                /* Look up the variable in the namespace, creating it for an
-                   address lookup, if applicable, if it doesn't exist. */
-                AspTreeResult memberResult = createAddress ?
-                    AspTreeTryInsertBySymbol
-                        (engine, ns, variableSymbol, engine->noneSingleton) :
-                    AspFindSymbol
-                        (engine, ns, variableSymbol);
-                if (memberResult.result != AspRunResult_OK)
-                    return memberResult.result;
-                foundMember = createAddress ?
-                    memberResult.node : memberResult.value;
-                if (container == originalContainer)
-                    member = foundMember;
-
-                #ifdef ASP_FEATURE_CLASS
-
-                /* End the search if the member was found or the container is
-                   a module, in which case there's nowhere else to search. */
-                if (containerType == DataType_Module ||
-                    memberResult.value != 0 && !memberResult.inserted)
-                    break;
-
-                /* Keep searching. */
-                uint32_t nextContainerIndex = 0;
-                switch (containerType)
-                {
-                    default:
-                        return AspRunResult_InternalError;
-
-                    case DataType_Object:
-                        nextContainerIndex = AspDataGetObjectClassIndex
-                            (container);
-                        break;
-
-                    case DataType_Class:
-                        nextContainerIndex = AspDataGetClassBaseClassIndex
-                            (container);
-                        break;
-                }
-                if (nextContainerIndex == 0)
-                    break;
-                container = AspValueEntry(engine, nextContainerIndex);
-                createAddress = false;
-
-                #endif
-            }
-            #ifdef ASP_FEATURE_CLASS
-            if (iterationCount >= engine->cycleDetectionLimit)
-                return AspRunResult_CycleDetected;
-            #endif
-
-            #ifdef ASP_FEATURE_CLASS
-
-            /* Handle cases where a member is found in an inherited
-               container (i.e., an instances's class or a class' base). */
-            bool newMemberValue = false;
-            if (foundMember != 0 && container != originalContainer)
-            {
-                if (isAddressInstruction)
-                {
-                    /* Create a shadowing member referring to both the target
-                       and the found member value. */
-                    AspDataEntry *shadowingMember = AspAllocEntry
-                        (engine, DataType_ShadowingMember);
-                    AspDataSetShadowingMemberTargetIndex
-                        (shadowingMember, AspIndex(engine, member));
-                    AspRef(engine, foundMember);
-                    AspDataSetShadowingMemberSourceIndex
-                        (shadowingMember, AspIndex(engine, foundMember));
-                    member = shadowingMember;
-                }
-                else if ((originalContainerType == DataType_Object ||
-                          originalContainerType == DataType_Super) &&
-                         AspDataGetType(foundMember) == DataType_Function)
-                {
-                    AspDataEntry *instance = originalContainer;
-                    if (originalContainerType == DataType_Super)
-                    {
-                        /* Extract the underlying instance from the super
-                           object. */
-                        instance = AspValueEntry
-                            (engine,
-                             AspDataGetSuperInstanceIndex(originalContainer));
-                        if (AspDataGetType(instance) != DataType_Object)
-                            return AspRunResult_UnexpectedType;
-                    }
-
-                    /* Create a bound method, binding the original instance to
-                       the found member function. */
-                    AspDataEntry *boundMethod = AspAllocEntry
-                        (engine, DataType_BoundMethod);
-                    AspRef(engine, foundMember);
-                    AspDataSetBoundMethodFunctionIndex
-                        (boundMethod, AspIndex(engine, foundMember));
-                    AspRef(engine, instance);
-                    AspDataSetBoundMethodInstanceIndex
-                        (boundMethod, AspIndex(engine, instance));
-                    AspRef(engine, container);
-                    AspDataSetBoundMethodClassIndex
-                        (boundMethod, AspIndex(engine, container));
-                    member = boundMethod;
-                    newMemberValue = true;
-                }
-                else
-                    member = foundMember;
-            }
-
-            #endif
-
-            if (member == 0)
+            AspMemberResult result = AspFindMember
+                (engine, container, variableSymbol, isAddressInstruction);
+            if (result.result != AspRunResult_OK)
+                return result.result;
+            if (result.member == 0)
                 return AspRunResult_NameNotFound;
 
             /* Push variable's value or address as applicable. */
-            const AspDataEntry *stackEntry = AspPush(engine, member);
+            const AspDataEntry *stackEntry = AspPush(engine, result.member);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
+            if (AspIsObject(result.member))
+                AspUnref(engine, result.member);
 
-            #ifdef ASP_FEATURE_CLASS
-            if (newMemberValue)
-                AspUnref(engine, member);
-            #endif
-            AspUnref(engine, originalContainer);
+            AspUnref(engine, container);
 
             break;
         }

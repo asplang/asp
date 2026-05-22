@@ -6,6 +6,8 @@
 #define ASP_FUNCTION_H
 
 #include "asp-priv.h"
+#include "data.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {

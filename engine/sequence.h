@@ -7,6 +7,7 @@
 
 #include "asp-priv.h"
 #include "data.h"
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 

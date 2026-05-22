@@ -6,6 +6,7 @@
 #define ASP_STACK_H
 
 #include "asp-priv.h"
+#include "data.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus

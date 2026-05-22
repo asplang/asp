@@ -3,14 +3,9 @@
  */
 
 #include "asp.h"
-#include "data.h"
-#include "stack.h"
-#include "range.h"
+#include "class.h"
 #include "sequence.h"
 #include "search.h"
-#include <errno.h>
-#include <ctype.h>
-#include <stdlib.h>
 
 typedef struct
 {
@@ -140,63 +135,10 @@ ASP_LIB_API AspRunResult AspLib_super
      AspDataEntry *cls, AspDataEntry *instance,
      AspDataEntry **returnValue)
 {
-    if (!AspIsNone(cls) || !AspIsNone(instance))
-    {
-        if (!AspIsClass(cls) || !AspIsInstance(instance) ||
-            !AspIsTypeOf(engine, instance, cls))
-            return AspRunResult_UnexpectedType;
-    }
-    else
-    {
-        /* Search for the enclosing frame. */
-        uint32_t prevStackEntryIndex = AspDataGetStackEntryPreviousIndex
-            (engine->stackTop);
-        if (prevStackEntryIndex == 0)
-            return AspRunResult_InvalidContext;
-        AspDataEntry *frame = 0;
-        uint32_t iterationCount = 0;
-        AspDataEntry *stackTop = engine->stackTop;
-        for (AspDataEntry *stackEntry = AspEntry(engine, prevStackEntryIndex);
-             iterationCount < engine->cycleDetectionLimit && stackEntry != 0;
-             iterationCount++, stackEntry =
-             ((prevStackEntryIndex =
-               AspDataGetStackEntryPreviousIndex(stackEntry)) != 0 ?
-              AspEntry(engine, prevStackEntryIndex) : 0))
-        {
-            AspDataEntry *entry = AspValueEntry
-                (engine, AspDataGetStackEntryValueIndex(stackEntry));
-            if (AspDataGetType(entry) == DataType_Frame)
-            {
-                frame = entry;
-                break;
-            }
-        }
-        if (iterationCount >= engine->cycleDetectionLimit)
-            return AspRunResult_CycleDetected;
-        if (frame == 0)
-            return AspRunResult_InvalidContext;
-        uint32_t contextIndex = AspDataGetFrameContextIndex(frame);
-        if (contextIndex == 0)
-            return AspRunResult_InvalidContext;
-
-        AspDataEntry *context = AspEntry(engine, contextIndex);
-        uint32_t classIndex = AspDataGetContextClassIndex(context);
-        if (classIndex == 0)
-            return AspRunResult_InternalError;
-        else
-            cls = AspValueEntry(engine, classIndex);
-        uint32_t instanceIndex = AspDataGetContextInstanceIndex(context);
-        if (instanceIndex != 0)
-            instance = AspValueEntry(engine, instanceIndex);
-    }
-
-    *returnValue = AspAllocEntry(engine, DataType_Super);
-    if (*returnValue == 0)
-        return AspRunResult_OutOfDataMemory;
-    AspRef(engine, cls);
-    AspDataSetSuperClassIndex(*returnValue, AspIndex(engine, cls));
-    AspRef(engine, instance);
-    AspDataSetSuperInstanceIndex(*returnValue, AspIndex(engine, instance));
-
+    AspSuperResult result = AspSuperCreate
+        (engine, AspIsNone(cls) ? 0 : cls, AspIsNone(instance) ? 0 : instance);
+    if (result.result != AspRunResult_OK)
+        return result.result;
+    *returnValue = result.value;
     return AspRunResult_OK;
 }

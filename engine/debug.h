@@ -6,6 +6,7 @@
 #define ASP_DEBUG_H
 
 #include "asp-priv.h"
+#include "data.h"
 #include <stdint.h>
 #include <stdio.h>
 

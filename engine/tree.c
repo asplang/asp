@@ -154,8 +154,8 @@ AspTreeResult AspTreeTryInsertBySymbol
 {
     AspTreeResult result = {AspRunResult_OK, 0, 0, 0, false};
 
-    AspAssert(engine,
-        tree != 0 && AspDataGetType(tree) == DataType_Namespace);
+    AspAssert
+        (engine, tree != 0 && AspDataGetType(tree) == DataType_Namespace);
     AspAssert
         (engine, symbol >= AspSignedWordMin && symbol <= AspSignedWordMax);
     result.result = AspAssert

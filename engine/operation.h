@@ -6,6 +6,8 @@
 #define ASP_OPERATION_H
 
 #include "asp-priv.h"
+#include "data.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -3,7 +3,6 @@
  */
 
 #include "function.h"
-#include "asp-priv.h"
 #include "range.h"
 #include "stack.h"
 #include "sequence.h"
@@ -260,14 +259,39 @@ AspRunResult AspCallCallable
     (AspEngine *engine, AspDataEntry *callable, AspDataEntry *argumentList,
      bool fromApp)
 {
-    #ifdef ASP_FEATURE_CLASS
-    AspDataEntry *cls = 0, *instance = 0;
-    bool initializeInstance = false;
-    #endif
+    /* Redirect any direct calls from the application through the CALL
+       instruction in order to keep the application's stack usage under
+       control. */
+    if (engine->inApp)
+    {
+        if (callable == 0)
+        {
+            #ifdef ASP_DEBUG
+            puts("Null callable entry");
+            #endif
+            return AspRunResult_InvalidAppFunction;
+        }
+        const AspDataEntry *callableEntry = AspPush(engine, callable);
+        const AspDataEntry *argumentListEntry = AspPush(engine, argumentList);
+        if (callableEntry == 0 || argumentListEntry == 0)
+            return AspRunResult_OutOfDataMemory;
+        engine->callFromApp = true;
+        return AspRunResult_Call;
+    }
+    bool callerAgain = engine->again;
+    if (engine->callFromApp)
+    {
+        callerAgain = false;
+        engine->callFromApp = false;
+    }
+
     AspDataEntry *function = callable;
-    if (!engine->again)
+    if (!callerAgain)
     {
         #ifdef ASP_FEATURE_CLASS
+
+        AspDataEntry *cls = 0, *instance = 0;
+        bool initializeInstance = false;
 
         /* Handle the different types of callables. */
         uint8_t callableType = AspDataGetType(callable);
@@ -284,8 +308,8 @@ AspRunResult AspCallCallable
             AspDataSetObjectClassIndex
                 (instance, AspIndex(engine, callable));
 
-            /* Search for an initialization function in the class and its
-               base(s). */
+            /* Search for the applicable initialization function in the class
+               and its base(s). */
             cls = callable;
             AspDataEntry *initializationFunction = 0;
             uint32_t iterationCount = 0;
@@ -307,8 +331,7 @@ AspRunResult AspCallCallable
                 }
 
                 /* Keep searching. */
-                uint32_t baseClassIndex =
-                    AspDataGetClassBaseClassIndex(cls);
+                uint32_t baseClassIndex = AspDataGetClassBaseClassIndex(cls);
                 if (baseClassIndex == 0)
                     break;
                 cls = AspValueEntry(engine, baseClassIndex);
@@ -317,28 +340,18 @@ AspRunResult AspCallCallable
             }
             if (iterationCount >= engine->cycleDetectionLimit)
                 return AspRunResult_CycleDetected;
+            if (initializationFunction == 0)
+            {
+                #ifdef ASP_DEBUG
+                puts("Class initialization method not found");
+                #endif
+                return AspRunResult_InternalError;
+            }
 
-            /* Prepare to call the initialization function if present. */
-            if (initializationFunction != 0)
-            {
-                AspRef(engine, cls);
-                function = initializationFunction;
-                initializeInstance = true;
-            }
-            else if (AspDataGetSequenceCount(argumentList) != 0)
-                return AspRunResult_MalformedFunctionCall;
-            else
-            {
-                /* An instance has been created, and there is no initialization
-                   function to call, so push the instance onto the stack,
-                   delete the empty argument list, and exit. */
-                const AspDataEntry *stackEntry = AspPush(engine, instance);
-                if (stackEntry == 0)
-                    return AspRunResult_OutOfDataMemory;
-                AspUnref(engine, instance);
-                AspUnref(engine, argumentList);
-                return AspRunResult_OK;
-            }
+            /* Prepare to call the initialization function. */
+            AspRef(engine, cls);
+            function = initializationFunction;
+            initializeInstance = true;
         }
         else if (callableType == DataType_BoundMethod)
         {
@@ -376,39 +389,6 @@ AspRunResult AspCallCallable
 
         #endif
 
-        if (AspDataGetType(function) != DataType_Function)
-            return AspRunResult_UnexpectedType;
-    }
-
-    /* Redirect any direct calls from the application through the CALL
-       instruction in order to keep the application's stack usage under
-       control. */
-    if (engine->inApp)
-    {
-        if (function == 0)
-        {
-            #ifdef ASP_DEBUG
-            puts("Null function entry");
-            #endif
-            return AspRunResult_InvalidAppFunction;
-        }
-        const AspDataEntry *functionEntry = AspPush(engine, function);
-        const AspDataEntry *argumentListEntry = AspPush(engine, argumentList);
-        if (functionEntry == 0 || argumentListEntry == 0)
-            return AspRunResult_OutOfDataMemory;
-        engine->callFromApp = true;
-        return AspRunResult_Call;
-    }
-    bool callerAgain = engine->again;
-    if (engine->callFromApp)
-    {
-        callerAgain = false;
-        engine->callFromApp = false;
-    }
-
-    AspDataEntry *ns = 0;
-    if (!callerAgain)
-    {
         if (function == 0)
         {
             #ifdef ASP_DEBUG
@@ -426,7 +406,7 @@ AspRunResult AspCallCallable
             return AspRunResult_UnexpectedType;
 
         /* Create a local namespace for the call. */
-        ns = AspAllocEntry(engine, DataType_Namespace);
+        AspDataEntry *ns = AspAllocEntry(engine, DataType_Namespace);
         if (ns == 0)
             return AspRunResult_OutOfDataMemory;
         AspRunResult loadArgumentsResult = LoadArguments
