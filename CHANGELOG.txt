@@ -7,11 +7,22 @@ chronological order.
 Changes
 -------
 
+Version 1.2.5.4 (generator 1.2.2.3, compiler 1.2.3.1, engine 1.2.3.7):
+- Application specification generator:
+  - Made a minor future-proofing code change.
+- Engine:
+  - Made the code more robust to certain rare types of errors.
+- Standalone application:
+  - Fixed an error in the help text.
+- Information library and utility:
+  - Added a missing error code/message.
+
 Version 1.2.5.3 (generator 1.2.2.2, compiler 1.2.3.1, engine 1.2.3.6):
 - Engine:
   - Fixed an issue with how application modules were converted to their string
     representation. Script modules were not affected.
 - Information utility:
+  - Fixed a regression that caused the -l option to be rejected as invalid.
   - Fixed an error in the help text.
 - Build:
   - Added Clang compiler options to squelch nuisance warnings.

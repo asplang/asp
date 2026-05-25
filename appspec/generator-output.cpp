@@ -74,7 +74,7 @@ void Generator::WriteCompilerSpec(ostream &os)
         symbolTable.Symbol(importName);
         os << importName << delim;
     }
-    if (!imports.empty())
+    if (compilerAppSpecVersion >= 2u)
         os << delim;
 
     // Assign symbols, to variable and function names first, then to parameter
