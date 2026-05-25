@@ -1020,7 +1020,8 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Ensure we're in the context of a function. */
-            if (engine->localNamespace == engine->globalNamespace)
+            if (engine->localNamespace == 0 ||
+                engine->localNamespace == engine->globalNamespace)
                 return AspRunResult_InvalidContext;
 
             /* Look up the variable in the local namespace. */
@@ -1082,7 +1083,8 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Ensure we're in the context of a function. */
-            if (engine->localNamespace == engine->globalNamespace)
+            if (engine->localNamespace == 0 ||
+                engine->localNamespace == engine->globalNamespace)
                 return AspRunResult_InvalidContext;
 
             /* Look up the variable in the local namespace. */
@@ -1327,7 +1329,8 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Ensure we're in the context of a function. */
-            if (engine->localNamespace == engine->globalNamespace)
+            if (engine->localNamespace == 0 ||
+                engine->localNamespace == engine->globalNamespace)
                 return AspRunResult_InvalidContext;
 
             /* Access the return value on top of the stack. */

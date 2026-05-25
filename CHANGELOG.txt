@@ -7,8 +7,17 @@ chronological order.
 Changes
 -------
 
+Version 1.1.4.9 (compiler 1.1.0.2, engine 1.1.4.6):
+- Engine:
+  - Made the code more robust to certain rare types of errors.
+- Standalone application:
+  - Fixed an error in the help text.
+- Information library and utility:
+  - Added a missing error code/message.
+
 Version 1.1.4.8 (compiler 1.1.0.2, engine 1.1.4.5):
-- Fixed an error in the aspinfo help text.
+- Information utility:
+  - Fixed an error in the help text.
 
 Version 1.1.4.7 (compiler 1.1.0.2, engine 1.1.4.5):
 - Made some CMake improvements.
@@ -367,7 +376,7 @@ Version 0.7.1.2 (compiler 0.7.1.1, engine 0.7.3.1):
 - Compiler:
   - Added generation of the source info file (.aspd).
   - Added -v option to print version information and exit.
-- Info library and utility (new):
+- Information library and utility (new):
   - Added a library for translating error codes into text and translating
     a script's program counter into source location to be used in error
     reporting and tracing applications.

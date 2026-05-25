@@ -4,6 +4,8 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(lemon)
+project(lemon
+    LANGUAGES C
+    )
 
 add_executable(lemon lemon.c)

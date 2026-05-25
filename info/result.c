@@ -88,6 +88,8 @@ const char *AspRunResultToString(int result)
             return "Again";
         case AspRunResult_Abort:
             return "Abort";
+        case AspRunResult_Call:
+            return "Call";
         case AspRunResult_InternalError:
             return "Internal error";
         case AspRunResult_NotImplemented:

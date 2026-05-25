@@ -73,8 +73,8 @@ static void Usage()
         << COMMAND_OPTION_PREFIXES[0]
         << "p n        Code page size, in bytes. The default is 0, which"
         << " disables paging\n"
-        << "            mode. The number of pages is this value divided by the"
-        << " code size.\n"
+        << "            mode. The number of pages is the code size divided by"
+        << " this value.\n"
         #ifdef ASP_DEBUG
         << COMMAND_OPTION_PREFIXES[0]
         << "n n        Number of instructions to execute before exiting."

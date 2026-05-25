@@ -21,11 +21,6 @@ if(NOT ${ABI_VERSION} VERSION_EQUAL ${PARENT_VERSION})
         )
 endif()
 
-project(aspm
-    VERSION ${aspe_VERSION}
-    LANGUAGES C
-    )
-
 math(EXPR VERSION_VALUE
     "(${aspe_VERSION_MAJOR} << 24) +
      (${aspe_VERSION_MINOR} << 16) +

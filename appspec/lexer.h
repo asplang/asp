@@ -40,7 +40,6 @@ class Lexer
         Token *ProcessSignedNumber();
         Token *ProcessString();
         Token *ProcessName();
-        Token *ProcessSpecial();
 
         // Character methods.
         int Get();
