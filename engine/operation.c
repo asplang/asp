@@ -1432,7 +1432,7 @@ static AspOperationResult PerformMembershipOperation
                 rightType == DataType_Module ?
                 AspValueEntry(engine, AspDataGetModuleNamespaceIndex(right)) :
                 engine->localNamespace;
-            if (AspDataGetType(ns) != DataType_Namespace)
+            if (ns == 0 || AspDataGetType(ns) != DataType_Namespace)
             {
                 result.result = AspRunResult_InternalError;
                 break;

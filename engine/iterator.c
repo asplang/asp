@@ -165,6 +165,12 @@ AspIteratorResult AspIteratorCreate
                 iterableType == DataType_Module ?
                 AspEntry(engine, AspDataGetModuleNamespaceIndex(iterable)) :
                 engine->localNamespace;
+            if (iterable == 0 ||
+                AspDataGetType(iterable) != DataType_Namespace)
+            {
+                result.result = AspRunResult_InternalError;
+                return result;
+            }
 
             /* Store the underlying namespace for local scope iterators so that
                it can be checked later. */
