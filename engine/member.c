@@ -219,7 +219,7 @@ AspMemberResult AspFindMember
 
     #endif
 
-    if (!newMemberValue)
+    if (result.member != 0 && !newMemberValue)
         AspRef(engine, result.member);
 
     return result;
