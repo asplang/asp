@@ -42,7 +42,7 @@ string(CONCAT STR
     "\\\"SYSTEM\\\\CurrentControlSet\\\\"
     "Control\\\\Session Manager\\\\Environment\\\""
     " ASP_SPEC_FILE "
-    "\\\"\$INSTDIR\\\\etc\\\\asp\\\\standalone.aspec\\\"")
+    "\\\"\$INSTDIR\\\\etc\\\\asp\\\\standalone-oo.aspec\\\"")
 list(APPEND CPACK_NSIS_EXTRA_INSTALL_COMMANDS "${STR}")
 string(CONCAT STR
     "WriteRegExpandStr HKLM "

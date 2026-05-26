@@ -54,15 +54,20 @@ Prerelease version 1.3.0.0 (generator 1.3.0.0, compiler 1.3.0.0, engine
   - Fixed a regression that caused the -l option to be rejected as invalid.
   - Fixed an error in the help text.
   - Added a missing error code/message.
-- Build:
-  - Made support for classes in the engine conditionally compiled so that, when
-    enabled, two engine libraries are built: one with class support and the
-    other, smaller one, without.
-  - Added Clang compiler options to squelch nuisance warnings.
 - Standalone application:
   - When built with class support, added the ability to execute binaries built
     with either application specification, i.e., with or without class support.
   - Fixed an error in the help text.
+- Build:
+  - Made support for classes in the engine conditionally compiled so that, when
+    enabled, two engine libraries are built: one with class support and the
+    other, smaller one, without.
+  - Merged the math function library back into the engine library for Windows
+    builds as there was no advantage to keeping it separate and it was causing
+    issues with building the two versions of the engine library.
+  - Updated the NSIS Windows installer to make the standalone app spec with
+    class support the default.
+  - Added Clang compiler options to squelch nuisance warnings.
 
 Version 1.2.5.2 (generator 1.2.2.2, compiler 1.2.3.1, engine 1.2.3.5):
 - Compiler:
@@ -334,12 +339,12 @@ Version 1.1.3.0 (generator 1.1.0.0, compiler 1.1.0.1, engine 1.1.3.0):
 - Engine:
   - Added several API functions to support the ability for application
     functions to call other functions defined within the running script.
-- Build:
-  - Merged the ENABLE_ENGINE_DEBUG and ENABLE_ASPS_DEBUG options into a single
-    ENABLE_DEBUG option since the previous two depended on each other anyway.
 - Standalone application:
   - Improved CPU utilization by ceasing to execute script instructions while
     the script is sleeping.
+- Build:
+  - Merged the ENABLE_ENGINE_DEBUG and ENABLE_ASPS_DEBUG options into a single
+    ENABLE_DEBUG option since the previous two depended on each other anyway.
 
 Version 1.1.2.1 (generator 1.1.0.0, compiler 1.1.0.1, engine 1.1.2.0):
 - Compiler:

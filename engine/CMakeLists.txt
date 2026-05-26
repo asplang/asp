@@ -74,6 +74,7 @@ if(BUILD_FOR_TARGET)
         lib-type.c
         lib-collect.c
         lib-iter.c
+        $<$<BOOL:${WIN32}>:lib-math.c>
         integer.c
         integer-result.c
         $<$<BOOL:${ENABLE_DEBUG}>:debug.c>
@@ -156,40 +157,46 @@ if(BUILD_FOR_TARGET)
 
     endif()
 
-    add_library(aspm
-        lib-math.c
-        )
+    if(NOT WIN32)
 
-    if(ENABLE_DEBUG)
-        set_property(TARGET aspm
-            PROPERTY OUTPUT_NAME aspm-d
+        add_library(aspm
+            lib-math.c
             )
-    endif()
-    set_property(TARGET aspm
-        PROPERTY VERSION ${ABI_VERSION}
-        )
-    if(BUILD_SHARED_LIBS)
+
+        if(ENABLE_DEBUG)
+            set_property(TARGET aspm
+                PROPERTY OUTPUT_NAME aspm-d
+                )
+        endif()
         set_property(TARGET aspm
-            PROPERTY C_VISIBILITY_PRESET hidden
+            PROPERTY VERSION ${ABI_VERSION}
             )
+        if(BUILD_SHARED_LIBS)
+            set_property(TARGET aspm
+                PROPERTY C_VISIBILITY_PRESET hidden
+                )
+        endif()
+
+        target_compile_definitions(aspm PRIVATE
+            $<$<BOOL:${BUILD_SHARED_LIBS}>:USING_SHARED_LIBS>
+            ASP_EXPORT_API ASP_EXPORT_LIB_API
+            )
+
+        target_include_directories(aspm PUBLIC
+            "${CMAKE_CURRENT_BINARY_DIR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}"
+            )
+
     endif()
-
-    target_compile_definitions(aspm PRIVATE
-        $<$<BOOL:${BUILD_SHARED_LIBS}>:USING_SHARED_LIBS>
-        ASP_EXPORT_API ASP_EXPORT_LIB_API
-        )
-
-    target_include_directories(aspm PUBLIC
-        "${CMAKE_CURRENT_BINARY_DIR}"
-        "${CMAKE_CURRENT_SOURCE_DIR}"
-        )
 
     set(LIBS
         aspe
-        aspm
         )
     if(ENABLE_FEATURE_CLASS)
         list(APPEND LIBS aspe-oo)
+    endif()
+    if(NOT WIN32)
+        list(APPEND LIBS aspm)
     endif()
 
     if(WIN32)

@@ -103,7 +103,7 @@ target_include_directories(asps PRIVATE
 
 target_link_libraries(asps
     $<IF:$<BOOL:${ENABLE_FEATURE_CLASS}>,aspe-oo,aspe>
-    aspm
+    $<$<NOT:$<BOOL:${WIN32}>>:aspm>
     aspd
     )
 
