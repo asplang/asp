@@ -322,15 +322,11 @@ bool AspIsTypeOf
 
         return false;
     }
-    else
-    {
     #endif
-        return
-            AspIsType(type) &&
-            AspDataGetType(object) == AspDataGetTypeValue(type);
-    #ifdef ASP_FEATURE_CLASS
-    }
-    #endif
+
+    return
+        AspIsType(type) &&
+        AspDataGetType(object) == AspDataGetTypeValue(type);
 }
 
 #ifdef ASP_FEATURE_CLASS

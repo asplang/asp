@@ -250,28 +250,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataGetTreeRootIndex(eptr) \
     (AspDataGetWord1((eptr)))
 
-/* Iterator entry field access. */
-#define AspDataSetIteratorIterableIndex(eptr, value) \
-    (AspDataSetWord0((eptr), (value)))
-#define AspDataGetIteratorIterableIndex(eptr) \
-    (AspDataGetWord0((eptr)))
-#define AspDataSetIteratorMemberIndex(eptr, value) \
-    (AspDataSetWord1((eptr), (value)))
-#define AspDataGetIteratorMemberIndex(eptr) \
-    (AspDataGetWord1((eptr)))
-#define AspDataSetIteratorMemberNeedsCleanup(eptr, value) \
-    (AspDataSetBit0((eptr), (unsigned)(value)))
-#define AspDataGetIteratorMemberNeedsCleanup(eptr) \
-    ((bool)(AspDataGetBit0((eptr))))
-#define AspDataSetIteratorStringIndex(eptr, value) \
-    ((eptr)->s.s[11] = (value))
-#define AspDataGetIteratorStringIndex(eptr) \
-    ((eptr)->s.s[11])
-#define AspDataSetIteratorCollectionIndex(eptr, value) \
-    (AspDataSetWord3((eptr), (value)))
-#define AspDataGetIteratorCollectionIndex(eptr) \
-    (AspDataGetWord3((eptr)))
-
 /* Object entry field access. */
 #ifdef ASP_FEATURE_CLASS
 #define AspDataSetObjectClassIndex(eptr, value) \
@@ -283,28 +261,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetObjectNamespaceIndex(eptr) \
     (AspDataGetWord1((eptr)))
-
-/* Function entry field access. */
-#define AspDataSetFunctionIsApp(eptr, value) \
-    (AspDataSetBit0((eptr), (unsigned)(value)))
-#define AspDataGetFunctionIsApp(eptr) \
-    ((bool)(AspDataGetBit0((eptr))))
-#define AspDataSetFunctionSymbol(eptr, value) \
-    (AspDataSetSignedWord0((eptr), (value)))
-#define AspDataGetFunctionSymbol(eptr) \
-    (AspDataGetSignedWord0((eptr)))
-#define AspDataSetFunctionCodeAddress(eptr, value) \
-    (AspDataSetWord0((eptr), (value)))
-#define AspDataGetFunctionCodeAddress(eptr) \
-    (AspDataGetWord0((eptr)))
-#define AspDataSetFunctionModuleIndex(eptr, value) \
-    (AspDataSetWord1((eptr), (value)))
-#define AspDataGetFunctionModuleIndex(eptr) \
-    (AspDataGetWord1((eptr)))
-#define AspDataSetFunctionParametersIndex(eptr, value) \
-    (AspDataSetWord3((eptr), (value)))
-#define AspDataGetFunctionParametersIndex(eptr) \
-    (AspDataGetWord3((eptr)))
 
 #ifdef ASP_FEATURE_CLASS
 
@@ -344,6 +300,28 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 
 #endif
 
+/* Function entry field access. */
+#define AspDataSetFunctionIsApp(eptr, value) \
+    (AspDataSetBit0((eptr), (unsigned)(value)))
+#define AspDataGetFunctionIsApp(eptr) \
+    ((bool)(AspDataGetBit0((eptr))))
+#define AspDataSetFunctionSymbol(eptr, value) \
+    (AspDataSetSignedWord0((eptr), (value)))
+#define AspDataGetFunctionSymbol(eptr) \
+    (AspDataGetSignedWord0((eptr)))
+#define AspDataSetFunctionCodeAddress(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetFunctionCodeAddress(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetFunctionModuleIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetFunctionModuleIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+#define AspDataSetFunctionParametersIndex(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetFunctionParametersIndex(eptr) \
+    (AspDataGetWord3((eptr)))
+
 /* Module entry field access. */
 #define AspDataSetModuleIsApp(eptr, value) \
     (AspDataSetBit1((eptr), (unsigned)(value)))
@@ -365,6 +343,28 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetBit0((eptr), (unsigned)(value)))
 #define AspDataGetModuleIsLoaded(eptr) \
     ((bool)(AspDataGetBit0((eptr))))
+
+/* Iterator entry field access. */
+#define AspDataSetIteratorIterableIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetIteratorIterableIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetIteratorMemberIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetIteratorMemberIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+#define AspDataSetIteratorMemberNeedsCleanup(eptr, value) \
+    (AspDataSetBit0((eptr), (unsigned)(value)))
+#define AspDataGetIteratorMemberNeedsCleanup(eptr) \
+    ((bool)(AspDataGetBit0((eptr))))
+#define AspDataSetIteratorStringIndex(eptr, value) \
+    ((eptr)->s.s[11] = (value))
+#define AspDataGetIteratorStringIndex(eptr) \
+    ((eptr)->s.s[11])
+#define AspDataSetIteratorCollectionIndex(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetIteratorCollectionIndex(eptr) \
+    (AspDataGetWord3((eptr)))
 
 /* AppIntegerObject and AppPointerObject entry field access. */
 #define AspDataSetAppObjectType(eptr, value) \
