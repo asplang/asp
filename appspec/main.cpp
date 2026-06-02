@@ -556,8 +556,21 @@ pair<istream *, string> OpenSourceFile
     (const string &sourceFileName,
      const vector<string> &searchPath, const string &fileNameSeparators)
 {
+    if (sourceFileName.empty())
+        return make_pair(nullptr, sourceFileName);
+
+    // Determine if the file name is a fixed path and, if so, use it as is.
+    static const vector<string> absoluteSearchPath = {""};
+    auto isFixedPath =
+        strchr(FILE_NAME_SEPARATORS, sourceFileName[0]) != 0 ||
+        sourceFileName.size() >= 2 && sourceFileName[0] == '.' &&
+        strchr(FILE_NAME_SEPARATORS, sourceFileName[1]) != 0 ||
+        sourceFileName.size() >= 3 && sourceFileName.substr(0, 2) == ".." &&
+        strchr(FILE_NAME_SEPARATORS, sourceFileName[2]) != 0;
+    auto &localSearchPath = isFixedPath ? absoluteSearchPath : searchPath;
+
     // Look for the file in each of the directories on the path.
-    for (auto directory: searchPath)
+    for (auto directory: localSearchPath)
     {
         // Construct a path name for the file.
         if (!directory.empty())
