@@ -289,7 +289,7 @@ ASP_API bool AspSetErase
     (AspEngine *, AspDataEntry *set, const AspDataEntry *key);
 ASP_API bool AspDictionaryInsert
     (AspEngine *, AspDataEntry *dictionary,
-     AspDataEntry *key, AspDataEntry *value, bool take);
+     AspDataEntry *key, bool takeKey, AspDataEntry *value, bool takeValue);
 ASP_API bool AspDictionaryErase
     (AspEngine *, AspDataEntry *dictionary, const AspDataEntry *key);
 ASP_API bool AspObjectInsert

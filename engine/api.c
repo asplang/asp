@@ -1093,7 +1093,7 @@ bool AspSetErase(AspEngine *engine, AspDataEntry *set, const AspDataEntry *key)
 
 bool AspDictionaryInsert
     (AspEngine *engine, AspDataEntry *dictionary,
-     AspDataEntry *key, AspDataEntry *value, bool take)
+     AspDataEntry *key, bool takeKey, AspDataEntry *value, bool takeValue)
 {
     /* Ensure the container is a dictionary. */
     if (dictionary == 0 || AspDataGetType(dictionary) != DataType_Dictionary)
@@ -1104,11 +1104,10 @@ bool AspDictionaryInsert
     if (result.result != AspRunResult_OK)
         return false;
 
-    if (take)
-    {
+    if (takeKey)
         AspUnref(engine, key);
+    if (takeValue)
         AspUnref(engine, value);
-    }
 
     return true;
 }
