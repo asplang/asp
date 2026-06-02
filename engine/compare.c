@@ -382,14 +382,32 @@ AspRunResult AspCompare
 
                     case DataType_Object:
                     {
+                        /* Simple objects compare less than class instances. */
+                        #ifdef ASP_FEATURE_CLASS
+                        uint32_t
+                            leftClassIndex = AspDataGetObjectClassIndex
+                                (leftEntry),
+                            rightClassIndex = AspDataGetObjectClassIndex
+                                (rightEntry);
+                        if ((leftClassIndex != 0 || rightClassIndex != 0) &&
+                            !AspIsFeature(engine, AspFeatureBit_Class))
+                            return AspRunResult_UnexpectedType;
+                        #endif
                         uint32_t
                             leftNamespaceIndex = AspDataGetObjectNamespaceIndex
                                 (leftEntry),
                             rightNamespaceIndex = AspDataGetObjectNamespaceIndex
                                 (rightEntry);
                         comparison =
+                            #ifdef ASP_FEATURE_CLASS
+                            leftClassIndex == rightClassIndex ?
+                            leftNamespaceIndex == rightNamespaceIndex ? 0 :
+                            leftNamespaceIndex < rightNamespaceIndex ? -1 : 1 :
+                            leftClassIndex < rightClassIndex ? -1 : 1;
+                            #else
                             leftNamespaceIndex == rightNamespaceIndex ? 0 :
                             leftNamespaceIndex < rightNamespaceIndex ? -1 : 1;
+                            #endif
                         break;
                     }
 
