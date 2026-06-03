@@ -124,9 +124,9 @@ ASP_API size_t AspProgramCounter(const AspEngine *);
 ASP_API size_t AspFreeCount(const AspEngine *);
 ASP_API size_t AspLowFreeCount(const AspEngine *);
 ASP_API size_t AspCodePageReadCount(AspEngine *, bool reset);
+ASP_API uint32_t AspUseCount(const AspDataEntry *);
 #ifdef ASP_DEBUG
 ASP_API uint32_t AspDataAddress(const AspEngine *, const AspDataEntry *);
-ASP_API uint32_t AspUseCount(const AspDataEntry *);
 ASP_API void AspTraceFile(AspEngine *, FILE *);
 ASP_API void AspDump(const AspEngine *, FILE *);
 #endif

@@ -21,11 +21,6 @@ uint32_t AspDataAddress(const AspEngine *engine, const AspDataEntry *entry)
         0xFFFFFFFF : AspIndex(engine, entry);
 }
 
-uint32_t AspUseCount(const AspDataEntry *entry)
-{
-    return entry == 0 ? 0 : AspDataGetUseCount(entry);
-}
-
 void AspTraceFile(AspEngine *engine, FILE *fp)
 {
     engine->traceFile = fp;

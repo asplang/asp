@@ -924,3 +924,8 @@ size_t AspCodePageReadCount(AspEngine *engine, bool reset)
         engine->codePageReadCount = 0;
     return count;
 }
+
+uint32_t AspUseCount(const AspDataEntry *entry)
+{
+    return entry == 0 ? 0 : AspDataGetUseCount(entry);
+}
