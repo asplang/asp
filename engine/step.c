@@ -833,22 +833,6 @@ static AspRunResult Step(AspEngine *engine)
                 AspRef(engine, address);
             AspPop(engine);
 
-            #ifdef ASP_FEATURE_CLASS
-
-            /* Handle shadowing member if applicable. */
-            if (AspDataGetType(address) == DataType_ShadowingMember)
-            {
-                if (!AspIsFeature(engine, AspFeatureBit_Class))
-                    return AspRunResult_UnexpectedType;
-
-                AspDataEntry *shadowingAddress = AspEntry
-                    (engine, AspDataGetShadowingMemberTargetIndex(address));
-                AspUnref(engine, address);
-                address = shadowingAddress;
-            }
-
-            #endif
-
             /* Access value entry on the top of the stack. */
             AspDataEntry *newValue = AspTopValue(engine);
             if (newValue == 0)
@@ -2348,7 +2332,11 @@ static AspRunResult Step(AspEngine *engine)
                     if (!AspIsObject(item) &&
                         itemType != DataType_Element &&
                         itemType != DataType_DictionaryNode &&
-                        itemType != DataType_NamespaceNode)
+                        itemType != DataType_NamespaceNode
+                        #ifdef ASP_FEATURE_CLASS
+                        && itemType != DataType_ShadowingMember
+                        #endif
+                       )
                         return AspRunResult_UnexpectedType;
                     break;
 
@@ -2373,7 +2361,11 @@ static AspRunResult Step(AspEngine *engine)
                         if (!AspIsObject(item) &&
                             itemType != DataType_Element &&
                             itemType != DataType_DictionaryNode &&
-                            itemType != DataType_NamespaceNode)
+                            itemType != DataType_NamespaceNode
+                            #ifdef ASP_FEATURE_CLASS
+                            && itemType != DataType_ShadowingMember
+                            #endif
+                           )
                             return AspRunResult_UnexpectedType;
                         break;
                     }

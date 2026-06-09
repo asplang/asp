@@ -17,6 +17,9 @@ AspRunResult AspAssignSimple
     AspRunResult assertResult = AspAssert
         (engine,
          addressType == DataType_Element ||
+         #ifdef ASP_FEATURE_CLASS
+         addressType == DataType_ShadowingMember ||
+         #endif
          addressType == DataType_DictionaryNode ||
          addressType == DataType_NamespaceNode);
     if (assertResult != AspRunResult_OK)
@@ -39,6 +42,23 @@ AspRunResult AspAssignSimple
             AspDataSetElementValueIndex(address, newValueIndex);
             break;
         }
+
+        #ifdef ASP_FEATURE_CLASS
+
+        case DataType_ShadowingMember:
+        {
+            if (!AspIsFeature(engine, AspFeatureBit_Class))
+                return AspRunResult_UnexpectedType;
+
+            AspDataEntry *shadowingAddress = AspEntry
+                (engine, AspDataGetShadowingMemberTargetIndex(address));
+            AspUnref(engine, address);
+            address = shadowingAddress;
+            addressType = AspDataGetType(address);
+
+            /* Fall through... */
+        }
+        #endif
 
         case DataType_DictionaryNode:
         case DataType_NamespaceNode:
