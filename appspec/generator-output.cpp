@@ -460,29 +460,17 @@ void Generator::WriteApplicationCode(ostream &os) const
             {
                 auto &parameters = functionDefinition->Parameters();
 
-                // Write the function entry prefix and/or parameter count.
+                // Write the function entry prefix or 1-byte parameter count.
+                // If the parameter count is too big, a standard prefix is
+                // written, and the parameter count is written later.
                 auto parameterCount = parameters.ParametersSize();
-                if (parameterCount > static_cast<size_t>
-                    (AppSpecPrefix_MaxFunctionParameterCount))
-                {
-                    // Write the entry prefix separately.
-                    WriteStringEscapedHex
-                        (os, static_cast<uint8_t>(AppSpecPrefix_Function));
-                    specByteCount++;
-
-                    // Write a 4-byte parameter count.
-                    WriteStringEscapedHex
-                        (os, static_cast<uint32_t>(parameterCount));
-                    specByteCount += 4;
-                }
-                else
-                {
-                    // Write a single-byte parameter count which stands in for
-                    // the entry prefix.
-                    WriteStringEscapedHex
-                        (os, static_cast<uint8_t>(parameterCount));
-                    specByteCount++;
-                }
+                WriteStringEscapedHex
+                    (os,
+                     static_cast<uint8_t>
+                        (parameterCount > static_cast<size_t>
+                         (AppSpecPrefix_MaxFunctionParameterCount) ?
+                         AppSpecPrefix_Function : parameterCount));
+                specByteCount++;
 
                 // Write the function's symbol if applicable.
                 if (engineAppSpecVersion >= 1u)
@@ -491,6 +479,16 @@ void Generator::WriteApplicationCode(ostream &os) const
                     WriteStringEscapedHex
                         (os, *reinterpret_cast<uint32_t *>(&nameSymbol));
                     specByteCount += sizeof nameSymbol;
+                }
+
+                // Write the 4-byte parameter count if it was not written as
+                // the entry prefix.
+                if (parameterCount > static_cast<size_t>
+                    (AppSpecPrefix_MaxFunctionParameterCount))
+                {
+                    WriteStringEscapedHex
+                        (os, static_cast<uint32_t>(parameterCount));
+                    specByteCount += 4;
                 }
 
                 // Write the function's parameter specifications.
