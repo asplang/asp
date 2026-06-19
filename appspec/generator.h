@@ -6,11 +6,13 @@
 #define GENERATOR_H
 
 #include "lexer.h"
+#include "asp.h"
 
 #ifdef __cplusplus
 #include "statement.hpp"
 #include "symbol.hpp"
 #include <iostream>
+#include <stack>
 #include <deque>
 #include <list>
 #include <map>
@@ -67,7 +69,7 @@ class Generator
             NextModule();
         void SetSourceLocation(const SourceLocation &);
         unsigned ErrorCount() const;
-        void Finalize();
+        bool Finalize();
 
         // Source file methods.
         void CurrentSource
@@ -99,8 +101,14 @@ class Generator
         (MakeAssignment, NonTerminal *, Token *, Literal *)
     DECLARE_METHOD
         (MakeFunction, NonTerminal *, Token *, ParameterList *, Token *)
+    #ifdef ASP_FEATURE_CLASS
+    DECLARE_METHOD
+        (StartClass, NonTerminal *, Token *)
+    #endif
     DECLARE_METHOD
         (DeleteDefinition, NonTerminal *, NameList *)
+    DECLARE_METHOD
+        (EndBlock, NonTerminal *, int)
 
     /* Parameters. */
     DECLARE_METHOD
@@ -160,6 +168,66 @@ class Generator
         std::uint32_t CheckValue() const;
         std::uint32_t ComputeCheckValue() const;
 
+        // Modules and definitions navigation helper methods.
+        void ForEachModuleAndDefinition
+            (void (Generator::*moduleStartAction)
+                (const std::set<std::string> &key, const std::string &name,
+                 void *arg) const,
+             void (Generator::*definitionStartAction)
+                (const std::string &localName,
+                 const std::string &qualifiedName,
+                 const SourceElement &definition,
+                 void *arg) const,
+             void (Generator::*definitionEndAction)
+                (const std::string &localName,
+                 const std::string &qualifiedName,
+                 const SourceElement &definition,
+                 void *arg) const,
+             void (Generator::*moduleEndAction)
+                (const std::set<std::string> &key, const std::string &name,
+                 void *arg) const,
+             void *arg) const;
+        void AssignDefinitionSymbols
+            (const std::string &localName, const std::string &qualifiedName,
+             const SourceElement &definition,
+             void *) const;
+        void AssignQualifiedNameSymbol
+            (const std::string &localName, const std::string &qualifiedName,
+             const SourceElement &definition,
+             void *) const;
+        void WriteApplicationHeaderDefinition
+            (const std::string &localName, const std::string &qualifiedName,
+             const SourceElement &definition,
+             void *) const;
+        void WriteApplicationDispatchCodeModuleStart
+            (const std::set<std::string> &key, const std::string &name,
+             void *arg) const;
+        void WriteApplicationDispatchCodeDefinition
+            (const std::string &localName, const std::string &qualifiedName,
+             const SourceElement &definition,
+             void *) const;
+        void WriteApplicationDispatchCodeModuleEnd
+            (const std::set<std::string> &key, const std::string &name,
+             void *arg) const;
+        void WriteApplicationAppSpecCodeModule
+            (const std::set<std::string> &key, const std::string &name,
+             void *arg) const;
+        void WriteApplicationAppSpecCodeDefinitionStart
+            (const std::string &localName, const std::string &qualifiedName,
+             const SourceElement &definition,
+             void *) const;
+        void WriteApplicationAppSpecCodeDefinitionEnd
+            (const std::string &localName, const std::string &qualifiedName,
+             const SourceElement &definition,
+             void *) const;
+        void ComputeCheckValueModule
+            (const std::set<std::string> &key, const std::string &name,
+             void *arg) const;
+        void ComputeCheckValueDefinition
+            (const std::string &localName, const std::string &qualifiedName,
+             const SourceElement &definition,
+             void *) const;
+
         // Internal data structures.
         struct NameInfo
         {
@@ -175,20 +243,14 @@ class Generator
         {
             ModuleDefinitionsInfo
                 (const std::string &moduleName,
-                 std::shared_ptr<std::map
-                    <std::string, std::shared_ptr<SourceElement> > >
-                    definitions) :
+                 std::shared_ptr<DefinitionMap> definitions) :
                 moduleName(moduleName),
                 definitions(definitions)
             {
             }
 
             std::string moduleName;
-            std::shared_ptr
-                <std::map
-                    <std::string, // Definition name
-                     std::shared_ptr<SourceElement> > >
-                definitions;
+            std::shared_ptr<DefinitionMap> definitions;
         };
 
     private:
@@ -204,11 +266,8 @@ class Generator
         bool newFile = true, isLibrary = false;
         SourceLocation currentSourceLocation;
         std::string currentSourceFileName, currentModuleName;
-        std::shared_ptr
-            <std::map
-                <std::string, // Definition name
-                 std::shared_ptr<SourceElement> > >
-            currentModuleDefinitions;
+        std::shared_ptr<DefinitionMap> currentDefinitions;
+        std::stack<std::shared_ptr<DefinitionMap> > definitionsStack;
         std::set<std::string> moduleNames;
         std::deque<std::string> moduleNamesToImport;
         std::map
@@ -225,14 +284,12 @@ class Generator
             importedModules;
         std::map
             <std::string, // Module name
-             std::shared_ptr
-                <std::map
-                    <std::string, // Definition name
-                     std::shared_ptr<SourceElement> > > >
+             std::shared_ptr<DefinitionMap> >
             definitionsByModuleName;
 
         // Code generation data.
         SymbolTable moduleIdTable, symbolTable;
+        std::int32_t lastLocalSymbol;
         std::map
             <std::set<std::string>, // Module key
              ModuleDefinitionsInfo>

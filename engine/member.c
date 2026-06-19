@@ -4,6 +4,11 @@
 
 #include "member.h"
 #include "tree.h"
+#include "reserved.h"
+#include "function.h"
+#include "sequence.h"
+#include "stack.h"
+#include <stddef.h>
 
 AspMemberResult AspFindMember
     (AspEngine *engine, AspDataEntry *container, int32_t symbol, bool address)
@@ -17,10 +22,214 @@ AspMemberResult AspFindMember
 
     /* Search the container and, if applicable, its ancestors, for the
        member. */
-    AspDataEntry *originalContainer = container;
-    uint8_t originalContainerType = AspDataGetType(originalContainer);
+    AspMemberSeekResult symbolResult = AspSeekMember
+        (engine, container, symbol, address);
+    if (symbolResult.result != AspRunResult_OK)
+    {
+        result.result = symbolResult.result;
+        return result;
+    }
+
+    #ifdef ASP_FEATURE_CLASS
+
+    /* Check for the descriptor protocol if the member was an instance found in
+       a class and the operation is a get. */
+    uint8_t containerType = AspDataGetType(container);
+    if (!address && AspIsClass(symbolResult.container) &&
+        AspIsInstance(symbolResult.value))
+    {
+        /* Access the class of the instance, which may (or may not) be a
+           descriptor (i.e., define descriptor methods). */
+        AspDataEntry *descriptorClass = AspValueEntry
+            (engine, AspDataGetObjectClassIndex(symbolResult.value));
+
+        /* Check whether a descriptor get function is defined. */
+        AspMemberSeekResult getterResult = AspSeekMember
+            (engine, descriptorClass, AspReservedSymbol_GetMethod, false);
+        if (getterResult.result != AspRunResult_OK)
+        {
+            result.result = getterResult.result;
+            return result;
+        }
+
+        /* Invoke the descriptor get function if applicable. */
+        if (getterResult.value != 0)
+        {
+            /* Prepare to add arguments to the call. */
+            AspDataEntry *arguments = AspAllocEntry
+                (engine, DataType_ArgumentList);
+            if (arguments == 0)
+            {
+                result.result = AspRunResult_OutOfDataMemory;
+                return result;
+            }
+
+            /* Add the self argument. */
+            AspDataEntry *selfArgument = AspAllocEntry
+                (engine, DataType_Argument);
+            if (selfArgument == 0)
+            {
+                result.result = AspRunResult_OutOfDataMemory;
+                return result;
+            }
+            AspRef(engine, symbolResult.value);
+            AspDataSetArgumentValueIndex
+                (selfArgument, AspIndex(engine, symbolResult.value));
+            AspSequenceResult addArgumentResult = AspSequenceAppend
+                (engine, arguments, selfArgument);
+            if (addArgumentResult.result != AspRunResult_OK)
+            {
+                result.result = addArgumentResult.result;
+                return result;
+            }
+
+            /* Add the instance as the second argument. */
+            AspDataEntry *instanceArgument = AspAllocEntry
+                (engine, DataType_Argument);
+            if (instanceArgument == 0)
+            {
+                result.result = AspRunResult_OutOfDataMemory;
+                return result;
+            }
+            if (AspIsClass(container))
+            {
+                AspDataEntry *none = AspNewNone(engine);
+                AspDataSetArgumentValueIndex
+                    (instanceArgument, AspIndex(engine, none));
+            }
+            else
+            {
+                AspRef(engine, container);
+                AspDataSetArgumentValueIndex
+                    (instanceArgument, AspIndex(engine, container));
+            }
+            addArgumentResult = AspSequenceAppend
+                (engine, arguments, instanceArgument);
+            if (addArgumentResult.result != AspRunResult_OK)
+            {
+                result.result = addArgumentResult.result;
+                return result;
+            }
+
+            /* Add the class as the third argument, if applicable. */
+            AspDataEntry *classArgument = AspAllocEntry
+                (engine, DataType_Argument);
+            if (classArgument == 0)
+            {
+                result.result = AspRunResult_OutOfDataMemory;
+                return result;
+            }
+            AspRef(engine, symbolResult.container);
+            AspDataSetArgumentValueIndex
+                (classArgument, AspIndex(engine, symbolResult.container));
+            addArgumentResult = AspSequenceAppend
+                (engine, arguments, classArgument);
+            if (addArgumentResult.result != AspRunResult_OK)
+            {
+                result.result = addArgumentResult.result;
+                return result;
+            }
+
+            /* Call the descriptor get function. */
+            result.result = AspCallCallable
+                (engine, getterResult.value, arguments,
+                 engine->inApp);
+            if (result.result == AspRunResult_Call)
+                result.result = AspRunResult_NotImplemented;
+
+            result.member = AspTopValue(engine);
+            AspRef(engine, result.member);
+            AspPop(engine);
+            return result;
+        }
+    }
+
+    #endif
+
+    bool newMemberValue = false;
+
+    #ifdef ASP_FEATURE_CLASS
+
+    /* Handle cases where a member is found in an inherited container (i.e., an
+       instances's class or a class' base). */
+    if ((symbolResult.address != 0 || symbolResult.value != 0) &&
+        symbolResult.container != container)
+    {
+        if (address)
+        {
+            /* Create a shadowing member referring to both the target and the
+               found member value. */
+            AspDataEntry *shadowingMember = AspAllocEntry
+                (engine, DataType_ShadowingMember);
+            AspDataSetShadowingMemberTargetIndex
+                (shadowingMember, AspIndex(engine, symbolResult.address));
+            AspRef(engine, symbolResult.value);
+            AspDataSetShadowingMemberSourceIndex
+                (shadowingMember, AspIndex(engine, symbolResult.value));
+            result.member = shadowingMember;
+            newMemberValue = true;
+        }
+        else if ((containerType == DataType_Object ||
+                  containerType == DataType_Super) &&
+                 AspDataGetType(symbolResult.value) == DataType_Function)
+        {
+            AspDataEntry *instance = container;
+            if (containerType == DataType_Super)
+            {
+                /* Extract the underlying instance from the super object. */
+                instance = AspValueEntry
+                    (engine, AspDataGetSuperInstanceIndex(container));
+                if (AspDataGetType(instance) != DataType_Object)
+                {
+                    result.result = AspRunResult_UnexpectedType;
+                    return result;
+                }
+            }
+
+            /* Create a bound method, binding the original instance to the
+               found member function. */
+            AspDataEntry *boundMethod = AspAllocEntry
+                (engine, DataType_BoundMethod);
+            AspRef(engine, symbolResult.value);
+            AspDataSetBoundMethodFunctionIndex
+                (boundMethod, AspIndex(engine, symbolResult.value));
+            AspRef(engine, instance);
+            AspDataSetBoundMethodInstanceIndex
+                (boundMethod, AspIndex(engine, instance));
+            AspRef(engine, symbolResult.container);
+            AspDataSetBoundMethodClassIndex
+                (boundMethod, AspIndex(engine, symbolResult.container));
+            result.member = boundMethod;
+            newMemberValue = true;
+        }
+        else
+            result.member = symbolResult.value;
+    }
+    else
+        result.member = address ?
+            symbolResult.address : symbolResult.value;
+
+    #endif
+
+    if (result.member != 0 && !newMemberValue)
+        AspRef(engine, result.member);
+
+    return result;
+}
+
+AspMemberSeekResult AspSeekMember
+    (AspEngine *engine, AspDataEntry *container, int32_t symbol, bool address)
+{
+    AspMemberSeekResult result = {AspRunResult_OK, 0, 0, 0};
+
+    result.result = AspAssert
+        (engine, container != 0 && AspIsObject(container));
+    if (result.result != AspRunResult_OK)
+        return result;
+
+    /* Search the container and, if applicable, its ancestors, for the given
+       members. */
     bool createAddress = address;
-    AspDataEntry *foundMember = 0;
     #ifdef ASP_FEATURE_CLASS
     uint32_t iterationCount = 0;
     for (; iterationCount < engine->cycleDetectionLimit;
@@ -115,9 +324,12 @@ AspMemberResult AspFindMember
             result.result = memberResult.result;
             return result;
         }
-        foundMember = createAddress ? memberResult.node : memberResult.value;
-        if (container == originalContainer)
-            result.member = foundMember;
+        if (createAddress)
+            result.address = memberResult.node;
+        else if (memberResult.value != 0)
+            result.value = memberResult.value;
+        if (memberResult.node != 0)
+            result.container = container;
 
         #ifdef ASP_FEATURE_CLASS
 
@@ -157,70 +369,6 @@ AspMemberResult AspFindMember
         return result;
     }
     #endif
-
-    bool newMemberValue = false;
-
-    #ifdef ASP_FEATURE_CLASS
-
-    /* Handle cases where a member is found in an inherited container (i.e., an
-       instances's class or a class' base). */
-    if (foundMember != 0 && container != originalContainer)
-    {
-        if (address)
-        {
-            /* Create a shadowing member referring to both the target and the
-               found member value. */
-            AspDataEntry *shadowingMember = AspAllocEntry
-                (engine, DataType_ShadowingMember);
-            AspDataSetShadowingMemberTargetIndex
-                (shadowingMember, AspIndex(engine, result.member));
-            AspRef(engine, foundMember);
-            AspDataSetShadowingMemberSourceIndex
-                (shadowingMember, AspIndex(engine, foundMember));
-            result.member = shadowingMember;
-            newMemberValue = true;
-        }
-        else if ((originalContainerType == DataType_Object ||
-                  originalContainerType == DataType_Super) &&
-                 AspDataGetType(foundMember) == DataType_Function)
-        {
-            AspDataEntry *instance = originalContainer;
-            if (originalContainerType == DataType_Super)
-            {
-                /* Extract the underlying instance from the super object. */
-                instance = AspValueEntry
-                    (engine, AspDataGetSuperInstanceIndex(originalContainer));
-                if (AspDataGetType(instance) != DataType_Object)
-                {
-                    result.result = AspRunResult_UnexpectedType;
-                    return result;
-                }
-            }
-
-            /* Create a bound method, binding the original instance to the
-               found member function. */
-            AspDataEntry *boundMethod = AspAllocEntry
-                (engine, DataType_BoundMethod);
-            AspRef(engine, foundMember);
-            AspDataSetBoundMethodFunctionIndex
-                (boundMethod, AspIndex(engine, foundMember));
-            AspRef(engine, instance);
-            AspDataSetBoundMethodInstanceIndex
-                (boundMethod, AspIndex(engine, instance));
-            AspRef(engine, container);
-            AspDataSetBoundMethodClassIndex
-                (boundMethod, AspIndex(engine, container));
-            result.member = boundMethod;
-            newMemberValue = true;
-        }
-        else
-            result.member = foundMember;
-    }
-
-    #endif
-
-    if (result.member != 0 && !newMemberValue)
-        AspRef(engine, result.member);
 
     return result;
 }

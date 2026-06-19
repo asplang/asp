@@ -3,38 +3,20 @@
 //
 
 #include "symbol.hpp"
-#include "reserved.h"
 #include "word.h"
 #include <sstream>
 #include <utility>
 
 using namespace std;
 
-SymbolTable::SymbolTable() :
-    nextNamedSymbol(AspReservedSymbol_End)
+SymbolTable::SymbolTable(int32_t reservedEnd) :
+    nextNamedSymbol(reservedEnd)
 {
-}
-
-void SymbolTable::ReserveSystemSymbols(AspFeatureBits featureBits)
-{
-    // Reserve symbols used by the system if applicable.
-    for (const AspReservedNameEntry *entry = AspNextReservedNameEntry(0);
-         entry != 0; entry = AspNextReservedNameEntry(entry))
-    {
-        auto symbol = entry->symbol;
-        auto name = entry->name;
-
-        if (entry->featureBits != 0 &&
-            (entry->featureBits & featureBits) == 0)
-            continue;
-
-        ReserveSystemSymbol(symbol, name);
-    }
 }
 
 void SymbolTable::ReserveSystemSymbol(int32_t symbol, const string &name)
 {
-    if (symbol >= AspReservedSymbol_End)
+    if (symbol >= nextNamedSymbol)
     {
         ostringstream oss;
         oss

@@ -50,6 +50,7 @@ add_executable(aspc
     function.cpp
     search-path.cpp
     symbol.cpp
+    system.cpp
     emit.cpp
     executable.cpp
     instruction.cpp

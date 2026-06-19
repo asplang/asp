@@ -6,6 +6,7 @@
 #include "compiler.h"
 #include "executable.hpp"
 #include "symbol.hpp"
+#include "reserved.h"
 #include "asp.h"
 #include "search-path.hpp"
 #include <fstream>
@@ -422,7 +423,7 @@ static int main1(int argc, char **argv)
     }
 
     // Prepare to process the top-level source file.
-    SymbolTable symbolTable;
+    SymbolTable symbolTable(AspReservedSymbol_End);
     Executable executable(symbolTable);
     Compiler compiler(cerr, symbolTable, executable);
     compiler.LoadApplicationSpec(specStream);

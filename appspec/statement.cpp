@@ -66,6 +66,16 @@ FunctionDefinition::~FunctionDefinition()
     delete parameterList;
 }
 
+#ifdef ASP_FEATURE_CLASS
+
+ClassDefinition::ClassDefinition(const Token &nameToken) :
+    NonTerminal(nameToken),
+    definitions(new DefinitionMap)
+{
+}
+
+#endif
+
 void NameList::Add(const Token &nameToken)
 {
     if (names.empty())

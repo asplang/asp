@@ -9,6 +9,7 @@
 #include "statement.hpp"
 #include "function.hpp"
 #include "instruction.hpp"
+#include "system.hpp"
 #include "reserved.h"
 #include <iostream>
 #include <sstream>
@@ -91,7 +92,7 @@ void Compiler::LoadApplicationSpec(istream &specStream)
              "; premature end of file");
 
     // Now that the features are known, reserve the applicable symbols.
-    symbolTable.ReserveSystemSymbols(featureBits);
+    ReserveSystemSymbols(symbolTable, featureBits);
 }
 
 void Compiler::AddModule(const string &moduleName)
@@ -189,6 +190,8 @@ unsigned Compiler::ErrorCount() const
 
 void Compiler::Finalize()
 {
+    currentSourceLocation = SourceLocation();
+
     // Invoke the top-level module.
     executable.PushLocation(topLocation);
     executable.Insert

@@ -20,7 +20,15 @@ typedef struct
     AspDataEntry *member;
 } AspMemberResult;
 
+typedef struct
+{
+    AspRunResult result;
+    AspDataEntry *address, *value, *container;
+} AspMemberSeekResult;
+
 AspMemberResult AspFindMember
+    (AspEngine *, AspDataEntry *container, int32_t symbol, bool address);
+AspMemberSeekResult AspSeekMember
     (AspEngine *, AspDataEntry *container, int32_t symbol, bool address);
 
 #ifdef __cplusplus

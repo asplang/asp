@@ -16,6 +16,9 @@ typedef enum AppSpecPrefix
     AppSpecPrefix_Import = 0xFC,
     AppSpecPrefix_Module = 0xFD,
     AppSpecPrefix_Symbol = 0xFE,
+    #ifdef ASP_FEATURE_CLASS
+    AppSpecPrefix_Class = 0xFE,
+    #endif
     AppSpecPrefix_Variable = 0xFF,
 
 } AppSpecPrefix;
@@ -38,6 +41,22 @@ typedef enum AppSpecValueType
     AppSpecValueType_String = 0x05,
 
 } AppSpecValueType;
+
+#ifdef ASP_FEATURE_CLASS
+
+typedef enum AppSpecClassEntryType
+{
+    AppSpecClassEntryType_Start = 0x8,
+
+} AppSpecClassEntryType;
+
+typedef enum AppSpecFunctionEntryFlag
+{
+    AppSpecFunctionEntryFlag_Qualified = 0x1,
+
+} AppSpecFunctionEntryType;
+
+#endif
 
 #ifdef __cplusplus
 }

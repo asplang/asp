@@ -43,26 +43,26 @@ AspRunResult AspAssignSimple
             break;
         }
 
-        #ifdef ASP_FEATURE_CLASS
-
-        case DataType_ShadowingMember:
-        {
-            if (!AspIsFeature(engine, AspFeatureBit_Class))
-                return AspRunResult_UnexpectedType;
-
-            AspDataEntry *shadowingAddress = AspEntry
-                (engine, AspDataGetShadowingMemberTargetIndex(address));
-            AspUnref(engine, address);
-            address = shadowingAddress;
-            addressType = AspDataGetType(address);
-
-            /* Fall through... */
-        }
-        #endif
-
         case DataType_DictionaryNode:
         case DataType_NamespaceNode:
+        #ifdef ASP_FEATURE_CLASS
+        case DataType_ShadowingMember:
+        #endif
         {
+            #ifdef ASP_FEATURE_CLASS
+            if (addressType == DataType_ShadowingMember)
+            {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                    return AspRunResult_UnexpectedType;
+
+                AspDataEntry *shadowingAddress = AspEntry
+                    (engine, AspDataGetShadowingMemberTargetIndex(address));
+                AspUnref(engine, address);
+                address = shadowingAddress;
+                addressType = AspDataGetType(address);
+            }
+            #endif
+
             AspDataEntry *oldValue = AspValueEntry
                 (engine, AspDataGetTreeNodeValueIndex(address));
             if (AspIsObject(oldValue))

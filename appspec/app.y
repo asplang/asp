@@ -22,6 +22,10 @@
 %token AND ASSERT BREAK CLASS CONTINUE DEL ELIF ELSE EXCEPT EXEC.
 %token FINALLY FOR FROM GLOBAL IF IN IS LAMBDA LOCAL NONLOCAL NOT OR.
 %token PASS RAISE RETURN TRY WHILE WITH YIELD.
+%token UNEXPECTED_INDENT MISSING_INDENT MISMATCHED_UNINDENT INCONSISTENT_WS.
+
+// Optional tokens.
+%token BLOCK_START.
 
 %include
 {
@@ -134,9 +138,22 @@ statement(result) ::=
     DEF NAME(nameToken) LEFT_PAREN parameters(parameterList) RIGHT_PAREN
     ASSIGN NAME(internalName) LINE_END.
 {
-    result = ACTION
-        (MakeFunction, nameToken, parameterList,
-         internalName);
+    result = ACTION(MakeFunction, nameToken, parameterList, internalName);
+}
+
+%ifdef ASP_FEATURE_CLASS
+
+statement(result) ::=
+    CLASS NAME(nameToken) BLOCK_START.
+{
+    result = ACTION(StartClass, nameToken);
+}
+
+%endif
+
+statement(result) ::= BLOCK_END.
+{
+    result = ACTION(EndBlock, 0);
 }
 
 statement(result) ::= NAME(nameToken) LINE_END.

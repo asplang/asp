@@ -228,23 +228,6 @@ Token *Lexer::ProcessSpecial()
     return new Token(sourceLocation, type, lex);
 }
 
-Token *Lexer::ProcessIndent()
-{
-    Get(); // :
-
-    // Allow trailing whitespace and/or a comment.
-    int c;
-    while (c = Peek(), isspace(c) && c != '\n')
-        Get();
-    if (c == '#')
-        ProcessComment();
-    Get(); // newline
-
-    expectIndent = true;
-    checkIndent = true;
-    return new Token(sourceLocation, TOKEN_BLOCK_START);
-}
-
 int Lexer::Get()
 {
     // Get the next character from the peek prefetch or the file as appropriate.
@@ -271,58 +254,6 @@ int Lexer::Get()
     caret.column++;
 
     return c;
-}
-
-void Lexer::CheckIndent()
-{
-    checkIndent = false;
-    auto minSize = min(currIndent.size(), prevIndent.size());
-    bool consistent =
-        currIndent.substr(0, minSize) == prevIndent.substr(0, minSize);
-    if (!consistent)
-    {
-        pendingTokens.push_back
-            (new Token(sourceLocation, TOKEN_INCONSISTENT_WS));
-    }
-    else if (expectIndent)
-    {
-        // Ensure expected indent is present.
-        expectIndent = false;
-        if (currIndent.size() > prevIndent.size())
-            indents.push_back(currIndent.size() - prevIndent.size());
-        else
-            pendingTokens.push_back
-                (new Token(sourceLocation, TOKEN_MISSING_INDENT));
-    }
-    else if (currIndent.size() < prevIndent.size())
-    {
-        // Determine matching shallower indent level.
-        auto unindentSize = prevIndent.size();
-        int unindentCount = 0;
-        while (unindentSize > currIndent.size() && !indents.empty())
-        {
-            auto indentSize = indents.back();
-            indents.pop_back();
-            unindentSize -= indentSize;
-            unindentCount++;
-        }
-        if (unindentSize == currIndent.size())
-        {
-            while (unindentCount--)
-                pendingTokens.push_back
-                    (new Token(sourceLocation, TOKEN_BLOCK_END));
-        }
-        else
-            pendingTokens.push_back
-                (new Token(sourceLocation, TOKEN_MISMATCHED_UNINDENT));
-    }
-    else if (currIndent.size() > prevIndent.size())
-    {
-        pendingTokens.push_back
-            (new Token(sourceLocation, TOKEN_UNEXPECTED_INDENT));
-    }
-
-    prevIndent = currIndent;
 }
 
 static bool IsSpecial(int c)

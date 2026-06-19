@@ -6,6 +6,7 @@
 #define COMPILER_H
 
 #include "lexer.h"
+#include "asp-priv.h"
 
 #ifdef __cplusplus
 #include "executable.hpp"

@@ -19,6 +19,8 @@ enum AspReservedSymbol
     AspReservedSymbol_MainModule = 2,
     #ifdef ASP_FEATURE_CLASS
     AspReservedSymbol_ClassInitialize = 3,
+    AspReservedSymbol_GetMethod = 4,
+    AspReservedSymbol_CallMethod = 7,
     #endif
 
     AspReservedSymbol_End = 64 /* must be last */

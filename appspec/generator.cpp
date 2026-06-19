@@ -4,8 +4,8 @@
 
 #include "generator.h"
 #include "app.h"
-#include "asp.h"
 #include "function.hpp"
+#include "system.hpp"
 #include "reserved.h"
 #include "grammar.hpp"
 #include <iostream>
@@ -19,10 +19,11 @@ Generator::Generator
      const string &fileBaseName) :
     errorStream(errorStream),
     fileBaseName(fileBaseName),
-    variableBaseName(fileBaseName)
+    variableBaseName(fileBaseName),
+    symbolTable(AspReservedSymbol_End)
 {
     // Reserve module ID zero for the system module.
-    moduleIdTable.ReserveSystemSymbol(0, "");
+    moduleIdTable.Symbol("");
 
     // Deal with invalid variable name characters in the file name.
     for (string::iterator si = variableBaseName.begin();
@@ -60,8 +61,8 @@ pair<string, list<pair<string, SourceElement> > > Generator::NextModule()
     auto moduleName = moduleNamesToImport.front();
     currentModuleName = definitionsByModuleName.empty() ?  "" : moduleName;
     moduleNamesToImport.pop_front();
-    currentModuleDefinitions = definitionsByModuleName.emplace
-        (currentModuleName, new map<string, shared_ptr<SourceElement> >)
+    currentDefinitions = definitionsByModuleName.emplace
+        (currentModuleName, new DefinitionMap)
         .first->second;
 
     // Gather all the import source locations that reference the module.
@@ -92,22 +93,24 @@ unsigned Generator::ErrorCount() const
     return errorCount;
 }
 
-void Generator::Finalize()
+bool Generator::Finalize()
 {
+    currentSourceLocation = SourceLocation();
+
     #ifdef ASP_FEATURE_CLASS
 
     if ((featureBits & AspFeatureBit_Class) != 0)
     {
         // Switch to the system module.
-        currentModuleDefinitions = definitionsByModuleName.find("")->second;
+        currentDefinitions = definitionsByModuleName.find("")->second;
 
         // If not already defined by the app spec, add a definition for a
         // function that will serve as the initialization method of the base of
         // all non-derived classes.
         const auto &functionName = AspReservedName
             (AspReservedSymbol_ClassInitialize);
-        auto findDefinitionIter = currentModuleDefinitions->find(functionName);
-        if (findDefinitionIter == currentModuleDefinitions->end())
+        auto findDefinitionIter = currentDefinitions->find(functionName);
+        if (findDefinitionIter == currentDefinitions->end())
         {
             auto nameToken = new Token(SourceLocation(), functionName);
             auto selfParameterNameToken = Token(SourceLocation(), "self");
@@ -126,7 +129,7 @@ void Generator::Finalize()
     moduleNames.clear();
 
     // Reserve system symbols.
-    symbolTable.ReserveSystemSymbols(featureBits);
+    ReserveSystemSymbols(symbolTable, featureBits);
 
     // Prepare to write the feature bits to the app spec files if applicable.
     if (featureBits != 0)
@@ -180,23 +183,39 @@ void Generator::Finalize()
         // Assign a module identifier.
         moduleIdTable.Symbol(moduleEntry.second.moduleName);
 
-        // Set the required engine spec format to support functions with a
-        // large number of parameters if necessary.
-        if (engineAppSpecVersion < 1u)
+        for (const auto &definitionEntry: *moduleEntry.second.definitions)
         {
-            for (const auto &definitionEntry: *moduleEntry.second.definitions)
+            const auto definition = definitionEntry.second.get();
+            const auto functionDefinition =
+                dynamic_cast<const FunctionDefinition *>(definition);
+            #ifdef ASP_FEATURE_CLASS
+            const auto classDefinition =
+                dynamic_cast<const ClassDefinition *>(definition);
+            #endif
+
+            // Set the required engine spec format to support functions with a
+            // large number of parameters if necessary. Note that there is no
+            // need to check functions defined inside classes since class
+            // support itself needs engine spec version 2 or greater.
+            if (engineAppSpecVersion < 1u && functionDefinition != nullptr &&
+                functionDefinition->Parameters().ParametersSize()
+                > AppSpecPrefix_MaxFunctionParameterCount)
+                engineAppSpecVersion = 1u;
+
+            #ifdef ASP_FEATURE_CLASS
+
+            // Ensure the class feature is enabled when class definitions are
+            // present.
+            if (classDefinition != 0 &&
+                (featureBits & AspFeatureBit_Class) == 0)
             {
-                const auto definition = definitionEntry.second.get();
-                const auto functionDefinition =
-                    dynamic_cast<const FunctionDefinition *>(definition);
-                if (functionDefinition != nullptr &&
-                    functionDefinition->Parameters().ParametersSize()
-                    > AppSpecPrefix_MaxFunctionParameterCount)
-                {
-                    engineAppSpecVersion = 1u;
-                    break;
-                }
+                ReportError
+                    ("Class definition(s) encountered"
+                     " without the class feature enabled");
+                return false;
             }
+
+            #endif
         }
     }
 
@@ -207,7 +226,7 @@ void Generator::Finalize()
     // Compute the CRC.
     checkValue = ComputeCheckValue();
 
-    finalized = true;
+    return finalized = true;
 }
 
 void Generator::CurrentSource
@@ -314,6 +333,11 @@ DEFINE_ACTION
 {
     newFile = false;
 
+    if (!definitionsStack.empty())
+    {
+        ReportError("include must be at the top level", *includeNameToken);
+        return nullptr;
+    }
     if (includeNameToken->s.empty())
     {
         ReportError("Include name cannot be empty", *includeNameToken);
@@ -345,6 +369,11 @@ DEFINE_ACTION
 {
     newFile = false;
 
+    if (!definitionsStack.empty())
+    {
+        ReportError("import must be at the top level", *moduleNameToken);
+        return nullptr;
+    }
     if (moduleNameToken->s.empty())
     {
         ReportError("Module name cannot be empty", *moduleNameToken);
@@ -415,6 +444,15 @@ DEFINE_ACTION
 DEFINE_ACTION
     (UpdateFeatures, NonTerminal *, Token *, featureToken, int, add)
 {
+    newFile = false;
+
+    if (!definitionsStack.empty())
+    {
+        ReportError
+            ("Feature definitions must be at the top level", *featureToken);
+        return nullptr;
+    }
+
     AspFeatureBits featureBit = 0;
     #ifdef ASP_FEATURE_CLASS
     if (featureToken->s == "class")
@@ -449,8 +487,8 @@ DEFINE_ACTION
     // Replace any previous definition having the same name with this one.
     ClearDefinition(nameToken->s, *nameToken);
 
-    // Add the assignment definition to the current module.
-    currentModuleDefinitions->emplace
+    // Add the assignment definition to the current set of definitions.
+    currentDefinitions->emplace
         (nameToken->s, new Assignment(*nameToken, value));
 
     currentSourceLocation = nameToken->sourceLocation;
@@ -513,8 +551,8 @@ DEFINE_ACTION
     // Replace any previous definition having the same name with this one.
     ClearDefinition(nameToken->s, *nameToken);
 
-    // Add the function definition to the current module.
-    currentModuleDefinitions->emplace
+    // Add the function definition to the current set of definitions.
+    currentDefinitions->emplace
         (nameToken->s, new FunctionDefinition
             (*nameToken, isLibrary,
              *internalNameToken, parameterList));
@@ -528,6 +566,44 @@ DEFINE_ACTION
     return nullptr;
 }
 
+#ifdef ASP_FEATURE_CLASS
+
+DEFINE_ACTION
+    (StartClass, NonTerminal *, Token *, nameToken)
+{
+    newFile = false;
+
+    if (CheckReservedNameError(*nameToken))
+        return nullptr;
+
+    // Replace any previous definition having the same name with this one.
+    ClearDefinition(nameToken->s, *nameToken);
+
+    // Add the class definition to the current set of definitions.
+    auto classDefinition = new ClassDefinition(*nameToken);
+    currentDefinitions->emplace(nameToken->s, classDefinition);
+
+    // Switch to the class' set of definitions.
+    definitionsStack.push(currentDefinitions);
+    currentDefinitions = classDefinition->definitions;
+
+    delete nameToken;
+
+    return nullptr;
+}
+
+#endif
+
+DEFINE_ACTION
+    (EndBlock, NonTerminal *, int, _)
+{
+    // Revert back to the set of definitions in which the block was defined.
+    currentDefinitions = definitionsStack.top();
+    definitionsStack.pop();
+
+    return nullptr;
+}
+
 DEFINE_ACTION
     (DeleteDefinition, NonTerminal *, NameList *, nameList)
 {
@@ -537,9 +613,9 @@ DEFINE_ACTION
     {
         const auto &name = *iter;
 
-        // Ensure the name exists in the current module.
-        const auto findIter = currentModuleDefinitions->find(name);
-        if (findIter == currentModuleDefinitions->end())
+        // Ensure the name exists in the current set of definitions.
+        const auto findIter = currentDefinitions->find(name);
+        if (findIter == currentDefinitions->end())
         {
             ostringstream oss;
             oss << "Cannot delete '" << name << '\'' << "; not found";
@@ -547,7 +623,7 @@ DEFINE_ACTION
             continue;
         }
 
-        // Drop the definition from the current module.
+        // Drop the definition from the current set of definitions.
         ClearDefinition(name, *nameList, false);
     }
 
@@ -660,8 +736,8 @@ void Generator::ClearDefinition
     (const string &name, const SourceElement &sourceElement, bool warn)
 {
     // Determine whether the name is already defined.
-    auto findDefinitionIter = currentModuleDefinitions->find(name);
-    if (findDefinitionIter == currentModuleDefinitions->end())
+    auto findDefinitionIter = currentDefinitions->find(name);
+    if (findDefinitionIter == currentDefinitions->end())
         return;
 
     // Issue a warning if applicable.
@@ -672,8 +748,8 @@ void Generator::ClearDefinition
         ReportWarning(oss.str(), sourceElement);
     }
 
-    // Drop the definition from the current module.
-    currentModuleDefinitions->erase(findDefinitionIter);
+    // Drop the definition from the current set of definitions.
+    currentDefinitions->erase(findDefinitionIter);
 }
 
 bool Generator::CheckReservedNameError(const Token &nameToken)

@@ -7,6 +7,7 @@
 #include "stack.h"
 #include "sequence.h"
 #include "tree.h"
+#include "member.h"
 #include "integer.h"
 #include "integer-result.h"
 #include "code.h"
@@ -310,37 +311,11 @@ AspRunResult AspCallCallable
 
             /* Search for the applicable initialization function in the class
                and its base(s). */
-            cls = callable;
-            AspDataEntry *initializationFunction = 0;
-            uint32_t iterationCount = 0;
-            for (; iterationCount < engine->cycleDetectionLimit;
-                 iterationCount++)
-            {
-                AspDataEntry *ns = AspEntry
-                    (engine, AspDataGetClassNamespaceIndex(cls));
-                if (AspDataGetType(ns) != DataType_Namespace)
-                    return AspRunResult_UnexpectedType;
-                AspTreeResult findResult = AspFindSymbol
-                    (engine, ns, AspReservedSymbol_ClassInitialize);
-                if (findResult.result != AspRunResult_OK)
-                    return findResult.result;
-                if (findResult.value != 0)
-                {
-                    initializationFunction = findResult.value;
-                    break;
-                }
-
-                /* Keep searching. */
-                uint32_t baseClassIndex = AspDataGetClassBaseClassIndex(cls);
-                if (baseClassIndex == 0)
-                    break;
-                cls = AspValueEntry(engine, baseClassIndex);
-                if (AspDataGetType(cls) != DataType_Class)
-                    return AspRunResult_UnexpectedType;
-            }
-            if (iterationCount >= engine->cycleDetectionLimit)
-                return AspRunResult_CycleDetected;
-            if (initializationFunction == 0)
+            AspMemberSeekResult initializerResult = AspSeekMember
+                (engine, callable, AspReservedSymbol_ClassInitialize, false);
+            if (initializerResult.result != AspRunResult_OK)
+                return initializerResult.result;
+            if (initializerResult.value == 0)
             {
                 #ifdef ASP_DEBUG
                 puts("Class initialization method not found");
@@ -349,8 +324,9 @@ AspRunResult AspCallCallable
             }
 
             /* Prepare to call the initialization function. */
+            cls = initializerResult.container;
             AspRef(engine, cls);
-            function = initializationFunction;
+            function = initializerResult.value;
             initializeInstance = true;
         }
         else if (callableType == DataType_BoundMethod)
@@ -367,6 +343,29 @@ AspRunResult AspCallCallable
             instance = AspValueEntry
                 (engine, AspDataGetBoundMethodInstanceIndex(callable));
             AspRef(engine, instance);
+        }
+        else if (AspIsInstance(callable))
+        {
+            /* Access the class of the instance, which may contain a __call__
+               member. */
+            AspDataEntry *instanceClass = AspValueEntry
+                (engine, AspDataGetObjectClassIndex(callable));
+
+            /* Check for a __call__ member in the class hierarchy. */
+            AspMemberSeekResult callableResult = AspSeekMember
+                (engine, instanceClass, AspReservedSymbol_CallMethod, false);
+            if (callableResult.result != AspRunResult_OK)
+                return callableResult.result;
+            if (callableResult.value != 0)
+            {
+                /* Prepare to call the __call__ member on behalf of the
+                   instance. */
+                function = callableResult.value;
+                cls = instanceClass;
+                AspRef(engine, cls);
+                instance = callable;
+                AspRef(engine, instance);
+            }
         }
 
         /* Insert any instance at the head of the argument list. */

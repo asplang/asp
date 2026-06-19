@@ -391,17 +391,40 @@ static int main1(int argc, char **argv)
             auto &activeSourceFile = activeSourceFiles.back();
 
             Token *token = activeSourceFile.lexer->Next();
-            if (token->type == -1)
+            string error;
+            switch (token->type)
+            {
+                default:
+                    break;
+                case -1:
+                    error = "Bad token encountered";
+                    break;
+                case TOKEN_UNEXPECTED_INDENT:
+                    error = "Unexpected indentation";
+                    break;
+                case TOKEN_MISSING_INDENT:
+                    error = "Missing indentation";
+                    break;
+                case TOKEN_MISMATCHED_UNINDENT:
+                    error = "Mismatched indentation";
+                    break;
+                case TOKEN_INCONSISTENT_WS:
+                    error = "Inconsistent whitespace in indentation";
+                    break;
+            }
+            if (!error.empty())
             {
                 cerr
                     << token->sourceLocation.fileName << ':'
                     << token->sourceLocation.line << ':'
                     << token->sourceLocation.column
-                    << ": Bad token encountered: '"
-                    << token->s << '\'';
+                    << ": " << error;
+                if (!token->s.empty())
+                    cerr << ": '" << token->s << '\'';
                 if (!token->error.empty())
                     cerr << ": " << token->error;
                 cerr << endl;
+
                 delete token;
                 errorDetected = true;
                 break;
@@ -522,6 +545,10 @@ static int main1(int argc, char **argv)
         return !writeError;
     };
 
+    // Prepare to write output files.
+    if (!errorDetected)
+        errorDetected = !generator.Finalize();
+
     if (errorDetected)
     {
         cerr << "Ended in ERROR" << endl;
@@ -533,9 +560,6 @@ static int main1(int argc, char **argv)
         remove(codeFileName.c_str());
         return 1;
     }
-
-    // Prepare to write output files.
-    generator.Finalize();
 
     // Write all output files.
     if (!quiet)

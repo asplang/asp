@@ -25,15 +25,44 @@ Lexer::Lexer(istream &is, const string &fileName) :
 
 Token *Lexer::Next()
 {
-    Token *token = nullptr;
-    while (token == nullptr)
+    if (pendingTokens.empty())
+        FetchNext();
+    auto token = pendingTokens.front();
+    pendingTokens.pop_front();
+
+    return token;
+}
+
+void Lexer::FetchNext()
+{
+    while (pendingTokens.empty())
     {
         sourceLocation = caret;
+        Token *token = nullptr;
 
         // Check indent if applicable. Note that this may generate pending
         // tokens to indicate block-end or indent errors.
         int c = Peek();
+        if (c == '\\')
+        {
+            token = ProcessLineContinuation();
+            if (token)
+                pendingTokens.push_back(token);
+            else
+                continueLine = true;
+        }
+        else
+        {
+            if (c == '\n' && !continueLine)
+                checkIndent = true;
+            continueLine = false;
+        }
+        if (checkIndent && !isspace(c) && c != '\n' && c != '#')
+            CheckIndent();
+        if (!pendingTokens.empty())
+            continue;
 
+        c = Peek();
         if (c == EOF)
             token = new Token(sourceLocation);
         else if (c == '\\')
@@ -57,6 +86,14 @@ Token *Lexer::Next()
             }
             else
                 token = ProcessNumber();
+        }
+        else if (c == ':')
+        {
+            int cx;
+            int offset = 1;
+            while (cx = Peek(offset), isspace(cx) && cx != '\n')
+                offset++;
+            token = ProcessIndent();
         }
         else if ((c == '+' || c == '-'))
         {
@@ -108,9 +145,10 @@ Token *Lexer::Next()
             if (!isspace(c))
                 token = new Token(sourceLocation, -1, string(1, (char)c));
         }
-    }
 
-    return token;
+        if (token)
+            pendingTokens.push_back(token);
+    }
 }
 
 Token *Lexer::ProcessSignedNumber()
@@ -148,11 +186,16 @@ int Lexer::Get()
     else
         c = Read();
 
+    // Maintain indent level.
+    if (checkIndent && isspace(c) && c != '\n')
+        currIndent += static_cast<char>(c);
+
     // Maintain line/column.
     if (c == '\n')
     {
         caret.column = 0;
         caret.line++;
+        currIndent.clear();
     }
     caret.column++;
 

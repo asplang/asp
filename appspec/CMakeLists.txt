@@ -50,6 +50,7 @@ add_executable(aspg
     "${aspc_SOURCE_DIR}/function.cpp"
     "${aspc_SOURCE_DIR}/search-path.cpp"
     "${aspc_SOURCE_DIR}/symbol.cpp"
+    "${aspc_SOURCE_DIR}/system.cpp"
     crc.c
     )
 

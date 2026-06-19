@@ -33,6 +33,7 @@ class Lexer
         Lexer &operator =(const Lexer &) = delete;
 
         // Token scanning methods.
+        void FetchNext();
         Token *ProcessLineContinuation();
         Token *ProcessComment();
         Token *ProcessLineEnd();
@@ -40,11 +41,13 @@ class Lexer
         Token *ProcessSignedNumber();
         Token *ProcessString();
         Token *ProcessName();
+        Token *ProcessIndent();
 
         // Character methods.
         int Get();
         int Peek(unsigned offset = 0);
         int Read();
+        void CheckIndent();
 
     private:
 
@@ -57,6 +60,10 @@ class Lexer
         std::deque<int> prefetch;
         std::deque<int> readahead;
         SourceLocation sourceLocation, caret;
+        bool checkIndent = true, expectIndent = false, continueLine = false;
+        std::deque<std::size_t> indents;
+        std::string currIndent, prevIndent;
+        std::deque<Token *> pendingTokens;
 };
 
 } // extern "C"

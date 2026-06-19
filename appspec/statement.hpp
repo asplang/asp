@@ -9,7 +9,11 @@
 #include "grammar.hpp"
 #include "token.h"
 #include <list>
+#include <map>
 #include <string>
+#include <memory>
+
+typedef std::map<std::string, std::shared_ptr<SourceElement> > DefinitionMap;
 
 class Assignment : public NonTerminal
 {
@@ -134,6 +138,19 @@ class FunctionDefinition : public NonTerminal
         std::string internalName;
         ParameterList *parameterList;
 };
+
+#ifdef ASP_FEATURE_CLASS
+
+class ClassDefinition : public NonTerminal
+{
+    public:
+
+        ClassDefinition(const Token &name);
+
+        std::shared_ptr<DefinitionMap> definitions;
+};
+
+#endif
 
 class NameList : public NonTerminal
 {
