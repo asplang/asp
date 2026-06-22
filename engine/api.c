@@ -1238,16 +1238,13 @@ bool AspAddPositionalArgument
     if (!PrepareArgumentList(engine))
         return false;
 
-    AspDataEntry *argument = NewObject(engine, DataType_Argument);
-    if (argument == 0)
+    AspRunResult result = AspAppendPositionalArgument
+        (engine, engine->argumentList, value);
+    if (result != AspRunResult_OK)
         return false;
     if (!take)
         AspRef(engine, value);
-    AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
-
-    AspSequenceResult result = AspSequenceAppend
-        (engine, engine->argumentList, argument);
-    return result.result == AspRunResult_OK;
+    return true;
 }
 
 bool AspAddNamedArgument
@@ -1276,6 +1273,9 @@ bool AspAddNamedArgument
 bool AspAddIterableGroupArgument
     (AspEngine *engine, AspDataEntry *value, bool take)
 {
+    if (value == 0)
+        return false;
+
     if (!PrepareArgumentList(engine))
         return false;
 
@@ -1291,6 +1291,9 @@ bool AspAddIterableGroupArgument
 bool AspAddDictionaryGroupArgument
     (AspEngine *engine, AspDataEntry *value, bool take)
 {
+    if (value == 0)
+        return false;
+
     if (!PrepareArgumentList(engine))
         return false;
 

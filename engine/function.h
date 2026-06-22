@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+AspRunResult AspAppendPositionalArgument
+    (AspEngine *, AspDataEntry *argumentList, const AspDataEntry *value);
 AspRunResult AspExpandIterableGroupArgument
     (AspEngine *, AspDataEntry *argumentList, const AspDataEntry *iterable);
 AspRunResult AspExpandDictionaryGroupArgument

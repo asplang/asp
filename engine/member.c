@@ -29,6 +29,7 @@ AspMemberResult AspFindMember
         result.result = symbolResult.result;
         return result;
     }
+    result.member = address ? symbolResult.address : symbolResult.value;
 
     #ifdef ASP_FEATURE_CLASS
 
@@ -43,7 +44,7 @@ AspMemberResult AspFindMember
         AspDataEntry *descriptorClass = AspValueEntry
             (engine, AspDataGetObjectClassIndex(symbolResult.value));
 
-        /* Check whether a descriptor get function is defined. */
+        /* Check whether a special __get__ function is defined. */
         AspMemberSeekResult getterResult = AspSeekMember
             (engine, descriptorClass, AspReservedSymbol_GetMethod, false);
         if (getterResult.result != AspRunResult_OK)
@@ -52,7 +53,7 @@ AspMemberResult AspFindMember
             return result;
         }
 
-        /* Invoke the descriptor get function if applicable. */
+        /* Invoke the special __get__ function if applicable. */
         if (getterResult.value != 0)
         {
             /* Prepare to add arguments to the call. */
@@ -65,78 +66,43 @@ AspMemberResult AspFindMember
             }
 
             /* Add the self argument. */
-            AspDataEntry *selfArgument = AspAllocEntry
-                (engine, DataType_Argument);
-            if (selfArgument == 0)
-            {
-                result.result = AspRunResult_OutOfDataMemory;
-                return result;
-            }
             AspRef(engine, symbolResult.value);
-            AspDataSetArgumentValueIndex
-                (selfArgument, AspIndex(engine, symbolResult.value));
-            AspSequenceResult addArgumentResult = AspSequenceAppend
-                (engine, arguments, selfArgument);
-            if (addArgumentResult.result != AspRunResult_OK)
-            {
-                result.result = addArgumentResult.result;
+            result.result = AspAppendPositionalArgument
+                (engine, arguments, symbolResult.value);
+            if (result.result != AspRunResult_OK)
                 return result;
-            }
 
-            /* Add the instance as the second argument. */
-            AspDataEntry *instanceArgument = AspAllocEntry
-                (engine, DataType_Argument);
-            if (instanceArgument == 0)
-            {
-                result.result = AspRunResult_OutOfDataMemory;
-                return result;
-            }
+            /* Add the applicable instance argument. */
+            AspDataEntry *instanceValue;
             if (AspIsClass(container))
-            {
-                AspDataEntry *none = AspNewNone(engine);
-                AspDataSetArgumentValueIndex
-                    (instanceArgument, AspIndex(engine, none));
-            }
+                instanceValue = AspNewNone(engine);
             else
             {
                 AspRef(engine, container);
-                AspDataSetArgumentValueIndex
-                    (instanceArgument, AspIndex(engine, container));
+                instanceValue = container;
             }
-            addArgumentResult = AspSequenceAppend
-                (engine, arguments, instanceArgument);
-            if (addArgumentResult.result != AspRunResult_OK)
-            {
-                result.result = addArgumentResult.result;
+            result.result = AspAppendPositionalArgument
+                (engine, arguments, instanceValue);
+            if (result.result != AspRunResult_OK)
                 return result;
-            }
 
-            /* Add the class as the third argument, if applicable. */
-            AspDataEntry *classArgument = AspAllocEntry
-                (engine, DataType_Argument);
-            if (classArgument == 0)
-            {
-                result.result = AspRunResult_OutOfDataMemory;
-                return result;
-            }
+            /* Add the applicable class argument. */
             AspRef(engine, symbolResult.container);
-            AspDataSetArgumentValueIndex
-                (classArgument, AspIndex(engine, symbolResult.container));
-            addArgumentResult = AspSequenceAppend
-                (engine, arguments, classArgument);
-            if (addArgumentResult.result != AspRunResult_OK)
-            {
-                result.result = addArgumentResult.result;
+            result.result = AspAppendPositionalArgument
+                (engine, arguments, symbolResult.container);
+            if (result.result != AspRunResult_OK)
                 return result;
-            }
 
-            /* Call the descriptor get function. */
+            /* Call the special __get__ function. */
             result.result = AspCallCallable
                 (engine, getterResult.value, arguments,
                  engine->inApp);
             if (result.result == AspRunResult_Call)
                 result.result = AspRunResult_NotImplemented;
+            if (result.result != AspRunResult_OK)
+                return result;
 
+            /* Retain the returned value as the member value. */
             result.member = AspTopValue(engine);
             AspRef(engine, result.member);
             AspPop(engine);

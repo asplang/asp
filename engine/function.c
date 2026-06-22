@@ -23,6 +23,24 @@ static AspRunResult LoadArguments
      const AspDataEntry *argumentList, const AspDataEntry *parameterList,
      AspDataEntry *ns);
 
+AspRunResult AspAppendPositionalArgument
+    (AspEngine *engine, AspDataEntry *argumentList,
+     const AspDataEntry *value)
+{
+    AspRunResult assertResult = AspAssert(engine, value != 0);
+    if (assertResult != AspRunResult_OK)
+        return assertResult;
+
+    AspDataEntry *argument = AspAllocEntry(engine, DataType_Argument);
+    if (argument == 0)
+        return AspRunResult_OutOfDataMemory;
+    AspDataSetArgumentValueIndex(argument, AspIndex(engine, value));
+
+    AspSequenceResult result = AspSequenceAppend
+        (engine, argumentList, argument);
+    return result.result;
+}
+
 AspRunResult AspExpandIterableGroupArgument
     (AspEngine *engine, AspDataEntry *argumentList,
      const AspDataEntry *iterable)
