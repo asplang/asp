@@ -702,6 +702,58 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
             if (!moduleInsertResult.inserted)
                 return AspRunResult_InitializationError;
         }
+        #ifdef ASP_FEATURE_CLASS
+        else if (AspIsFeature(engine, AspFeatureBit_Class) &&
+                 version >= 2u && prefix == AppSpecPrefix_Class)
+        {
+            /* Process the class start/end entry. */
+            uint8_t byte = spec[specIndex++];
+            entryFlags = (uint8_t)(byte >> AspWordBitSize - 24u);
+            if (entryFlags != 0)
+            {
+                specIndex--;
+                uint32_t word;
+                AspRunResult result = LoadUnsignedInteger
+                    (spec, specSize, &specIndex, &word);
+                if (result != AspRunResult_OK)
+                    return result;
+                symbol = AspBitGetSignedField(word, 0, AspWordBitSize);
+                if ((entryFlags & AppSpecClassEntryType_Start) != 0)
+                {
+                    /* Create the class. */
+                    AspDataEntry *cls = AspNewClass(engine, 0);
+                    if (cls == 0)
+                        return AspRunResult_OutOfDataMemory;
+
+                    /* Insert the class  into the current namespace. */
+                    AspTreeResult insertResult = AspTreeTryInsertBySymbol
+                        (engine, currentAppNamespace, symbol, cls);
+
+                    /* Prepare to add subsequent definitions to the class'
+                       namespace. */
+                    AspDataEntry *classNamespace = AspEntry
+                        (engine, AspDataGetClassNamespaceIndex(cls));
+                    if (AspPushNoUse(engine, currentAppNamespace) == 0)
+                        return AspRunResult_OutOfDataMemory;
+                    currentAppNamespace = classNamespace;
+                }
+                else
+                    return AspRunResult_InitializationError;
+            }
+            else
+            {
+                /* This is a class end entry, so ensure that we're in the
+                   middle of a structured entry. */
+                if (engine->stackTop == startStackTop)
+                    return AspRunResult_InitializationError;
+
+                /* Revert to the enveloping structure's namespace. */
+                currentAppNamespace = AspTopValue(engine);
+                if (!AspPopNoErase(engine))
+                    return AspRunResult_InitializationError;
+            }
+        }
+        #endif
         else if (version >= 1u && prefix == AppSpecPrefix_Function ||
                  prefix != AppSpecPrefix_Symbol)
         {
@@ -716,6 +768,19 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                 if (result != AspRunResult_OK)
                     return result;
             }
+
+            /* Read the symbol of the qualified name if applicable. */
+            int32_t appFunctionSymbol = symbol;
+            #ifdef ASP_FEATURE_CLASS
+            if (version >= 2u &&
+                (entryFlags & AppSpecFunctionEntryFlag_Qualified) != 0)
+            {
+                AspRunResult result = LoadSignedInteger
+                    (spec, specSize, &specIndex, &appFunctionSymbol);
+                if (result != AspRunResult_OK)
+                    return result;
+            }
+            #endif
 
             /* Create the function's parameter list. */
             AspDataEntry *parameters = AspAllocEntry
@@ -770,17 +835,6 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                is used to identify the function to the dispatcher. This
                distinguishes functions with the same name defined in different
                classes. */
-            int32_t appFunctionSymbol = symbol;
-            #ifdef ASP_FEATURE_CLASS
-            if (version >= 2u &&
-                (entryFlags & AppSpecFunctionEntryFlag_Qualified) != 0)
-            {
-                AspRunResult result = LoadSignedInteger
-                    (spec, specSize, &specIndex, &appFunctionSymbol);
-                if (result != AspRunResult_OK)
-                    return result;
-            }
-            #endif
             AspDataEntry *function = AspAllocEntry(engine, DataType_Function);
             if (function == 0)
                 return AspRunResult_OutOfDataMemory;
@@ -801,58 +855,6 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                 return AspRunResult_InitializationError;
             AspUnref(engine, function);
         }
-        #ifdef ASP_FEATURE_CLASS
-        else if (AspIsFeature(engine, AspFeatureBit_Class) &&
-                 version >= 2u && prefix == AppSpecPrefix_Class)
-        {
-            /* Process the class start/end entry. */
-            uint8_t byte = spec[specIndex++];
-            entryFlags = (uint8_t)(byte >> AspWordBitSize - 24u);
-            if (entryFlags != 0)
-            {
-                specIndex--;
-                uint32_t word;
-                AspRunResult result = LoadUnsignedInteger
-                    (spec, specSize, &specIndex, &word);
-                if (result != AspRunResult_OK)
-                    return result;
-                symbol = AspBitGetSignedField(word, 0, AspWordBitSize);
-                if ((entryFlags & AppSpecClassEntryType_Start) != 0)
-                {
-                    /* Create the class. */
-                    AspDataEntry *cls = AspNewClass(engine, 0);
-                    if (cls == 0)
-                        return AspRunResult_OutOfDataMemory;
-
-                    /* Insert the class  into the current namespace. */
-                    AspTreeResult insertResult = AspTreeTryInsertBySymbol
-                        (engine, currentAppNamespace, symbol, cls);
-
-                    /* Prepare to add subsequent definitions to the class'
-                       namespace. */
-                    AspDataEntry *classNamespace = AspEntry
-                        (engine, AspDataGetClassNamespaceIndex(cls));
-                    if (AspPushNoUse(engine, currentAppNamespace) == 0)
-                        return AspRunResult_OutOfDataMemory;
-                    currentAppNamespace = classNamespace;
-                }
-                else
-                    return AspRunResult_InitializationError;
-            }
-            else
-            {
-                /* This is a class end entry, so ensure that we're in the
-                   middle of a structured entry. */
-                if (engine->stackTop == startStackTop)
-                    return AspRunResult_InitializationError;
-
-                /* Revert to the enveloping structure's namespace. */
-                currentAppNamespace = AspTopValue(engine);
-                if (!AspPopNoErase(engine))
-                    return AspRunResult_InitializationError;
-            }
-        }
-        #endif
     }
     if (engine->stackTop != startStackTop)
         return AspRunResult_InitializationError;
