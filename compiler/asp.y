@@ -300,7 +300,19 @@ def(result) ::=
     DEF NAME(nameToken) LEFT_PAREN parameters(parameterList) RIGHT_PAREN
     block(block).
 {
-    result = ACTION(MakeDefStatement, nameToken, parameterList, block);
+    result = ACTION
+        (MakeDefStatement,
+         ACTION(MakeEmptyDecoratorList, 0),
+         nameToken, parameterList, block);
+}
+
+def(result) ::=
+    decorators(decoratorList)
+    DEF NAME(nameToken) LEFT_PAREN parameters(parameterList) RIGHT_PAREN
+    block(block).
+{
+    result = ACTION
+        (MakeDefStatement, decoratorList, nameToken, parameterList, block);
 }
 
 %type parameters {ParameterList *}
@@ -357,7 +369,19 @@ class(result) ::=
     CLASS NAME(nameToken) block(block).
 {
     result = ACTION
-        (MakeClassStatement, nameToken,
+        (MakeClassStatement,
+         ACTION(MakeEmptyDecoratorList, 0),
+         nameToken,
+         ACTION(MakeEmptyArgumentList, 0),
+         block);
+}
+
+class(result) ::=
+    decorators(decoratorList)
+    CLASS NAME(nameToken) block(block).
+{
+    result = ACTION
+        (MakeClassStatement, decoratorList, nameToken,
          ACTION(MakeEmptyArgumentList, 0),
          block);
 }
@@ -366,7 +390,19 @@ class(result) ::=
     CLASS NAME(nameToken) LEFT_PAREN arguments(argumentList) RIGHT_PAREN
     block(block).
 {
-    result = ACTION(MakeClassStatement, nameToken, argumentList, block);
+    result = ACTION
+        (MakeClassStatement,
+         ACTION(MakeEmptyDecoratorList, 0),
+         nameToken, argumentList, block);
+}
+
+class(result) ::=
+    decorators(decoratorList)
+    CLASS NAME(nameToken) LEFT_PAREN arguments(argumentList) RIGHT_PAREN
+    block(block).
+{
+    result = ACTION
+        (MakeClassStatement, decoratorList, nameToken, argumentList, block);
 }
 
 %endif
@@ -609,6 +645,39 @@ insertion(result) ::=
     result = ACTION
         (MakeSinglePairInsertionStatement, insertionToken,
          containerExpression, keyValuePair);
+}
+
+%type decorators {DecoratorList *}
+
+decorators(result) ::=
+    decorators(decoratorList) decorator(decorator).
+{
+    result = ACTION(AddDecoratorToList, decoratorList, decorator);
+}
+
+decorators(result) ::= decorator(decorator).
+{
+    result = ACTION
+        (AddDecoratorToList,
+         ACTION(MakeEmptyDecoratorList, 0),
+         decorator);
+}
+
+%type decorator {Expression *}
+
+decorator(result) ::= AT(token) expression(expression) line_ends.
+{
+    result = ACTION(MakeDecorator, token, expression);
+}
+
+line_ends(result) ::= line_ends LINE_END.
+{
+    result = 0;
+}
+
+line_ends(result) ::= LINE_END.
+{
+    result = 0;
 }
 
 %type expression {Expression *}

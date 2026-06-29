@@ -76,6 +76,23 @@ class BlockStatement : public Statement
         Block *block;
 };
 
+class DecoratorList : public NonTerminal
+{
+    public:
+
+        DecoratorList() = default;
+        ~DecoratorList() override;
+
+        void Add(Expression *);
+
+        void EmitPreamble(Executable &) const;
+        void EmitPostamble(Executable &) const;
+
+    private:
+
+        std::list<Expression *> expressions;
+};
+
 class ExpressionStatement : public Statement
 {
     public:
@@ -482,13 +499,16 @@ class DefStatement : public Statement
 {
     public:
 
-        DefStatement(const Token &nameToken, ParameterList *, Block *);
+        DefStatement
+            (DecoratorList *decoratorList,
+             const Token &nameToken, ParameterList *, Block *);
         ~DefStatement() override;
 
         void Emit(Executable &) const override;
 
     private:
 
+        DecoratorList *decoratorList;
         std::string name;
         ParameterList *parameterList;
         Block *block;
@@ -500,13 +520,16 @@ class ClassStatement : public Statement
 {
     public:
 
-        ClassStatement(const Token &nameToken, Argument *, Block *);
+        ClassStatement
+            (DecoratorList *decoratorList,
+             const Token &nameToken, Argument *, Block *);
         ~ClassStatement() override;
 
         void Emit(Executable &) const override;
 
     private:
 
+        DecoratorList *decoratorList;
         std::string name;
         Argument *baseClassArgument;
         Block *block;

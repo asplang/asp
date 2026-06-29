@@ -6,6 +6,8 @@
 #include "class.h"
 #include "sequence.h"
 #include "search.h"
+#include "member.h"
+#include "reserved.h"
 
 typedef struct
 {
@@ -140,5 +142,84 @@ ASP_LIB_API AspRunResult AspLib_super
     if (result.result != AspRunResult_OK)
         return result.result;
     *returnValue = result.value;
+    return AspRunResult_OK;
+}
+
+/* staticmethod.__init__(self, func)
+ * Initialize a staticmethod function wrapper.
+ */
+ASP_LIB_API AspRunResult AspLib_staticmethod_init
+    (AspEngine *engine,
+     AspDataEntry *self, AspDataEntry *func,
+     AspDataEntry **returnValue)
+{
+    if (!AspIsInstance(self))
+        return AspRunResult_InvalidContext;
+
+    bool insertResult = AspObjectInsert
+        (engine, self, AspReservedSymbol_FunctionMember, func, false);
+    return insertResult ? AspRunResult_OK : AspRunResult_OutOfDataMemory;
+}
+
+/* staticmethod.__get__(self, instance, owner)
+ * Return the bare function instead of a bound method.
+ */
+ASP_LIB_API AspRunResult AspLib_staticmethod_get
+    (AspEngine *engine,
+     AspDataEntry *self, AspDataEntry *instance, AspDataEntry *owner,
+     AspDataEntry **returnValue)
+{
+    AspMemberResult result = AspFindMember
+        (engine, self, AspReservedSymbol_FunctionMember, false);
+    if (result.result != AspRunResult_OK)
+        return result.result;
+    *returnValue = result.member;
+    return AspRunResult_OK;
+}
+
+/* classmethod.__init__(self, func)
+ * Initialize a classmethod function wrapper.
+ */
+ASP_LIB_API AspRunResult AspLib_classmethod_init
+    (AspEngine *engine,
+     AspDataEntry *self, AspDataEntry *func,
+     AspDataEntry **returnValue)
+{
+    if (!AspIsInstance(self))
+        return AspRunResult_InvalidContext;
+
+    bool insertResult = AspObjectInsert
+        (engine, self, AspReservedSymbol_FunctionMember, func, false);
+    return insertResult ? AspRunResult_OK : AspRunResult_OutOfDataMemory;
+}
+
+/* classmethod.__get__(self, instance, owner)
+ * Return a method with the function bound to the class instead of the
+ * instance.
+ */
+ASP_LIB_API AspRunResult AspLib_classmethod_get
+    (AspEngine *engine,
+     AspDataEntry *self, AspDataEntry *instance, AspDataEntry *owner,
+     AspDataEntry **returnValue)
+{
+    AspMemberResult result = AspFindMember
+        (engine, self, AspReservedSymbol_FunctionMember, false);
+    if (result.result != AspRunResult_OK)
+        return result.result;
+
+    if (AspIsNone(owner))
+        owner = AspInstanceClass(engine, instance);
+
+    *returnValue = AspAllocEntry(engine, DataType_BoundMethod);
+    if (*returnValue == 0)
+        return AspRunResult_OutOfDataMemory;
+    AspDataSetBoundMethodFunctionIndex
+        (*returnValue, AspIndex(engine, result.member));
+    AspRef(engine, owner);
+    AspDataSetBoundMethodInstanceIndex
+        (*returnValue, AspIndex(engine, owner));
+    AspRef(engine, owner);
+    AspDataSetBoundMethodClassIndex
+        (*returnValue, AspIndex(engine, owner));
     return AspRunResult_OK;
 }

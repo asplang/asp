@@ -11,8 +11,9 @@ static AspReservedNameEntry ReservedNameEntries[] =
     {AspReservedSymbol_SystemArguments, "args"},
     {AspReservedSymbol_MainModule, "__main__"},
     #ifdef ASP_FEATURE_CLASS
-    {AspReservedSymbol_ClassInitialize, "__init__", AspFeatureBit_Class},
+    {AspReservedSymbol_InitializeMethod, "__init__", AspFeatureBit_Class},
     {AspReservedSymbol_GetMethod, "__get__", AspFeatureBit_Class},
+    {AspReservedSymbol_FunctionMember, "__func__", AspFeatureBit_Class},
     {AspReservedSymbol_CallMethod, "__call__", AspFeatureBit_Class},
     #endif
 

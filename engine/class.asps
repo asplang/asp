@@ -11,3 +11,11 @@ lib
 def isinstance(obj, type) = AspLib_isinstance
 def issubclass(class1, class2) = AspLib_issubclass
 def super(cls = None, obj = None) = AspLib_super
+
+# Class method decorator classes.
+class staticmethod:
+    def __init__(self, func) = AspLib_staticmethod_init
+    def __get__(self, instance, owner = None) = AspLib_staticmethod_get
+class classmethod:
+    def __init__(self, func) = AspLib_classmethod_init
+    def __get__(self, instance, owner = None) = AspLib_classmethod_get

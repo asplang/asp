@@ -193,6 +193,7 @@ Token *Lexer::ProcessSpecial()
         {"{", TOKEN_LEFT_BRACE},
         {"}", TOKEN_RIGHT_BRACE},
         {"~", TOKEN_TILDE},
+        {"@", TOKEN_AT},
         {"**", TOKEN_DOUBLE_ASTERISK},
         {"//", TOKEN_FLOOR_DIVIDE},
         {"<<", TOKEN_LEFT_SHIFT},
@@ -258,6 +259,6 @@ int Lexer::Get()
 
 static bool IsSpecial(int c)
 {
-    static const char chars[] = "!\"%&'()*+,-./:;<=>[]^`{|}~";
+    static const char chars[] = "!\"%&'()*+,-./:;<=>@[]^`{|}~";
     return c > 0 && c <= 0xFF && strchr(chars, c) != nullptr;
 }

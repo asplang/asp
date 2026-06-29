@@ -26,6 +26,38 @@ void BlockStatement::Emit(Executable &executable) const
         ("Internal error: Block statement remaining after parsing phase");
 }
 
+void DecoratorList::EmitPreamble(Executable &executable) const
+{
+    for (const auto &expression: expressions)
+    {
+        expression->Emit(executable, Expression::EmitType::Value);
+        executable.Insert
+            (new PushArgumentListInstruction
+                ("Push empty decorator argument list"),
+             expression->sourceLocation);
+    }
+}
+
+void DecoratorList::EmitPostamble(Executable &executable) const
+{
+    for (auto iter = expressions.rbegin(); iter != expressions.rend(); iter++)
+    {
+        const auto &expression = *iter;
+
+        executable.Insert
+            (new MakeArgumentInstruction
+                (MakeArgumentInstruction::Type::Positional,
+                 "Make decorator argument"),
+             expression->sourceLocation);
+        executable.Insert
+            (new BuildInstruction("Add argument to argument list"),
+             expression->sourceLocation);
+        executable.Insert
+            (new CallInstruction("Call decorator"),
+             expression->sourceLocation);
+    }
+}
+
 void ExpressionStatement::Emit(Executable &executable) const
 {
     expression->Emit(executable);
@@ -777,10 +809,13 @@ void DefStatement::Emit(Executable &executable) const
     }
     executable.PopLocation();
 
+    // Emit the (possibly decorated) function definition.
+    decoratorList->EmitPreamble(executable);
     parameterList->Emit(executable);
     executable.Insert
         (new MakeFunctionInstruction(entryLocation, "Make function"),
          sourceLocation);
+    decoratorList->EmitPostamble(executable);
 
     VariableExpression variableExpression
         (Token(sourceLocation, TOKEN_NAME, name));
@@ -812,6 +847,8 @@ void ClassStatement::Emit(Executable &executable) const
     {
         block->Emit(executable);
 
+        // Emit the (possibly decorated) class definition.
+        decoratorList->EmitPreamble(executable);
         if (baseClassArgument != 0)
             baseClassArgument->ValueExpression()->Emit(executable);
         else
@@ -820,6 +857,7 @@ void ClassStatement::Emit(Executable &executable) const
                  sourceLocation);
         executable.Insert
             (new MakeClassInstruction("Make class"), sourceLocation);
+        decoratorList->EmitPostamble(executable);
         executable.Insert
             (new ReturnInstruction("Return class"), sourceLocation);
     }

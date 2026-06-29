@@ -38,6 +38,7 @@ DECLARE_TYPE(SourceElement)
 DECLARE_TYPE(NonTerminal)
 DECLARE_TYPE(ConstantExpression)
 DECLARE_TYPE(Expression)
+DECLARE_TYPE(DecoratorList)
 DECLARE_TYPE(AssignmentStatement)
 DECLARE_TYPE(InsertionStatement)
 DECLARE_TYPE(IfStatement)
@@ -167,16 +168,26 @@ class Compiler
          Expression *, Expression *, Block *, Block *)
     DECLARE_METHOD
         (MakeDefStatement, Statement *,
-         Token *, ParameterList *, Block *)
+         DecoratorList *, Token *, ParameterList *, Block *)
     #ifdef ASP_FEATURE_CLASS
     DECLARE_METHOD
         (MakeClassStatement, Statement *,
-         Token *, ArgumentList *, Block *)
+         DecoratorList *, Token *, ArgumentList *, Block *)
     #endif
     DECLARE_METHOD
         (MakeBlockStatement, Statement *, Block *)
     DECLARE_METHOD
         (AssignStatement, Statement *, Statement *)
+
+    /* Decorators. */
+    DECLARE_METHOD
+        (MakeEmptyDecoratorList, DecoratorList *, int)
+    DECLARE_METHOD
+        (AddDecoratorToList, DecoratorList *,
+         DecoratorList *, Expression *)
+    DECLARE_METHOD
+        (MakeDecorator, Expression *,
+         Token *, Expression *)
 
     /* Expressions. */
     DECLARE_METHOD

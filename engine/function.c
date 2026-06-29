@@ -330,7 +330,7 @@ AspRunResult AspCallCallable
             /* Search for the applicable initialization function in the class
                and its base(s). */
             AspMemberSeekResult initializerResult = AspSeekMember
-                (engine, callable, AspReservedSymbol_ClassInitialize, false);
+                (engine, callable, AspReservedSymbol_InitializeMethod, false);
             if (initializerResult.result != AspRunResult_OK)
                 return initializerResult.result;
             if (initializerResult.value == 0)

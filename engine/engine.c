@@ -894,7 +894,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
            module. */
         AspTreeResult initFunctionFindResult = AspFindSymbol
             (engine, engine->systemNamespace,
-             AspReservedSymbol_ClassInitialize);
+             AspReservedSymbol_InitializeMethod);
         if (initFunctionFindResult.result != AspRunResult_OK)
             return initFunctionFindResult.result;
         if (initFunctionFindResult.value == 0)
@@ -907,7 +907,7 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
             (engine, AspDataGetClassNamespaceIndex(engine->objectClass));
         AspTreeResult insertResult = AspTreeTryInsertBySymbol
             (engine, objectClassNamespace,
-             AspReservedSymbol_ClassInitialize, initFunctionFindResult.value);
+             AspReservedSymbol_InitializeMethod, initFunctionFindResult.value);
         if (insertResult.result != AspRunResult_OK)
             return insertResult.result;
     }

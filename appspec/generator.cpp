@@ -108,7 +108,7 @@ bool Generator::Finalize()
         // function that will serve as the initialization method of the base of
         // all non-derived classes.
         const auto &functionName = AspReservedName
-            (AspReservedSymbol_ClassInitialize);
+            (AspReservedSymbol_InitializeMethod);
         auto findDefinitionIter = currentDefinitions->find(functionName);
         if (findDefinitionIter == currentDefinitions->end())
         {

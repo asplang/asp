@@ -841,6 +841,7 @@ DEFINE_ACTION
 
 DEFINE_ACTION
     (MakeDefStatement, Statement *,
+     DecoratorList *, decoratorList,
      Token *, nameToken, ParameterList *, parameterList, Block *, block)
 {
     Statement *result = nullptr;
@@ -868,7 +869,8 @@ DEFINE_ACTION
                     ReportError(error, parameter);
             }
 
-            result = new DefStatement(*nameToken, parameterList, block);
+            result = new DefStatement
+                (decoratorList, *nameToken, parameterList, block);
         }
         catch (const string &error)
         {
@@ -884,6 +886,7 @@ DEFINE_ACTION
 
 DEFINE_ACTION
     (MakeClassStatement, Statement *,
+     DecoratorList *, decoratorList,
      Token *, nameToken, ArgumentList *, argumentList, Block *, block)
 {
     Statement *result = nullptr;
@@ -934,7 +937,8 @@ DEFINE_ACTION
                     ReportError("Invalid type for base class");
             }
 
-            result = new ClassStatement(*nameToken, argument, block);
+            result = new ClassStatement
+                (decoratorList, *nameToken, argument, block);
         }
         catch (const string &error)
         {
@@ -970,6 +974,39 @@ DEFINE_ACTION
     (AssignStatement, Statement *, Statement *, statement)
 {
     return statement;
+}
+
+DEFINE_ACTION
+    (MakeEmptyDecoratorList, DecoratorList *, int, _)
+{
+    return new DecoratorList;
+}
+
+DEFINE_ACTION
+    (AddDecoratorToList, DecoratorList *,
+     DecoratorList *, decoratorList, Expression *, decoratorExpression)
+{
+    if (decoratorList != nullptr && decoratorExpression != nullptr)
+    {
+        try
+        {
+            decoratorList->Add(decoratorExpression);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return decoratorList;
+}
+
+DEFINE_ACTION
+    (MakeDecorator, Expression *, Token *, token, Expression *, expression)
+{
+    (SourceElement &)*expression = *token;
+    delete token;
+    return expression;
 }
 
 DEFINE_ACTION

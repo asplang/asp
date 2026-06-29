@@ -127,6 +127,19 @@ void BlockStatement::MoveStatements(Block *destinationBlock)
     block->statements.clear();
 }
 
+DecoratorList::~DecoratorList()
+{
+    for (auto &expression: expressions)
+        delete expression;
+}
+
+void DecoratorList::Add(Expression *expression)
+{
+    if (expressions.empty())
+        (SourceElement &)*this = *expression;
+    expressions.push_back(expression);
+}
+
 ExpressionStatement::ExpressionStatement(Expression *expression) :
     Statement(*expression),
     expression(expression)
@@ -602,8 +615,10 @@ void ParameterList::Parent(const Statement *statement) const
 }
 
 DefStatement::DefStatement
-    (const Token &nameToken, ParameterList *parameterList, Block *block) :
+    (DecoratorList *decoratorList,
+     const Token &nameToken, ParameterList *parameterList, Block *block) :
     Statement(nameToken),
+    decoratorList(decoratorList),
     name(nameToken.s),
     parameterList(parameterList),
     block(block)
@@ -614,6 +629,7 @@ DefStatement::DefStatement
 
 DefStatement::~DefStatement()
 {
+    delete decoratorList;
     delete parameterList;
     delete block;
 }
@@ -621,8 +637,10 @@ DefStatement::~DefStatement()
 #ifdef ASP_FEATURE_CLASS
 
 ClassStatement::ClassStatement
-    (const Token &nameToken, Argument *baseClassArgument, Block *block) :
+    (DecoratorList *decoratorList,
+     const Token &nameToken, Argument *baseClassArgument, Block *block) :
     Statement(nameToken),
+    decoratorList(decoratorList),
     name(nameToken.s),
     baseClassArgument(baseClassArgument),
     block(block)
@@ -634,6 +652,7 @@ ClassStatement::ClassStatement
 
 ClassStatement::~ClassStatement()
 {
+    delete decoratorList;
     delete baseClassArgument;
     delete block;
 }
