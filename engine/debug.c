@@ -144,6 +144,9 @@ static TypeName gTypeNames[] =
     {DataType_AppPointerObject, "app-ptr"},
     {DataType_Type, "type"},
 
+    /* Internal objects. */
+    {DataType_Namespace, "ns"},
+
     /* Support types. */
     {DataType_StackEntry, "stkent"},
     {DataType_Frame, "frame"},
@@ -155,7 +158,6 @@ static TypeName gTypeNames[] =
     {DataType_StringFragment, "strfrag"},
     {DataType_KeyValuePair, "kvp"},
     {DataType_NameValuePair, "nvp"},
-    {DataType_Namespace, "ns"},
     {DataType_SetNode, "snode"},
     {DataType_DictionaryNode, "dnode"},
     {DataType_NamespaceNode, "nsnode"},
@@ -395,12 +397,6 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetFrameReturnAddress(entry),
                 AspDataGetFrameModuleIndex(entry),
                 AspDataGetFrameLocalNamespaceIndex(entry));
-            #ifdef ASP_FEATURE_CLASS
-            uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
-            if (contextIndex)
-                fprintf(fp, " ctx=0x%07X", contextIndex);
-            #endif
-
             break;
         }
 

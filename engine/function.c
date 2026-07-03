@@ -445,6 +445,9 @@ AspRunResult AspCallCallable
             (frame, AspIndex(engine, engine->module));
         AspDataSetFrameLocalNamespaceIndex
             (frame, AspIndex(engine, engine->localNamespace));
+        AspDataEntry *newTop = AspPush(engine, frame);
+        if (newTop == 0)
+            return AspRunResult_OutOfDataMemory;
         #ifdef ASP_FEATURE_CLASS
         if (cls != 0 || instance != 0)
         {
@@ -470,12 +473,10 @@ AspRunResult AspCallCallable
             AspDataSetContextInstanceIndex(context, AspIndex(engine, instance));
             AspDataSetContextInitializeInstanceFlag
                 (context, initializeInstance);
-            AspDataSetFrameContextIndex(frame, AspIndex(engine, context));
+            AspDataSetStackEntryHasValue2(newTop, true);
+            AspDataSetStackEntryValue2Index(newTop, AspIndex(engine, context));
         }
         #endif
-        const AspDataEntry *newTop = AspPush(engine, frame);
-        if (newTop == 0)
-            return AspRunResult_OutOfDataMemory;
         if (fromApp)
         {
             AspDataEntry *appFrame = AspAllocEntry(engine, DataType_AppFrame);
@@ -976,17 +977,21 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
 
     #ifdef ASP_FEATURE_CLASS
 
+    AspDataEntry *context = 0;
     uint32_t instanceIndex = 0;
     bool instanceInitialized = false;
-    uint32_t contextIndex = AspDataGetFrameContextIndex(frame);
-    if (contextIndex != 0)
+    if (engine->stackTop != 0 &&
+        AspDataGetStackEntryHasValue2(engine->stackTop))
     {
         if (!AspIsFeature(engine, AspFeatureBit_Class))
             return AspRunResult_InternalError;
 
-        const AspDataEntry *context = AspEntry(engine, contextIndex);
+        context = AspEntry
+            (engine, AspDataGetStackEntryValue2Index(engine->stackTop));
         instanceIndex = AspDataGetContextInstanceIndex(context);
         instanceInitialized = AspDataGetContextInitializeInstanceFlag(context);
+        AspDataSetStackEntryHasValue2(engine->stackTop, false);
+        AspDataSetStackEntryValue2Index(engine->stackTop, 0);
     }
 
     /* Replace the return value with a class instance if specified. */
@@ -1017,6 +1022,10 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
     /* Pop the frame off the stack. */
     AspPop(engine);
     AspUnref(engine, frame);
+    #ifdef ASP_FEATURE_CLASS
+    if (context)
+        AspUnref(engine, context);
+    #endif
     if (engine->runResult != AspRunResult_OK)
         return engine->runResult;
 

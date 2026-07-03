@@ -286,31 +286,25 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 const AspDataEntry *module = AspValueEntry
                     (engine, AspDataGetFrameModuleIndex(entry));
                 AspPushNoUse(engine, module);
-
-                #ifdef ASP_FEATURE_CLASS
-                uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
-                if (contextIndex != 0)
-                {
-                    if (!AspIsFeature(engine, AspFeatureBit_Class))
-                    {
-                        engine->runResult = AspRunResult_UnexpectedType;
-                        break;
-                    }
-
-                    AspDataEntry *context = AspEntry(engine, contextIndex);
-
-                    const AspDataEntry *cls = AspValueEntry
-                        (engine, AspDataGetContextClassIndex(context));
-                    AspPushNoUse(engine, cls);
-
-                    const AspDataEntry *instance = AspValueEntry
-                        (engine, AspDataGetContextInstanceIndex(context));
-                    AspPushNoUse(engine, instance);
-
-                    AspUnref(engine, context);
-                }
-                #endif
             }
+            #ifdef ASP_FEATURE_CLASS
+            else if (t == DataType_Context)
+            {
+                if (!AspIsFeature(engine, AspFeatureBit_Class))
+                {
+                    engine->runResult = AspRunResult_UnexpectedType;
+                    break;
+                }
+
+                const AspDataEntry *cls = AspValueEntry
+                    (engine, AspDataGetContextClassIndex(entry));
+                AspPushNoUse(engine, cls);
+
+                const AspDataEntry *instance = AspValueEntry
+                    (engine, AspDataGetContextInstanceIndex(entry));
+                AspPushNoUse(engine, instance);
+            }
+            #endif
             else if (t == DataType_KeyValuePair)
             {
                 AspDataEntry *key = AspValueEntry

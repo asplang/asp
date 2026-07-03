@@ -41,12 +41,17 @@ typedef enum
     DataType_Super = 0x1E,
     #endif
     DataType_Function = 0x1F,
-    DataType_Module = 0x20,
+    DataType_Module = 0x22,
     DataType_ReverseIterator = 0x25,
     DataType_ForwardIterator = 0x26,
     DataType_AppIntegerObject = 0x2A,
     DataType_AppPointerObject = 0x2B,
     DataType_Type = 0x2F,
+
+    /* Internal object types. */
+    DataType_Namespace = 0x30,
+
+    /* Mask for distinguishing object types. */
     DataType_ObjectMask = 0x3F,
 
     /* Support types. */
@@ -60,7 +65,6 @@ typedef enum
     DataType_StringFragment = 0x64,
     DataType_KeyValuePair = 0x66,
     DataType_NameValuePair = 0x68,
-    DataType_Namespace = 0x70,
     DataType_SetNode = 0x74,
     DataType_DictionaryNode = 0x78,
     DataType_NamespaceNode = 0x7C,
@@ -444,12 +448,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord2((eptr), (value)))
 #define AspDataGetFrameLocalNamespaceIndex(eptr) \
     (AspDataGetWord2((eptr)))
-#ifdef ASP_FEATURE_CLASS
-#define AspDataSetFrameContextIndex(eptr, value) \
-    (AspDataSetWord3((eptr), (value)))
-#define AspDataGetFrameContextIndex(eptr) \
-    (AspDataGetWord3((eptr)))
-#endif
 
 #ifdef ASP_FEATURE_CLASS
 

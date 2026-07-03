@@ -34,14 +34,12 @@ AspSuperResult AspSuperCreate
         {
             AspDataEntry *entry = AspValueEntry
                 (engine, AspDataGetStackEntryValueIndex(stackEntry));
-            if (AspDataGetType(entry) == DataType_Frame)
+            if (AspDataGetType(entry) == DataType_Frame &&
+                AspDataGetStackEntryHasValue2(stackEntry))
             {
-                uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
-                if (contextIndex != 0)
-                {
-                    context = AspEntry(engine, contextIndex);
-                    break;
-                }
+                context = AspEntry
+                    (engine, AspDataGetStackEntryValue2Index(stackEntry));
+                break;
             }
         }
         if (iterationCount >= engine->cycleDetectionLimit)
