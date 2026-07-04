@@ -593,6 +593,11 @@ static int main1(int argc, char **argv)
 
         } while (!errorDetected && token->type != 0);
 
+        if (token->type == 0) {
+            // Delete EOF token.
+            delete token;
+        }
+
         ParseFree(parser, free);
     }
 
