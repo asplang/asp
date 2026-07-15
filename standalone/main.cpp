@@ -828,7 +828,12 @@ int main(int argc, char **argv)
 
     CloseFiles(openedFiles);
 
-    return runResult == AspRunResult_Complete ? 0 : 2;
+    return
+        runResult == AspRunResult_Complete
+        #ifdef ASP_DEBUG
+        || stepCountLimit != UINT_MAX && runResult == AspRunResult_OK
+        #endif
+        ? 0 : 2;
 }
 
 static AspRunResult LoadCodePage
