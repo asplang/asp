@@ -2007,9 +2007,17 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_MKFUN:
+        #ifdef ASP_FEATURE_CLASS
+        case OpCode_MKCFUN:
+        #endif
         {
             #ifdef ASP_DEBUG
-            fputs("MKFUN ", engine->traceFile);
+            fprintf
+                (engine->traceFile, "%s ",
+                 #ifdef ASP_FEATURE_CLASS
+                 opCode == OpCode_MKCFUN ? "MKCFUN" :
+                 #endif
+                 "MKFUN");
             #endif
 
             /* Fetch the code address from the operand. */

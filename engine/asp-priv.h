@@ -134,6 +134,9 @@ struct AspEngine
     /* Current namespaces. */
     AspDataEntry *systemNamespace, *globalNamespace, *localNamespace;
 
+    /* Closure management. */
+    AspDataEntry *localClosures;
+
     /* Application specification (functions). */
     const AspAppSpec *appSpec;
 

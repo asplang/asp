@@ -67,6 +67,13 @@ void AspDump(const AspEngine *engine, FILE *fp)
     fprintf
         (fp, "Current local namespace: 0x%07X\n",
          AspIndex(engine, engine->localNamespace));
+    fputs("Current local closures: ", fp);
+    if (engine->localClosures == 0)
+        fputs("none", fp);
+    else
+        fprintf
+            (fp, "0x%07X", AspIndex(engine, engine->localClosures));
+    fputc('\n', fp);
 }
 
 static void DumpData(const AspEngine *engine, FILE *fp)

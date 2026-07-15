@@ -398,7 +398,8 @@ void GlobalStatement::Emit(Executable &executable) const
         ostringstream oss;
         oss << "Enable global override for variable " << name;
         executable.Insert
-            (new GlobalInstruction(symbol, false, oss.str()),
+            (new ScopeInstruction
+                (symbol, ScopeInstruction::Type::Global, oss.str()),
              sourceLocation);
     }
 }
@@ -418,7 +419,8 @@ void LocalStatement::Emit(Executable &executable) const
         ostringstream oss;
         oss << "Disable global override for variable " << name;
         executable.Insert
-            (new GlobalInstruction(symbol, true, oss.str()),
+            (new ScopeInstruction
+                (symbol, ScopeInstruction::Type::Local, oss.str()),
              sourceLocation);
     }
 }
@@ -813,7 +815,11 @@ void DefStatement::Emit(Executable &executable) const
     decoratorList->EmitPreamble(executable);
     parameterList->Emit(executable);
     executable.Insert
-        (new MakeFunctionInstruction(entryLocation, "Make function"),
+        (new MakeFunctionInstruction(entryLocation
+         #ifdef ASP_FEATURE_CLASS
+         , false
+         #endif
+         , "Make function"),
          sourceLocation);
     decoratorList->EmitPostamble(executable);
 
@@ -872,7 +878,8 @@ void ClassStatement::Emit(Executable &executable) const
         (new PushParameterListInstruction("Push empty parameter list"),
          sourceLocation);
     executable.Insert
-        (new MakeFunctionInstruction(entryLocation, "Make class function"),
+        (new MakeFunctionInstruction
+            (entryLocation, true, "Make class function"),
          sourceLocation);
 
     executable.Insert

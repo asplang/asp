@@ -240,6 +240,9 @@ void SimpleInstruction::PrintCode(ostream &os) const
         #endif
         {OpCode_MKOBJ, "MKOBJ"},
         {OpCode_MKFUN, "MKFUN"},
+        #ifdef ASP_FEATURE_CLASS
+        {OpCode_MKCFUN, "MKCFUN"},
+        #endif
         {OpCode_MKKVP, "MKKVP"},
         {OpCode_MKR0, "MKR0"},
         {OpCode_MKRS, "MKRS"},
@@ -583,12 +586,15 @@ EraseInstruction::EraseInstruction(const string &comment) :
 {
 }
 
-GlobalInstruction::GlobalInstruction
-    (int32_t symbol, bool local, const string &comment) :
+ScopeInstruction::ScopeInstruction
+    (int32_t symbol, Type type, const string &comment) :
     Instruction
-        (local ?
+        (type == Type::Local ?
             (OperandSize(symbol) <= 1 ? OpCode_LOC1 :
              OperandSize(symbol) == 2 ? OpCode_LOC2 : OpCode_LOC4) :
+         type == Type::Nonlocal ?
+            (OperandSize(symbol) <= 1 ? OpCode_NLOC1 :
+             OperandSize(symbol) == 2 ? OpCode_NLOC2 : OpCode_NLOC4) :
             (OperandSize(symbol) <= 1 ? OpCode_GLOB1 :
              OperandSize(symbol) == 2 ? OpCode_GLOB2 : OpCode_GLOB4),
          comment),
@@ -596,24 +602,28 @@ GlobalInstruction::GlobalInstruction
 {
 }
 
-unsigned GlobalInstruction::OperandsSize() const
+unsigned ScopeInstruction::OperandsSize() const
 {
     return max(1U, OperandSize(symbol));
 }
 
-void GlobalInstruction::WriteOperands(ostream &os) const
+void ScopeInstruction::WriteOperands(ostream &os) const
 {
     uint32_t uSymbol = *reinterpret_cast<const uint32_t *>(&symbol);
     WriteField(os, uSymbol, OperandsSize());
 }
 
-void GlobalInstruction::PrintCode(ostream &os) const
+void ScopeInstruction::PrintCode(ostream &os) const
 {
-    bool local =
-        OpCode() == OpCode_LOC1 ||
-        OpCode() == OpCode_LOC2 ||
-        OpCode() == OpCode_LOC4;
-    os << (local ? "LOC" : "GLOB") << ' ' << symbol;
+    bool nonlocal =
+        OpCode() == OpCode_NLOC1 ||
+        OpCode() == OpCode_NLOC2 ||
+        OpCode() == OpCode_NLOC4;
+    bool global =
+        OpCode() == OpCode_GLOB1 ||
+        OpCode() == OpCode_GLOB2 ||
+        OpCode() == OpCode_GLOB4;
+    os << (global ? "GLOB" : nonlocal ? "NLOC" : "LOC") << ' ' << symbol;
 }
 
 StartIteratorInstruction::StartIteratorInstruction
@@ -843,8 +853,17 @@ MakeObjectInstruction::MakeObjectInstruction
 }
 
 MakeFunctionInstruction::MakeFunctionInstruction
-    (const Executable::Location &location, const string &comment) :
-    SimpleInstruction(OpCode_MKFUN, location, comment)
+    (const Executable::Location &location
+     #ifdef ASP_FEATURE_CLASS
+     , bool cls
+     #endif
+     , const string &comment) :
+    SimpleInstruction
+        (
+        #ifdef ASP_FEATURE_CLASS
+        cls ? OpCode_MKCFUN :
+        #endif
+        OpCode_MKFUN, location, comment)
 {
 }
 

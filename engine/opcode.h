@@ -94,13 +94,16 @@ typedef enum OpCode
     OpCode_DEL2 = 0x8E, /* delete variable with 2-byte symbol */
     OpCode_DEL4 = 0x8F, /* delete variable with 4-byte symbol */
 
-    /* Global override operations. */
+    /* Scope override operations. */
     OpCode_GLOB1 = 0x91, /* 1-byte symbol global override */
     OpCode_GLOB2 = 0x92, /* 2-byte symbol global override */
     OpCode_GLOB4 = 0x93, /* 4-byte symbol global override */
-    OpCode_LOC1 = 0x95, /* cancel 1-byte symbol global override */
-    OpCode_LOC2 = 0x96, /* cancel 2-byte symbol global override */
-    OpCode_LOC4 = 0x97, /* cancel 4-byte symbol global override */
+    OpCode_NLOC1 = 0x95, /* 1-byte symbol nonlocal override */
+    OpCode_NLOC2 = 0x96, /* 2-byte symbol nonlocal override */
+    OpCode_NLOC4 = 0x97, /* 4-byte symbol nonlocal override */
+    OpCode_LOC1 = 0x99, /* cancel 1-byte symbol scope override */
+    OpCode_LOC2 = 0x9A, /* cancel 2-byte symbol scope override */
+    OpCode_LOC4 = 0x9B, /* cancel 4-byte symbol scope override */
 
     /* Iterator operations. */
     OpCode_SITER = 0xA0, /* start iterator */
@@ -164,6 +167,9 @@ typedef enum OpCode
 
     /* Function definition operations. */
     OpCode_MKFUN = 0xE0, /* make function with 4-byte code address */
+    #ifdef ASP_FEATURE_CLASS
+    OpCode_MKCFUN = 0xE1, /* make class function with 4-byte code address */
+    #endif
 
     /* Dictionary entry operations. */
     OpCode_MKKVP = 0xE2, /* make key/value pair */

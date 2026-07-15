@@ -368,12 +368,20 @@ class EraseInstruction : public SimpleInstruction
             (const std::string &comment = "");
 };
 
-class GlobalInstruction : public Instruction
+class ScopeInstruction : public Instruction
 {
     public:
 
-        GlobalInstruction
-            (std::int32_t symbol, bool local,
+        enum class Type
+        {
+            Local,
+            Nonlocal,
+            Global,
+        };
+
+
+        ScopeInstruction
+            (std::int32_t symbol, Type type,
              const std::string &comment = "");
 
     protected:
@@ -581,7 +589,11 @@ class MakeFunctionInstruction : public SimpleInstruction
     public:
 
         explicit MakeFunctionInstruction
-            (const Executable::Location &, const std::string &comment = "");
+            (const Executable::Location &
+             #ifdef ASP_FEATURE_CLASS
+             , bool cls = false
+             #endif
+             , const std::string &comment = "");
 };
 
 class MakeNameValuePairInstruction : public Instruction
