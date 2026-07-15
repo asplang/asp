@@ -542,17 +542,23 @@ static int main1(int argc, char **argv)
 
         void *parser = ParseAlloc(malloc, &compiler);
 
-        Token *token;
+        int tokenType;
         do
         {
-            token = lexer.Next();
+            auto token = lexer.Next();
+            tokenType = token->type;
+            compiler.SetSourceLocation(token->sourceLocation);
             string error;
-            switch (token->type)
+            switch (tokenType)
             {
                 default:
                     break;
                 case -1:
                     error = "Bad token encountered";
+                    break;
+                case 0:
+                    delete token;
+                    token = nullptr;
                     break;
                 case TOKEN_UNEXPECTED_INDENT:
                     error = "Unexpected indentation";
@@ -585,13 +591,11 @@ static int main1(int argc, char **argv)
                 break;
             }
 
-            compiler.SetSourceLocation(token->sourceLocation);
-
-            Parse(parser, token->type, token);
+            Parse(parser, tokenType, token);
             if (compiler.ErrorCount() > 0)
                 errorDetected = true;
 
-        } while (!errorDetected && token->type != 0);
+        } while (!errorDetected && tokenType != 0);
 
         ParseFree(parser, free);
     }

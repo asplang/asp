@@ -390,8 +390,15 @@ static int main1(int argc, char **argv)
         {
             auto &activeSourceFile = activeSourceFiles.back();
 
-            Token *token = activeSourceFile.lexer->Next();
-            if (token->type == -1)
+            auto token = activeSourceFile.lexer->Next();
+            auto tokenType = token->type;
+            generator.SetSourceLocation(token->sourceLocation);
+            if (tokenType == 0)
+            {
+                delete token;
+                token = nullptr;
+            }
+            if (tokenType == -1)
             {
                 cerr
                     << token->sourceLocation.fileName << ':'
@@ -407,9 +414,7 @@ static int main1(int argc, char **argv)
                 break;
             }
 
-            generator.SetSourceLocation(token->sourceLocation);
-
-            Parse(activeSourceFile.parser, token->type, token);
+            Parse(activeSourceFile.parser, tokenType, token);
             if (generator.ErrorCount() > 0)
             {
                 errorDetected = true;
@@ -417,7 +422,7 @@ static int main1(int argc, char **argv)
             }
 
             // Check for end of source file.
-            if (token->type == 0)
+            if (tokenType == 0)
             {
                 // We're done with the current source file.
                 auto oldSourceLocation = activeSourceFile.oldSourceLocation;
