@@ -390,14 +390,20 @@ static int main1(int argc, char **argv)
         {
             auto &activeSourceFile = activeSourceFiles.back();
 
-            Token *token = activeSourceFile.lexer->Next();
+            auto token = activeSourceFile.lexer->Next();
+            auto tokenType = token->type;
+            generator.SetSourceLocation(token->sourceLocation);
             string error;
-            switch (token->type)
+            switch (tokenType)
             {
                 default:
                     break;
                 case -1:
                     error = "Bad token encountered";
+                    break;
+                case 0:
+                    delete token;
+                    token = nullptr;
                     break;
                 case TOKEN_UNEXPECTED_INDENT:
                     error = "Unexpected indentation";
@@ -430,9 +436,7 @@ static int main1(int argc, char **argv)
                 break;
             }
 
-            generator.SetSourceLocation(token->sourceLocation);
-
-            Parse(activeSourceFile.parser, token->type, token);
+            Parse(activeSourceFile.parser, tokenType, token);
             if (generator.ErrorCount() > 0)
             {
                 errorDetected = true;
@@ -440,7 +444,7 @@ static int main1(int argc, char **argv)
             }
 
             // Check for end of source file.
-            if (token->type == 0)
+            if (tokenType == 0)
             {
                 // We're done with the current source file.
                 auto oldSourceLocation = activeSourceFile.oldSourceLocation;
