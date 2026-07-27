@@ -68,6 +68,7 @@ if(BUILD_FOR_TARGET)
         compare.c
         operation.c
         function.c
+        closure.c
         arguments.c
         member.c
         lib-sys.c

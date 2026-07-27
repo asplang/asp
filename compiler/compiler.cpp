@@ -610,6 +610,25 @@ DEFINE_ACTION
 }
 
 DEFINE_ACTION
+    (MakeNonlocalStatement, Statement *,
+     VariableList *, variableList)
+{
+    if (variableList != nullptr)
+    {
+        try
+        {
+            return new NonlocalStatement(variableList);
+        }
+        catch (const string &error)
+        {
+            ReportError(error);
+        }
+    }
+
+    return nullptr;
+}
+
+DEFINE_ACTION
     (MakeLocalStatement, Statement *,
      VariableList *, variableList)
 {

@@ -13,6 +13,7 @@
 #include "iterator.h"
 #include "assign.h"
 #include "function.h"
+#include "closure.h"
 #include "member.h"
 #include "operation.h"
 #include "reserved.h"
@@ -668,10 +669,10 @@ static AspRunResult Step(AspEngine *engine)
             fputs("LD ", engine->traceFile);
             #endif
 
-            /* Fetch the variable's symbol from the operand. */
             int32_t variableSymbol;
             if (operandSize > 0)
             {
+                /* Fetch the variable's symbol from the operand. */
                 AspRunResult operandLoadResult = LoadSignedWordOperand
                     (engine, operandSize, &variableSymbol);
                 if (operandLoadResult != AspRunResult_OK)
@@ -701,15 +702,28 @@ static AspRunResult Step(AspEngine *engine)
             #endif
 
             /* Look up the variable, trying first the local namespace, and
-               then failing that, the global and system namespaces in turn.
-               Note that a local variable can also defer to the global
-               namespace via a global override. */
+               then failing that, the nonlocal, global, and system namespaces
+               in turn. Note that a local variable can also defer to the
+               nonlocal or global namespace via a scope override. */
             AspTreeResult findResult = AspFindSymbol
                 (engine, engine->localNamespace, variableSymbol);
             if (findResult.result != AspRunResult_OK)
                 return findResult.result;
-            if ((findResult.node == 0 ||
-                 AspDataGetNamespaceNodeIsGlobal(findResult.node)) &&
+            bool nonlocalOverride = false, globalOverride = false;
+            if (findResult.node != 0)
+            {
+                nonlocalOverride = AspDataGetNamespaceNodeIsNonlocal
+                    (findResult.node);
+                globalOverride = AspDataGetNamespaceNodeIsGlobal
+                    (findResult.node);
+            }
+            if (findResult.node == 0 || nonlocalOverride)
+            {
+                findResult = AspSearchNonlocal(engine, variableSymbol, 0);
+                if (findResult.node == 0 && nonlocalOverride)
+                    return AspRunResult_NameNotFound;
+            }
+            if ((findResult.node == 0 || globalOverride) &&
                 engine->globalNamespace != engine->localNamespace)
             {
                 findResult = AspFindSymbol
@@ -717,7 +731,7 @@ static AspRunResult Step(AspEngine *engine)
                 if (findResult.result != AspRunResult_OK)
                     return findResult.result;
             }
-            if (findResult.node == 0)
+            if (findResult.node == 0 && !nonlocalOverride && !globalOverride)
             {
                 findResult = AspFindSymbol
                     (engine, engine->systemNamespace, variableSymbol);
@@ -795,11 +809,22 @@ static AspRunResult Step(AspEngine *engine)
                 return insertResult.result;
             const AspDataEntry *node = insertResult.node;
 
-            /* Set the scope usage for the newly created variable. */
-            if (AspDataGetNamespaceNodeIsGlobal(node) &&
-                engine->localNamespace != engine->globalNamespace)
+            /* Apply any scope override if present. */
+            if (AspDataGetNamespaceNodeIsNonlocal(node))
             {
-                /* Use global scope because of global override. */
+                /* Search for a nonlocal variable. */
+                AspTreeResult findResult = AspSearchNonlocal
+                    (engine, variableSymbol, 0);
+                if (findResult.result != AspRunResult_OK)
+                    return findResult.result;
+                if (findResult.node == 0)
+                    return AspRunResult_NameNotFound;
+                insertResult.node = findResult.node;
+            }
+            else if (AspDataGetNamespaceNodeIsGlobal(node) &&
+                     engine->localNamespace != engine->globalNamespace)
+            {
+                /* Use the global scope. */
                 insertResult = AspTreeTryInsertBySymbol
                     (engine, engine->globalNamespace,
                      variableSymbol, engine->noneSingleton);
@@ -970,8 +995,8 @@ static AspRunResult Step(AspEngine *engine)
                                 startValue : startValue + 1;
                             AspDataEntry *selectedElement = 0;
                             uint32_t iterationCount = 0;
-                            for (AspSequenceResult nextResult =
-                                 AspSequenceNext(engine, container, 0, right);
+                            for (AspSequenceResult nextResult = AspSequenceNext
+                                    (engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
                                  (!bounded ||
@@ -1133,16 +1158,31 @@ static AspRunResult Step(AspEngine *engine)
                 return findResult.result;
             const AspDataEntry *node = findResult.node;
 
-            /* Check whether there is a global override in place. */
-            if (node != 0 && AspDataGetNamespaceNodeIsGlobal(node) &&
-                engine->globalNamespace != engine->localNamespace)
+            /* Check whether there is a scope override in place. */
+            if (node != 0)
             {
-                ns = engine->globalNamespace;
-                findResult = AspFindSymbol
-                    (engine, ns, variableSymbol);
-                if (findResult.result != AspRunResult_OK)
-                    return findResult.result;
-                node = findResult.node;
+                if (AspDataGetNamespaceNodeIsNonlocal(node))
+                {
+                    /* Locate the first occurance of the variable in the chain
+                       of nonlocal namespaces, noting in which one it was
+                       found. */
+                    AspTreeResult findResult = AspSearchNonlocal
+                        (engine, variableSymbol, &ns);
+                    if (findResult.result != AspRunResult_OK)
+                        return findResult.result;
+                   node = findResult.node;
+                }
+                else if (AspDataGetNamespaceNodeIsGlobal(node) &&
+                         engine->globalNamespace != engine->localNamespace)
+                {
+                    /* Look up the variable in the global namespace. */
+                    ns = engine->globalNamespace;
+                    findResult = AspFindSymbol
+                        (engine, ns, variableSymbol);
+                    if (findResult.result != AspRunResult_OK)
+                        return findResult.result;
+                    node = findResult.node;
+                }
             }
 
             /* Ensure the variable was found. */
@@ -1159,14 +1199,31 @@ static AspRunResult Step(AspEngine *engine)
         }
 
         case OpCode_GLOB4:
+        case OpCode_NLOC4:
+        case OpCode_LOC4:
             operandSize += 2;
         case OpCode_GLOB2:
+        case OpCode_NLOC2:
+        case OpCode_LOC2:
             operandSize++;
         case OpCode_GLOB1:
+        case OpCode_NLOC1:
+        case OpCode_LOC1:
             operandSize++;
         {
+            bool isGlobal =
+                opCode == OpCode_GLOB1 ||
+                opCode == OpCode_GLOB2 ||
+                opCode == OpCode_GLOB4;
+            bool isNonlocal =
+                opCode == OpCode_NLOC1 ||
+                opCode == OpCode_NLOC2 ||
+                opCode == OpCode_NLOC4;
+
             #ifdef ASP_DEBUG
-            fputs("GLOB ", engine->traceFile);
+            fprintf
+                (engine->traceFile, "%s ",
+                 isGlobal ? "GLOB" : isNonlocal ? "NLOC" : "LOC");
             #endif
 
             /* Fetch the variable's symbol from the operand. */
@@ -1195,16 +1252,21 @@ static AspRunResult Step(AspEngine *engine)
             if (findResult.result != AspRunResult_OK)
                 return findResult.result;
             AspDataEntry *node = findResult.node;
-            if (node != 0)
+
+            /* For a nonlocal override, ensure that a variable exists somewhere
+               in the chain of nonlocal namespaces. */
+            if (isNonlocal)
             {
-                /* Ensure the variable is not already marked as global. */
-                if (AspDataGetNamespaceNodeIsGlobal(node))
-                    return AspRunResult_Redundant;
+                AspTreeResult nonlocalFindResult = AspSearchNonlocal
+                    (engine, variableSymbol, 0);
+                if (nonlocalFindResult.node == 0)
+                    return AspRunResult_NameNotFound;
             }
-            else
+
+            /* For any scope override, create a temporary local variable as a
+               reference to the applicable namespace if necessary. */
+            if ((isGlobal || isNonlocal) && node == 0)
             {
-                /* Create a temporary local variable as a reference to the
-                   global namespace. */
                 AspTreeResult insertResult = AspTreeTryInsertBySymbol
                     (engine, engine->localNamespace,
                      variableSymbol, engine->noneSingleton);
@@ -1214,68 +1276,38 @@ static AspRunResult Step(AspEngine *engine)
                 AspDataSetNamespaceNodeIsNotLocal(node, true);
             }
 
-            /* Mark the variable with a global override. */
-            AspDataSetNamespaceNodeIsGlobal(node, true);
-
-            break;
-        }
-
-        case OpCode_LOC4:
-            operandSize += 2;
-        case OpCode_LOC2:
-            operandSize++;
-        case OpCode_LOC1:
-            operandSize++;
-        {
-            #ifdef ASP_DEBUG
-            fputs("LOC ", engine->traceFile);
-            #endif
-
-            /* Fetch the variable's symbol from the operand. */
-            int32_t variableSymbol;
-            AspRunResult operandLoadResult = LoadSignedWordOperand
-                (engine, operandSize, &variableSymbol);
-            if (operandLoadResult != AspRunResult_OK)
+            /* Apply or remove the scope override as applicable. */
+            if (isGlobal)
             {
-                #ifdef ASP_DEBUG
-                fputs("?\n", engine->traceFile);
-                #endif
-                return operandLoadResult;
+                AspDataSetNamespaceNodeIsGlobal(node, true);
+                AspDataSetNamespaceNodeIsNonlocal(node, false);
             }
-            #ifdef ASP_DEBUG
-            fprintf(engine->traceFile, "%d\n", variableSymbol);
-            #endif
-
-            /* Ensure we're in the context of a function. */
-            if (engine->localNamespace == 0 ||
-                engine->localNamespace == engine->globalNamespace)
-                return AspRunResult_InvalidContext;
-
-            /* Look up the variable in the local namespace. */
-            AspTreeResult findResult = AspFindSymbol
-                (engine, engine->localNamespace, variableSymbol);
-            if (findResult.result != AspRunResult_OK)
-                return findResult.result;
-            AspDataEntry *node = findResult.node;
-            if (node == 0)
-                return AspRunResult_NameNotFound;
-
-            /* Ensure that a global override is in place. */
-            if (!AspDataGetNamespaceNodeIsGlobal(node))
-                return AspRunResult_Redundant;
-
-            /* Revert the variable's global override, removing the local
-               variable if it didn't exist prior to the global override. */
-            if (AspDataGetNamespaceNodeIsNotLocal(node))
+            else if (isNonlocal)
             {
-                AspRunResult eraseResult = AspTreeEraseNode
-                    (engine, engine->localNamespace, node, true, true);
-                if (eraseResult != AspRunResult_OK)
-                    return eraseResult;
+                AspDataSetNamespaceNodeIsGlobal(node, false);
+                AspDataSetNamespaceNodeIsNonlocal(node, true);
             }
             else
-                AspDataSetNamespaceNodeIsGlobal(node, false);
+            {
+                /* Ensure the variable or scope override exists locally. */
+                if (node == 0)
+                    return AspRunResult_NameNotFound;
 
+                /* Revert the variable's scope override, removing the local
+                   variable if it didn't exist prior to the override. */
+                if (AspDataGetNamespaceNodeIsNotLocal(node))
+                {
+                    AspRunResult eraseResult = AspTreeEraseNode
+                        (engine, engine->localNamespace, node, true, true);
+                    if (eraseResult != AspRunResult_OK)
+                        return eraseResult;
+                }
+                else
+                {
+                    AspDataSetNamespaceNodeIsGlobal(node, false);
+                    AspDataSetNamespaceNodeIsNonlocal(node, false);
+                }
+            }
             break;
         }
 
@@ -1513,6 +1545,10 @@ static AspRunResult Step(AspEngine *engine)
                transferred to the class and will therefore not be destroyed. */
             if (engine->localNamespace != 0)
             {
+                AspRunResult discardResult = AspProcessClosures
+                    (engine, engine->localNamespace);
+                if (discardResult != AspRunResult_OK)
+                    return discardResult;
                 AspUnref(engine, engine->localNamespace);
                 if (engine->runResult != AspRunResult_OK)
                     return engine->runResult;
@@ -1970,6 +2006,8 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetClassBaseClassIndex(cls, AspIndex(engine, baseClass));
 
+            AspProcessClosures(engine, engine->localNamespace);
+
             /* Transfer the local namespace into the class, preventing it from
                destruction when returning from the class definition
                function. */
@@ -2056,6 +2094,39 @@ static AspRunResult Step(AspEngine *engine)
                 (function, AspIndex(engine, engine->module));
             AspDataSetFunctionParametersIndex
                 (function, AspIndex(engine, parameters));
+            #ifdef ASP_FEATURE_CLASS
+            AspDataSetFunctionIsClass(function, opCode == OpCode_MKCFUN);
+            #endif
+
+            /* Wrap the function in a closure if applicable. */
+            bool inFunction =
+                engine->localNamespace != 0 &&
+                AspDataGetNamespaceIsFunction(engine->localNamespace);
+            uint32_t enclosingNamespaceIndex =
+                engine->localNamespace == 0 ? 0 :
+                AspDataGetNamespaceEnclosingNamespaceIndex
+                    (engine->localNamespace);
+            if (inFunction || enclosingNamespaceIndex != 0)
+            {
+                /* Wrap a closure around the function. */
+                AspDataEntry *closure = AspAllocEntry
+                    (engine, DataType_Closure);
+                if (closure == 0)
+                    return AspRunResult_OutOfDataMemory;
+                AspDataSetClosureFunctionIndex
+                    (closure, AspIndex(engine, function));
+                AspDataSetClosureNonlocalNamespaceIndex
+                    (closure,
+                     inFunction ?
+                     AspIndex(engine, engine->localNamespace) :
+                     enclosingNamespaceIndex);
+                function = closure;
+
+                /* Keep track of the locally created closure. */
+                AspRunResult trackResult = AspTrackClosure(engine, closure);
+                if (trackResult != AspRunResult_OK)
+                    return trackResult;
+            }
 
             /* Replace the top stack entry with the function. */
             AspDataSetStackEntryValueIndex
@@ -2790,8 +2861,8 @@ static AspRunResult Step(AspEngine *engine)
                             int32_t select = right ?
                                 startValue : startValue + 1;
                             uint32_t iterationCount = 0;
-                            for (AspSequenceResult nextResult =
-                                 AspSequenceNext(engine, container, 0, right);
+                            for (AspSequenceResult nextResult = AspSequenceNext
+                                    (engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
                                  (!bounded ||
@@ -2915,8 +2986,8 @@ static AspRunResult Step(AspEngine *engine)
                             int32_t select = right ?
                                 startValue : startValue + 1;
                             uint32_t iterationCount = 0;
-                            for (AspSequenceResult nextResult =
-                                 AspSequenceNext(engine, container, 0, right);
+                            for (AspSequenceResult nextResult = AspSequenceNext
+                                    (engine, container, 0, right);
                                  iterationCount < engine->cycleDetectionLimit &&
                                  nextResult.element != 0 &&
                                  (!bounded ||
@@ -3250,8 +3321,7 @@ static AspRunResult LoadSignedOperand
         /* Sign extend if applicable. */
         if (negative)
         {
-            unsigned i = operandSize;
-            for (; i < 4; i++)
+            for (unsigned i = operandSize; i < 4; i++)
                 unsignedOperand |= 0xFFU << (i << 3);
         }
     }

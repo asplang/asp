@@ -168,6 +168,7 @@ ASP_API bool AspIsBoundMethod(const AspDataEntry *);
 ASP_API bool AspIsSuper(const AspDataEntry *);
 #endif
 ASP_API bool AspIsFunction(const AspDataEntry *);
+ASP_API bool AspIsClosure(const AspDataEntry *);
 ASP_API bool AspIsModule(const AspDataEntry *);
 ASP_API bool AspIsReverseIterator(const AspDataEntry *);
 ASP_API bool AspIsForwardIterator(const AspDataEntry *);

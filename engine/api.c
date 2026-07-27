@@ -181,7 +181,16 @@ bool AspIsSuper(const AspDataEntry *entry)
 
 bool AspIsFunction(const AspDataEntry *entry)
 {
-    return entry != 0 && AspDataGetType(entry) == DataType_Function;
+    uint8_t type = AspDataGetType(entry);
+    return
+        entry != 0 &&
+        (type == DataType_Function ||
+         type == DataType_Closure);
+}
+
+bool AspIsClosure(const AspDataEntry *entry)
+{
+    return entry != 0 && AspDataGetType(entry) == DataType_Closure;
 }
 
 bool AspIsModule(const AspDataEntry *entry)

@@ -385,9 +385,20 @@ void ImportStatement::Emit(Executable &executable) const
 
 void GlobalStatement::Emit(Executable &executable) const
 {
-    bool isLocal = ParentDef() != nullptr;
+    // Ensure the global statement is not at the global scope.
+    bool isLocal =
+        ParentDef() != nullptr
+        #ifdef ASP_FEATURE_CLASS
+        || ParentClass() != nullptr
+        #endif
+        ;
     if (!isLocal)
-        ThrowError("global outside function");
+        ThrowError
+            ("global outside function"
+             #ifdef ASP_FEATURE_CLASS
+             " or class"
+             #endif
+            );
 
     for (auto iter = variableList->NamesBegin();
          iter != variableList->NamesEnd(); iter++)
@@ -404,11 +415,23 @@ void GlobalStatement::Emit(Executable &executable) const
     }
 }
 
-void LocalStatement::Emit(Executable &executable) const
+void NonlocalStatement::Emit(Executable &executable) const
 {
-    bool isLocal = ParentDef() != nullptr;
-    if (!isLocal)
-        ThrowError("local outside function");
+    // Ensure the nonlocal statement is in a closure.
+    auto parentStatement = Parent()->Parent();
+    for (;
+         parentStatement != nullptr;
+         parentStatement = parentStatement->Parent()->Parent())
+    {
+        if (dynamic_cast<const DefStatement *>(parentStatement) != nullptr
+        #ifdef ASP_FEATURE_CLASS
+            || dynamic_cast<const ClassStatement *>(parentStatement) != nullptr
+        #endif
+           )
+            break;
+    }
+    if (parentStatement == nullptr || parentStatement->ParentDef() == nullptr)
+        ThrowError("nonlocal outside closure");
 
     for (auto iter = variableList->NamesBegin();
          iter != variableList->NamesEnd(); iter++)
@@ -417,7 +440,39 @@ void LocalStatement::Emit(Executable &executable) const
         auto symbol = executable.Symbol(name);
 
         ostringstream oss;
-        oss << "Disable global override for variable " << name;
+        oss << "Enable nonlocal override for variable " << name;
+        executable.Insert
+            (new ScopeInstruction
+                (symbol, ScopeInstruction::Type::Nonlocal, oss.str()),
+             sourceLocation);
+    }
+}
+
+void LocalStatement::Emit(Executable &executable) const
+{
+    // Ensure the local statement is not at the global scope.
+    bool isLocal =
+        ParentDef() != nullptr
+        #ifdef ASP_FEATURE_CLASS
+        || ParentClass() != nullptr
+        #endif
+        ;
+    if (!isLocal)
+        ThrowError
+            ("local outside function"
+             #ifdef ASP_FEATURE_CLASS
+             " or class"
+             #endif
+            );
+
+    for (auto iter = variableList->NamesBegin();
+         iter != variableList->NamesEnd(); iter++)
+    {
+        const auto &name = *iter;
+        auto symbol = executable.Symbol(name);
+
+        ostringstream oss;
+        oss << "Disable scope override for variable " << name;
         executable.Insert
             (new ScopeInstruction
                 (symbol, ScopeInstruction::Type::Local, oss.str()),
@@ -485,9 +540,23 @@ void DelStatement::Emit1
 void ReturnStatement::Emit(Executable &executable) const
 {
     // Ensure the return statement is within a function definition.
-    const auto *parentDef = ParentDef();
-    auto isLocal = parentDef != nullptr;
-    if (!isLocal)
+    const DefStatement *parentDef = nullptr;
+    for (auto parentStatement = Parent()->Parent();
+         parentStatement != nullptr;
+         parentStatement = parentStatement->Parent()->Parent())
+    {
+        #ifdef ASP_FEATURE_CLASS
+        if (dynamic_cast<const ClassStatement *>(parentStatement) != nullptr)
+            break;
+        #endif
+        auto defStatement = dynamic_cast<const DefStatement *>(parentStatement);
+        if (defStatement != nullptr)
+        {
+            parentDef = defStatement;
+            break;
+        }
+    }
+    if (parentDef == nullptr)
         ThrowError("return outside function");
 
     // Emit pop instructions to pop stack entries for each applicable enclosing

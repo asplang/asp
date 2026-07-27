@@ -41,7 +41,7 @@
 %nonassoc NAME.
 
 // Reserved tokens.
-%token ASSERT CLASS EXCEPT EXEC FINALLY LAMBDA NONLOCAL RAISE TRY WITH YIELD.
+%token ASSERT CLASS EXCEPT EXEC FINALLY LAMBDA RAISE TRY WITH YIELD.
 %token UNEXPECTED_INDENT MISSING_INDENT MISMATCHED_UNINDENT INCONSISTENT_WS.
 
 // Tokens used in different contexts.
@@ -463,6 +463,11 @@ simple_statement(result) ::= import(statement).
 }
 
 simple_statement(result) ::= global(statement).
+{
+    result = ACTION(AssignStatement, statement);
+}
+
+simple_statement(result) ::= nonlocal(statement).
 {
     result = ACTION(AssignStatement, statement);
 }
@@ -1199,6 +1204,13 @@ import_name(result) ::= NAME(nameToken).
 global(result) ::= GLOBAL variables(variableList).
 {
     result = ACTION(MakeGlobalStatement, variableList);
+}
+
+%type nonlocal {Statement *}
+
+nonlocal(result) ::= NONLOCAL variables(variableList).
+{
+    result = ACTION(MakeNonlocalStatement, variableList);
 }
 
 %type local {Statement *}

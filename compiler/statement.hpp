@@ -14,6 +14,9 @@
 class Block;
 class LoopStatement;
 class DefStatement;
+#ifdef ASP_FEATURE_CLASS
+class ClassStatement;
+#endif
 
 class Statement : public NonTerminal
 {
@@ -31,6 +34,9 @@ class Statement : public NonTerminal
 
         const LoopStatement *ParentLoop() const;
         const DefStatement *ParentDef() const;
+        #ifdef ASP_FEATURE_CLASS
+        const ClassStatement *ParentClass() const;
+        #endif
 
     private:
 
@@ -293,6 +299,20 @@ class GlobalStatement : public Statement
 
         explicit GlobalStatement(VariableList *);
         ~GlobalStatement() override;
+
+        void Emit(Executable &) const override;
+
+    private:
+
+        VariableList *variableList;
+};
+
+class NonlocalStatement : public Statement
+{
+    public:
+
+        explicit NonlocalStatement(VariableList *);
+        ~NonlocalStatement() override;
 
         void Emit(Executable &) const override;
 

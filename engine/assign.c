@@ -10,8 +10,7 @@ static AspRunResult CheckSequenceMatch
     (AspEngine *, const AspDataEntry *address, const AspDataEntry *newValue);
 
 AspRunResult AspAssignSimple
-    (AspEngine *engine,
-     AspDataEntry *address, AspDataEntry *newValue)
+    (AspEngine *engine, AspDataEntry *address, AspDataEntry *newValue)
 {
     uint8_t addressType = AspDataGetType(address);
     AspRunResult assertResult = AspAssert
@@ -80,8 +79,7 @@ AspRunResult AspAssignSimple
 }
 
 AspRunResult AspAssignSequence
-    (AspEngine *engine,
-     AspDataEntry *address, AspDataEntry *newValue)
+    (AspEngine *engine, AspDataEntry *address, AspDataEntry *newValue)
 {
     DataType addressType = AspDataGetType(address);
     AspRunResult assertResult = AspAssert
@@ -175,8 +173,7 @@ AspRunResult AspAssignSequence
 }
 
 static AspRunResult CheckSequenceMatch
-    (AspEngine *engine,
-     const AspDataEntry *address, const AspDataEntry *value)
+    (AspEngine *engine, const AspDataEntry *address, const AspDataEntry *value)
 {
     DataType addressType = AspDataGetType(address);
     AspRunResult assertResult = AspAssert

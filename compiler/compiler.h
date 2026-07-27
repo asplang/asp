@@ -137,6 +137,8 @@ class Compiler
     DECLARE_METHOD
         (MakeGlobalStatement, Statement *, VariableList *)
     DECLARE_METHOD
+        (MakeNonlocalStatement, Statement *, VariableList *)
+    DECLARE_METHOD
         (MakeLocalStatement, Statement *, VariableList *)
     DECLARE_METHOD
         (MakeDelStatement, Statement *, Expression *)

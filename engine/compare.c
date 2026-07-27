@@ -118,6 +118,7 @@ AspRunResult AspCompare
                         type == DataType_Super ||
                         #endif
                         type == DataType_Function ||
+                        type == DataType_Closure ||
                         type == DataType_Module ||
                         type == DataType_ReverseIterator ||
                         type == DataType_ForwardIterator ||
@@ -131,6 +132,7 @@ AspRunResult AspCompare
                     if (type == DataType_List ||
                         type == DataType_Set ||
                         type == DataType_Dictionary ||
+                        type == DataType_Closure ||
                         type == DataType_ReverseIterator ||
                         type == DataType_ForwardIterator)
                         return AspRunResult_UnexpectedType;
@@ -482,7 +484,27 @@ AspRunResult AspCompare
                     #endif
 
                     case DataType_Function:
+                    case DataType_Closure:
                     {
+                        uint32_t
+                            leftNonlocalNamespaceIndex = 0,
+                            rightNonlocalNamespaceIndex = 0;
+                        if (type == DataType_Closure)
+                        {
+                            leftNonlocalNamespaceIndex =
+                                AspDataGetClosureNonlocalNamespaceIndex
+                                    (leftEntry);
+                            rightNonlocalNamespaceIndex =
+                                AspDataGetClosureNonlocalNamespaceIndex
+                                    (rightEntry);
+                            leftEntry = AspValueEntry
+                                (engine,
+                                 AspDataGetClosureFunctionIndex(leftEntry));
+                            rightEntry = AspValueEntry
+                                (engine,
+                                 AspDataGetClosureFunctionIndex(rightEntry));
+                        }
+
                         bool
                             leftIsApp = AspDataGetFunctionIsApp(leftEntry),
                             rightIsApp = AspDataGetFunctionIsApp(rightEntry);
@@ -496,7 +518,11 @@ AspRunResult AspCompare
                                 rightSymbol = AspDataGetFunctionSymbol
                                     (rightEntry);
                             comparison =
-                                leftSymbol == rightSymbol ? 0 :
+                                leftSymbol == rightSymbol ?
+                                leftNonlocalNamespaceIndex ==
+                                rightNonlocalNamespaceIndex ? 0 :
+                                leftNonlocalNamespaceIndex <
+                                rightNonlocalNamespaceIndex ? -1 : 1 :
                                 leftSymbol < rightSymbol ? -1 : 1;
                         }
                         else
@@ -507,7 +533,11 @@ AspRunResult AspCompare
                                 rightAddress = AspDataGetFunctionCodeAddress
                                     (rightEntry);
                             comparison =
-                                leftAddress == rightAddress ? 0 :
+                                leftAddress == rightAddress ?
+                                leftNonlocalNamespaceIndex ==
+                                rightNonlocalNamespaceIndex ? 0 :
+                                leftNonlocalNamespaceIndex <
+                                rightNonlocalNamespaceIndex ? -1 : 1 :
                                 leftAddress < rightAddress ? -1 : 1;
                         }
 

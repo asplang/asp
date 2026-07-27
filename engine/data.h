@@ -41,6 +41,7 @@ typedef enum
     DataType_Super = 0x1E,
     #endif
     DataType_Function = 0x1F,
+    DataType_Closure = 0x20,
     DataType_Module = 0x22,
     DataType_ReverseIterator = 0x25,
     DataType_ForwardIterator = 0x26,
@@ -73,6 +74,8 @@ typedef enum
     DataType_ParameterList = 0x81,
     DataType_Argument = 0x82,
     DataType_ArgumentList = 0x83,
+    DataType_ClosureTracker = 0x90,
+    DataType_ClosureTrackerList = 0x91,
     DataType_AppIntegerObjectInfo = 0xAA,
     DataType_AppPointerObjectInfo = 0xAB,
     #ifdef ASP_FEATURE_CLASS
@@ -153,21 +156,21 @@ uint32_t AspDataGetWord3(const AspDataEntry *);
 void AspDataSetSignedWord3(AspDataEntry *, int32_t value);
 int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataSetBit0(eptr, value) \
-    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize), (value)))
+    (AspBitSet(&(eptr)->w.u.u.u0, (AspWordBitSize), (value)))
 #define AspDataGetBit0(eptr) \
-    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize)))
+    (AspBitGet((eptr)->w.u.u.u0, (AspWordBitSize)))
 #define AspDataSetBit1(eptr, value) \
-    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 1, (value)))
+    (AspBitSet(&(eptr)->w.u.u.u0, (AspWordBitSize) + 1, (value)))
 #define AspDataGetBit1(eptr) \
-    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 1))
+    (AspBitGet((eptr)->w.u.u.u0, (AspWordBitSize) + 1))
 #define AspDataSetBit2(eptr, value) \
-    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 2, (value)))
+    (AspBitSet(&(eptr)->w.u.u.u0, (AspWordBitSize) + 2, (value)))
 #define AspDataGetBit2(eptr) \
-    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 2))
+    (AspBitGet((eptr)->w.u.u.u0, (AspWordBitSize) + 2))
 #define AspDataSetBit3(eptr, value) \
-    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 3, (value)))
+    (AspBitSet(&(eptr)->w.u.u.u0, (AspWordBitSize) + 3, (value)))
 #define AspDataGetBit3(eptr) \
-    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 3))
+    (AspBitGet((eptr)->w.u.u.u0, (AspWordBitSize) + 3))
 
 /* Common field access. */
 #define AspDataSetType(eptr, ty) \
@@ -254,6 +257,16 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataGetTreeRootIndex(eptr) \
     (AspDataGetWord1((eptr)))
 
+/* Namespace entry field access. */
+#define AspDataSetNamespaceIsFunction(eptr, value) \
+    (AspDataSetBit0((eptr), (unsigned)(value)))
+#define AspDataGetNamespaceIsFunction(eptr) \
+    ((bool)(AspDataGetBit0((eptr))))
+#define AspDataSetNamespaceEnclosingNamespaceIndex(eptr, value) \
+    (AspDataSetSignedWord3((eptr), (value)))
+#define AspDataGetNamespaceEnclosingNamespaceIndex(eptr) \
+    (AspDataGetSignedWord3((eptr)))
+
 /* Object entry field access. */
 #ifdef ASP_FEATURE_CLASS
 #define AspDataSetObjectClassIndex(eptr, value) \
@@ -309,6 +322,12 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetBit0((eptr), (unsigned)(value)))
 #define AspDataGetFunctionIsApp(eptr) \
     ((bool)(AspDataGetBit0((eptr))))
+#ifdef ASP_FEATURE_CLASS
+#define AspDataSetFunctionIsClass(eptr, value) \
+    (AspDataSetBit1((eptr), (unsigned)(value)))
+#define AspDataGetFunctionIsClass(eptr) \
+    ((bool)(AspDataGetBit1((eptr))))
+#endif
 #define AspDataSetFunctionSymbol(eptr, value) \
     (AspDataSetSignedWord0((eptr), (value)))
 #define AspDataGetFunctionSymbol(eptr) \
@@ -324,6 +343,24 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
 #define AspDataSetFunctionParametersIndex(eptr, value) \
     (AspDataSetWord3((eptr), (value)))
 #define AspDataGetFunctionParametersIndex(eptr) \
+    (AspDataGetWord3((eptr)))
+
+/* Closure entry field access. */
+#define AspDataSetClosureFunctionIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetClosureFunctionIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetClosureNonlocalNamespaceIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetClosureNonlocalNamespaceIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+#define AspDataSetClosureIsDetached(eptr, value) \
+    (AspDataSetBit1((eptr), (unsigned)(value)))
+#define AspDataGetClosureIsDetached(eptr) \
+    ((bool)(AspDataGetBit1((eptr))))
+#define AspDataSetClosureTrackerElementIndex(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetClosureTrackerElementIndex(eptr) \
     (AspDataGetWord3((eptr)))
 
 /* Module entry field access. */
@@ -448,6 +485,10 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord2((eptr), (value)))
 #define AspDataGetFrameLocalNamespaceIndex(eptr) \
     (AspDataGetWord2((eptr)))
+#define AspDataSetFrameClosureTrackerListIndex(eptr, value) \
+    (AspDataSetWord3((eptr), (value)))
+#define AspDataGetFrameClosureTrackerListIndex(eptr) \
+    (AspDataGetWord3((eptr)))
 
 #ifdef ASP_FEATURE_CLASS
 
@@ -576,10 +617,14 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetBit1((eptr), (unsigned)(value)))
 #define AspDataGetNamespaceNodeIsGlobal(eptr) \
     ((bool)(AspDataGetBit1((eptr))))
-#define AspDataSetNamespaceNodeIsNotLocal(eptr, value) \
+#define AspDataSetNamespaceNodeIsNonlocal(eptr, value) \
     (AspDataSetBit2((eptr), (unsigned)(value)))
-#define AspDataGetNamespaceNodeIsNotLocal(eptr) \
+#define AspDataGetNamespaceNodeIsNonlocal(eptr) \
     ((bool)(AspDataGetBit2((eptr))))
+#define AspDataSetNamespaceNodeIsNotLocal(eptr, value) \
+    (AspDataSetBit3((eptr), (unsigned)(value)))
+#define AspDataGetNamespaceNodeIsNotLocal(eptr) \
+    ((bool)(AspDataGetBit3((eptr))))
 
 /* TreeLinksNode entry field access. */
 #define AspDataSetTreeLinksNodeLeftIndex(eptr, value) \
@@ -634,6 +679,20 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetArgumentValueIndex(eptr) \
     (AspDataGetWord1((eptr)))
+
+/* ClosureTracker entry field access. */
+#define AspDataSetClosureTrackerClosureIndex(eptr, value) \
+    (AspDataSetWord0((eptr), (value)))
+#define AspDataGetClosureTrackerClosureIndex(eptr) \
+    (AspDataGetWord0((eptr)))
+#define AspDataSetClosureTrackerListIndex(eptr, value) \
+    (AspDataSetWord1((eptr), (value)))
+#define AspDataGetClosureTrackerListIndex(eptr) \
+    (AspDataGetWord1((eptr)))
+#define AspDataSetClosureTrackerCloneIndex(eptr, value) \
+    (AspDataSetWord2((eptr), (value)))
+#define AspDataGetClosureTrackerCloneIndex(eptr) \
+    (AspDataGetWord2((eptr)))
 
 #ifdef ASP_FEATURE_CLASS
 

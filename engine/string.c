@@ -615,7 +615,11 @@ static AspDataEntry *ToString
             #endif
 
             case DataType_Function:
+            case DataType_Closure:
             {
+                if (type == DataType_Closure)
+                    entry = AspValueEntry
+                        (engine, AspDataGetClosureFunctionIndex(entry));
                 int count = 0;
                 if (AspDataGetFunctionIsApp(entry))
                     count += snprintf
@@ -801,6 +805,8 @@ static const char *TypeString(DataType type)
         #endif
         case DataType_Function:
             return "function";
+        case DataType_Closure:
+            return "closure";
         case DataType_Module:
             return "module";
         case DataType_ReverseIterator:

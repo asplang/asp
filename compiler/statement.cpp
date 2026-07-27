@@ -56,22 +56,30 @@ const LoopStatement *Statement::ParentLoop() const
 const DefStatement *Statement::ParentDef() const
 {
     // Search for parent function definition statement, ending the search
-    // if we reach a class definition or the top level first.
+    // if we reach the top level first.
     const DefStatement *defStatement = nullptr;
     for (auto parentStatement = Parent()->Parent();
          parentStatement != nullptr && defStatement == nullptr;
          defStatement = dynamic_cast<const DefStatement *>(parentStatement),
-         parentStatement = parentStatement->Parent()->Parent())
-    {
-        #ifdef ASP_FEATURE_CLASS
-        auto classStatement =
-            dynamic_cast<const ClassStatement *>(parentStatement);
-        if (classStatement != nullptr)
-            break;
-        #endif
-    }
+         parentStatement = parentStatement->Parent()->Parent()) ;
     return defStatement;
 }
+
+#ifdef ASP_FEATURE_CLASS
+
+const ClassStatement *Statement::ParentClass() const
+{
+    // Search for parent class definition statement, ending the search
+    // if we reach the top level first.
+    const ClassStatement *classStatement = nullptr;
+    for (auto parentStatement = Parent()->Parent();
+         parentStatement != nullptr && classStatement == nullptr;
+         classStatement = dynamic_cast<const ClassStatement *>(parentStatement),
+         parentStatement = parentStatement->Parent()->Parent()) ;
+    return classStatement;
+}
+
+#endif
 
 Block::~Block()
 {
@@ -365,6 +373,17 @@ GlobalStatement::GlobalStatement(VariableList *variableList) :
 }
 
 GlobalStatement::~GlobalStatement()
+{
+    delete variableList;
+}
+
+NonlocalStatement::NonlocalStatement(VariableList *variableList) :
+    Statement(*variableList),
+    variableList(variableList)
+{
+}
+
+NonlocalStatement::~NonlocalStatement()
 {
     delete variableList;
 }

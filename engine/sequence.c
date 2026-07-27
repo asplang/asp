@@ -411,7 +411,8 @@ static bool IsSequenceType(DataType type)
         type == DataType_Tuple ||
         type == DataType_List ||
         type == DataType_ParameterList ||
-        type == DataType_ArgumentList;
+        type == DataType_ArgumentList ||
+        type == DataType_ClosureTrackerList;
 }
 
 static bool IsElementType(DataType type)
