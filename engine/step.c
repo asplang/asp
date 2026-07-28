@@ -807,7 +807,7 @@ static AspRunResult Step(AspEngine *engine)
                  variableSymbol, engine->noneSingleton);
             if (insertResult.result != AspRunResult_OK)
                 return insertResult.result;
-            const AspDataEntry *node = insertResult.node;
+            AspDataEntry *node = insertResult.node;
 
             /* Apply any scope override if present. */
             if (AspDataGetNamespaceNodeIsNonlocal(node))
@@ -819,7 +819,7 @@ static AspRunResult Step(AspEngine *engine)
                     return findResult.result;
                 if (findResult.node == 0)
                     return AspRunResult_NameNotFound;
-                insertResult.node = findResult.node;
+                node = findResult.node;
             }
             else if (AspDataGetNamespaceNodeIsGlobal(node) &&
                      engine->localNamespace != engine->globalNamespace)
@@ -830,11 +830,15 @@ static AspRunResult Step(AspEngine *engine)
                      variableSymbol, engine->noneSingleton);
                 if (insertResult.result != AspRunResult_OK)
                     return insertResult.result;
+                node = insertResult.node;
             }
 
+            /* Mark the variable as undefined if it was created. */
+            if (insertResult.inserted)
+                AspDataSetNamespaceNodeIsUndefined(node, true);
+
             /* Push the variable's tree node to serve as an address. */
-            const AspDataEntry *stackEntry = AspPush
-                (engine, insertResult.node);
+            const AspDataEntry *stackEntry = AspPush(engine, node);
             if (stackEntry == 0)
                 return AspRunResult_OutOfDataMemory;
 
@@ -863,6 +867,7 @@ static AspRunResult Step(AspEngine *engine)
             if (newValue == 0)
                 return AspRunResult_StackUnderflow;
 
+            /* Assign the value. */
             AspRunResult assignResult =
                 AspDataGetType(address) == DataType_Tuple ||
                 AspDataGetType(address) == DataType_List ?
@@ -885,6 +890,10 @@ static AspRunResult Step(AspEngine *engine)
             AspDataEntry *address = AspTopValue(engine);
             if (address == 0)
                 return AspRunResult_StackUnderflow;
+
+            /* Ensure the address has a defined value. */
+            if (AspDataGetNamespaceNodeIsUndefined(address))
+                return AspRunResult_NameNotFound;
 
             /* Obtain the value at the address. */
             AspDataEntry *value = 0;

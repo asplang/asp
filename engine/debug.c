@@ -530,6 +530,8 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fputs(" nl", fp);
             if (!AspDataGetNamespaceNodeIsNotLocal(entry))
                 fputs(" loc", fp);
+            if (AspDataGetNamespaceNodeIsUndefined(entry))
+                fputs(" undef", fp);
             break;
 
         case DataType_TreeLinksNode:

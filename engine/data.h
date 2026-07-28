@@ -171,6 +171,22 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspBitSet(&(eptr)->w.u.u.u0, (AspWordBitSize) + 3, (value)))
 #define AspDataGetBit3(eptr) \
     (AspBitGet((eptr)->w.u.u.u0, (AspWordBitSize) + 3))
+#define AspDataSetBit4(eptr, value) \
+    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize), (value)))
+#define AspDataGetBit4(eptr) \
+    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize)))
+#define AspDataSetBit5(eptr, value) \
+    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 1, (value)))
+#define AspDataGetBit5(eptr) \
+    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 1))
+#define AspDataSetBit6(eptr, value) \
+    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 2, (value)))
+#define AspDataGetBit6(eptr) \
+    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 2))
+#define AspDataSetBit7(eptr, value) \
+    (AspBitSet(&(eptr)->w.u.u.u1, (AspWordBitSize) + 3, (value)))
+#define AspDataGetBit7(eptr) \
+    (AspBitGet((eptr)->w.u.u.u1, (AspWordBitSize) + 3))
 
 /* Common field access. */
 #define AspDataSetType(eptr, ty) \
@@ -625,6 +641,10 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetBit3((eptr), (unsigned)(value)))
 #define AspDataGetNamespaceNodeIsNotLocal(eptr) \
     ((bool)(AspDataGetBit3((eptr))))
+#define AspDataSetNamespaceNodeIsUndefined(eptr, value) \
+    (AspDataSetBit4((eptr), (unsigned)(value)))
+#define AspDataGetNamespaceNodeIsUndefined(eptr) \
+    ((bool)(AspDataGetBit4((eptr))))
 
 /* TreeLinksNode entry field access. */
 #define AspDataSetTreeLinksNodeLeftIndex(eptr, value) \
