@@ -305,9 +305,9 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             else
                 fprintf(fp, " code=0x%07X",
                     AspDataGetModuleCodeAddress(entry));
-            fprintf(fp, " ns=0x%07X ld=%d",
-                AspDataGetModuleNamespaceIndex(entry),
-                AspDataGetModuleIsLoaded(entry));
+            fprintf(fp, " ns=0x%07X", AspDataGetModuleNamespaceIndex(entry));
+            if (AspDataGetModuleIsLoaded(entry))
+                fprintf(fp, " loaded");
             break;
 
         case DataType_ReverseIterator:
@@ -400,7 +400,6 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             if (contextIndex)
                 fprintf(fp, " ctx=0x%07X", contextIndex);
             #endif
-
             break;
         }
 
@@ -484,14 +483,16 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
 
         case DataType_NamespaceNode:
             fprintf(fp,
-                " sym=%d p=0x%07X lr=0x%07X val=0x%07X clr=%c gl=%d loc=%d",
+                " sym=%d p=0x%07X lr=0x%07X val=0x%07X clr=%c",
                 AspDataGetNamespaceNodeSymbol(entry),
                 AspDataGetTreeNodeParentIndex(entry),
                 AspDataGetTreeNodeLinksIndex(entry),
                 AspDataGetTreeNodeValueIndex(entry),
-                AspDataGetTreeNodeIsBlack(entry) ? 'B' : 'R',
-                AspDataGetNamespaceNodeIsGlobal(entry),
-                !AspDataGetNamespaceNodeIsNotLocal(entry));
+                AspDataGetTreeNodeIsBlack(entry) ? 'B' : 'R');
+            if (AspDataGetNamespaceNodeIsGlobal(entry))
+                fputs(" gl", fp);
+            if (!AspDataGetNamespaceNodeIsNotLocal(entry))
+                fputs(" loc", fp);
             break;
 
         case DataType_TreeLinksNode:
