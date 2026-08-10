@@ -72,6 +72,10 @@ AspRunResult AspAssignSimple
                     return engine->runResult;
             }
             AspDataSetTreeNodeValueIndex(address, newValueIndex);
+
+            /* Mark a simple variable as defined. */
+            if (addressType == DataType_NamespaceNode)
+                AspDataSetNamespaceNodeIsUndefined(address, false);
             break;
         }
     }

@@ -582,6 +582,10 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetBit2((eptr), (unsigned)(value)))
 #define AspDataGetNamespaceNodeIsNotLocal(eptr) \
     ((bool)(AspDataGetBit2((eptr))))
+#define AspDataSetNamespaceNodeIsUndefined(eptr, value) \
+    (AspDataSetBit3((eptr), (unsigned)(value)))
+#define AspDataGetNamespaceNodeIsUndefined(eptr) \
+    ((bool)(AspDataGetBit3((eptr))))
 
 /* TreeLinksNode entry field access. */
 #define AspDataSetTreeLinksNodeLeftIndex(eptr, value) \
