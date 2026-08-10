@@ -728,6 +728,10 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                     /* Insert the class  into the current namespace. */
                     AspTreeResult insertResult = AspTreeTryInsertBySymbol
                         (engine, currentAppNamespace, symbol, cls);
+                    if (insertResult.result != AspRunResult_OK)
+                        return insertResult.result;
+                    if (!insertResult.inserted)
+                        return AspRunResult_InitializationError;
 
                     /* Prepare to add subsequent definitions to the class'
                        namespace. */
