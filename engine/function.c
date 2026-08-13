@@ -308,13 +308,46 @@ AspRunResult AspCallCallable
     AspDataEntry *function = callable;
     if (!callerAgain)
     {
+        uint8_t callableType = AspDataGetType(callable);
+
         #ifdef ASP_FEATURE_CLASS
 
         AspDataEntry *cls = 0, *instance = 0;
         bool initializeInstance = false;
 
-        /* Handle the different types of callables. */
-        uint8_t callableType = AspDataGetType(callable);
+        /* Handle calling a bound method if applicable. */
+        if (callableType == DataType_BoundMethod)
+        {
+            if (!AspIsFeature(engine, AspFeatureBit_Class))
+                return AspRunResult_UnexpectedType;
+
+            /* Prepare to call the function on behalf of the instance. */
+            cls = AspValueEntry
+                (engine, AspDataGetBoundMethodClassIndex(callable));
+            AspRef(engine, cls);
+            instance = AspValueEntry
+                (engine, AspDataGetBoundMethodInstanceIndex(callable));
+            AspRef(engine, instance);
+            function = callable = AspValueEntry
+                (engine, AspDataGetBoundMethodFunctionIndex(callable));
+            callableType = AspDataGetType(callable);
+        }
+
+        #endif
+
+        /* Determine whether we're calling a closure. */
+        AspDataEntry *closure = 0;
+        if (AspDataGetType(callable) == DataType_Closure)
+        {
+            closure = callable;
+            function = callable = AspEntry
+                (engine, AspDataGetClosureFunctionIndex(callable));
+            callableType = AspDataGetType(callable);
+        }
+
+        #ifdef ASP_FEATURE_CLASS
+
+        /* Handle the different types of callables other than functions. */
         if (callableType == DataType_Class)
         {
             if (!AspIsFeature(engine, AspFeatureBit_Class))
@@ -347,21 +380,6 @@ AspRunResult AspCallCallable
             AspRef(engine, cls);
             function = initializerResult.value;
             initializeInstance = true;
-        }
-        else if (callableType == DataType_BoundMethod)
-        {
-            if (!AspIsFeature(engine, AspFeatureBit_Class))
-                return AspRunResult_UnexpectedType;
-
-            /* Prepare to call the function on behalf of the instance. */
-            function = AspValueEntry
-                (engine, AspDataGetBoundMethodFunctionIndex(callable));
-            cls = AspValueEntry
-                (engine, AspDataGetBoundMethodClassIndex(callable));
-            AspRef(engine, cls);
-            instance = AspValueEntry
-                (engine, AspDataGetBoundMethodInstanceIndex(callable));
-            AspRef(engine, instance);
         }
         else if (AspIsInstance(callable))
         {
@@ -414,15 +432,6 @@ AspRunResult AspCallCallable
             #endif
             return AspRunResult_InvalidAppFunction;
         }
-
-        /* Determine whether we're calling a closure. */
-        AspDataEntry *closure = 0;
-        if (AspDataGetType(function) == DataType_Closure)
-        {
-            closure = function;
-            function = AspEntry
-                (engine, AspDataGetClosureFunctionIndex(function));
-        }
         if (AspDataGetType(function) != DataType_Function)
             return AspRunResult_UnexpectedType;
 
@@ -455,6 +464,8 @@ AspRunResult AspCallCallable
                each one on behalf of the call frame. */
             AspRunResult referenceResult = AspReferenceNamespaceChain
                 (engine, AspEntry(engine, nonlocalNamespaceIndex), true);
+            if (referenceResult != AspRunResult_OK)
+                return referenceResult;
         }
 
         /* Populate the local namespace with the call arguments. */
@@ -477,10 +488,6 @@ AspRunResult AspCallCallable
             (frame, AspIndex(engine, engine->module));
         AspDataSetFrameLocalNamespaceIndex
             (frame, AspIndex(engine, engine->localNamespace));
-        AspDataSetFrameClosureTrackerListIndex
-            (frame, AspIndex(engine, engine->closureTrackers));
-        engine->closureTrackers = 0;
-
         AspDataEntry *newTop = AspPush(engine, frame);
         if (newTop == 0)
             return AspRunResult_OutOfDataMemory;
@@ -613,11 +620,19 @@ AspRunResult AspCallCallable
             return AspRunResult_OK;
         }
 
+        /* Ripple through the chain of nonlocal namespaces, unreferencing each
+           one on behalf of the call frame. */
+        AspRunResult unreferenceResult = AspReferenceNamespaceChain
+            (engine,
+             AspEntry
+                (engine,
+                 AspDataGetNamespaceEnclosingNamespaceIndex
+                    (engine->appFunctionNamespace)),
+             false);
+        if (unreferenceResult != AspRunResult_OK)
+            return unreferenceResult;
+
         /* We're now done with the local namespace. */
-        AspRunResult closuresResult = AspProcessClosures
-            (engine, engine->appFunctionNamespace);
-        if (closuresResult != AspRunResult_OK)
-            return closuresResult;
         AspUnref(engine, engine->appFunctionNamespace);
         if (engine->runResult != AspRunResult_OK)
             return engine->runResult;
@@ -1009,8 +1024,6 @@ AspRunResult AspReturnToCaller(AspEngine *engine, AspDataEntry **returnValue)
         return AspRunResult_UnexpectedType;
 
     /* Restore context from the standard frame. */
-    engine->closureTrackers = AspEntry
-        (engine, AspDataGetFrameClosureTrackerListIndex(frame));
     engine->localNamespace = AspEntry
         (engine, AspDataGetFrameLocalNamespaceIndex(frame));
     engine->module = AspEntry

@@ -276,7 +276,6 @@ AspRunResult AspReset(AspEngine *engine)
     engine->codeEndKnown = false;
     engine->pagedCodeId = 0;
     engine->codePageReadCount = 0;
-    engine->closureTrackers = 0;
     if (engine->cachedCodePages != 0)
     {
         for (size_t i = 0; i < engine->cachedCodePageCount; i++)
@@ -328,7 +327,6 @@ AspRunResult AspRestart(AspEngine *engine)
     engine->runResult = AspRunResult_OK;
     engine->pc = engine->instructionAddress = 0;
     engine->codePageReadCount = 0;
-    engine->closureTrackers = 0;
     engine->again = false;
     engine->callFromApp = false;
     engine->callReturning = false;
@@ -727,9 +725,11 @@ static AspRunResult InitializeAppDefinitions(AspEngine *engine)
                     if (cls == 0)
                         return AspRunResult_OutOfDataMemory;
 
-                    /* Insert the class  into the current namespace. */
+                    /* Insert the class into the current namespace. */
                     AspTreeResult insertResult = AspTreeTryInsertBySymbol
                         (engine, currentAppNamespace, symbol, cls);
+                    if (insertResult.result != AspRunResult_OK)
+                        return insertResult.result;
 
                     /* Prepare to add subsequent definitions to the class'
                        namespace. */

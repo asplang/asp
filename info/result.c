@@ -54,8 +54,6 @@ const char *AspRunResultToString(int result)
             return "Cycle detected";
         case AspRunResult_InvalidContext:
             return "Invalid context";
-        case AspRunResult_Redundant:
-            return "Redundant";
         case AspRunResult_UnexpectedType:
             return "Unexpected type";
         case AspRunResult_SequenceMismatch:

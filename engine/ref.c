@@ -63,8 +63,7 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
             else if (t == DataType_String ||
                      t == DataType_Tuple || t == DataType_List ||
                      t == DataType_ParameterList ||
-                     t == DataType_ArgumentList ||
-                     t == DataType_ClosureTrackerList)
+                     t == DataType_ArgumentList)
             {
                 uint32_t iterationCount = 0;
                 for (AspSequenceResult nextResult = {AspRunResult_OK, 0, 0};
@@ -234,51 +233,6 @@ void AspUnref(AspEngine *engine, AspDataEntry *entry)
                 const AspDataEntry *function = AspValueEntry
                     (engine, AspDataGetClosureFunctionIndex(entry));
                 AspPushNoUse(engine, function);
-
-                /* Handle closure destruction according to whether it was being
-                   tracked or was detached. */
-                uint32_t trackerElementIndex =
-                    AspDataGetClosureTrackerElementIndex(entry);
-                if (trackerElementIndex != 0)
-                {
-                    /* The closure was being tracked, so there is nothing
-                       more to do than to stop tracking it. */
-                    AspDataEntry *trackerElement = AspEntry
-                        (engine, trackerElementIndex);
-                    AspDataEntry *tracker = AspEntry
-                        (engine, AspDataGetElementValueIndex(trackerElement));
-                    AspDataEntry *trackerList = AspEntry
-                        (engine, AspDataGetClosureTrackerListIndex(tracker));
-                    bool eraseResult = AspSequenceEraseElement
-                        (engine, trackerList,
-                         AspEntry(engine, trackerElementIndex), false);
-                    if (!eraseResult)
-                    {
-                        engine->runResult = AspRunResult_InternalError;
-                        break;
-                    }
-                    AspUnref(engine, tracker);
-                }
-                else if (AspDataGetClosureIsDetached(entry))
-                {
-                    /* The closure was detached, so ripple through the chain of
-                       non-local namespaces, unreferencing each one on behalf
-                       of the closure. */
-                    uint32_t iterationCount = 0;
-                    for (AspDataEntry *ns = AspEntry
-                            (engine,
-                             AspDataGetClosureNonlocalNamespaceIndex(entry));
-                         ns != 0;
-                         ns = AspEntry
-                            (engine,
-                             AspDataGetNamespaceEnclosingNamespaceIndex(ns)))
-                        AspPushNoUse(engine, ns);
-                    if (iterationCount >= engine->cycleDetectionLimit)
-                    {
-                        engine->runResult = AspRunResult_CycleDetected;
-                        break;
-                    }
-                }
             }
             else if (t == DataType_Module)
             {
@@ -462,7 +416,6 @@ static bool IsTerminal(const AspDataEntry *entry)
         DataType_AppIntegerObject,
         DataType_AppPointerObject,
         DataType_StringFragment,
-        DataType_ClosureTracker,
     };
 
     uint8_t t = AspDataGetType(entry);

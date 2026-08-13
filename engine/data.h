@@ -74,8 +74,6 @@ typedef enum
     DataType_ParameterList = 0x81,
     DataType_Argument = 0x82,
     DataType_ArgumentList = 0x83,
-    DataType_ClosureTracker = 0x90,
-    DataType_ClosureTrackerList = 0x91,
     DataType_AppIntegerObjectInfo = 0xAA,
     DataType_AppPointerObjectInfo = 0xAB,
     #ifdef ASP_FEATURE_CLASS
@@ -370,14 +368,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetClosureNonlocalNamespaceIndex(eptr) \
     (AspDataGetWord1((eptr)))
-#define AspDataSetClosureIsDetached(eptr, value) \
-    (AspDataSetBit1((eptr), (unsigned)(value)))
-#define AspDataGetClosureIsDetached(eptr) \
-    ((bool)(AspDataGetBit1((eptr))))
-#define AspDataSetClosureTrackerElementIndex(eptr, value) \
-    (AspDataSetWord3((eptr), (value)))
-#define AspDataGetClosureTrackerElementIndex(eptr) \
-    (AspDataGetWord3((eptr)))
 
 /* Module entry field access. */
 #define AspDataSetModuleIsApp(eptr, value) \
@@ -501,10 +491,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord2((eptr), (value)))
 #define AspDataGetFrameLocalNamespaceIndex(eptr) \
     (AspDataGetWord2((eptr)))
-#define AspDataSetFrameClosureTrackerListIndex(eptr, value) \
-    (AspDataSetWord3((eptr), (value)))
-#define AspDataGetFrameClosureTrackerListIndex(eptr) \
-    (AspDataGetWord3((eptr)))
 
 #ifdef ASP_FEATURE_CLASS
 
@@ -699,20 +685,6 @@ int32_t AspDataGetSignedWord3(const AspDataEntry *);
     (AspDataSetWord1((eptr), (value)))
 #define AspDataGetArgumentValueIndex(eptr) \
     (AspDataGetWord1((eptr)))
-
-/* ClosureTracker entry field access. */
-#define AspDataSetClosureTrackerClosureIndex(eptr, value) \
-    (AspDataSetWord0((eptr), (value)))
-#define AspDataGetClosureTrackerClosureIndex(eptr) \
-    (AspDataGetWord0((eptr)))
-#define AspDataSetClosureTrackerListIndex(eptr, value) \
-    (AspDataSetWord1((eptr), (value)))
-#define AspDataGetClosureTrackerListIndex(eptr) \
-    (AspDataGetWord1((eptr)))
-#define AspDataSetClosureTrackerCloneIndex(eptr, value) \
-    (AspDataSetWord2((eptr), (value)))
-#define AspDataGetClosureTrackerCloneIndex(eptr) \
-    (AspDataGetWord2((eptr)))
 
 #ifdef ASP_FEATURE_CLASS
 

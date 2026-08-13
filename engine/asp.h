@@ -45,7 +45,6 @@ typedef enum
     AspRunResult_StackUnderflow = 0x07,
     AspRunResult_CycleDetected = 0x08,
     AspRunResult_InvalidContext = 0x0A,
-    AspRunResult_Redundant = 0x0B,
     AspRunResult_UnexpectedType = 0x0C,
     AspRunResult_SequenceMismatch = 0x0D,
     AspRunResult_StringFormattingError = 0x0E,
@@ -193,6 +192,7 @@ ASP_API bool AspSymbolValue(const AspDataEntry *, int32_t *);
 ASP_API bool AspRangeValues
     (AspEngine *, const AspDataEntry *,
      int32_t *start, int32_t *end, int32_t *step, bool *bounded);
+ASP_API const AspDataEntry *AspClosureValue(AspEngine *, const AspDataEntry *);
 ASP_API bool AspStringValue
     (AspEngine *, const AspDataEntry *,
      size_t *size, char *buffer, size_t index, size_t bufferSize);

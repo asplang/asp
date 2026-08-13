@@ -1554,10 +1554,6 @@ static AspRunResult Step(AspEngine *engine)
                transferred to the class and will therefore not be destroyed. */
             if (engine->localNamespace != 0)
             {
-                AspRunResult discardResult = AspProcessClosures
-                    (engine, engine->localNamespace);
-                if (discardResult != AspRunResult_OK)
-                    return discardResult;
                 AspUnref(engine, engine->localNamespace);
                 if (engine->runResult != AspRunResult_OK)
                     return engine->runResult;
@@ -2015,8 +2011,6 @@ static AspRunResult Step(AspEngine *engine)
                 return AspRunResult_OutOfDataMemory;
             AspDataSetClassBaseClassIndex(cls, AspIndex(engine, baseClass));
 
-            AspProcessClosures(engine, engine->localNamespace);
-
             /* Transfer the local namespace into the class, preventing it from
                destruction when returning from the class definition
                function. */
@@ -2129,12 +2123,11 @@ static AspRunResult Step(AspEngine *engine)
                      inFunction ?
                      AspIndex(engine, engine->localNamespace) :
                      enclosingNamespaceIndex);
+                AspRunResult referenceResult = AspReferenceNamespaceChain
+                    (engine, engine->localNamespace, true);
+                if (referenceResult != AspRunResult_OK)
+                    return referenceResult;
                 function = closure;
-
-                /* Keep track of the locally created closure. */
-                AspRunResult trackResult = AspTrackClosure(engine, closure);
-                if (trackResult != AspRunResult_OK)
-                    return trackResult;
             }
 
             /* Replace the top stack entry with the function. */

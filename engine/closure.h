@@ -8,14 +8,13 @@
 #include "asp-priv.h"
 #include "data.h"
 #include "tree.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-AspRunResult AspProcessClosures(AspEngine *, AspDataEntry *ns);
-AspRunResult AspTrackClosure(AspEngine *, AspDataEntry *);
 AspRunResult AspReferenceNamespaceChain
     (AspEngine *, AspDataEntry *ns, bool reference);
 AspTreeResult AspSearchNonlocal

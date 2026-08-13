@@ -7,8 +7,8 @@
 
 #include "asp-priv.h"
 #include "data.h"
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 
 #ifdef __cplusplus

@@ -137,7 +137,7 @@ AspMemberResult AspFindMember
         }
         else if ((containerType == DataType_Object ||
                   containerType == DataType_Super) &&
-                  AspIsFunction(symbolResult.value))
+                 AspIsFunction(symbolResult.value))
         {
             AspDataEntry *instance = container;
             if (containerType == DataType_Super)

@@ -67,13 +67,6 @@ void AspDump(const AspEngine *engine, FILE *fp)
     fprintf
         (fp, "Current local namespace: 0x%07X\n",
          AspIndex(engine, engine->localNamespace));
-    fputs("Current closure trackers: ", fp);
-    if (engine->closureTrackers == 0)
-        fputs("none", fp);
-    else
-        fprintf
-            (fp, "0x%07X", AspIndex(engine, engine->closureTrackers));
-    fputc('\n', fp);
 }
 
 static void DumpData(const AspEngine *engine, FILE *fp)
@@ -174,8 +167,6 @@ static TypeName gTypeNames[] =
     {DataType_ParameterList, "parms"},
     {DataType_Argument, "arg"},
     {DataType_ArgumentList, "args"},
-    {DataType_ClosureTracker, "clostrk"},
-    {DataType_ClosureTrackerList, "clostrks"},
     {DataType_AppIntegerObjectInfo, "app-ii"},
     {DataType_AppPointerObjectInfo, "app-pi"},
     #ifdef ASP_FEATURE_CLASS
@@ -246,7 +237,6 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
         case DataType_List:
         case DataType_ParameterList:
         case DataType_ArgumentList:
-        case DataType_ClosureTrackerList:
             fprintf(fp, " count=%u head=0x%07X tail=0x%07X",
                 AspDataGetSequenceCount(entry),
                 AspDataGetSequenceHeadIndex(entry),
@@ -324,14 +314,6 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
             fprintf(fp, " func=0x%07X nlns=0x%07X",
                 AspDataGetClosureFunctionIndex(entry),
                 AspDataGetClosureNonlocalNamespaceIndex(entry));
-            uint32_t trackerElementIndex =
-                AspDataGetClosureTrackerElementIndex(entry);
-            if (AspDataGetClosureIsDetached(entry))
-                fputs(" detached", fp);
-            if (trackerElementIndex == 0)
-                fputs(" local", fp);
-            else
-                fprintf(fp, " trk=0x%07X", trackerElementIndex);
             break;
         }
 
@@ -431,10 +413,6 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 AspDataGetFrameReturnAddress(entry),
                 AspDataGetFrameModuleIndex(entry),
                 AspDataGetFrameLocalNamespaceIndex(entry));
-            uint32_t closureTrackerListIndex =
-                AspDataGetFrameClosureTrackerListIndex(entry);
-            if (closureTrackerListIndex != 0)
-                fprintf(fp, " clostrks=0x%07X", closureTrackerListIndex);
             break;
         }
 
@@ -561,13 +539,6 @@ static void DumpDataEntry(uint32_t index, const AspDataEntry *entry, FILE *fp)
                 fputs(" dgrp", fp);
             else
                 fputs(" pos", fp);
-            break;
-
-        case DataType_ClosureTracker:
-            fprintf(fp, " clos=0x%07X list=0x%07X clone=0x%07X ",
-                AspDataGetClosureTrackerClosureIndex(entry),
-                AspDataGetClosureTrackerListIndex(entry),
-                AspDataGetClosureTrackerCloneIndex(entry));
             break;
 
         case DataType_AppIntegerObjectInfo:

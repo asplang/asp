@@ -184,8 +184,7 @@ bool AspIsFunction(const AspDataEntry *entry)
     uint8_t type = AspDataGetType(entry);
     return
         entry != 0 &&
-        (type == DataType_Function ||
-         type == DataType_Closure);
+        (type == DataType_Function || type == DataType_Closure);
 }
 
 bool AspIsClosure(const AspDataEntry *entry)
@@ -469,6 +468,15 @@ bool AspRangeValues
 
     AspGetRange(engine, entry, start, end, step, bounded);
     return true;
+}
+
+const AspDataEntry *AspClosureValue
+    (AspEngine *engine, const AspDataEntry *entry)
+{
+    if (!AspIsClosure(entry))
+        return false;
+
+    return AspEntry(engine, AspDataGetClosureFunctionIndex(entry));
 }
 
 bool AspAppObjectTypeValue
