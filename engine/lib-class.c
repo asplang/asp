@@ -202,24 +202,31 @@ ASP_LIB_API AspRunResult AspLib_classmethod_get
      AspDataEntry *self, AspDataEntry *instance, AspDataEntry *owner,
      AspDataEntry **returnValue)
 {
+    if (AspIsNone(owner))
+        owner = AspInstanceClass(engine, instance);
+
     AspMemberResult result = AspFindMember
         (engine, self, AspReservedSymbol_FunctionMember, false);
     if (result.result != AspRunResult_OK)
         return result.result;
 
-    if (AspIsNone(owner))
-        owner = AspInstanceClass(engine, instance);
+    AspContextResult contextResult = AspFindContext(engine);
+    if (contextResult.result != AspRunResult_OK)
+        return contextResult.result;
 
+    /* Return a bound method, binding the owner class as the instance. */
     *returnValue = AspAllocEntry(engine, DataType_BoundMethod);
     if (*returnValue == 0)
         return AspRunResult_OutOfDataMemory;
     AspDataSetBoundMethodFunctionIndex
         (*returnValue, AspIndex(engine, result.member));
     AspRef(engine, owner);
-    AspDataSetBoundMethodInstanceIndex
-        (*returnValue, AspIndex(engine, owner));
-    AspRef(engine, owner);
-    AspDataSetBoundMethodClassIndex
-        (*returnValue, AspIndex(engine, owner));
+    AspDataSetBoundMethodInstanceIndex(*returnValue, AspIndex(engine, owner));
+    AspDataEntry *cls =
+        contextResult.value == 0 ? owner :
+        AspEntry(engine, AspDataGetContextClassIndex(contextResult.value));
+    AspRef(engine, cls);
+    AspDataSetBoundMethodClassIndex(*returnValue, AspIndex(engine, cls));
+
     return AspRunResult_OK;
 }

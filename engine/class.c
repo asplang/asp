@@ -21,42 +21,20 @@ AspSuperResult AspSuperCreate
     }
     else
     {
-        /* Search for the enclosing frame with a context. */
-        AspDataEntry *context = 0;
-        uint32_t prevStackEntryIndex;
-        uint32_t iterationCount = 0;
-        for (AspDataEntry *stackEntry = engine->stackTop;
-             iterationCount < engine->cycleDetectionLimit && stackEntry != 0;
-             iterationCount++, stackEntry =
-             ((prevStackEntryIndex =
-               AspDataGetStackEntryPreviousIndex(stackEntry)) != 0 ?
-              AspEntry(engine, prevStackEntryIndex) : 0))
+        AspContextResult contextResult = AspFindContext(engine);
+        if (contextResult.result != AspRunResult_OK)
         {
-            AspDataEntry *entry = AspValueEntry
-                (engine, AspDataGetStackEntryValueIndex(stackEntry));
-            if (AspDataGetType(entry) == DataType_Frame)
-            {
-                uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
-                if (contextIndex != 0)
-                {
-                    context = AspEntry(engine, contextIndex);
-                    break;
-                }
-            }
-        }
-        if (iterationCount >= engine->cycleDetectionLimit)
-        {
-            result.result = AspRunResult_CycleDetected;
+            result.result = contextResult.result;
             return result;
         }
-        if (context == 0)
+        if (contextResult.value == 0)
         {
             result.result = AspRunResult_InvalidContext;
             return result;
         }
 
         /* Use the class and instance from the context. */
-        uint32_t classIndex = AspDataGetContextClassIndex(context);
+        uint32_t classIndex = AspDataGetContextClassIndex(contextResult.value);
         if (classIndex == 0)
         {
             result.result = AspRunResult_InternalError;
@@ -64,7 +42,8 @@ AspSuperResult AspSuperCreate
         }
         else
             cls = AspValueEntry(engine, classIndex);
-        uint32_t instanceIndex = AspDataGetContextInstanceIndex(context);
+        uint32_t instanceIndex = AspDataGetContextInstanceIndex
+            (contextResult.value);
         if (instanceIndex != 0)
             instance = AspValueEntry(engine, instanceIndex);
     }
@@ -80,6 +59,41 @@ AspSuperResult AspSuperCreate
     AspDataSetSuperClassIndex(result.value, AspIndex(engine, cls));
     AspRef(engine, instance);
     AspDataSetSuperInstanceIndex(result.value, AspIndex(engine, instance));
+
+    return result;
+}
+
+AspContextResult AspFindContext(AspEngine *engine)
+{
+    AspContextResult result = {AspRunResult_OK, 0};
+
+    /* Search for the enclosing frame with a context. */
+    uint32_t prevStackEntryIndex;
+    uint32_t iterationCount = 0;
+    for (AspDataEntry *stackEntry = engine->stackTop;
+         iterationCount < engine->cycleDetectionLimit && stackEntry != 0;
+         iterationCount++, stackEntry =
+         ((prevStackEntryIndex = AspDataGetStackEntryPreviousIndex(stackEntry))
+          != 0 ?
+          AspEntry(engine, prevStackEntryIndex) : 0))
+    {
+        AspDataEntry *entry = AspValueEntry
+            (engine, AspDataGetStackEntryValueIndex(stackEntry));
+        if (AspDataGetType(entry) == DataType_Frame)
+        {
+            uint32_t contextIndex = AspDataGetFrameContextIndex(entry);
+            if (contextIndex != 0)
+            {
+                result.value = AspEntry(engine, contextIndex);
+                break;
+            }
+        }
+    }
+    if (iterationCount >= engine->cycleDetectionLimit)
+    {
+        result.result = AspRunResult_CycleDetected;
+        return result;
+    }
 
     return result;
 }

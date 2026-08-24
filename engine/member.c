@@ -56,6 +56,33 @@ AspMemberResult AspFindMember
         /* Invoke the special __get__ function if applicable. */
         if (getterResult.value != 0)
         {
+            /* Determine whether the container is a super object. */
+            AspDataEntry *superClass = 0, *superInstance = 0;
+            AspDataEntry *superInstanceClass = 0;
+            if (containerType == DataType_Super)
+            {
+                superClass = AspEntry
+                    (engine, AspDataGetSuperClassIndex(container));
+                superInstance = AspEntry
+                    (engine, AspDataGetSuperInstanceIndex(container));
+                if (AspDataGetType(superInstance) == DataType_Class)
+                    superInstanceClass = superInstance;
+            }
+
+            /* Create a temporary bound method, binding the descriptor instance
+               to the descriptor's __get__ method. */
+            AspDataEntry *boundMethod = AspAllocEntry
+                (engine, DataType_BoundMethod);
+            AspRef(engine, getterResult.value);
+            AspDataSetBoundMethodFunctionIndex
+                (boundMethod, AspIndex(engine, getterResult.value));
+            AspRef(engine, symbolResult.value);
+            AspDataSetBoundMethodInstanceIndex
+                (boundMethod, AspIndex(engine, symbolResult.value));
+            AspRef(engine, symbolResult.container);
+            AspDataSetBoundMethodClassIndex
+                (boundMethod, AspIndex(engine, symbolResult.container));
+
             /* Prepare to add arguments to the call. */
             AspDataEntry *arguments = AspAllocEntry
                 (engine, DataType_ArgumentList);
@@ -65,42 +92,41 @@ AspMemberResult AspFindMember
                 return result;
             }
 
-            /* Add the self argument. */
-            AspRef(engine, symbolResult.value);
-            result.result = AspAppendPositionalArgument
-                (engine, arguments, symbolResult.value);
-            if (result.result != AspRunResult_OK)
-                return result;
-
             /* Add the applicable instance argument. */
-            AspDataEntry *instanceValue;
-            if (AspIsClass(container))
-                instanceValue = AspNewNone(engine);
-            else
-            {
-                AspRef(engine, container);
-                instanceValue = container;
-            }
+            bool instanceReferenced = false;
+            AspDataEntry *instanceArgument =
+                AspIsClass(container) || superInstanceClass != 0 ?
+                (instanceReferenced = true, AspNewNone(engine)) :
+                superInstance != 0 ? superInstance : container;
+            if (!instanceReferenced)
+                AspRef(engine, instanceArgument);
             result.result = AspAppendPositionalArgument
-                (engine, arguments, instanceValue);
+                (engine, arguments, instanceArgument);
             if (result.result != AspRunResult_OK)
                 return result;
 
-            /* Add the applicable class argument. */
-            AspRef(engine, symbolResult.container);
+            /* Add the applicable owner argument. */
+            AspDataEntry *ownerArgument =
+                superInstanceClass != 0 ? superInstanceClass :
+                AspIsInstance(instanceArgument) ?
+                AspEntry(engine, AspDataGetObjectClassIndex(instanceArgument)) :
+                superClass != 0 ? symbolResult.container : container;
+            AspRef(engine, ownerArgument);
             result.result = AspAppendPositionalArgument
-                (engine, arguments, symbolResult.container);
+                (engine, arguments, ownerArgument);
             if (result.result != AspRunResult_OK)
                 return result;
 
-            /* Call the special __get__ function. */
+            /* Call the special __get__ method. */
             result.result = AspCallCallable
-                (engine, getterResult.value, arguments,
-                 engine->inApp);
+                (engine, boundMethod, arguments, engine->inApp);
             if (result.result == AspRunResult_Call)
                 result.result = AspRunResult_NotImplemented;
             if (result.result != AspRunResult_OK)
                 return result;
+
+            /* We're now done with the bound method. */
+            AspUnref(engine, boundMethod);
 
             /* Retain the returned value as the member value. */
             result.member = AspTopValue(engine);

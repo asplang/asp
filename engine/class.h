@@ -18,8 +18,15 @@ typedef struct
     AspDataEntry *value;
 } AspSuperResult;
 
+typedef struct
+{
+    AspRunResult result;
+    AspDataEntry *value;
+} AspContextResult;
+
 AspSuperResult AspSuperCreate
     (AspEngine *engine, AspDataEntry *cls, AspDataEntry *instance);
+AspContextResult AspFindContext(AspEngine *engine);
 
 #ifdef __cplusplus
 }
