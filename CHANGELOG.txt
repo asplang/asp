@@ -7,6 +7,14 @@ chronological order.
 Changes
 -------
 
+Version 1.3.1.1 (generator 1.3.1.0, compiler 1.3.1.0, engine 1.3.1.1):
+- Engine:
+  - Fixed issues with how member selection interacts with descriptors:
+    - Fixed the type of the object passed as the first argument to methods
+      decorated with classmethod. Previously, the wrong class in a class
+      hierarchy was being passed.
+    - Fixed a data memory area leak of bound methods.
+
 Version 1.3.1.0 (generator 1.3.1.0, compiler 1.3.1.0, engine 1.3.1.0):
 - Application specification generator:
   - Fixed a code generation error for application functions with greater than
